@@ -1,24 +1,40 @@
-import logo from './logo.svg';
+import React from 'react';
+import Map from './Map';
 import './App.css';
+import './Map.css';
+import './VisualElements.css';
+import './Creature.css';
+
+class Game extends React.Component {
+  constructor() {
+    super();
+
+    this.state = {
+      noticeClasses: 'notice'
+    }
+  }
+
+  closeNotice = () => {
+    this.setState({noticeClasses: 'hide'});
+  }
+
+  render() {
+    return (
+        <div className="game">
+          <div className={this.state.noticeClasses}>
+            <div className="notice-message">Find the stairs down to enter a new dungeon! Use mouse or arrow keys to move.</div>
+            <button className="notice-button" onClick={this.closeNotice}>Close</button>
+          </div>
+
+          <Map />
+        </div>
+    );
+  }
+}
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+      <Game />
   );
 }
 
