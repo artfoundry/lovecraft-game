@@ -44,14 +44,12 @@ class Map extends React.Component {
 		const numMapPieces = Object.keys(this.mapPieces).length;
 
 		while (numPosUnavail < numMapPieces && Object.keys(this.mapLayoutTemp).length < this.mapPieceLimit) {
-			const {newPiece, pieceName, pieceWidth, pieceHeight} = this.chooseNewRandomPiece(attemptedPieces);
+			const {newPiece, pieceName} = this.chooseNewRandomPiece(attemptedPieces);
 			attemptedPieces.push(pieceName);
 			const {positionFound, updatedPiece, mapOpening, pieceOpening} = this.findNextPiecePosition(newPiece);
 
 			if (positionFound) {
 				this.updateMapLayout(updatedPiece, mapOpening, pieceOpening);
-				this.totalPiecesWidth += pieceWidth;
-				this.totalPiecesHeight += pieceHeight;
 				attemptedPieces = [];
 				numPosUnavail = 0;
 			} else numPosUnavail++;
@@ -74,19 +72,8 @@ class Map extends React.Component {
 		const filteredPiecesList = pieceNamesList.filter(name => attemptedPieces.indexOf(name) < 0);
 		const randomIndex = Math.floor(Math.random() * filteredPiecesList.length);
 		const newPiece = this.mapPieces[filteredPiecesList[randomIndex]];
-		const tileList = Object.keys(newPiece);
-		let pieceWidth = 0;
-		let pieceHeight = 0;
-		tileList.forEach(tileNum => {
-			if (newPiece[tileNum].xPos > pieceWidth) {
-				pieceWidth = newPiece[tileNum].xPos;
-			}
-			if (newPiece[tileNum].yPos > pieceHeight) {
-				pieceHeight = newPiece[tileNum].yPos;
-			}
-		});
 
-		return {newPiece, pieceName: filteredPiecesList[randomIndex], pieceWidth, pieceHeight};
+		return {newPiece, pieceName: filteredPiecesList[randomIndex]};
 	}
 
 	findNextPiecePosition(piece) {
