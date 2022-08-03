@@ -79,6 +79,7 @@ class Map extends React.Component {
 	findNextPiecePosition(piece) {
 		let positionFound = false;
 
+		// just for placing first piece
 		if (Object.keys(this.mapLayoutTemp).length === 0) {
 			positionFound = true;
 			return {positionFound, updatedPiece: piece};
@@ -87,6 +88,7 @@ class Map extends React.Component {
 		let pieceOpenings = [];
 		let mapOpenings = [];
 
+		// find all tile openings in piece and existing map
 		for (const [tilePos, tileSides] of Object.entries(piece)) {
 			for (const [side, value] of Object.entries(tileSides)) {
 				if (value === 'opening') {
@@ -105,21 +107,21 @@ class Map extends React.Component {
 		let mapOpening = {};
 		let pieceOpening = {};
 		let adjustedPieceOpening = {};
-		let pieceAdjustedTilePositions = [];
+		let pieceAdjustedTilePositions = {};
 		let mapTilesAvailableForPiece = 0;
 		let mapOpeningsCounter = 0;
 		let pieceOpeningsCounter = 0;
-		const numOfPieceTiles = Object.keys(piece).length;
+		const numOfTilesInPiece = Object.keys(piece).length;
 
 		// look through each opening in the map
-		while (mapTilesAvailableForPiece < numOfPieceTiles && mapOpeningsCounter < mapOpenings.length) {
+		while (mapTilesAvailableForPiece < numOfTilesInPiece && mapOpeningsCounter < mapOpenings.length) {
 			mapOpening = mapOpenings[mapOpeningsCounter];
 			const mapOpeningTileCoords = Object.keys(mapOpening)[0].split('-');
 			mapOpeningTileCoords.forEach((coord,i,arr) => arr[i] = +coord);
 
 			// for a map opening, check each piece opening to see if piece fits there
-			while (mapTilesAvailableForPiece < numOfPieceTiles && pieceOpeningsCounter < pieceOpenings.length) {
-				pieceAdjustedTilePositions = [];
+			while (mapTilesAvailableForPiece < numOfTilesInPiece && pieceOpeningsCounter < pieceOpenings.length) {
+				pieceAdjustedTilePositions = {};
 				mapTilesAvailableForPiece = 0;  // gets reset for each piece opening
 				pieceOpening = pieceOpenings[pieceOpeningsCounter];
 				const mapOpeningOpenSide = Object.values(mapOpening)[0];
@@ -129,27 +131,30 @@ class Map extends React.Component {
 					pieceOpeningTileCoords.forEach((coord,i,arr) => arr[i] = +coord);
 					const xAdjust = mapOpeningOpenSide === 'leftSide' ? -1 : mapOpeningOpenSide === 'rightSide' ? 1 : 0;
 					const yAdjust = mapOpeningOpenSide === 'topSide' ? -1 : mapOpeningOpenSide === 'bottomSide' ? 1 : 0;
-					// these are the coords for where to place the piece's tile containing the opening
+					// these are the coords for where in the map to place the piece's tile that contains the opening
 					const mapOpeningXOffset = mapOpeningTileCoords[0] + xAdjust;
 					const mapOpeningYOffset = mapOpeningTileCoords[1] + yAdjust;
 					const adjustedPieceOpeningCoords = mapOpeningXOffset + '-' + mapOpeningYOffset;
 					adjustedPieceOpening = {[adjustedPieceOpeningCoords]: pieceOpeningOpenSide};
 
-					for (const [tilePos, tileData] of Object.entries(piece)) {
+					// now move all other tiles in the piece to go with the opening tile
+					// and copy in rest of original tile info
+					for (const tileData of Object.values(piece)) {
 						const newXPos = mapOpeningXOffset + tileData.xPos - pieceOpeningTileCoords[0];
 						const newYPos = mapOpeningYOffset + tileData.yPos - pieceOpeningTileCoords[1];
-						pieceAdjustedTilePositions.push({
-							[tilePos]: newXPos + '-' + newYPos,
+						pieceAdjustedTilePositions[newXPos + '-' + newYPos] = {
+							...tileData,
 							xPos: newXPos,
 							yPos: newYPos
-						});
+						};
 					}
 
 					let tilePosIndex = 0;
 					let validPos = true;
+					const adjustedPiecesList = Object.values(pieceAdjustedTilePositions);
 					// check if all tiles on map where piece would go are empty
-					while (validPos && tilePosIndex < pieceAdjustedTilePositions.length) {
-						const adjustedTilePos = pieceAdjustedTilePositions[tilePosIndex];
+					while (validPos && tilePosIndex < adjustedPiecesList.length) {
+						const adjustedTilePos = adjustedPiecesList[tilePosIndex];
 						const tilePotentialPosInMap = adjustedTilePos.xPos + '-' + adjustedTilePos.yPos;
 
 						if (this.mapLayoutTemp[tilePotentialPosInMap] || adjustedTilePos.xPos < 0 || adjustedTilePos.yPos < 0) {
@@ -167,17 +172,9 @@ class Map extends React.Component {
 		}
 
 		let updatedPiece = {};
-		if (mapTilesAvailableForPiece === numOfPieceTiles) {
+		if (mapTilesAvailableForPiece === numOfTilesInPiece) {
 			positionFound = true;
-			for (const [tilePos, tileData] of Object.entries(piece)) {
-				const matchingUpdate = pieceAdjustedTilePositions.find(adjData => Object.keys(adjData).find(key => key === tilePos));
-				const updatedTilePos = matchingUpdate[tilePos];
-				updatedPiece[updatedTilePos] = {
-					...tileData,
-					xPos: +updatedTilePos.split('-')[0],
-					yPos: +updatedTilePos.split('-')[1]
-				};
-			}
+			updatedPiece = {...pieceAdjustedTilePositions};
 		}
 
 		pieceOpening = adjustedPieceOpening;
