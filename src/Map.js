@@ -139,14 +139,17 @@ class Map extends React.Component {
 
 					// now move all other tiles in the piece to go with the opening tile
 					// and copy in rest of original tile info
-					let validPos = true;
-					for (const tileData of Object.values(piece)) {
+					let isValidPos = true;
+					let tilePosIndex = 0;
+					const tileList = Object.values(piece);
+					while (isValidPos && tilePosIndex < tileList.length) {
+						const tileData = tileList[tilePosIndex];
 						const newXPos = mapOpeningXOffset + tileData.xPos - pieceOpeningTileCoords[0];
 						const newYPos = mapOpeningYOffset + tileData.yPos - pieceOpeningTileCoords[1];
 						const newPosCoords = newXPos + '-' + newYPos;
 						// check if location on map where tile would go is empty and within bounds
 						if (this.mapLayoutTemp[newPosCoords] || newXPos < 0 || newYPos < 0) {
-							validPos = false;
+							isValidPos = false;
 						} else {
 							mapTilesAvailableForPiece++;
 							pieceAdjustedTilePositions[newXPos + '-' + newYPos] = {
@@ -155,6 +158,7 @@ class Map extends React.Component {
 								yPos: newYPos
 							};
 						}
+						tilePosIndex++;
 					}
 				}
 				pieceOpeningsCounter++;
