@@ -139,30 +139,22 @@ class Map extends React.Component {
 
 					// now move all other tiles in the piece to go with the opening tile
 					// and copy in rest of original tile info
+					let validPos = true;
 					for (const tileData of Object.values(piece)) {
 						const newXPos = mapOpeningXOffset + tileData.xPos - pieceOpeningTileCoords[0];
 						const newYPos = mapOpeningYOffset + tileData.yPos - pieceOpeningTileCoords[1];
-						pieceAdjustedTilePositions[newXPos + '-' + newYPos] = {
-							...tileData,
-							xPos: newXPos,
-							yPos: newYPos
-						};
-					}
-
-					let tilePosIndex = 0;
-					let validPos = true;
-					const adjustedPiecesList = Object.values(pieceAdjustedTilePositions);
-					// check if all tiles on map where piece would go are empty
-					while (validPos && tilePosIndex < adjustedPiecesList.length) {
-						const adjustedTilePos = adjustedPiecesList[tilePosIndex];
-						const tilePotentialPosInMap = adjustedTilePos.xPos + '-' + adjustedTilePos.yPos;
-
-						if (this.mapLayoutTemp[tilePotentialPosInMap] || adjustedTilePos.xPos < 0 || adjustedTilePos.yPos < 0) {
+						const newPosCoords = newXPos + '-' + newYPos;
+						// check if location on map where tile would go is empty and within bounds
+						if (this.mapLayoutTemp[newPosCoords] || newXPos < 0 || newYPos < 0) {
 							validPos = false;
 						} else {
 							mapTilesAvailableForPiece++;
+							pieceAdjustedTilePositions[newXPos + '-' + newYPos] = {
+								...tileData,
+								xPos: newXPos,
+								yPos: newYPos
+							};
 						}
-						tilePosIndex++;
 					}
 				}
 				pieceOpeningsCounter++;
