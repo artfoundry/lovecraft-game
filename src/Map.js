@@ -10,7 +10,7 @@ class Map extends React.Component {
 
 		this.tileSize = 50;
 		this.mapPieces = MapData();
-		this.mapPieceLimit = 100
+		this.mapTileLimit = 500;
 		this.OPPOSITE_SIDE = {
 			topSide: 'bottomSide',
 			bottomSide: 'topSide',
@@ -39,20 +39,20 @@ class Map extends React.Component {
 	}
 
 	layoutPieces = () => {
-		let numPosUnavail = 0;
+		let numPiecesTried = 0;
 		let attemptedPieces = [];
-		const numMapPieces = Object.keys(this.mapPieces).length;
+		const numPieceTemplates = Object.keys(this.mapPieces).length;
 
-		while (numPosUnavail < numMapPieces && Object.keys(this.mapLayoutTemp).length < this.mapPieceLimit) {
+		while (numPiecesTried < numPieceTemplates && Object.keys(this.mapLayoutTemp).length < this.mapTileLimit) {
 			const {newPiece, pieceName} = this.chooseNewRandomPiece(attemptedPieces);
 			attemptedPieces.push(pieceName);
-			const {positionFound, updatedPiece, mapOpening, pieceOpening} = this.findNextPiecePosition(newPiece);
+			const {positionFound, updatedPiece, mapOpening, pieceOpening} = this.findNewPiecePosition(newPiece);
 
 			if (positionFound) {
 				this.updateMapLayout(updatedPiece, mapOpening, pieceOpening);
 				attemptedPieces = [];
-				numPosUnavail = 0;
-			} else numPosUnavail++;
+				numPiecesTried = 0;
+			} else numPiecesTried++;
 		}
 
 		this.mapCleanup();
@@ -70,13 +70,27 @@ class Map extends React.Component {
 	chooseNewRandomPiece(attemptedPieces) {
 		const pieceNamesList = Object.keys(this.mapPieces);
 		const filteredPiecesList = pieceNamesList.filter(name => attemptedPieces.indexOf(name) < 0);
-		const randomIndex = Math.floor(Math.random() * filteredPiecesList.length);
+		let randomIndex = Math.floor(Math.random() * filteredPiecesList.length);
+
+		// first piece on map (0,0) needs to have at least an exit at right or bottom
+		if (Object.keys(this.mapLayoutTemp).length === 0) {
+			let startTileNotFound = true;
+			while (startTileNotFound) {
+				for (const tileData of Object.values(this.mapPieces[filteredPiecesList[randomIndex]])) {
+					if (tileData.rightSide !== 'wall' || tileData.bottomSide !== 'wall') {
+						startTileNotFound = false;
+						break;
+					}
+				}
+				randomIndex = Math.floor(Math.random() * filteredPiecesList.length);
+			}
+		}
 		const newPiece = this.mapPieces[filteredPiecesList[randomIndex]];
 
 		return {newPiece, pieceName: filteredPiecesList[randomIndex]};
 	}
 
-	findNextPiecePosition(piece) {
+	findNewPiecePosition(piece) {
 		let positionFound = false;
 
 		// just for placing first piece
@@ -209,25 +223,50 @@ class Map extends React.Component {
 
 	mapCleanup() {
 		for (const [tileLoc, tileData] of Object.entries(this.mapLayoutTemp)) {
-			const tileSides = {
-				topSide: tileData.topSide,
-				bottomSide: tileData.bottomSide,
-				leftSide: tileData.leftSide,
-				rightSide: tileData.rightSide
-			}
-			for (const [tileSide, sideType] of Object.entries(tileSides)) {
-				let adjacentTile = {};
-				const tileCoords = tileLoc.split('-');
-				switch(tileSide) {
-					case 'topSide': adjacentTile = this.mapLayoutTemp[`${tileCoords[0]}-${tileCoords[1] - 1}`]; break;
-					case 'bottomSide': adjacentTile = this.mapLayoutTemp[`${tileCoords[0]}-${tileCoords[1] + 1}`]; break;
-					case 'leftSide': adjacentTile = this.mapLayoutTemp[`${tileCoords[0] - 1}-${tileCoords[1]}`]; break;
-					case 'rightSide': adjacentTile = this.mapLayoutTemp[`${tileCoords[0] + 1}-${tileCoords[1]}`];
+			if (tileData.type !== 'wall') {
+				const tileSides = {
+					topSide: tileData.topSide,
+					bottomSide: tileData.bottomSide,
+					leftSide: tileData.leftSide,
+					rightSide: tileData.rightSide
 				}
-
-				const oppositeSide = adjacentTile !== undefined ? adjacentTile[this.OPPOSITE_SIDE[tileSide]] : '';
-				if (sideType === 'opening' || (sideType === '' && oppositeSide === 'wall')) {
-					this.mapLayoutTemp[tileLoc][tileSide] = 'wall';
+				for (const [tileSide, sideType] of Object.entries(tileSides)) {
+					let adjacentTile = null;
+					let tilePosBeforeOpening = null;
+					const tileCoords = tileLoc.split('-');
+					switch(tileSide) {
+						case 'topSide':
+							adjacentTile = this.mapLayoutTemp[`${+tileCoords[0]}-${+tileCoords[1] - 1}`];
+							tilePosBeforeOpening = `${+tileCoords[0]}-${+tileCoords[1] + 1}`;
+							break;
+						case 'bottomSide':
+							adjacentTile = this.mapLayoutTemp[`${+tileCoords[0]}-${+tileCoords[1] + 1}`];
+							tilePosBeforeOpening = `${+tileCoords[0]}-${+tileCoords[1] - 1}`;
+							break;
+						case 'leftSide':
+							adjacentTile = this.mapLayoutTemp[`${+tileCoords[0] - 1}-${+tileCoords[1]}`];
+							tilePosBeforeOpening = `${+tileCoords[0] + 1}-${+tileCoords[1]}`;
+							break;
+						case 'rightSide':
+							adjacentTile = this.mapLayoutTemp[`${+tileCoords[0] + 1}-${+tileCoords[1]}`];
+							tilePosBeforeOpening = `${+tileCoords[0] - 1}-${+tileCoords[1]}`;
+					}
+					const oppositeSide = adjacentTile ? adjacentTile[this.OPPOSITE_SIDE[tileSide]] : '';
+					if (!adjacentTile || ((sideType === 'opening' || sideType === '') && oppositeSide === 'wall')) {
+						this.mapLayoutTemp[tileLoc] = {
+							xPos: this.mapLayoutTemp[tileLoc].xPos,
+							yPos: this.mapLayoutTemp[tileLoc].yPos,
+							type: 'wall',
+							walkable: false,
+							topSide: 'wall',
+							rightSide: 'wall',
+							bottomSide: 'wall',
+							leftSide: 'wall'
+						};
+						if (this.mapLayoutTemp[tilePosBeforeOpening]) {
+							this.mapLayoutTemp[tilePosBeforeOpening][tileSide] = 'wall';
+						}
+					}
 				}
 			}
 		}
@@ -242,11 +281,16 @@ class Map extends React.Component {
 	}
 
 	createMapTile(tilePos) {
-		const topSideClass = this.state.mapLayout[tilePos].topSide === 'wall' ? ' top-wall' : '';
-		const rightSideClass = this.state.mapLayout[tilePos].rightSide === 'wall' ? ' right-wall' : '';
-		const bottomSideClass = this.state.mapLayout[tilePos].bottomSide === 'wall' ? ' bottom-wall' : '';
-		const leftSideClass = this.state.mapLayout[tilePos].leftSide === 'wall' ? ' left-wall' : '';
-		const allClasses = topSideClass + rightSideClass + bottomSideClass + leftSideClass;
+		let allClasses = '';
+		if (this.state.mapLayout[tilePos].type === 'wall') {
+			allClasses += ' wall';
+		} else {
+			const topSideClass = this.state.mapLayout[tilePos].topSide === 'wall' ? ' top-wall' : '';
+			const rightSideClass = this.state.mapLayout[tilePos].rightSide === 'wall' ? ' right-wall' : '';
+			const bottomSideClass = this.state.mapLayout[tilePos].bottomSide === 'wall' ? ' bottom-wall' : '';
+			const leftSideClass = this.state.mapLayout[tilePos].leftSide === 'wall' ? ' left-wall' : '';
+			allClasses = topSideClass + rightSideClass + bottomSideClass + leftSideClass;
+		}
 		const xPos = (this.state.mapLayout[tilePos].xPos * this.tileSize) + 'px';
 		const yPos = (this.state.mapLayout[tilePos].yPos * this.tileSize) + 'px';
 		const size = this.tileSize + 'px';
@@ -325,7 +369,7 @@ class Map extends React.Component {
 			}
 		} else {
 			// new position generated randomly
-			const tileList = Object.keys(this.state.mapLayout);
+			const tileList = Object.keys(this.state.mapLayout).filter(tilePos => this.state.mapLayout[tilePos].walkable);
 			const randomIndex = Math.floor(Math.random() * tileList.length);
 			tileLoc = tileList[randomIndex];
 			coords = tileLoc.split('-');
@@ -345,15 +389,31 @@ class Map extends React.Component {
 
 			const visitedTile = `${coords[0]}-${coords[1]}`;
 			if (!this.state.playerVisited[visitedTile]) {
-				this.setState(prevState => ({
-					playerVisited: {
-						...prevState.playerVisited,
-						[visitedTile]: {
-							xPos: +coords[0],
-							yPos: +coords[1]
+				const xMinusOne = (+coords[0] - 1) < 0 ? 0 : +coords[0] - 1;
+				const yMinusOne = (+coords[1] - 1) < 0 ? 0 : +coords[1] - 1;
+				// list of surrounding tiles that are walls
+				let allTilesToSet = [
+					`${xMinusOne}-${yMinusOne}`,
+					`${+coords[0]}-${yMinusOne}`,
+					`${+coords[0]+1}-${yMinusOne}`,
+					`${xMinusOne}-${+coords[1]}`,
+					`${+coords[0]+1}-${+coords[1]}`,
+					`${xMinusOne}-${+coords[1]+1}`,
+					`${+coords[0]}-${+coords[1]+1}`,
+					`${+coords[0]+1}-${+coords[1]+1}`
+				].filter(tile => this.state.mapLayout[tile] && this.state.mapLayout[tile].type === 'wall');
+				allTilesToSet.push(visitedTile);
+				allTilesToSet.forEach(tile => {
+					this.setState(prevState => ({
+						playerVisited: {
+							...prevState.playerVisited,
+							[tile]: {
+								xPos: +tile.split('-')[0],
+								yPos: +tile.split('-')[0]
+							}
 						}
-					}
-				}));
+					}));
+				});
 			}
 		}
 	}
@@ -392,22 +452,21 @@ class Map extends React.Component {
 	addLighting() {
 		let tiles = [];
 		const playerPosStr = `${this.state.playerPos.xPos}-${this.state.playerPos.yPos}`;
+		const lineOfSightTiles = this.unblockedPathsToNearbyTiles(playerPosStr);
 
 		for (const tilePos of Object.keys(this.state.mapLayout)) {
 			let allClasses = 'light-tile';
 
-			// these tiles are not assigned to anything (and shouldn't - they have the points data)
-			let lineOfSightTiles = this.unblockedPathsToNearbyTiles(playerPosStr);
 			if (tilePos === playerPosStr) {
-				allClasses += ' bright-light bright-yellow-light';
-			} else if (lineOfSightTiles.oneAway[tilePos]) {
-				allClasses += ' high-light yellow-light';
-			} else if (lineOfSightTiles.twoAway[tilePos]) {
-				allClasses += ' med-light yellow-light';
-			} else if (lineOfSightTiles.threeAway[tilePos]) {
-				allClasses += ' low-light yellow-light';
-			} else if (this.state.playerVisited[tilePos]) {
+				allClasses += ' very-bright-light black-light';
+			} else if (lineOfSightTiles.oneAway.floors[tilePos] || lineOfSightTiles.oneAway.walls[tilePos]) {
+				allClasses += ' bright-light black-light';
+			} else if (lineOfSightTiles.twoAway.floors[tilePos] || lineOfSightTiles.twoAway.walls[tilePos]) {
+				allClasses += ' med-light black-light';
+			} else if (lineOfSightTiles.threeAway.floors[tilePos] || lineOfSightTiles.threeAway.walls[tilePos]) {
 				allClasses += ' low-light black-light';
+			} else if (this.state.playerVisited[tilePos]) {
+				allClasses += ' ambient-light black-light';
 			} else {
 				allClasses += ' no-light black-light';
 			}
@@ -432,113 +491,94 @@ class Map extends React.Component {
 	// then find tiles of those that have unblocked lines of sight(LOS) to the center
 	unblockedPathsToNearbyTiles(centerTilePos) {
 		const centerTile = this.state.mapLayout[centerTilePos];
-		let nearbyTiles = {oneAway: {}, twoAway: {}, threeAway: {}};
-		let lineOfSightTiles = {oneAway: {}, twoAway: {}, threeAway: {}};
+		let nearbyTiles = {
+			twoAway: {floors: {}, walls: {}},
+			threeAway: {floors: {}, walls: {}}
+		};
+		let lineOfSightTiles = {
+			oneAway: {floors: {}, walls: {}},
+			twoAway: {floors: {}, walls: {}},
+			threeAway: {floors: {}, walls: {}}
+		};
 
 		// collect all tiles that are 1-3 tiles away from center
-		for (const [tilePos, tileData] of Object.entries(this.state.mapLayout)) {
-			const currentTile = this.state.mapLayout[tilePos];
-			const horizDelta = Math.abs(centerTile.xPos - currentTile.xPos);
-			const vertDelta = Math.abs(centerTile.yPos - currentTile.yPos);
-			if (horizDelta <= 1 && vertDelta <= 1) {
-				nearbyTiles.oneAway[tilePos] = tileData;
-			} else if (horizDelta <= 2 && vertDelta <= 2) {
-				nearbyTiles.twoAway[tilePos] = tileData;
-			} else if (horizDelta <= 3 && vertDelta <= 3) {
-				nearbyTiles.threeAway[tilePos] = tileData;
-			}
-		}
+		for (let xCount = (centerTile.xPos - 3) < 0 ? 0 : centerTile.xPos - 3; xCount <= centerTile.xPos + 3; xCount++) {
+			for (let yCount = (centerTile.yPos - 3) < 0 ? 0 : centerTile.yPos - 3; yCount <= centerTile.yPos + 3; yCount++) {
+				const tilePos = xCount + '-' + yCount;
+				const currentTile = this.state.mapLayout[tilePos];
+				if (currentTile && tilePos !== centerTilePos) {
+					const horizDeltaFromCenter = Math.abs(centerTile.xPos - currentTile.xPos);
+					const vertDeltaFromCenter = Math.abs(centerTile.yPos - currentTile.yPos);
 
-		// uses point system - a tile has a point for each value of delta (if x delta is 2 and y is 1, points = 3)
-		// tile must have points -1 number of connected lineOfSight tiles to be line of sight
-		// corner tiles must always be examined last
-
-		// find tiles among closest to center that have line of sight to center
-		for (const [oneAwayTilePos, oneAwayTileData] of Object.entries(nearbyTiles.oneAway)) {
-			const adjacentSides = this.getSidesBetweenAdjacentTiles(centerTilePos, oneAwayTilePos);
-			const setOneOfSidesNotWalls = centerTile[adjacentSides[0]] !== 'wall' &&
-				oneAwayTileData[this.OPPOSITE_SIDE[adjacentSides[0]]] !== 'wall';
-			const setTwoOfSidesNotWalls = centerTile[adjacentSides[1]] !== 'wall' &&
-				oneAwayTileData[this.OPPOSITE_SIDE[adjacentSides[1]]] !== 'wall';
-			if (adjacentSides.length === 1 && setOneOfSidesNotWalls) {
-				// TODO: put points data in separate object
-
-				lineOfSightTiles.oneAway[oneAwayTilePos] = {...oneAwayTileData, points: 1};
-			} else if (adjacentSides.length === 2 && setOneOfSidesNotWalls && setTwoOfSidesNotWalls) {
-				lineOfSightTiles.oneAway[oneAwayTilePos] = {...oneAwayTileData, points: 2};
+					if (horizDeltaFromCenter <= 1 && vertDeltaFromCenter <= 1) {
+						if (currentTile.type === 'wall') {
+							lineOfSightTiles.oneAway.walls[tilePos] = currentTile;
+						} else {
+							lineOfSightTiles.oneAway.floors[tilePos] = currentTile;
+						}
+					} else if (horizDeltaFromCenter <= 2 && vertDeltaFromCenter <= 2) {
+						if (currentTile.type === 'wall') {
+							nearbyTiles.twoAway.walls[tilePos] = currentTile;
+						} else {
+							nearbyTiles.twoAway.floors[tilePos] = currentTile;
+						}
+					} else if (horizDeltaFromCenter <= 3 && vertDeltaFromCenter <= 3) {
+						if (currentTile.type === 'wall') {
+							nearbyTiles.threeAway.walls[tilePos] = currentTile;
+						} else {
+							nearbyTiles.threeAway.floors[tilePos] = currentTile;
+						}
+					}
+				}
 			}
 		}
 
 		// now find tiles two tiles from center that have line of sight
-		for (const [twoAwayTilePos, twoAwayTileData] of Object.entries(nearbyTiles.twoAway)) {
-			for (const [oneAwayTilePos, oneAwayTileData] of Object.entries(lineOfSightTiles.oneAway)) {
-				const lineOfSightSides = [];
-				const deltaX = Math.abs(twoAwayTileData.xPos - oneAwayTileData.xPos);
-				const deltaY = Math.abs(twoAwayTileData.yPos - oneAwayTileData.yPos);
+		let floorsAndWalls = {...nearbyTiles.twoAway.floors, ...nearbyTiles.twoAway.walls};
+		for (const [twoAwayTilePos, twoAwayTileData] of Object.entries(floorsAndWalls)) {
+			for (const oneAwayTileData of Object.values(lineOfSightTiles.oneAway.floors)) {
+				const deltaXTwoAndOneAway = Math.abs(twoAwayTileData.xPos - oneAwayTileData.xPos);
+				const deltaYTwoAndOneAway = Math.abs(twoAwayTileData.yPos - oneAwayTileData.yPos);
+				const deltaXOneAwayAndCenter = Math.abs(oneAwayTileData.xPos - centerTile.xPos);
+				const deltaYOneAwayAndCenter = Math.abs(oneAwayTileData.yPos - centerTile.yPos);
+				const outerTileHasLOS =
+					(deltaXTwoAndOneAway <= 1 && deltaXOneAwayAndCenter <= 1 && deltaYTwoAndOneAway === 1) ||
+					(deltaYTwoAndOneAway <= 1 && deltaYOneAwayAndCenter <= 1 && deltaXTwoAndOneAway === 1);
+
 				// if one of the 1 away tiles that has line of sight is between the current 2 away tile and center tile...
-				if (deltaX <= 1 && deltaY <= 1) {
-					// add their in-between sides to the list...
-					lineOfSightSides.push(...this.getSidesBetweenAdjacentTiles(oneAwayTilePos, twoAwayTilePos));
-				}
-
-				const setOneOfSidesNotWalls = oneAwayTileData[lineOfSightSides[0]] !== 'wall' &&
-					twoAwayTileData[this.OPPOSITE_SIDE[lineOfSightSides[0]]] !== 'wall';
-				const setTwoOfSidesNotWalls = oneAwayTileData[lineOfSightSides[1]] !== 'wall' &&
-					twoAwayTileData[this.OPPOSITE_SIDE[lineOfSightSides[1]]] !== 'wall';
-				const middleTileHasLOS = lineOfSightTiles.oneAway[oneAwayTilePos];
-
-				// then check if any of those sides are blocked by walls
-
-				// only 1 matching side means outer and middle tiles are adjacent
-				if (lineOfSightSides.length === 1 && setOneOfSidesNotWalls) {
-					// 1 point means both tiles are in straight line from center
-					if (middleTileHasLOS && middleTileHasLOS.points === 1) {
-						lineOfSightTiles.twoAway[twoAwayTilePos] = {...twoAwayTileData, points: 2};
-						// 2 points means middle tile is diagonal from center
-					} else if (middleTileHasLOS && middleTileHasLOS.points === 2) {
-						lineOfSightTiles.twoAway[twoAwayTilePos] = {...twoAwayTileData, points: 3};
-					}
-
-					// two matching sides means outer and middle tiles are diagonal
-					// only need to check corner tile from set of tiles that are 1 away
-				} else if (lineOfSightSides.length === 2 &&
-					middleTileHasLOS && middleTileHasLOS.points === 2 &&
-					setOneOfSidesNotWalls && setTwoOfSidesNotWalls)
+				if (outerTileHasLOS)
 				{
-					lineOfSightTiles.twoAway[twoAwayTilePos] = {...twoAwayTileData, points: 4};
+					if (twoAwayTileData.type === 'wall') {
+						lineOfSightTiles.twoAway.walls[twoAwayTilePos] = twoAwayTileData;
+					} else {
+						lineOfSightTiles.twoAway.floors[twoAwayTilePos] = twoAwayTileData;
+					}
 				}
 			}
 		}
 
 		// now find tiles three tiles from center that have line of sight
-		for (const [threeAwayTilePos, threeAwayTileData] of Object.entries(nearbyTiles.threeAway)) {
-			for (const [twoAwayTilePos, twoAwayTileData] of Object.entries(lineOfSightTiles.twoAway)) {
-				const lineOfSightSides = [];
-				const deltaX = Math.abs(threeAwayTileData.xPos - twoAwayTileData.xPos);
-				const deltaY = Math.abs(threeAwayTileData.yPos - twoAwayTileData.yPos);
-				// if one of the 2 away tiles that has line of sight is between the current 3 away tile and center tile...
-				if (deltaX <= 1 && deltaY <= 1) {
-					// add their in-between sides to the list...
-					lineOfSightSides.push(...this.getSidesBetweenAdjacentTiles(twoAwayTilePos, threeAwayTilePos));
-				}
+		floorsAndWalls = {...nearbyTiles.threeAway.floors, ...nearbyTiles.threeAway.walls};
+		for (const [threeAwayTilePos, threeAwayTileData] of Object.entries(floorsAndWalls)) {
+			for (const twoAwayTileData of Object.values(lineOfSightTiles.twoAway.floors)) {
+				for (const oneAwayTileData of Object.values(lineOfSightTiles.oneAway.floors)) {
+					const deltaXThreeAndTwoAway = Math.abs(threeAwayTileData.xPos - twoAwayTileData.xPos);
+					const deltaYThreeAndTwoAway = Math.abs(threeAwayTileData.yPos - twoAwayTileData.yPos);
+					const deltaXTwoAndOneAway = Math.abs(twoAwayTileData.xPos - oneAwayTileData.xPos);
+					const deltaYTwoAndOneAway = Math.abs(twoAwayTileData.yPos - oneAwayTileData.yPos);
+					const outerTileHasLOS =
+						(deltaXThreeAndTwoAway <= 1 && deltaXTwoAndOneAway <= 1 && deltaYThreeAndTwoAway === 1) ||
+						(deltaYThreeAndTwoAway <= 1 && deltaYTwoAndOneAway <= 1 && deltaXThreeAndTwoAway === 1);
 
-				const setOneOfSidesNotWalls = twoAwayTileData[lineOfSightSides[0]] !== 'wall' &&
-					threeAwayTileData[this.OPPOSITE_SIDE[lineOfSightSides[0]]] !== 'wall';
-				const setTwoOfSidesNotWalls = twoAwayTileData[lineOfSightSides[1]] !== 'wall' &&
-					threeAwayTileData[this.OPPOSITE_SIDE[lineOfSightSides[1]]] !== 'wall';
-				const middleTileHasLOS = lineOfSightTiles.twoAway[twoAwayTilePos];
-
-				// then check if any of those sides are blocked by walls
-				// don't need to save point data for these
-
-				// only 1 matching side means outer and middle tiles are adjacent
-				if ((lineOfSightSides.length === 1 && middleTileHasLOS && setOneOfSidesNotWalls) ||
-					// two matching sides means outer and middle tiles are diagonal
-					// only need to check corner tile from set of tiles that are 1 away
-					(lineOfSightSides.length === 2 && middleTileHasLOS && middleTileHasLOS.points === 4 &&
-						setOneOfSidesNotWalls && setTwoOfSidesNotWalls))
-				{
-					lineOfSightTiles.threeAway[threeAwayTilePos] = threeAwayTileData;
+					// if one of the 1 away tiles that has line of sight is between the current 2 away tile and center tile...
+					if (outerTileHasLOS)
+					{
+						if (threeAwayTileData.type === 'wall') {
+							lineOfSightTiles.threeAway.walls[threeAwayTilePos] = threeAwayTileData;
+						} else {
+							lineOfSightTiles.threeAway.floors[threeAwayTilePos] = threeAwayTileData;
+						}
+					}
 				}
 			}
 		}
@@ -568,8 +608,12 @@ class Map extends React.Component {
 	}
 
 	placeExit = () => {
-		const tilePositions = Object.keys(this.state.mapLayout);
-		const exitPosition = tilePositions[Math.floor(Math.random() * tilePositions.length)];
+		const tilePositions = Object.keys(this.state.mapLayout).filter(tilePos => this.state.mapLayout[tilePos].walkable);
+		let exitPosition = tilePositions[Math.floor(Math.random() * tilePositions.length)];
+		const playerPos = this.state.playerPos.xPos + '-' + this.state.playerPos.yPos;
+		while (exitPosition === playerPos) {
+			exitPosition = tilePositions[Math.floor(Math.random() * tilePositions.length)];
+		}
 		const exitCoords = exitPosition.split('-');
 		this.setState({exitPosition: {xPos: +exitCoords[0], yPos: +exitCoords[1]}, exitPlaced: true});
 	}
@@ -617,7 +661,13 @@ class Map extends React.Component {
 					<this.createAllPieces></this.createAllPieces>
 					}
 					{ this.state.exitPlaced &&
-					<Exit styleProp={{transform: `translate(${this.state.exitPosition.xPos * this.tileSize}px, ${this.state.exitPosition.yPos * this.tileSize}px)`}} tileNameProp={this.state.exitPosition.xPos + '-' + this.state.exitPosition.yPos}></Exit>
+					<Exit
+						styleProp={{
+							transform: `translate(${this.state.exitPosition.xPos * this.tileSize}px, ${this.state.exitPosition.yPos * this.tileSize}px)`,
+							width: this.tileSize + 'px',
+							height: this.tileSize + 'px'
+						}}
+						tileNameProp={this.state.exitPosition.xPos + '-' + this.state.exitPosition.yPos}></Exit>
 					}
 				</div>
 				<div className="lighting" style={this.state.mapPosition}>
@@ -627,7 +677,11 @@ class Map extends React.Component {
 				</div>
 				{ this.state.mapLayoutDone &&
 				<Player dataLocProp={this.state.playerPos}
-				        styleProp={{transform: `translate(${playerTransform.xPos}px, ${playerTransform.yPos}px)`}}/>
+				        styleProp={{
+							transform: `translate(${playerTransform.xPos}px, ${playerTransform.yPos}px)`,
+					        width: this.tileSize + 'px',
+					        height: this.tileSize + 'px'
+						}}/>
 				}
 			</div>
 		);
