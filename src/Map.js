@@ -6,7 +6,8 @@ class Map extends React.Component {
 	constructor() {
 		super();
 
-		this.initialLoad = true;
+		this.pageFirstLoaded = true;
+		this.initialMapLoad = true;
 
 		this.tileSize = 50;
 		this.mapPieces = MapData();
@@ -54,12 +55,15 @@ class Map extends React.Component {
 		}
 		this.mapCleanup();
 
-		if (this.initialLoad) {
-			this.initialLoad = false;
+		if (this.initialMapLoad) {
+			this.initialMapLoad = false;
 			this.setState({mapLayoutDone: true, mapLayout: {...this.mapLayoutTemp}}, () => {
 				this.placePlayer(null, null, () => {
 					this.placeExit();
-					this.setupKeyListeners();
+					if (this.pageFirstLoaded) {
+						this.pageFirstLoaded = false;
+						this.setupKeyListeners();
+					}
 				});
 			});
 		}
@@ -302,7 +306,8 @@ class Map extends React.Component {
 			key={tilePos}
 			styleProp={tileStyle}
 			tileNameProp={this.state.mapLayout[tilePos].xPos + '-' + this.state.mapLayout[tilePos].yPos}
-			classStrProp={allClasses} />);
+			classStrProp={allClasses}
+			placePlayerProp={this.placePlayer} />);
 	}
 
 	placePlayer = (tileLoc, e, callback = null) => {
@@ -633,6 +638,7 @@ class Map extends React.Component {
 	}
 
 	resetMap = () => {
+		this.initialMapLoad = true;
 		this.mapLayoutTemp = {};
 
 		this.setState({
@@ -651,7 +657,7 @@ class Map extends React.Component {
 	}
 
 	componentDidMount() {
-		if (this.initialLoad) {
+		if (this.initialMapLoad) {
 			this.layoutPieces();
 		}
 	}
