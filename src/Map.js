@@ -32,9 +32,7 @@ class Map extends React.Component {
 			lighting: {}
 		};
 
-		this.placePlayer = this.placePlayer.bind(this);
 		this.createAllPieces = this.createAllPieces.bind(this);
-		this.placeExit = this.placeExit.bind(this);
 		this.addLighting = this.addLighting.bind(this);
 	}
 
@@ -54,40 +52,40 @@ class Map extends React.Component {
 				numPiecesTried = 0;
 			} else numPiecesTried++;
 		}
-
 		this.mapCleanup();
-		this.setState({mapLayout: {...this.mapLayoutTemp}, mapLayoutDone: true}, () => {
-			this.placePlayer(null, null, () => {
-				this.placeExit();
-				if (this.initialLoad) {
-					this.initialLoad = false;
+
+		if (this.initialLoad) {
+			this.initialLoad = false;
+			this.setState({mapLayoutDone: true, mapLayout: {...this.mapLayoutTemp}}, () => {
+				this.placePlayer(null, null, () => {
+					this.placeExit();
 					this.setupKeyListeners();
-				}
+				});
 			});
-		});
+		}
 	}
 
 	chooseNewRandomPiece(attemptedPieces) {
 		const pieceNamesList = Object.keys(this.mapPieces);
-		const filteredPiecesList = pieceNamesList.filter(name => attemptedPieces.indexOf(name) < 0);
-		let randomIndex = Math.floor(Math.random() * filteredPiecesList.length);
+		const filteredPieceNameList = pieceNamesList.filter(name => attemptedPieces.indexOf(name) < 0);
+		let randomIndex = Math.floor(Math.random() * filteredPieceNameList.length);
 
 		// first piece on map (0,0) needs to have at least an exit at right or bottom
 		if (Object.keys(this.mapLayoutTemp).length === 0) {
 			let startTileNotFound = true;
 			while (startTileNotFound) {
-				for (const tileData of Object.values(this.mapPieces[filteredPiecesList[randomIndex]])) {
+				for (const tileData of Object.values(this.mapPieces[filteredPieceNameList[randomIndex]])) {
 					if (tileData.rightSide !== 'wall' || tileData.bottomSide !== 'wall') {
 						startTileNotFound = false;
 						break;
 					}
 				}
-				randomIndex = Math.floor(Math.random() * filteredPiecesList.length);
+				randomIndex = Math.floor(Math.random() * filteredPieceNameList.length);
 			}
 		}
-		const newPiece = this.mapPieces[filteredPiecesList[randomIndex]];
+		const newPiece = this.mapPieces[filteredPieceNameList[randomIndex]];
 
-		return {newPiece, pieceName: filteredPiecesList[randomIndex]};
+		return {newPiece, pieceName: filteredPieceNameList[randomIndex]};
 	}
 
 	findNewPiecePosition(piece) {
@@ -304,8 +302,7 @@ class Map extends React.Component {
 			key={tilePos}
 			styleProp={tileStyle}
 			tileNameProp={this.state.mapLayout[tilePos].xPos + '-' + this.state.mapLayout[tilePos].yPos}
-			classStrProp={allClasses}
-			placePlayerProp={this.placePlayer}></Tile>);
+			classStrProp={allClasses} />);
 	}
 
 	placePlayer = (tileLoc, e, callback = null) => {
@@ -376,23 +373,13 @@ class Map extends React.Component {
 		}
 
 		if (!invalidMove) {
-			this.setState({
-				playerPos: {
-					xPos: +coords[0],
-					yPos: +coords[1]
-				},
-				playerPlaced: true
-			}, () => {
-				this.moveMap(callback);
-				this.checkForExit();
-			});
-
 			const visitedTile = `${coords[0]}-${coords[1]}`;
 			if (!this.state.playerVisited[visitedTile]) {
 				const xMinusOne = (+coords[0] - 1) < 0 ? 0 : +coords[0] - 1;
 				const yMinusOne = (+coords[1] - 1) < 0 ? 0 : +coords[1] - 1;
+				let surroundingTilesCoords = {};
 				// list of surrounding tiles that are walls
-				let allTilesToSet = [
+				let surroundingTilesList = [
 					`${xMinusOne}-${yMinusOne}`,
 					`${+coords[0]}-${yMinusOne}`,
 					`${+coords[0]+1}-${yMinusOne}`,
@@ -402,17 +389,37 @@ class Map extends React.Component {
 					`${+coords[0]}-${+coords[1]+1}`,
 					`${+coords[0]+1}-${+coords[1]+1}`
 				].filter(tile => this.state.mapLayout[tile] && this.state.mapLayout[tile].type === 'wall');
-				allTilesToSet.push(visitedTile);
-				allTilesToSet.forEach(tile => {
-					this.setState(prevState => ({
-						playerVisited: {
-							...prevState.playerVisited,
-							[tile]: {
-								xPos: +tile.split('-')[0],
-								yPos: +tile.split('-')[0]
-							}
-						}
-					}));
+				surroundingTilesList.push(visitedTile);
+				surroundingTilesList.forEach(tile => {
+					surroundingTilesCoords[tile] = {
+						xPos: +tile.split('-')[0],
+						yPos: +tile.split('-')[0]
+					}
+				});
+				this.setState(prevState => ({
+					playerVisited: {
+						...prevState.playerVisited,
+						...surroundingTilesCoords
+					},
+					playerPos: {
+						xPos: +coords[0],
+						yPos: +coords[1]
+					},
+					playerPlaced: true
+				}), () => {
+					this.moveMap(callback);
+					this.checkForExit();
+				});
+			} else {
+				this.setState({
+					playerPos: {
+						xPos: +coords[0],
+						yPos: +coords[1]
+					},
+					playerPlaced: true
+				}, () => {
+					this.moveMap(callback);
+					this.checkForExit();
 				});
 			}
 		}
@@ -451,7 +458,7 @@ class Map extends React.Component {
 
 	addLighting() {
 		let tiles = [];
-		const playerPosStr = `${this.state.playerPos.xPos}-${this.state.playerPos.yPos}`;
+		const playerPosStr = this.state.playerPos.xPos + '-' + this.state.playerPos.yPos;
 		const lineOfSightTiles = this.unblockedPathsToNearbyTiles(playerPosStr);
 
 		for (const tilePos of Object.keys(this.state.mapLayout)) {
@@ -482,7 +489,7 @@ class Map extends React.Component {
 				key={tilePos}
 				styleProp={tileStyle}
 				tileNameProp={this.state.mapLayout[tilePos].xPos + '-' + this.state.mapLayout[tilePos].yPos}
-				classStrProp={allClasses}></LightElement>);
+				classStrProp={allClasses} />);
 		}
 		return tiles;
 	}
@@ -644,12 +651,14 @@ class Map extends React.Component {
 	}
 
 	componentDidMount() {
-		this.layoutPieces();
+		if (this.initialLoad) {
+			this.layoutPieces();
+		}
 	}
 
-	componentDidUpdate(prevProps, prevState, snapShot) {
+	// componentDidUpdate(prevProps, prevState, snapShot) {}
 
-	}
+	// shouldComponentUpdate(nextProps, nextState, nextContent) {}
 
 	// Add below for testing: <button onClick={this.resetMap}>Reset</button>
 	render() {
@@ -658,30 +667,30 @@ class Map extends React.Component {
 			<div className="world" style={{width: `${Math.floor(window.outerWidth/this.tileSize) * this.tileSize}px`}}>
 				<div className="map" style={this.state.mapPosition}>
 					{ this.state.mapLayoutDone &&
-					<this.createAllPieces></this.createAllPieces>
+						<this.createAllPieces />
 					}
 					{ this.state.exitPlaced &&
-					<Exit
-						styleProp={{
-							transform: `translate(${this.state.exitPosition.xPos * this.tileSize}px, ${this.state.exitPosition.yPos * this.tileSize}px)`,
-							width: this.tileSize + 'px',
-							height: this.tileSize + 'px'
-						}}
-						tileNameProp={this.state.exitPosition.xPos + '-' + this.state.exitPosition.yPos}></Exit>
+						<Exit
+							styleProp={{
+								transform: `translate(${this.state.exitPosition.xPos * this.tileSize}px, ${this.state.exitPosition.yPos * this.tileSize}px)`,
+								width: this.tileSize + 'px',
+								height: this.tileSize + 'px'
+							}}
+							tileNameProp={this.state.exitPosition.xPos + '-' + this.state.exitPosition.yPos} />
 					}
 				</div>
 				<div className="lighting" style={this.state.mapPosition}>
 					{ this.state.playerPlaced &&
-					<this.addLighting></this.addLighting>
+						<this.addLighting />
 					}
 				</div>
 				{ this.state.mapLayoutDone &&
-				<Player dataLocProp={this.state.playerPos}
-				        styleProp={{
-							transform: `translate(${playerTransform.xPos}px, ${playerTransform.yPos}px)`,
-					        width: this.tileSize + 'px',
-					        height: this.tileSize + 'px'
-						}}/>
+					<Player dataLocProp={this.state.playerPos}
+					        styleProp={{
+								transform: `translate(${playerTransform.xPos}px, ${playerTransform.yPos}px)`,
+						        width: this.tileSize + 'px',
+						        height: this.tileSize + 'px'
+							}} />
 				}
 			</div>
 		);
