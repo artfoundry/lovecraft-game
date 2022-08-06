@@ -9,9 +9,10 @@ class Map extends React.Component {
 		this.pageFirstLoaded = true;
 		this.initialMapLoad = true;
 
-		this.tileSize = 50;
+		this.tileSize = 32;
 		this.mapPieces = MapData();
 		this.mapTileLimit = 500;
+		this.firstPiecePosition = {xPos: 5, yPos: 5};
 		this.OPPOSITE_SIDE = {
 			topSide: 'bottomSide',
 			bottomSide: 'topSide',
@@ -46,6 +47,7 @@ class Map extends React.Component {
 			const {newPiece, pieceName} = this.chooseNewRandomPiece(attemptedPieces);
 			attemptedPieces.push(pieceName);
 			const {positionFound, updatedPiece, mapOpening, pieceOpening} = this.findNewPiecePosition(newPiece);
+console.log(numPiecesTried, numPieceTemplates, pieceName, attemptedPieces)
 
 			if (positionFound) {
 				this.updateMapLayout(updatedPiece, mapOpening, pieceOpening);
@@ -72,33 +74,25 @@ class Map extends React.Component {
 	chooseNewRandomPiece(attemptedPieces) {
 		const pieceNamesList = Object.keys(this.mapPieces);
 		const filteredPieceNameList = pieceNamesList.filter(name => attemptedPieces.indexOf(name) < 0);
-		let randomIndex = Math.floor(Math.random() * filteredPieceNameList.length);
-
-		// first piece on map (0,0) needs to have at least an exit at right or bottom
-		if (Object.keys(this.mapLayoutTemp).length === 0) {
-			let startTileNotFound = true;
-			while (startTileNotFound) {
-				for (const tileData of Object.values(this.mapPieces[filteredPieceNameList[randomIndex]])) {
-					if (tileData.rightSide !== 'wall' || tileData.bottomSide !== 'wall') {
-						startTileNotFound = false;
-						break;
-					}
-				}
-				randomIndex = Math.floor(Math.random() * filteredPieceNameList.length);
-			}
-		}
+		const randomIndex = Math.floor(Math.random() * filteredPieceNameList.length);
 		const newPiece = this.mapPieces[filteredPieceNameList[randomIndex]];
-
 		return {newPiece, pieceName: filteredPieceNameList[randomIndex]};
 	}
 
 	findNewPiecePosition(piece) {
 		let positionFound = false;
+		let updatedPiece = {};
 
 		// just for placing first piece
 		if (Object.keys(this.mapLayoutTemp).length === 0) {
 			positionFound = true;
-			return {positionFound, updatedPiece: piece};
+			for (const tileData of Object.values(piece)) {
+				const adjustedXPos = this.firstPiecePosition.xPos + tileData.xPos;
+				const adjustedYPos = this.firstPiecePosition.yPos + tileData.yPos;
+				const adjustedPos = adjustedXPos + '-' + adjustedYPos;
+				updatedPiece[adjustedPos] = {...tileData, xPos: adjustedXPos, yPos: adjustedYPos};
+			}
+			return {positionFound, updatedPiece};
 		}
 
 		let pieceOpenings = [];
@@ -136,6 +130,7 @@ class Map extends React.Component {
 			mapOpeningTileCoords.forEach((coord,i,arr) => arr[i] = +coord);
 
 			// for a map opening, check each piece opening to see if piece fits there
+			// if mapTilesAvailableForPiece == numOfTilesInPiece, then piece fits in the map and can stop looking
 			while (mapTilesAvailableForPiece < numOfTilesInPiece && pieceOpeningsCounter < pieceOpenings.length) {
 				pieceAdjustedTilePositions = {};
 				mapTilesAvailableForPiece = 0;  // gets reset for each piece opening
@@ -183,7 +178,6 @@ class Map extends React.Component {
 			mapOpeningsCounter++;
 		}
 
-		let updatedPiece = {};
 		if (mapTilesAvailableForPiece === numOfTilesInPiece) {
 			positionFound = true;
 			updatedPiece = {...pieceAdjustedTilePositions};
@@ -198,19 +192,19 @@ class Map extends React.Component {
 	// pieceOpeningToRemove: Object, {[tileCoords relative to piece]: side} - undefined for first piece
 	updateMapLayout(newPiece, mapOpeningToRemove, pieceOpeningToRemove) {
 		const tilePositions = Object.keys(newPiece);
-		let pieceOpeningTile = '';
+		let pieceOpeningTilePos = '';
 		let pieceOpeningSide = '';
 		let mapOpeningTile = '';
 		let mapOpeningSide = '';
 		if (mapOpeningToRemove && pieceOpeningToRemove) {
-			pieceOpeningTile = Object.keys(pieceOpeningToRemove)[0];
-			pieceOpeningSide = pieceOpeningToRemove[pieceOpeningTile];
+			pieceOpeningTilePos = Object.keys(pieceOpeningToRemove)[0];
+			pieceOpeningSide = pieceOpeningToRemove[pieceOpeningTilePos];
 			mapOpeningTile = Object.keys(mapOpeningToRemove)[0];
 			mapOpeningSide = mapOpeningToRemove[mapOpeningTile];
 		}
-
+// console.log(pieceOpeningTilePos, pieceOpeningSide, mapOpeningTile, mapOpeningSide)
 		tilePositions.forEach(tilePos => {
-			if (pieceOpeningToRemove && tilePos === pieceOpeningTile) {
+			if (pieceOpeningToRemove && tilePos === pieceOpeningTilePos) {
 				// clear 'opening' from piece tile
 				newPiece[tilePos][pieceOpeningSide] = '';
 			}
