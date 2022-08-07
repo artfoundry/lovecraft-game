@@ -47,7 +47,6 @@ class Map extends React.Component {
 			const {newPiece, pieceName} = this.chooseNewRandomPiece(attemptedPieces);
 			attemptedPieces.push(pieceName);
 			const {positionFound, updatedPiece, mapOpening, pieceOpening} = this.findNewPiecePosition(newPiece);
-console.log(numPiecesTried, numPieceTemplates, pieceName, attemptedPieces)
 
 			if (positionFound) {
 				this.updateMapLayout(updatedPiece, mapOpening, pieceOpening);
@@ -196,13 +195,13 @@ console.log(numPiecesTried, numPieceTemplates, pieceName, attemptedPieces)
 		let pieceOpeningSide = '';
 		let mapOpeningTile = '';
 		let mapOpeningSide = '';
+
 		if (mapOpeningToRemove && pieceOpeningToRemove) {
 			pieceOpeningTilePos = Object.keys(pieceOpeningToRemove)[0];
 			pieceOpeningSide = pieceOpeningToRemove[pieceOpeningTilePos];
 			mapOpeningTile = Object.keys(mapOpeningToRemove)[0];
 			mapOpeningSide = mapOpeningToRemove[mapOpeningTile];
 		}
-// console.log(pieceOpeningTilePos, pieceOpeningSide, mapOpeningTile, mapOpeningSide)
 		tilePositions.forEach(tilePos => {
 			if (pieceOpeningToRemove && tilePos === pieceOpeningTilePos) {
 				// clear 'opening' from piece tile
