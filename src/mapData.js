@@ -9,7 +9,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-left-wall'
 			},
 			'1-0': {
 				xPos: 1,
@@ -19,7 +20,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'2-0': {
 				xPos: 2,
@@ -29,7 +31,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'3-0': {
 				xPos: 3,
@@ -39,7 +42,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'4-0': {
 				xPos: 4,
@@ -49,17 +53,20 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-right-wall'
 			},
 			'0-1': {
 				xPos: 0,
 				yPos: 1,
-				type: 'floor',
+				type: 'door',
 				walkable: true,
 				topSide: 'wall',
 				rightSide: '',
 				bottomSide: 'wall',
-				leftSide: 'opening'
+				leftSide: 'opening',
+				classes: 'left-door',
+				altClasses: 'left-wall'
 			},
 			'1-1': {
 				xPos: 1,
@@ -99,7 +106,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'right-wall'
 			},
 			'0-2': {
 				xPos: 0,
@@ -109,7 +117,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'left-wall'
 			},
 			'1-2': {
 				xPos: 1,
@@ -144,12 +153,14 @@ export default function MapData() {
 			'4-2': {
 				xPos: 4,
 				yPos: 2,
-				type: 'floor',
+				type: 'door',
 				walkable: true,
 				topSide: 'wall',
 				rightSide: 'opening',
 				bottomSide: 'wall',
-				leftSide: ''
+				leftSide: '',
+				classes: 'right-door',
+				altClasses: 'right-wall'
 			},
 			'0-3': {
 				xPos: 0,
@@ -159,7 +170,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-left-wall'
 			},
 			'1-3': {
 				xPos: 1,
@@ -169,7 +181,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			},
 			'2-3': {
 				xPos: 2,
@@ -179,7 +192,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			},
 			'3-3': {
 				xPos: 3,
@@ -189,7 +203,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			},
 			'4-3': {
 				xPos: 4,
@@ -199,7 +214,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-right-wall'
 			},
 		},
 		room2x3: {
@@ -211,7 +227,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-left-wall'
 			},
 			'1-0': {
 				xPos: 1,
@@ -221,17 +238,20 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'2-0': {
 				xPos: 2,
 				yPos: 0,
-				type: 'floor',
+				type: 'door',
 				walkable: true,
 				topSide: 'opening',
 				rightSide: 'wall',
 				bottomSide: '',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-door',
+				altClasses: 'top-wall'
 			},
 			'3-0': {
 				xPos: 3,
@@ -241,7 +261,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-right-wall'
 			},
 			'0-1': {
 				xPos: 0,
@@ -251,7 +272,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'left-wall'
 			},
 			'1-1': {
 				xPos: 1,
@@ -281,17 +303,20 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'right-wall'
 			},
 			'0-2': {
 				xPos: 0,
 				yPos: 2,
-				type: 'floor',
+				type: 'door',
 				walkable: true,
 				topSide: 'wall',
 				rightSide: '',
 				bottomSide: 'wall',
-				leftSide: 'opening'
+				leftSide: 'opening',
+				classes: 'left-door',
+				altClasses: 'left-wall'
 			},
 			'1-2': {
 				xPos: 1,
@@ -321,7 +346,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'right-wall'
 			},
 			'0-3': {
 				xPos: 0,
@@ -331,7 +357,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'left-wall'
 			},
 			'1-3': {
 				xPos: 1,
@@ -356,12 +383,14 @@ export default function MapData() {
 			'3-3': {
 				xPos: 3,
 				yPos: 3,
-				type: 'floor',
+				type: 'door',
 				walkable: true,
 				topSide: 'wall',
 				rightSide: 'opening',
 				bottomSide: 'wall',
-				leftSide: ''
+				leftSide: '',
+				classes: 'right-door',
+				altClasses: 'right-wall'
 			},
 			'0-4': {
 				xPos: 0,
@@ -371,7 +400,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-left-wall'
 			},
 			'1-4': {
 				xPos: 1,
@@ -381,7 +411,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			},
 			'2-4': {
 				xPos: 2,
@@ -391,7 +422,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			},
 			'3-4': {
 				xPos: 3,
@@ -401,7 +433,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-right-wall'
 			},
 		},
 		room3x3: {
@@ -413,7 +446,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-left-wall'
 			},
 			'1-0': {
 				xPos: 1,
@@ -423,17 +457,20 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'2-0': {
 				xPos: 2,
 				yPos: 0,
-				type: 'floor',
+				type: 'door',
 				walkable: true,
 				topSide: 'opening',
 				rightSide: 'wall',
 				bottomSide: '',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-door',
+				altClasses: 'top-wall'
 			},
 			'3-0': {
 				xPos: 3,
@@ -443,7 +480,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'4-0': {
 				xPos: 4,
@@ -453,7 +491,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-right-wall'
 			},
 			'0-1': {
 				xPos: 0,
@@ -463,7 +502,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'left-wall',
 			},
 			'1-1': {
 				xPos: 1,
@@ -503,17 +543,20 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'right-wall'
 			},
 			'0-2': {
 				xPos: 0,
 				yPos: 2,
-				type: 'floor',
+				type: 'door',
 				walkable: true,
 				topSide: 'wall',
 				rightSide: '',
 				bottomSide: 'wall',
-				leftSide: 'opening'
+				leftSide: 'opening',
+				classes: 'left-door',
+				altClasses: 'left-wall'
 			},
 			'1-2': {
 				xPos: 1,
@@ -548,12 +591,14 @@ export default function MapData() {
 			'4-2': {
 				xPos: 4,
 				yPos: 2,
-				type: 'floor',
+				type: 'door',
 				walkable: true,
 				topSide: 'wall',
 				rightSide: 'opening',
 				bottomSide: 'wall',
-				leftSide: ''
+				leftSide: '',
+				classes: 'right-door',
+				altClasses: 'right-wall'
 			},
 			'0-3': {
 				xPos: 0,
@@ -563,7 +608,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'left-wall'
 			},
 			'1-3': {
 				xPos: 1,
@@ -603,7 +649,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'right-wall'
 			},
 			'0-4': {
 				xPos: 0,
@@ -613,7 +660,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-left-wall'
 			},
 			'1-4': {
 				xPos: 1,
@@ -623,17 +671,20 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			},
 			'2-4': {
 				xPos: 2,
 				yPos: 4,
-				type: 'floor',
+				type: 'door',
 				walkable: true,
 				topSide: '',
 				rightSide: 'wall',
 				bottomSide: 'opening',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-door',
+				altClasses: 'bottom-wall'
 			},
 			'3-4': {
 				xPos: 3,
@@ -643,7 +694,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			},
 			'4-4': {
 				xPos: 4,
@@ -653,7 +705,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-right-wall'
 			},
 		},
 		roomLshapeUL6x5: {
@@ -665,7 +718,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-left-wall'
 			},
 			'1-0': {
 				xPos: 1,
@@ -675,7 +729,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'2-0': {
 				xPos: 2,
@@ -685,7 +740,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'3-0': {
 				xPos: 3,
@@ -695,7 +751,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'4-0': {
 				xPos: 4,
@@ -705,7 +762,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'5-0': {
 				xPos: 5,
@@ -715,7 +773,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'6-0': {
 				xPos: 6,
@@ -725,17 +784,20 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'7-0': {
 				xPos: 7,
 				yPos: 0,
-				type: 'floor',
+				type: 'door',
 				walkable: true,
 				topSide: 'opening',
 				rightSide: 'wall',
 				bottomSide: '',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-door',
+				altClasses: 'top-wall'
 			},
 			'8-0': {
 				xPos: 8,
@@ -745,7 +807,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-right-wall'
 			},
 			'0-1': {
 				xPos: 0,
@@ -755,7 +818,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'left-wall'
 			},
 			'1-1': {
 				xPos: 1,
@@ -823,29 +887,32 @@ export default function MapData() {
 				type: 'floor',
 				walkable: true,
 				topSide: '',
-				rightSide: '',
+				rightSide: 'wall',
 				bottomSide: '',
 				leftSide: ''
 			},
 			'8-1': {
 				xPos: 8,
 				yPos: 1,
-				type: 'floor',
-				walkable: true,
+				type: 'wall',
+				walkable: false,
 				topSide: 'wall',
-				rightSide: '',
-				bottomSide: '',
-				leftSide: ''
+				rightSide: 'wall',
+				bottomSide: 'wall',
+				leftSide: 'wall',
+				classes: 'right-wall'
 			},
 			'0-2': {
 				xPos: 0,
 				yPos: 2,
-				type: 'floor',
+				type: 'door',
 				walkable: true,
 				topSide: 'wall',
 				rightSide: '',
 				bottomSide: 'wall',
-				leftSide: 'opening'
+				leftSide: 'opening',
+				classes: 'left-door',
+				altClasses: 'left-wall'
 			},
 			'1-2': {
 				xPos: 1,
@@ -925,7 +992,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'right-wall'
 			},
 			'0-3': {
 				xPos: 0,
@@ -935,7 +1003,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'left-wall'
 			},
 			'1-3': {
 				xPos: 1,
@@ -1015,7 +1084,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'right-wall'
 			},
 			'0-4': {
 				xPos: 0,
@@ -1025,7 +1095,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-left-wall'
 			},
 			'1-4': {
 				xPos: 1,
@@ -1035,7 +1106,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			},
 			'2-4': {
 				xPos: 2,
@@ -1045,7 +1117,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			},
 			'3-4': {
 				xPos: 3,
@@ -1055,7 +1128,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			},
 			'4-4': {
 				xPos: 4,
@@ -1065,7 +1139,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-left-inverse-wall'
 			},
 			'5-4': {
 				xPos: 5,
@@ -1105,7 +1180,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'right-wall'
 			},
 			'4-5': {
 				xPos: 4,
@@ -1115,7 +1191,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'left-wall'
 			},
 			'5-5': {
 				xPos: 5,
@@ -1150,12 +1227,14 @@ export default function MapData() {
 			'8-5': {
 				xPos: 8,
 				yPos: 5,
-				type: 'floor',
+				type: 'door',
 				walkable: true,
 				topSide: 'wall',
 				rightSide: 'opening',
 				bottomSide: 'wall',
-				leftSide: ''
+				leftSide: '',
+				classes: 'right-door',
+				altClasses: 'right-wall'
 			},
 			'4-6': {
 				xPos: 4,
@@ -1165,7 +1244,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-left-wall'
 			},
 			'5-6': {
 				xPos: 5,
@@ -1175,7 +1255,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			},
 			'6-6': {
 				xPos: 6,
@@ -1185,7 +1266,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			},
 			'7-6': {
 				xPos: 7,
@@ -1195,7 +1277,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			},
 			'8-6': {
 				xPos: 8,
@@ -1205,7 +1288,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-right-wall'
 			}
 		},
 		roomLshapeDL5x5: {
@@ -1217,17 +1301,20 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-left-wall'
 			},
 			'3-0': {
 				xPos: 3,
 				yPos: 0,
-				type: 'floor',
+				type: 'door',
 				walkable: true,
 				topSide: 'opening',
 				rightSide: 'wall',
 				bottomSide: '',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-door',
+				altClasses: 'top-wall'
 			},
 			'4-0': {
 				xPos: 4,
@@ -1237,7 +1324,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'5-0': {
 				xPos: 5,
@@ -1247,7 +1335,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'6-0': {
 				xPos: 6,
@@ -1257,7 +1346,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-right-wall'
 			},
 			'2-1': {
 				xPos: 2,
@@ -1267,7 +1357,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'left-wall'
 			},
 			'3-1': {
 				xPos: 3,
@@ -1307,7 +1398,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'right-wall'
 			},
 			'2-2': {
 				xPos: 2,
@@ -1317,7 +1409,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: ''
 			},
 			'3-2': {
 				xPos: 3,
@@ -1327,7 +1420,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-left-inverse-wall'
 			},
 			'4-2': {
 				xPos: 4,
@@ -1357,7 +1451,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'right-wall',
 			},
 			'0-3': {
 				xPos: 0,
@@ -1367,7 +1462,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-left-wall'
 			},
 			'1-3': {
 				xPos: 1,
@@ -1377,7 +1473,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'2-3': {
 				xPos: 2,
@@ -1387,17 +1484,19 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'3-3': {
 				xPos: 3,
 				yPos: 3,
-				type: 'floor',
-				walkable: true,
+				type: 'wall',
+				walkable: false,
 				topSide: 'wall',
-				rightSide: '',
-				bottomSide: '',
-				leftSide: 'left'
+				rightSide: 'wall',
+				bottomSide: 'wall',
+				leftSide: 'wall',
+				classes: 'top-left-inverse-wall'
 			},
 			'4-3': {
 				xPos: 4,
@@ -1407,7 +1506,7 @@ export default function MapData() {
 				topSide: '',
 				rightSide: '',
 				bottomSide: '',
-				leftSide: ''
+				leftSide: 'wall'
 			},
 			'5-3': {
 				xPos: 5,
@@ -1427,17 +1526,20 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'right-wall'
 			},
 			'0-4': {
 				xPos: 0,
 				yPos: 4,
-				type: 'floor',
+				type: 'door',
 				walkable: true,
 				topSide: 'wall',
 				rightSide: '',
 				bottomSide: 'wall',
-				leftSide: 'opening'
+				leftSide: 'opening',
+				classes: 'left-door',
+				altClasses: 'left-wall'
 			},
 			'1-4': {
 				xPos: 1,
@@ -1464,7 +1566,7 @@ export default function MapData() {
 				yPos: 4,
 				type: 'floor',
 				walkable: true,
-				topSide: '',
+				topSide: 'wall',
 				rightSide: '',
 				bottomSide: '',
 				leftSide: ''
@@ -1497,7 +1599,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'right-wall'
 			},
 			'0-5': {
 				xPos: 0,
@@ -1507,7 +1610,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-left-wall'
 			},
 			'1-5': {
 				xPos: 1,
@@ -1567,7 +1671,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'right-wall'
 			},
 			'0-6': {
 				xPos: 0,
@@ -1577,7 +1682,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-left-wall'
 			},
 			'1-6': {
 				xPos: 1,
@@ -1587,7 +1693,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			},
 			'2-6': {
 				xPos: 2,
@@ -1597,7 +1704,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			},
 			'3-6': {
 				xPos: 3,
@@ -1607,17 +1715,20 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			},
 			'4-6': {
 				xPos: 4,
 				yPos: 6,
-				type: 'floor',
+				type: 'door',
 				walkable: true,
 				topSide: '',
 				rightSide: 'wall',
 				bottomSide: 'opening',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-door',
+				altClasses: 'bottom-wall'
 			},
 			'5-6': {
 				xPos: 5,
@@ -1627,7 +1738,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			},
 			'6-6': {
 				xPos: 6,
@@ -1637,7 +1749,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-right-wall'
 			}
 		},
 		roomArena: {
@@ -1649,7 +1762,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-left-wall'
 			},
 			'2-0': {
 				xPos: 2,
@@ -1659,7 +1773,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'3-0': {
 				xPos: 3,
@@ -1669,17 +1784,20 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'4-0': {
 				xPos: 4,
 				yPos: 0,
-				type: 'floor',
+				type: 'door',
 				walkable: true,
 				topSide: 'opening',
 				rightSide: 'wall',
 				bottomSide: '',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-door',
+				altClasses: 'top-wall'
 			},
 			'5-0': {
 				xPos: 5,
@@ -1689,7 +1807,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'6-0': {
 				xPos: 6,
@@ -1699,7 +1818,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'7-0': {
 				xPos: 7,
@@ -1709,7 +1829,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-right-wall'
 			},
 			'0-1': {
 				xPos: 0,
@@ -1719,7 +1840,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-left-wall'
 			},
 			'1-1': {
 				xPos: 1,
@@ -1729,7 +1851,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-left-inverse-wall'
 			},
 			'2-1': {
 				xPos: 2,
@@ -1789,7 +1912,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-right-inverse-wall'
 			},
 			'8-1': {
 				xPos: 8,
@@ -1799,7 +1923,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-right-wall'
 			},
 			'0-2': {
 				xPos: 0,
@@ -1809,7 +1934,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'left-wall'
 			},
 			'1-2': {
 				xPos: 1,
@@ -1889,7 +2015,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'right-wall'
 			},
 			'0-3': {
 				xPos: 0,
@@ -1899,7 +2026,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'left-wall'
 			},
 			'1-3': {
 				xPos: 1,
@@ -1979,17 +2107,20 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'right-wall'
 			},
 			'0-4': {
 				xPos: 0,
 				yPos: 4,
-				type: 'floor',
+				type: 'door',
 				walkable: true,
 				topSide: 'wall',
 				rightSide: '',
 				bottomSide: 'wall',
-				leftSide: 'opening'
+				leftSide: 'opening',
+				classes: 'left-door',
+				altClasses: 'left-wall'
 			},
 			'1-4': {
 				xPos: 1,
@@ -2064,12 +2195,14 @@ export default function MapData() {
 			'8-4': {
 				xPos: 8,
 				yPos: 4,
-				type: 'floor',
+				type: 'door',
 				walkable: true,
 				topSide: 'wall',
 				rightSide: 'opening',
 				bottomSide: 'wall',
-				leftSide: ''
+				leftSide: '',
+				classes: 'right-door',
+				altClasses: 'right-wall'
 			},
 			'0-5': {
 				xPos: 0,
@@ -2079,7 +2212,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'left-wall'
 			},
 			'1-5': {
 				xPos: 1,
@@ -2159,7 +2293,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'right-wall'
 			},
 			'0-6': {
 				xPos: 0,
@@ -2169,7 +2304,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'left-wall'
 			},
 			'1-6': {
 				xPos: 1,
@@ -2249,7 +2385,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'right-wall'
 			},
 			'0-7': {
 				xPos: 0,
@@ -2259,7 +2396,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-left-wall'
 			},
 			'1-7': {
 				xPos: 1,
@@ -2269,7 +2407,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-left-inverse-wall'
 			},
 			'2-7': {
 				xPos: 2,
@@ -2329,7 +2468,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-right-inverse-wall'
 			},
 			'8-7': {
 				xPos: 8,
@@ -2339,7 +2479,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-right-wall'
 			},
 			'1-8': {
 				xPos: 1,
@@ -2349,7 +2490,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-left-wall'
 			},
 			'2-8': {
 				xPos: 2,
@@ -2359,7 +2501,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			},
 			'3-8': {
 				xPos: 3,
@@ -2369,17 +2512,20 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			},
 			'4-8': {
 				xPos: 4,
 				yPos: 8,
-				type: 'floor',
+				type: 'door',
 				walkable: true,
 				topSide: '',
 				rightSide: 'wall',
 				bottomSide: 'opening',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-door',
+				altClasses: 'bottom-wall'
 			},
 			'5-8': {
 				xPos: 5,
@@ -2389,7 +2535,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			},
 			'6-8': {
 				xPos: 6,
@@ -2399,7 +2546,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			},
 			'7-8': {
 				xPos: 7,
@@ -2409,7 +2557,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-right-wall'
 			},
 		},
 		hall2x1: {
@@ -2421,7 +2570,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'1-0': {
 				xPos: 1,
@@ -2431,7 +2581,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'0-1': {
 				xPos: 0,
@@ -2441,7 +2592,9 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: '',
 				bottomSide: 'wall',
-				leftSide: 'opening'
+				leftSide: 'opening',
+				classes: '',
+				altClasses: 'left-wall'
 			},
 			'1-1': {
 				xPos: 1,
@@ -2451,7 +2604,9 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'opening',
 				bottomSide: 'wall',
-				leftSide: ''
+				leftSide: '',
+				classes: '',
+				altClasses: 'right-wall'
 			},
 			'0-2': {
 				xPos: 0,
@@ -2461,7 +2616,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			},
 			'1-2': {
 				xPos: 1,
@@ -2471,7 +2627,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			}
 		},
 		hall1x2: {
@@ -2483,7 +2640,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'left-wall'
 			},
 			'1-0': {
 				xPos: 1,
@@ -2493,7 +2651,9 @@ export default function MapData() {
 				topSide: 'opening',
 				rightSide: 'wall',
 				bottomSide: '',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: '',
+				altClasses: 'top-wall'
 			},
 			'2-0': {
 				xPos: 2,
@@ -2503,7 +2663,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'right-wall'
 			},
 			'0-1': {
 				xPos: 0,
@@ -2513,7 +2674,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'left-wall'
 			},
 			'1-1': {
 				xPos: 1,
@@ -2523,7 +2685,9 @@ export default function MapData() {
 				topSide: '',
 				rightSide: 'wall',
 				bottomSide: 'opening',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: '',
+				altClasses: 'bottom-wall'
 			},
 			'2-1': {
 				xPos: 2,
@@ -2533,7 +2697,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'right-wall'
 			}
 		},
 		hallUR: {
@@ -2545,7 +2710,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-left-wall'
 			},
 			'1-0': {
 				xPos: 1,
@@ -2555,7 +2721,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'2-0': {
 				xPos: 2,
@@ -2565,7 +2732,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'0-1': {
 				xPos: 0,
@@ -2575,7 +2743,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'left-wall'
 			},
 			'1-1': {
 				xPos: 1,
@@ -2595,7 +2764,9 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'opening',
 				bottomSide: 'wall',
-				leftSide: ''
+				leftSide: '',
+				classes: '',
+				altClasses: 'right-wall'
 			},
 			'0-2': {
 				xPos: 0,
@@ -2605,7 +2776,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'left-wall'
 			},
 			'1-2': {
 				xPos: 1,
@@ -2615,7 +2787,9 @@ export default function MapData() {
 				topSide: '',
 				rightSide: 'wall',
 				bottomSide: 'opening',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: '',
+				altClasses: 'bottom-wall'
 			},
 			'2-2': {
 				xPos: 2,
@@ -2625,7 +2799,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-right-inverse-wall'
 			}
 		},
 		hallUL: {
@@ -2637,7 +2812,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'1-0': {
 				xPos: 1,
@@ -2647,7 +2823,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'2-0': {
 				xPos: 2,
@@ -2657,7 +2834,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-right-wall'
 			},
 			'0-1': {
 				xPos: 0,
@@ -2667,7 +2845,9 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: '',
 				bottomSide: 'wall',
-				leftSide: 'opening'
+				leftSide: 'opening',
+				classes: '',
+				altClasses: 'left-wall'
 			},
 			'1-1': {
 				xPos: 1,
@@ -2687,7 +2867,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'right-wall'
 			},
 			'0-2': {
 				xPos: 0,
@@ -2697,7 +2878,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-left-inverse-wall'
 			},
 			'1-2': {
 				xPos: 1,
@@ -2707,7 +2889,9 @@ export default function MapData() {
 				topSide: '',
 				rightSide: 'wall',
 				bottomSide: 'opening',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: '',
+				altClasses: 'bottom-wall'
 			},
 			'2-2': {
 				xPos: 2,
@@ -2717,7 +2901,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'right-wall'
 			},
 		},
 		hallDR: {
@@ -2729,7 +2914,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'left-wall'
 			},
 			'1-0': {
 				xPos: 1,
@@ -2739,7 +2925,9 @@ export default function MapData() {
 				topSide: 'opening',
 				rightSide: 'wall',
 				bottomSide: '',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: '',
+				altClasses: 'top-wall'
 			},
 			'2-0': {
 				xPos: 2,
@@ -2749,7 +2937,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-right-inverse-wall'
 			},
 			'0-1': {
 				xPos: 0,
@@ -2759,7 +2948,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'left-wall'
 			},
 			'1-1': {
 				xPos: 1,
@@ -2779,7 +2969,9 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'opening',
 				bottomSide: 'wall',
-				leftSide: ''
+				leftSide: '',
+				classes: '',
+				altClasses: 'right-wall'
 			},
 			'0-2': {
 				xPos: 0,
@@ -2789,7 +2981,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-left-wall'
 			},
 			'1-2': {
 				xPos: 1,
@@ -2799,7 +2992,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			},
 			'2-2': {
 				xPos: 2,
@@ -2809,7 +3003,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			}
 		},
 		hallDL: {
@@ -2821,7 +3016,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-left-inverse-wall'
 			},
 			'1-0': {
 				xPos: 1,
@@ -2831,7 +3027,9 @@ export default function MapData() {
 				topSide: 'opening',
 				rightSide: 'wall',
 				bottomSide: '',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: '',
+				altClasses: 'top-wall'
 			},
 			'2-0': {
 				xPos: 2,
@@ -2841,7 +3039,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'right-wall'
 			},
 			'0-1': {
 				xPos: 0,
@@ -2851,7 +3050,9 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: '',
 				bottomSide: 'wall',
-				leftSide: 'opening'
+				leftSide: 'opening',
+				classes: '',
+				altClasses: 'left-wall'
 			},
 			'1-1': {
 				xPos: 1,
@@ -2871,7 +3072,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'right-wall'
 			},
 			'0-2': {
 				xPos: 0,
@@ -2881,7 +3083,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			},
 			'1-2': {
 				xPos: 1,
@@ -2891,7 +3094,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			},
 			'2-2': {
 				xPos: 2,
@@ -2901,7 +3105,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-right-wall'
 			}
 		},
 		fourWayIntersection: {
@@ -2913,7 +3118,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-left-inverse-wall'
 			},
 			'1-0': {
 				xPos: 1,
@@ -2923,7 +3129,9 @@ export default function MapData() {
 				topSide: 'opening',
 				rightSide: 'wall',
 				bottomSide: '',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: '',
+				altClasses: 'top-wall'
 			},
 			'2-0': {
 				xPos: 2,
@@ -2933,7 +3141,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-right-inverse-wall'
 			},
 			'0-1': {
 				xPos: 0,
@@ -2943,7 +3152,9 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: '',
 				bottomSide: 'wall',
-				leftSide: 'opening'
+				leftSide: 'opening',
+				classes: '',
+				altClasses: 'left-wall'
 			},
 			'1-1': {
 				xPos: 1,
@@ -2963,7 +3174,9 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'opening',
 				bottomSide: 'wall',
-				leftSide: ''
+				leftSide: '',
+				classes: '',
+				altClasses: 'right-wall'
 			},
 			'0-2': {
 				xPos: 0,
@@ -2973,7 +3186,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-left-inverse-wall'
 			},
 			'1-2': {
 				xPos: 1,
@@ -2983,7 +3197,9 @@ export default function MapData() {
 				topSide: '',
 				rightSide: 'wall',
 				bottomSide: 'opening',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: '',
+				altClasses: 'bottom-wall'
 			},
 			'2-2': {
 				xPos: 2,
@@ -2993,7 +3209,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-right-inverse-wall'
 			}
 		},
 		tIntersectionDown: {
@@ -3005,7 +3222,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'1-0': {
 				xPos: 1,
@@ -3015,7 +3233,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'2-0': {
 				xPos: 2,
@@ -3025,7 +3244,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-wall'
 			},
 			'0-1': {
 				xPos: 0,
@@ -3035,7 +3255,9 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: '',
 				bottomSide: 'wall',
-				leftSide: 'opening'
+				leftSide: 'opening',
+				classes: '',
+				altClasses: 'left-wall'
 			},
 			'1-1': {
 				xPos: 1,
@@ -3055,7 +3277,9 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'opening',
 				bottomSide: 'wall',
-				leftSide: ''
+				leftSide: '',
+				classes: '',
+				altClasses: 'right-wall'
 			},
 			'0-2': {
 				xPos: 0,
@@ -3065,7 +3289,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-left-inverse-wall'
 			},
 			'1-2': {
 				xPos: 1,
@@ -3075,7 +3300,9 @@ export default function MapData() {
 				topSide: '',
 				rightSide: 'wall',
 				bottomSide: 'opening',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: '',
+				altClasses: 'bottom-wall'
 			},
 			'2-2': {
 				xPos: 2,
@@ -3085,7 +3312,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-right-inverse-wall'
 			},
 		},
 		tIntersectionUp: {
@@ -3097,7 +3325,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-left-inverse-wall'
 			},
 			'1-0': {
 				xPos: 1,
@@ -3107,7 +3336,9 @@ export default function MapData() {
 				topSide: 'opening',
 				rightSide: 'wall',
 				bottomSide: '',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: '',
+				altClasses: 'top-wall'
 			},
 			'2-0': {
 				xPos: 2,
@@ -3117,7 +3348,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-right-inverse-wall'
 			},
 			'0-1': {
 				xPos: 0,
@@ -3127,7 +3359,9 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: '',
 				bottomSide: 'wall',
-				leftSide: 'opening'
+				leftSide: 'opening',
+				classes: '',
+				altClasses: 'left-wall'
 			},
 			'1-1': {
 				xPos: 1,
@@ -3147,7 +3381,9 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'opening',
 				bottomSide: 'wall',
-				leftSide: ''
+				leftSide: '',
+				classes: '',
+				altClasses: 'right-wall'
 			},
 			'0-2': {
 				xPos: 0,
@@ -3157,7 +3393,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			},
 			'1-2': {
 				xPos: 1,
@@ -3167,7 +3404,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			},
 			'2-2': {
 				xPos: 2,
@@ -3177,7 +3415,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-wall'
 			}
 		},
 		tIntersectionRight: {
@@ -3189,7 +3428,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'left-wall'
 			},
 			'1-0': {
 				xPos: 1,
@@ -3199,7 +3439,9 @@ export default function MapData() {
 				topSide: 'opening',
 				rightSide: 'wall',
 				bottomSide: '',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: '',
+				altClasses: 'top-wall'
 			},
 			'2-0': {
 				xPos: 2,
@@ -3209,7 +3451,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-right-inverse-wall'
 			},
 			'0-1': {
 				xPos: 0,
@@ -3219,7 +3462,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'left-wall'
 			},
 			'1-1': {
 				xPos: 1,
@@ -3239,7 +3483,9 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'opening',
 				bottomSide: 'wall',
-				leftSide: ''
+				leftSide: '',
+				classes: '',
+				altClasses: 'right-wall'
 			},
 			'0-2': {
 				xPos: 0,
@@ -3249,7 +3495,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'left-wall'
 			},
 			'1-2': {
 				xPos: 1,
@@ -3259,7 +3506,9 @@ export default function MapData() {
 				topSide: '',
 				rightSide: 'wall',
 				bottomSide: 'opening',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: '',
+				altClasses: 'bottom-wall'
 			},
 			'2-2': {
 				xPos: 2,
@@ -3269,7 +3518,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-right-inverse-wall'
 			},
 		},
 		tIntersectionLeft: {
@@ -3281,7 +3531,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'top-left-inverse-wall'
 			},
 			'1-0': {
 				xPos: 1,
@@ -3291,7 +3542,9 @@ export default function MapData() {
 				topSide: 'opening',
 				rightSide: 'wall',
 				bottomSide: '',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: '',
+				altClasses: 'top-wall'
 			},
 			'2-0': {
 				xPos: 2,
@@ -3301,7 +3554,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'right-wall'
 			},
 			'0-1': {
 				xPos: 0,
@@ -3311,7 +3565,9 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: '',
 				bottomSide: 'wall',
-				leftSide: 'opening'
+				leftSide: 'opening',
+				classes: '',
+				altClasses: 'left-wall'
 			},
 			'1-1': {
 				xPos: 1,
@@ -3331,7 +3587,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'right-wall'
 			},
 			'0-2': {
 				xPos: 0,
@@ -3341,7 +3598,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'bottom-left-inverse-wall'
 			},
 			'1-2': {
 				xPos: 1,
@@ -3351,7 +3609,9 @@ export default function MapData() {
 				topSide: '',
 				rightSide: 'wall',
 				bottomSide: 'opening',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: '',
+				altClasses: 'bottom-wall'
 			},
 			'2-2': {
 				xPos: 2,
@@ -3361,7 +3621,8 @@ export default function MapData() {
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
-				leftSide: 'wall'
+				leftSide: 'wall',
+				classes: 'right-wall'
 			},
 		}
 	}

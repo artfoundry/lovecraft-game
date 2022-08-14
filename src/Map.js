@@ -3,8 +3,8 @@ import MapData from "./mapData";
 import {Exit, LightElement, Player, Tile} from "./VisualElements";
 
 class Map extends React.Component {
-	constructor() {
-		super();
+	constructor(props) {
+		super(props);
 
 		this.pageFirstLoaded = true;
 		this.initialMapLoad = true;
@@ -26,6 +26,7 @@ class Map extends React.Component {
 			playerPos: {},
 			playerPlaced: false,
 			playerVisited: {},
+			currentMap: 'catacombs',
 			mapLayout: {},
 			mapLayoutDone: false,
 			mapPosition: {},
@@ -34,6 +35,7 @@ class Map extends React.Component {
 			lighting: {}
 		};
 
+		this.showDialog = this.props.showDialogProp;
 		this.createAllPieces = this.createAllPieces.bind(this);
 		this.addLighting = this.addLighting.bind(this);
 	}
@@ -256,7 +258,8 @@ class Map extends React.Component {
 							topSide: 'wall',
 							rightSide: 'wall',
 							bottomSide: 'wall',
-							leftSide: 'wall'
+							leftSide: 'wall',
+							classes: sideType === 'opening' ? this.mapLayoutTemp[tileLoc].altClasses : this.mapLayoutTemp[tileLoc].classes
 						};
 						if (this.mapLayoutTemp[tilePosBeforeOpening]) {
 							this.mapLayoutTemp[tilePosBeforeOpening][tileSide] = 'wall';
@@ -276,18 +279,16 @@ class Map extends React.Component {
 	}
 
 	createMapTile(tilePos) {
-		let allClasses = '';
-		if (this.state.mapLayout[tilePos].type === 'wall') {
-			allClasses += ' wall';
-		} else {
-			const topSideClass = this.state.mapLayout[tilePos].topSide === 'wall' ? ' top-wall' : '';
-			const rightSideClass = this.state.mapLayout[tilePos].rightSide === 'wall' ? ' right-wall' : '';
-			const bottomSideClass = this.state.mapLayout[tilePos].bottomSide === 'wall' ? ' bottom-wall' : '';
-			const leftSideClass = this.state.mapLayout[tilePos].leftSide === 'wall' ? ' left-wall' : '';
-			allClasses = topSideClass + rightSideClass + bottomSideClass + leftSideClass;
+		let allClasses = this.state.currentMap;
+		const tileData = this.state.mapLayout[tilePos];
+
+		if (tileData.classes && tileData.classes !== '') {
+			allClasses += ` ${tileData.classes}`;
+		} else if (tileData.type === 'floor') {
+			allClasses += ' floor'
 		}
-		const xPos = (this.state.mapLayout[tilePos].xPos * this.tileSize) + 'px';
-		const yPos = (this.state.mapLayout[tilePos].yPos * this.tileSize) + 'px';
+		const xPos = (tileData.xPos * this.tileSize) + 'px';
+		const yPos = (tileData.yPos * this.tileSize) + 'px';
 		const size = this.tileSize + 'px';
 		const tileStyle = {
 			transform: `translate(${xPos}, ${yPos})`,
@@ -297,8 +298,9 @@ class Map extends React.Component {
 
 		return (<Tile
 			key={tilePos}
+			tileTypeProp={tileData.type}
 			styleProp={tileStyle}
-			tileNameProp={this.state.mapLayout[tilePos].xPos + '-' + this.state.mapLayout[tilePos].yPos}
+			tileNameProp={tileData.xPos + '-' + tileData.yPos}
 			classStrProp={allClasses}
 			placePlayerProp={this.placePlayer} />);
 	}
@@ -450,7 +452,12 @@ class Map extends React.Component {
 		if (this.state.playerPos.xPos === this.state.exitPosition.xPos &&
 			this.state.playerPos.yPos === this.state.exitPosition.yPos)
 		{
-			this.resetMap();
+			const dialogText = 'Do you want to descend to the next level?';
+			const closeButtonText = 'Stay here';
+			const actionButtonVisible = true;
+			const actionButtonText = 'Descend';
+			const actionButtonCallback = this.resetMap;
+			this.showDialog(dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback);
 		}
 	}
 
@@ -625,7 +632,9 @@ class Map extends React.Component {
 
 	setupKeyListeners() {
 		document.addEventListener('keydown', (e) => {
-			e.preventDefault();
+			if (e.code.startsWith('Arrow') || e.code === 'Space') {
+				e.preventDefault();
+			}
 			this.placePlayer('', e);
 		});
 	}
@@ -687,8 +696,9 @@ class Map extends React.Component {
 					<Player dataLocProp={this.state.playerPos}
 					        styleProp={{
 								transform: `translate(${playerTransform.xPos}px, ${playerTransform.yPos}px)`,
-						        width: this.tileSize + 'px',
-						        height: this.tileSize + 'px'
+						        width: (this.tileSize * 0.75) + 'px',
+						        height: (this.tileSize * 0.75) + 'px',
+						        margin: '4px'
 							}} />
 				}
 			</div>

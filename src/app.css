@@ -7,7 +7,7 @@ body {
   background-color: black;
 }
 
-.notice {
+.dialog {
   position: absolute;
   display: flex;
   flex-direction: column;
@@ -20,16 +20,24 @@ body {
   z-index: 10;
   border: 2px solid lightgray;
   border-radius: 10px;
-  background-color: #6699CC;
+  color: lightgray;
+  background-color: darkslategray;
   text-align: center;
   padding: 20px;
   font-size: 24px;
 }
 
-.notice-message {
+.dialog-message {
 }
 
-.notice-button {
+.dialog-buttons {
+  display: flex;
+  justify-content: space-around;
+  flex-direction: row;
+  width: 100%;
+}
+
+.dialog-button {
   width: 100px;
   height: 30px;
   background-color: lightgray;
