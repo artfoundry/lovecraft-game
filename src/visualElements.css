@@ -1,0 +1,56 @@
+.tile {
+	position: absolute;
+	border: none;
+	box-sizing: border-box;
+}
+
+/* LIGHTING */
+
+.light-tile {
+	position: absolute;
+	box-sizing: border-box;
+}
+
+.very-bright-light {
+	opacity: 0;
+}
+
+.bright-light {
+	opacity: 0.2;
+}
+
+.med-light {
+	opacity: 0.4;
+}
+
+.low-light {
+	opacity: 0.6;
+}
+
+.ambient-light {
+	opacity: 0.8;
+}
+
+.no-light {
+	opacity: 1;
+}
+
+.black-light {
+	background-color: black;
+}
+
+.yellow-light {
+	background-color: #333300;
+}
+
+.bright-yellow-light {
+	background-color: yellow;
+}
+
+/* OBJECTS */
+
+.player {
+	position: absolute;
+	z-index: 4;
+	content: url('https://thumbs.gfycat.com/ClearcutPowerlessHyrax-max-1mb.gif');
+}

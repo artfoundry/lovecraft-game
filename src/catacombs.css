@@ -1,0 +1,133 @@
+.catacombs {
+	background-image: url('../assets/tilesets/Catacombs/catacombs.png');
+}
+
+/* FLOORS */
+
+.floor-one {
+	background-position: -128px -160px;
+}
+
+.floor-two {
+	background-position: -160px -160px;
+}
+
+.floor-three {
+	background-position: -128px -192px;
+}
+
+.floor-four {
+	background-position: -160px -192px;
+}
+
+.floor-five {
+	background-position: -128px -224px;
+}
+
+.floor-six {
+	background-position: -160px -224px;
+}
+
+/* WALLS */
+
+.top-left-wall {
+	background-position: 0 0;
+}
+
+.top-wall-one {
+	background-position: -32px 0;
+}
+
+.top-wall-two {
+	background-position: -64px 0;
+}
+
+.top-wall-three {
+	background-position: -96px 0;
+}
+
+.top-wall-four {
+	background-position: -128px 0;
+}
+
+.top-right-wall {
+	background-position: -160px 0;
+}
+
+.left-wall {
+	background-position: 0 -32px;
+}
+
+.right-wall {
+	background-position: -160px -32px;
+}
+
+.bottom-left-wall {
+	background-position: 0 -64px;
+}
+
+.bottom-wall-one {
+	background-position: -32px -64px;
+}
+
+.bottom-wall-two {
+	background-position: -64px -64px;
+}
+
+.bottom-wall-three {
+	background-position: -96px -64px;
+}
+
+.bottom-wall-four {
+	background-position: -128px -64px;
+}
+
+.bottom-right-wall {
+	background-position: -160px -64px;
+}
+
+.bottom-left-inverse-wall {
+	background-position: 0 -96px;
+}
+
+.bottom-right-inverse-wall {
+	background-position: -32px -96px;
+}
+
+.top-left-inverse-wall {
+	background-position: -64px -96px;
+}
+
+.top-right-inverse-wall {
+	background-position: -96px -96px;
+}
+
+.T-shaped-wall {
+	background-position: -128px -96px;
+}
+
+
+/* DOORS */
+
+.left-door {
+	background-position: -192px 0;
+}
+
+.right-door {
+	background-position: -224px 0;
+}
+
+.top-bottom-door {
+	background-position: -192px -32px;
+}
+
+/* OBJECTS */
+
+.exit {
+	position: absolute;
+	z-index: 1;
+	pointer-events: none;
+	content: url('../assets/tilesets/Catacombs/mainlevbuild.png');
+	object-fit: none;
+	object-position: -736px -65px;
+}

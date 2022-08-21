@@ -1,0 +1,20 @@
+.world {
+	position: relative;
+	height: 1000px;
+	margin: auto;
+	background-color: black;
+	overflow: hidden;
+}
+
+.lighting {
+	position: relative;
+	margin: auto;
+	z-index: 3;
+	pointer-events: none;
+}
+
+.map {
+	position: relative;
+	margin: auto;
+	z-index: 0;
+}

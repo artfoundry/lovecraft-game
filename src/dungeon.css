@@ -1,0 +1,49 @@
+/* FLOORS */
+
+.tile-floor-gray-one {
+	background-position: 0 -160px;
+}
+
+.tile-floor-gray-two {
+	background-position: -32px -160px;
+}
+
+.tile-floor-gray-three {
+	background-position: 0 -192px;
+}
+
+.tile-floor-gray-four {
+	background-position: -32px -192px;
+}
+
+.tile-floor-gray-five {
+	background-position: 0 -224px;
+}
+
+.tile-floor-gray-six {
+	background-position: -32px -224px;
+}
+
+.tile-floor-blue-one {
+	background-position: -64px -160px;
+}
+
+.tile-floor-blue-two {
+	background-position: -96px -160px;
+}
+
+.tile-floor-blue-three {
+	background-position: -64px -192px;
+}
+
+.tile-floor-blue-four {
+	background-position: -96px -192px;
+}
+
+.tile-floor-blue-five {
+	background-position: -64px -224px;
+}
+
+.tile-floor-blue-six {
+	background-position: -96px -224px;
+}

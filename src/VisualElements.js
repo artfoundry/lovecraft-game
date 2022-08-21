@@ -1,3 +1,6 @@
+import React, { useState } from 'react';
+import {randomTileVariant} from './Utils';
+
 function Player(props) {
 	return (
 		<img alt="player"
@@ -9,7 +12,7 @@ function Player(props) {
 
 function Exit(props) {
 	return (
-		<img alt="stairs"
+		<img alt="exit"
 		     className='exit'
 		     style={props.styleProp}
 		     data-location={props.tileNameProp} />
@@ -17,13 +20,18 @@ function Exit(props) {
 }
 
 function Tile(props) {
+	const isTopOrBottomWall = props.classStrProp.includes('top-wall') || props.classStrProp.includes('bottom-wall');
+	const tileType = props.tileTypeProp === 'floor' || (props.tileTypeProp === 'wall' && isTopOrBottomWall) ? randomTileVariant() : '';
+
+	const [randomizedVariantSuffix] = useState(tileType);
+
 	return (
-		<div className={'tile' + props.classStrProp}
+		<div className={`tile ${props.classStrProp}${randomizedVariantSuffix}`}
 		     style={{...props.styleProp, fontSize: '18px'}}
 		     data-tile-num={props.tileNameProp}
 		     onClick={(e) => {
 			     props.placePlayerProp(props.tileNameProp, e);
-		     }}></div>
+		     }} />
 	);
 }
 
@@ -31,7 +39,7 @@ function LightElement(props) {
 	return (
 		<div className={props.classStrProp}
 		     style={props.styleProp}
-		     data-tile-num={props.tileNameProp}></div>
+		     data-tile-num={props.tileNameProp} />
 	);
 }
 
