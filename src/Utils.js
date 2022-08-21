@@ -5,4 +5,14 @@ function rng() {
 	return dateToStr[randomIndex] * .1;
 }
 
-export {rng};
+function randomTileVariant() {
+	const types = [
+		'-one',
+		'-two',
+		'-three',
+		'-four'
+	];
+	return types[Math.floor(Math.random() * types.length)];
+}
+
+export {rng, randomTileVariant};

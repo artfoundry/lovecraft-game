@@ -94,12 +94,16 @@
 	background-position: -32px -96px;
 }
 
-.top-right-inverse-wall {
+.top-left-inverse-wall {
 	background-position: -64px -96px;
 }
 
-.top-left-inverse-wall {
+.top-right-inverse-wall {
 	background-position: -96px -96px;
+}
+
+.T-shaped-wall {
+	background-position: -128px -96px;
 }
 
 
@@ -113,12 +117,8 @@
 	background-position: -224px 0;
 }
 
-.top-door {
+.top-bottom-door {
 	background-position: -192px -32px;
-}
-
-.bottom-door {
-	background-position: -192px -64px;
 }
 
 /* OBJECTS */

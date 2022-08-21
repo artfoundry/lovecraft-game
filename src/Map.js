@@ -159,6 +159,7 @@ class Map extends React.Component {
 						const newXPos = mapOpeningXOffset + tileData.xPos - pieceOpeningTileCoords[0];
 						const newYPos = mapOpeningYOffset + tileData.yPos - pieceOpeningTileCoords[1];
 						const newPosCoords = newXPos + '-' + newYPos;
+						const originalPos = tileData.xPos + '-' + tileData.yPos;
 						// check if location on map where tile would go is empty and within bounds
 						if (this.mapLayoutTemp[newPosCoords] || newXPos < 0 || newYPos < 0) {
 							isValidPos = false;
@@ -167,8 +168,49 @@ class Map extends React.Component {
 							pieceAdjustedTilePositions[newXPos + '-' + newYPos] = {
 								...tileData,
 								xPos: newXPos,
-								yPos: newYPos
+								yPos: newYPos,
+								originalPos
 							};
+							if (tileData.altClasses) {
+								let updatedAltClasses = {};
+								for (const [pos, classes] of Object.entries(tileData.altClasses)) {
+									if (pos === 'both') {
+										updatedAltClasses.both = classes;
+									} else {
+										let neighborPos = {};
+										let newXPos = null;
+										let newYPos = null;
+										neighborPos = pos.split('-');
+										newXPos = +neighborPos[0] + mapOpeningXOffset - pieceOpeningTileCoords[0];
+										newYPos = +neighborPos[1] + mapOpeningYOffset - pieceOpeningTileCoords[1];
+										updatedAltClasses[newXPos + '-' + newYPos] = classes;
+									}
+								}
+								pieceAdjustedTilePositions[newXPos + '-' + newYPos].altClasses = updatedAltClasses;
+							}
+							if (tileData.neighbors) {
+								let updatedNeighbors = {};
+								for (const [type, neighborCoords] of Object.entries(tileData.neighbors)) {
+									let neighborPos = {};
+									let newXPos = null;
+									let newYPos = null;
+									if (Array.isArray(neighborCoords)) {
+										updatedNeighbors[type] = [];
+										neighborCoords.forEach(coord => {
+											neighborPos = coord.split('-');
+											newXPos = +neighborPos[0] + mapOpeningXOffset - pieceOpeningTileCoords[0];
+											newYPos = +neighborPos[1] + mapOpeningYOffset - pieceOpeningTileCoords[1];
+											updatedNeighbors[type].push(newXPos + '-' + newYPos);
+										});
+									} else {
+										neighborPos = neighborCoords.split('-');
+										newXPos = +neighborPos[0] + mapOpeningXOffset - pieceOpeningTileCoords[0];
+										newYPos = +neighborPos[1] + mapOpeningYOffset - pieceOpeningTileCoords[1];
+										updatedNeighbors[type] = newXPos + '-' + newYPos;
+									}
+								}
+								pieceAdjustedTilePositions[newXPos + '-' + newYPos].neighbors = updatedNeighbors;
+							}
 						}
 						tilePosIndex++;
 					}
@@ -188,6 +230,7 @@ class Map extends React.Component {
 		return {positionFound, updatedPiece, mapOpening, pieceOpening};
 	}
 
+	// For clearing out the 'opening' type from recently laid piece and matching opening on the map
 	// newPiece: Object, copy from this.mapPieces but with updated pos for map layout
 	// mapOpeningToRemove: Object, {[tileCoords relative to map]: side} - undefined for first piece
 	// pieceOpeningToRemove: Object, {[tileCoords relative to piece]: side} - undefined for first piece
@@ -218,8 +261,10 @@ class Map extends React.Component {
 		}
 	}
 
+	// For closing up all remaining openings since map layout is finished
 	mapCleanup() {
-		for (const [tileLoc, tileData] of Object.entries(this.mapLayoutTemp)) {
+		const mapData = {...this.mapLayoutTemp};
+		for (const [tileLoc, tileData] of Object.entries(mapData)) {
 			if (tileData.type !== 'wall') {
 				const tileSides = {
 					topSide: tileData.topSide,
@@ -228,42 +273,55 @@ class Map extends React.Component {
 					rightSide: tileData.rightSide
 				}
 				for (const [tileSide, sideType] of Object.entries(tileSides)) {
-					let adjacentTile = null;
-					let tilePosBeforeOpening = null;
-					const tileCoords = tileLoc.split('-');
-					switch(tileSide) {
-						case 'topSide':
-							adjacentTile = this.mapLayoutTemp[`${+tileCoords[0]}-${+tileCoords[1] - 1}`];
-							tilePosBeforeOpening = `${+tileCoords[0]}-${+tileCoords[1] + 1}`;
-							break;
-						case 'bottomSide':
-							adjacentTile = this.mapLayoutTemp[`${+tileCoords[0]}-${+tileCoords[1] + 1}`];
-							tilePosBeforeOpening = `${+tileCoords[0]}-${+tileCoords[1] - 1}`;
-							break;
-						case 'leftSide':
-							adjacentTile = this.mapLayoutTemp[`${+tileCoords[0] - 1}-${+tileCoords[1]}`];
-							tilePosBeforeOpening = `${+tileCoords[0] + 1}-${+tileCoords[1]}`;
-							break;
-						case 'rightSide':
-							adjacentTile = this.mapLayoutTemp[`${+tileCoords[0] + 1}-${+tileCoords[1]}`];
-							tilePosBeforeOpening = `${+tileCoords[0] - 1}-${+tileCoords[1]}`;
-					}
-					const oppositeSide = adjacentTile ? adjacentTile[this.OPPOSITE_SIDE[tileSide]] : '';
-					if (!adjacentTile || ((sideType === 'opening' || sideType === '') && oppositeSide === 'wall')) {
-						this.mapLayoutTemp[tileLoc] = {
-							xPos: this.mapLayoutTemp[tileLoc].xPos,
-							yPos: this.mapLayoutTemp[tileLoc].yPos,
-							type: 'wall',
-							walkable: false,
-							topSide: 'wall',
-							rightSide: 'wall',
-							bottomSide: 'wall',
-							leftSide: 'wall',
-							classes: sideType === 'opening' ? this.mapLayoutTemp[tileLoc].altClasses : this.mapLayoutTemp[tileLoc].classes
-						};
-						if (this.mapLayoutTemp[tilePosBeforeOpening]) {
-							this.mapLayoutTemp[tilePosBeforeOpening][tileSide] = 'wall';
+					if (sideType === 'opening') {
+						// change tile's attributes if it and neighbors won't be deleted, ie. if it's part of a hall, not a room
+						if (!tileData.neighbors.toDelete) {
+							this.mapLayoutTemp[tileLoc] = {
+								...this.mapLayoutTemp[tileLoc],
+								type: 'wall',
+								walkable: false,
+								topSide: 'wall',
+								rightSide: 'wall',
+								bottomSide: 'wall',
+								leftSide: 'wall'
+							};
+						// or if it and neighbors will be deleted, then change neighboring door to wall
+						} else if (tileData.neighbors.toChangeType){
+							this.mapLayoutTemp[tileData.neighbors.toChangeType] = {
+								...this.mapLayoutTemp[tileData.neighbors.toChangeType],
+								type: 'wall',
+								walkable: false,
+								topSide: 'wall',
+								rightSide: 'wall',
+								bottomSide: 'wall',
+								leftSide: 'wall'
+							};
 						}
+
+						// go through all neighbors and delete them or change class/side as specified in mapData
+						tileData.neighbors.toChangeClass.forEach(neighborLoc => {
+							let newTileClasses = this.mapLayoutTemp[neighborLoc].altClasses[tileLoc];
+
+							// if this neighbor is a corner with two adjacent openings (has the 'both' key), need to check if both are now walls
+							if (this.mapLayoutTemp[neighborLoc].altClasses.both) {
+								const otherAdjacentOpening = Object.keys(this.mapLayoutTemp[neighborLoc].altClasses).find(key => (
+									key !== 'both' && key !== tileLoc
+								));
+								if (this.mapLayoutTemp[otherAdjacentOpening].type === 'wall') {
+									newTileClasses = this.mapLayoutTemp[neighborLoc].altClasses.both;
+								}
+							}
+			if (newTileClasses.includes('right-wall') && this.mapLayoutTemp[neighborLoc].type === 'floor') {
+				console.log(tileData, this.mapLayoutTemp[neighborLoc])
+			}
+							this.mapLayoutTemp[neighborLoc].classes = newTileClasses;
+						});
+						if (tileData.neighbors.toDelete) {
+							tileData.neighbors.toDelete.forEach(tileToDelete => {
+								delete this.mapLayoutTemp[tileToDelete];
+							});
+						}
+						this.mapLayoutTemp[tileData.neighbors.toChangeSideType][tileSide] = 'wall';
 					}
 				}
 			}
@@ -356,11 +414,10 @@ class Map extends React.Component {
 
 			// move is invalid if through a wall
 			if (this.state.mapLayout[playerLoc][playerMovementSide[0]] === 'wall' ||
-				this.state.mapLayout[tileLoc][this.OPPOSITE_SIDE[playerMovementSide[0]]] === 'wall'
+				this.state.mapLayout[tileLoc][this.OPPOSITE_SIDE[playerMovementSide[0]]] === 'wall')
 				// below is for possibly moving diagonally
 				// || this.state.mapLayout[playerLoc][playerMovementSide[1]] === 'wall' ||
 				// this.state.mapLayout[tileLoc][this.OPPOSITE_SIDE[playerMovementSide[1]]] === 'wall'
-			)
 			{
 				invalidMove = true;
 			}
@@ -598,21 +655,21 @@ class Map extends React.Component {
 		return lineOfSightTiles;
 	}
 
-	getSidesBetweenAdjacentTiles(centerTileLoc, adjTileLoc) {
+	getSidesBetweenAdjacentTiles(mainTileLoc, adjTileLoc) {
 		let sides = [];
 		const adjTile = this.state.mapLayout[adjTileLoc];
-		const centerTile = this.state.mapLayout[centerTileLoc];
+		const mainTile = this.state.mapLayout[mainTileLoc];
 
-		if (centerTile.xPos - adjTile.xPos === -1) {
+		if (mainTile.xPos - adjTile.xPos === -1) {
 			sides.push('rightSide');
 		}
-		if (centerTile.xPos - adjTile.xPos === 1) {
+		if (mainTile.xPos - adjTile.xPos === 1) {
 			sides.push('leftSide');
 		}
-		if (centerTile.yPos - adjTile.yPos === -1) {
+		if (mainTile.yPos - adjTile.yPos === -1) {
 			sides.push('bottomSide');
 		}
-		if (centerTile.yPos - adjTile.yPos === 1) {
+		if (mainTile.yPos - adjTile.yPos === 1) {
 			sides.push('topSide');
 		}
 
@@ -696,8 +753,8 @@ class Map extends React.Component {
 					<Player dataLocProp={this.state.playerPos}
 					        styleProp={{
 								transform: `translate(${playerTransform.xPos}px, ${playerTransform.yPos}px)`,
-						        width: (this.tileSize * 0.75) + 'px',
-						        height: (this.tileSize * 0.75) + 'px',
+						        width: (this.tileSize * 0.65) + 'px',
+						        height: (this.tileSize * 0.65) + 'px',
 						        margin: '4px'
 							}} />
 				}

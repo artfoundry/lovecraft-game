@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import {randomTileVariant} from './Utils';
 
 function Player(props) {
 	return (
@@ -19,16 +20,6 @@ function Exit(props) {
 }
 
 function Tile(props) {
-	const randomTileVariant = function() {
-		const types = [
-			'-one',
-			'-two',
-			'-three',
-			'-four'
-		];
-		return types[Math.floor(Math.random() * types.length)];
-	}
-
 	const isTopOrBottomWall = props.classStrProp.includes('top-wall') || props.classStrProp.includes('bottom-wall');
 	const tileType = props.tileTypeProp === 'floor' || (props.tileTypeProp === 'wall' && isTopOrBottomWall) ? randomTileVariant() : '';
 
