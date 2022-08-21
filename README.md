@@ -1,5 +1,7 @@
 # Lovecraft themed RPG
 
+Working title: War of the Old Ones
+
 WIP
 
 ---
