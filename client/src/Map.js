@@ -446,6 +446,7 @@ class Map extends React.Component {
 					`${+coords[0]}-${+coords[1]+1}`,
 					`${+coords[0]+1}-${+coords[1]+1}`
 				].filter(tile => this.state.mapLayout[tile] && this.state.mapLayout[tile].type === 'wall');
+
 				surroundingTilesList.push(visitedTile);
 				surroundingTilesList.forEach(tile => {
 					surroundingTilesCoords[tile] = {

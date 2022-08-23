@@ -1,0 +1,156 @@
+.tiles {
+	content: url('../../assets/tilesets/Catacombs/catacombs.png');
+	cursor: pointer;
+	box-sizing: border-box;
+}
+
+.tiles:hover {
+	border: 1px yellow solid;
+}
+
+/* FLOORS */
+
+.floor-one {
+	object-position: -128px -160px;
+	object-fit: none;
+}
+
+.floor-two {
+	object-position: -160px -160px;
+	object-fit: none;
+}
+
+.floor-three {
+	object-position: -128px -192px;
+	object-fit: none;
+}
+
+.floor-four {
+	object-position: -160px -192px;
+	object-fit: none;
+}
+
+.floor-five {
+	object-position: -128px -224px;
+	object-fit: none;
+}
+
+.floor-six {
+	object-position: -160px -224px;
+	object-fit: none;
+}
+
+/* WALLS */
+
+.top-left-wall {
+	object-position: 0 0;
+	object-fit: none;
+}
+
+.top-wall-one {
+	object-position: -32px 0;
+	object-fit: none;
+}
+
+.top-wall-two {
+	object-position: -64px 0;
+	object-fit: none;
+}
+
+.top-wall-three {
+	object-position: -96px 0;
+	object-fit: none;
+}
+
+.top-wall-four {
+	object-position: -128px 0;
+	object-fit: none;
+}
+
+.top-right-wall {
+	object-position: -160px 0;
+	object-fit: none;
+}
+
+.left-wall {
+	object-position: 0 -32px;
+	object-fit: none;
+}
+
+.right-wall {
+	object-position: -160px -32px;
+	object-fit: none;
+}
+
+.bottom-left-wall {
+	object-position: 0 -64px;
+	object-fit: none;
+}
+
+.bottom-wall-one {
+	object-position: -32px -64px;
+	object-fit: none;
+}
+
+.bottom-wall-two {
+	object-position: -64px -64px;
+	object-fit: none;
+}
+
+.bottom-wall-three {
+	object-position: -96px -64px;
+	object-fit: none;
+}
+
+.bottom-wall-four {
+	object-position: -128px -64px;
+	object-fit: none;
+}
+
+.bottom-right-wall {
+	object-position: -160px -64px;
+	object-fit: none;
+}
+
+.bottom-left-inverse-wall {
+	object-position: 0 -96px;
+	object-fit: none;
+}
+
+.bottom-right-inverse-wall {
+	object-position: -32px -96px;
+	object-fit: none;
+}
+
+.top-left-inverse-wall {
+	object-position: -64px -96px;
+	object-fit: none;
+}
+
+.top-right-inverse-wall {
+	object-position: -96px -96px;
+	object-fit: none;
+}
+
+.T-shaped-wall {
+	object-position: -128px -96px;
+	object-fit: none;
+}
+
+
+/* DOORS */
+
+.left-door {
+	object-position: -192px 0;
+	object-fit: none;
+}
+
+.right-door {
+	object-position: -224px 0;
+	object-fit: none;
+}
+
+.top-bottom-door {
+	object-position: -192px -32px;
+	object-fit: none;
+}

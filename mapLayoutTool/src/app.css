@@ -1,0 +1,59 @@
+h3 {
+	text-align: center;
+	margin-top: 0;
+}
+
+.tool-container {
+	display: grid;
+	gap: 10px;
+	grid-template-areas:
+    "pieces tiles tiles"
+    "pieces grid params";
+	background-color: gray;
+}
+
+.tiles-container {
+	grid-area: tiles;
+	max-height: 130px;
+	font-size: 10px;
+	background-color: black;
+	color: white;
+	overflow-y: scroll;
+}
+
+.tiles-container div {
+	display: inline-flex;
+	flex-direction: column;
+	align-items: center;
+	margin: 5px;
+}
+
+.existing-pieces {
+	grid-area: pieces;
+	padding: 10px;
+}
+
+.grid {
+	grid-area: grid;
+	display: flex;
+	flex-direction: column;
+	text-align: center;
+	background-color: black;
+	cursor: pointer;
+}
+
+.grid-cell {
+	display: inline-block;
+	box-sizing: border-box;
+	border: none;
+	border-image: none;
+}
+
+.grid-cell:hover {
+	border: 1px yellow solid;
+}
+
+.parameters {
+	grid-area: params;
+	padding: 10px;
+}
