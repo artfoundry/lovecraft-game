@@ -1,42 +1,17 @@
+.selected {
+	border: 1px blue solid;
+}
+
 .tiles {
 	content: url('../../assets/tilesets/Catacombs/catacombs.png');
 	cursor: pointer;
 	box-sizing: border-box;
 }
 
-.tiles:hover {
-	border: 1px yellow solid;
-}
-
 /* FLOORS */
 
-.floor-one {
+.floor {
 	object-position: -128px -160px;
-	object-fit: none;
-}
-
-.floor-two {
-	object-position: -160px -160px;
-	object-fit: none;
-}
-
-.floor-three {
-	object-position: -128px -192px;
-	object-fit: none;
-}
-
-.floor-four {
-	object-position: -160px -192px;
-	object-fit: none;
-}
-
-.floor-five {
-	object-position: -128px -224px;
-	object-fit: none;
-}
-
-.floor-six {
-	object-position: -160px -224px;
 	object-fit: none;
 }
 
@@ -47,23 +22,8 @@
 	object-fit: none;
 }
 
-.top-wall-one {
+.top-wall {
 	object-position: -32px 0;
-	object-fit: none;
-}
-
-.top-wall-two {
-	object-position: -64px 0;
-	object-fit: none;
-}
-
-.top-wall-three {
-	object-position: -96px 0;
-	object-fit: none;
-}
-
-.top-wall-four {
-	object-position: -128px 0;
 	object-fit: none;
 }
 
@@ -87,23 +47,8 @@
 	object-fit: none;
 }
 
-.bottom-wall-one {
+.bottom-wall {
 	object-position: -32px -64px;
-	object-fit: none;
-}
-
-.bottom-wall-two {
-	object-position: -64px -64px;
-	object-fit: none;
-}
-
-.bottom-wall-three {
-	object-position: -96px -64px;
-	object-fit: none;
-}
-
-.bottom-wall-four {
-	object-position: -128px -64px;
 	object-fit: none;
 }
 

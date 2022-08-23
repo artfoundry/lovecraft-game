@@ -5,7 +5,7 @@ import './tiles.css';
 const FILE_SERVER = 'http://localhost:4000';
 
 function GridCell(props) {
-	return <img id={props.idProp} className={'grid-cell' + props.classesProp} style={props.styleProp} onMouseUp={props.mouseUpProp} />;
+	return <img id={props.idProp} className={'grid-cell' + props.classesProp} style={props.styleProp} onMouseUp={props.clickProp} />;
 }
 
 class Tool extends React.Component {
@@ -13,6 +13,161 @@ class Tool extends React.Component {
 		super();
 
 		this.tileSize = 32;
+		this.tileData = {
+			'top-left-wall': {
+				classes: 'top-left-wall',
+				type: 'wall',
+				walkable: false,
+				topSide: 'wall',
+				rightSide: 'wall',
+				bottomSide: 'wall',
+				leftSide: 'wall'
+			},
+			'top-wall': {
+				classes: 'top-wall',
+				type: 'wall',
+				walkable: false,
+				topSide: 'wall',
+				rightSide: 'wall',
+				bottomSide: 'wall',
+				leftSide: 'wall'
+			},
+			'top-right-wall': {
+				classes: 'top-right-wall',
+				type: 'wall',
+				walkable: false,
+				topSide: 'wall',
+				rightSide: 'wall',
+				bottomSide: 'wall',
+				leftSide: 'wall'
+			},
+			'left-wall': {
+				classes: 'left-wall',
+				type: 'wall',
+				walkable: false,
+				topSide: 'wall',
+				rightSide: 'wall',
+				bottomSide: 'wall',
+				leftSide: 'wall'
+			},
+			'right-wall': {
+				classes: 'right-wall',
+				type: 'wall',
+				walkable: false,
+				topSide: 'wall',
+				rightSide: 'wall',
+				bottomSide: 'wall',
+				leftSide: 'wall'
+			},
+			'bottom-left-wall': {
+				classes: 'bottom-left-wall',
+				type: 'wall',
+				walkable: false,
+				topSide: 'wall',
+				rightSide: 'wall',
+				bottomSide: 'wall',
+				leftSide: 'wall'
+			},
+			'bottom-wall': {
+				classes: 'bottom-wall',
+				type: 'wall',
+				walkable: false,
+				topSide: 'wall',
+				rightSide: 'wall',
+				bottomSide: 'wall',
+				leftSide: 'wall'
+			},
+			'bottom-right-wall': {
+				classes: 'bottom-right-wall',
+				type: 'wall',
+				walkable: false,
+				topSide: 'wall',
+				rightSide: 'wall',
+				bottomSide: 'wall',
+				leftSide: 'wall'
+			},
+			'bottom-left-inverse-wall': {
+				classes: 'bottom-left-inverse-wall',
+				type: 'wall',
+				walkable: false,
+				topSide: 'wall',
+				rightSide: 'wall',
+				bottomSide: 'wall',
+				leftSide: 'wall'
+			},
+			'bottom-right-inverse-wall': {
+				classes: 'bottom-right-inverse-wall',
+				type: 'wall',
+				walkable: false,
+				topSide: 'wall',
+				rightSide: 'wall',
+				bottomSide: 'wall',
+				leftSide: 'wall'
+			},
+			'top-left-inverse-wall': {
+				classes: 'top-left-inverse-wall',
+				type: 'wall',
+				walkable: false,
+				topSide: 'wall',
+				rightSide: 'wall',
+				bottomSide: 'wall',
+				leftSide: 'wall'
+			},
+			'top-right-inverse-wall': {
+				classes: 'top-right-inverse-wall',
+				type: 'wall',
+				walkable: false,
+				topSide: 'wall',
+				rightSide: 'wall',
+				bottomSide: 'wall',
+				leftSide: 'wall'
+			},
+			'T-shaped-wall': {
+				classes: 'T-shaped-wall',
+				type: 'wall',
+				walkable: false,
+				topSide: 'wall',
+				rightSide: 'wall',
+				bottomSide: 'wall',
+				leftSide: 'wall'
+			},
+			'floor': {
+				classes: 'floor',
+				type: 'floor',
+				walkable: true,
+				topSide: '',
+				rightSide: '',
+				bottomSide: '',
+				leftSide: ''
+			},
+			'left-door': {
+				classes: 'left-door',
+				type: 'door',
+				walkable: true,
+				topSide: 'wall',
+				rightSide: '',
+				bottomSide: 'wall',
+				leftSide: ''
+			},
+			'right-door': {
+				classes: 'right-door',
+				type: 'door',
+				walkable: true,
+				topSide: 'wall',
+				rightSide: '',
+				bottomSide: 'wall',
+				leftSide: ''
+			},
+			'top-bottom-door': {
+				classes: 'top-bottom-door',
+				type: 'door',
+				walkable: true,
+				topSide: '',
+				rightSide: 'wall',
+				bottomSide: '',
+				leftSide: 'wall'
+			}
+		}
 		this.pieceData = {};
 
 		this.socket = io(FILE_SERVER);
@@ -26,7 +181,9 @@ class Tool extends React.Component {
 		this.state = {
 			pieces: [],
 			gridCellNames: {},
-			gridCellNamesDone: false
+			gridCellNamesDone: false,
+			tileNameSelected: '',
+			gridTileIdSelected: ''
 		};
 	}
 
@@ -34,10 +191,28 @@ class Tool extends React.Component {
 		let cells = {};
 		for (let r = 0; r < 15; r++) {
 			for (let c = 0; c < 15; c++) {
-				cells[r + '-' + c] = '';
+				cells[r + '-' + c] = {};
 			}
 		}
 		this.setState({gridCellNames: cells, gridCellNamesDone: true});
+	}
+
+	layoutTiles() {
+		let tiles = [];
+		for (const tileName of Object.keys(this.tileData)) {
+			tiles.push(
+				<div key={tileName}>
+					<img className={'tiles ' + tileName + (this.state.tileNameSelected === tileName && !this.state.gridTileIdSelected ? ' selected' : '')}
+					     onClick={e => {
+						     this.selectTile(e.target.classList[1], '');
+					     }}
+					     style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}}
+					/>
+					{tileName}
+				</div>
+			)
+		}
+		return tiles;
 	}
 
 	layoutGrid() {
@@ -46,11 +221,22 @@ class Tool extends React.Component {
 			let row = [];
 			for (let c = 0; c < 15; c++) {
 				const id = r + '-' + c;
-				const classes = this.state.gridCellNames[id] === '' ? this.state.gridCellNames[id] : ` tiles ${this.state.gridCellNames[id]}`;
+				let classes = (this.state.tileNameSelected === this.state.gridCellNames[id].classes && this.state.gridTileIdSelected === id) ? ' selected' : '';
+				classes += Object.keys(this.state.gridCellNames[id]).length === 0 ?
+					this.state.gridCellNames[id] :
+					` tiles ${this.state.gridCellNames[id].classes}`;
 				row.push(<GridCell
 					key={id}
 					idProp={id}
-					mouseUpProp={e => {this.insertTile(e)}}
+					clickProp={e => {
+						if (e.target.classList.contains('tiles') &&
+							(this.state.tileNameSelected === '' || this.state.gridTileIdSelected === id))
+						{
+							this.selectTile(e.target.classList[2], id);
+						} else if (this.state.tileNameSelected !== '') {
+							this.insertTile(e.target.id);
+						}
+					}}
 					classesProp={classes}
 					styleProp={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
 				);
@@ -71,37 +257,46 @@ class Tool extends React.Component {
 
 	}
 
-	insertTile = (e) => {
-		e.preventDefault();
-		const tileType = e.target.classList[1];
-		let coords = '';
-		let firstAvail = '';
+	selectTile = (tileName, tileId) => {
+		this.setState(prevState => ({
+			tileNameSelected: prevState.tileNameSelected === tileName ? '' : tileName,
+			gridTileIdSelected: tileId
+		}));
+	}
 
-		for (const [pos, name] of Object.entries(this.state.gridCellNames)) {
-			if (name === '') {
-				firstAvail = pos;
-				break;
-			}
-		}
-
-		// if click, user is inserting a new tile
-		if (e.type === 'click') {
-			if (this.state.gridCellNames['0-0'] === '') {
-				coords = '0-0';
-			} else if (firstAvail === '') {
-				alert('All grid spaces full. Delete one first.');
-				return;
-			} else {
-				coords = firstAvail;
-			}
-		// user is moving a tile
-		} else if (e.type === 'mouseUp') {
-			coords = e.target.id;
-		}
+	insertTile = (id) => {
+		const pos = id;
+		let coords = pos.split('-');
+		const prevGridPos = this.state.gridTileIdSelected;
+		const tileName = this.state.tileNameSelected;
 
 		this.setState(prevState => ({
-			gridCellNames: {...prevState.gridCellNames, [coords]: tileType}
+			gridCellNames: {
+				...prevState.gridCellNames,
+				[pos]: {
+					piece: '',
+					xPos: +coords[0],
+					yPos: +coords[1],
+					type: this.tileData[tileName].type,
+					walkable: this.tileData[tileName].walkable,
+					topSide: this.tileData[tileName].topSide,
+					rightSide: this.tileData[tileName].rightSide,
+					bottomSide: this.tileData[tileName].bottomSide,
+					leftSide: this.tileData[tileName].leftSide,
+					classes: tileName
+				}
+			},
+			tileNameSelected: '',
+			gridTileIdSelected: ''
 		}));
+		if (prevGridPos !== '') {
+			this.setState(prevState => ({
+				gridCellNames: {
+					...prevState.gridCellNames,
+					[prevGridPos]: {}
+				}
+			}));
+		}
 	}
 
 	componentDidMount() {
@@ -113,118 +308,7 @@ class Tool extends React.Component {
 		return (
 			<div className="tool-container" style={{gridTemplateColumns: `auto ${this.tileSize * 15 + 'px'} auto`}}>
 				<div className="tiles-container">
-					<div>
-						<img className="tiles top-left-wall" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						top-left-wall
-					</div>
-					<div>
-						<img className="tiles top-wall-one" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						top-wall-one
-					</div>
-					<div>
-						<img className="tiles top-wall-two" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						top-wall-two
-					</div>
-					<div>
-						<img className="tiles top-wall-three" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						top-wall-three
-					</div>
-					<div>
-						<img className="tiles top-wall-four" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						top-wall-four
-					</div>
-					<div>
-						<img className="tiles top-right-wall" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						top-right-wall
-					</div>
-					<div>
-						<img className="tiles left-wall" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						left-wall
-					</div>
-					<div>
-						<img className="tiles right-wall" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						right-wall
-					</div>
-					<div>
-						<img className="tiles bottom-left-wall" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						bottom-left-wall
-					</div>
-					<div>
-						<img className="tiles bottom-wall-one" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						bottom-wall-one
-					</div>
-					<div>
-						<img className="tiles bottom-wall-two" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						bottom-wall-two
-					</div>
-					<div>
-						<img className="tiles bottom-wall-three" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						bottom-wall-three
-					</div>
-					<div>
-						<img className="tiles bottom-wall-four" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						bottom-wall-four
-					</div>
-					<div>
-						<img className="tiles bottom-right-wall" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						bottom-right-wall
-					</div>
-					<div>
-						<img className="tiles bottom-left-inverse-wall" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						bottom-left-inverse-wall
-					</div>
-					<div>
-						<img className="tiles bottom-right-inverse-wall" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						bottom-right-inverse-wall
-					</div>
-					<div>
-						<img className="tiles top-left-inverse-wall" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						top-left-inverse-wall
-					</div>
-					<div>
-						<img className="tiles top-right-inverse-wall" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						top-right-inverse-wall
-					</div>
-					<div>
-						<img className="tiles T-shaped-wall" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						T-shaped-wall
-					</div>
-					<div>
-						<img className="tiles left-door" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						left-door
-					</div>
-					<div>
-						<img className="tiles right-door" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						right-door
-					</div>
-					<div>
-						<img className="tiles top-bottom-door" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						top-bottom-door
-					</div>
-					<div>
-						<img className="tiles floor-one" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						floor-one
-					</div>
-					<div>
-						<img className="tiles floor-two" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						floor-two
-					</div>
-					<div>
-						<img className="tiles floor-three" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						floor-three
-					</div>
-					<div>
-						<img className="tiles floor-four" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						floor-four
-					</div>
-					<div>
-						<img className="tiles floor-five" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						floor-five
-					</div>
-					<div>
-						<img className="tiles floor-six" onClick={e => this.insertTile(e)} style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-						floor-six
-					</div>
+					{this.layoutTiles()}
 				</div>
 				<div className="existing-pieces">
 					<h3>Existing Pieces</h3>
