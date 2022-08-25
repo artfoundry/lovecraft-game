@@ -1,5 +1,5 @@
 import React from "react";
-import MapData from "./mapData";
+import * as MapData from "./mapData.json";
 import {Exit, LightElement, Player, Tile} from "./VisualElements";
 
 class Map extends React.Component {
@@ -8,9 +8,8 @@ class Map extends React.Component {
 
 		this.pageFirstLoaded = true;
 		this.initialMapLoad = true;
-
 		this.tileSize = 32;
-		this.mapPieces = MapData();
+		this.mapPieces = MapData;
 		this.mapTileLimit = 500;
 		this.firstPiecePosition = {xPos: 5, yPos: 5};
 		this.OPPOSITE_SIDE = {

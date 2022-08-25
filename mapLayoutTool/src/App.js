@@ -168,7 +168,6 @@ class Tool extends React.Component {
 				leftSide: 'wall'
 			}
 		}
-		this.pieceData = {};
 
 		this.socket = io(FILE_SERVER);
 		this.socket.on('connect', () => {
@@ -179,22 +178,25 @@ class Tool extends React.Component {
 		});
 
 		this.state = {
-			pieces: [],
-			gridCellNames: {},
-			gridCellNamesDone: false,
+			pieces: {},
+			piecesLoaded: false,
+			gridDataDone: false,
 			tileNameSelected: '',
-			gridTileIdSelected: ''
+			gridTileIdSelected: '',
+			pieceNameSelected: '',
+			gridPieceName: '',
+			gridPieceData: {}
 		};
 	}
 
-	populateCellsState() {
+	initGridCells = () => {
 		let cells = {};
 		for (let r = 0; r < 15; r++) {
 			for (let c = 0; c < 15; c++) {
-				cells[r + '-' + c] = {};
+				cells[c + '-' + r] = {};
 			}
 		}
-		this.setState({gridCellNames: cells, gridCellNamesDone: true});
+		this.setState({gridPieceData: cells, gridDataDone: true});
 	}
 
 	layoutTiles() {
@@ -203,12 +205,12 @@ class Tool extends React.Component {
 			tiles.push(
 				<div key={tileName}>
 					<img className={'tiles ' + tileName + (this.state.tileNameSelected === tileName && !this.state.gridTileIdSelected ? ' selected' : '')}
-					     onClick={e => {
-						     this.selectTile(e.target.classList[1], '');
+					     onClick={() => {
+							 this.state.tileNameSelected !== '' ? this.selectTile('', '') : this.selectTile(tileName, '');
 					     }}
 					     style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}}
 					/>
-					{tileName}
+					{tileName.replace(/-/g, ' ')}
 				</div>
 			)
 		}
@@ -220,21 +222,26 @@ class Tool extends React.Component {
 		const layoutRow = (r) => {
 			let row = [];
 			for (let c = 0; c < 15; c++) {
-				const id = r + '-' + c;
-				let classes = (this.state.tileNameSelected === this.state.gridCellNames[id].classes && this.state.gridTileIdSelected === id) ? ' selected' : '';
-				classes += Object.keys(this.state.gridCellNames[id]).length === 0 ?
-					this.state.gridCellNames[id] :
-					` tiles ${this.state.gridCellNames[id].classes}`;
+				const id = c + '-' + r;
+				const tileDataClasses = this.state.gridPieceData[id].classes || '';
+				let classes = this.state.gridTileIdSelected === id ? ' selected' : '';
+				classes += Object.keys(this.state.gridPieceData[id]).length === 0 ? '' : ` tiles ${tileDataClasses}`;
 				row.push(<GridCell
 					key={id}
 					idProp={id}
-					clickProp={e => {
-						if (e.target.classList.contains('tiles') &&
-							(this.state.tileNameSelected === '' || this.state.gridTileIdSelected === id))
-						{
-							this.selectTile(e.target.classList[2], id);
-						} else if (this.state.tileNameSelected !== '') {
-							this.insertTile(e.target.id);
+					clickProp={() => {
+						// if a tile already exists in this grid space
+						if (classes.includes('tiles')) {
+							// if neither tile template nor other grid tile is selected then select this grid tile
+							if (this.state.tileNameSelected === '' && this.state.gridTileIdSelected === '') {
+								this.selectTile('', id);
+							// or if the tile here is already selected, then unselect it
+							} else if (this.state.gridTileIdSelected === id) {
+								this.selectTile('', '');
+							}
+						// if a tile template is selected or a grid tile is selected, then insert tile here
+						} else if (this.state.tileNameSelected !== '' || this.state.gridTileIdSelected !== '') {
+							this.insertTile(id);
 						}
 					}}
 					classesProp={classes}
@@ -250,40 +257,74 @@ class Tool extends React.Component {
 	}
 
 	populatePieceList = () => {
-
+		this.socket.emit('load-pieces');
+		this.socket.on('sending-pieces', (data) => {
+			this.setState({pieces: JSON.parse(data), piecesLoaded: true});
+		});
 	}
 
-	showPiece() {
+	layoutPieces() {
+		let pieces = [];
+		for (const pieceName of Object.keys(this.state.pieces)) {
+			pieces.push(
+				<div key={pieceName}
+				     className={'piece' + (this.state.pieceNameSelected === pieceName ? ' selected' : '')}
+				     onClick={() => {
+						 if (this.state.pieceNameSelected !== pieceName) {
+							 this.showPiece(pieceName);
+						 }
+				     }}
+				>
+					{pieceName}
+				</div>
+			);
+		}
+		return pieces;
+	}
 
+	showPiece = (pieceName) => {
+		this.initGridCells();
+		this.setState({
+			pieceNameSelected: pieceName,
+			gridPieceName: pieceName
+		});
+		for (const [tilePos, tileData] of Object.entries(this.state.pieces[pieceName])) {
+			this.insertTile(tilePos, tileData);
+		}
 	}
 
 	selectTile = (tileName, tileId) => {
-		this.setState(prevState => ({
-			tileNameSelected: prevState.tileNameSelected === tileName ? '' : tileName,
+		this.setState({
+			tileNameSelected: tileName,
 			gridTileIdSelected: tileId
-		}));
+		});
 	}
 
-	insertTile = (id) => {
-		const pos = id;
-		let coords = pos.split('-');
+	// tile data is either imported from mapData file from server or from this.tileData,
+	// which is template data used for generating new pieces
+	insertTile = (tilePos, importedTileData = null) => {
+		const coords = tilePos.split('-');
 		const prevGridPos = this.state.gridTileIdSelected;
-		const tileName = this.state.tileNameSelected;
+		const tileData = importedTileData ? importedTileData :
+			this.state.tileNameSelected !== '' ? this.tileData[this.state.tileNameSelected] :
+			this.state.gridPieceData[prevGridPos];
 
 		this.setState(prevState => ({
-			gridCellNames: {
-				...prevState.gridCellNames,
-				[pos]: {
-					piece: '',
+			gridPieceData: {
+				...prevState.gridPieceData,
+				[tilePos]: {
+					piece: tileData.piece || '',
 					xPos: +coords[0],
 					yPos: +coords[1],
-					type: this.tileData[tileName].type,
-					walkable: this.tileData[tileName].walkable,
-					topSide: this.tileData[tileName].topSide,
-					rightSide: this.tileData[tileName].rightSide,
-					bottomSide: this.tileData[tileName].bottomSide,
-					leftSide: this.tileData[tileName].leftSide,
-					classes: tileName
+					type: tileData.type,
+					walkable: tileData.walkable,
+					topSide: tileData.topSide,
+					rightSide: tileData.rightSide,
+					bottomSide: tileData.bottomSide,
+					leftSide: tileData.leftSide,
+					classes: tileData.classes || 'floor',
+					altClasses: tileData.classes || {},
+					neighbors: tileData.neighbors || {}
 				}
 			},
 			tileNameSelected: '',
@@ -291,34 +332,105 @@ class Tool extends React.Component {
 		}));
 		if (prevGridPos !== '') {
 			this.setState(prevState => ({
-				gridCellNames: {
-					...prevState.gridCellNames,
+				gridPieceData: {
+					...prevState.gridPieceData,
 					[prevGridPos]: {}
 				}
 			}));
 		}
 	}
 
+	updatePieceName(value) {
+		this.setState({
+			gridPieceName: value,
+			pieceNameSelected: ''
+		});
+	}
+
+	updatePieceOptions(options) {
+
+	}
+
+	savePiece = () => {
+		let populatedGridTiles = {};
+
+		for (const [tilePos, tileData] of Object.entries(this.state.gridPieceData)) {
+			if (Object.keys(tileData).length > 0) {
+				populatedGridTiles[tilePos] = tileData;
+			}
+		}
+		this.setState(prevState => ({
+			pieces: {
+				...prevState.pieces,
+				[this.state.gridPieceName]: populatedGridTiles
+			}
+		}), () => {alert('Piece saved')});
+	}
+
+	deletePiece = () => {
+		let pieces = {...this.state.pieces};
+		delete pieces[this.state.gridPieceName];
+		this.setState({pieces, gridPieceName: '', gridPieceData: {}});
+		this.initGridCells();
+	}
+
+	deleteTile = () => {
+		const tileId = this.state.gridTileIdSelected;
+		this.setState(prevState => ({
+			gridPieceData: {...prevState.gridPieceData, [tileId]: {}},
+			gridTileIdSelected: ''
+		}));
+	}
+
 	componentDidMount() {
-		this.populateCellsState();
+		this.initGridCells();
 		this.populatePieceList();
 	}
 
 	render() {
 		return (
-			<div className="tool-container" style={{gridTemplateColumns: `auto ${this.tileSize * 15 + 'px'} auto`}}>
+			<div className="tool-container">
 				<div className="tiles-container">
 					{this.layoutTiles()}
 				</div>
 				<div className="existing-pieces">
 					<h3>Existing Pieces</h3>
-					{this.state.pieces}
+					{this.state.piecesLoaded && this.layoutPieces()}
 				</div>
 				<div className="grid">
-					{this.state.gridCellNamesDone && this.layoutGrid()}
+					{this.state.gridDataDone && this.layoutGrid()}
 				</div>
-				<div className="parameters">
-					<h3>Tile Parameters</h3>
+				<div className="piece-options">
+					<h3>Map Piece Options</h3>
+					<form onSubmit={e => {
+						e.preventDefault();
+						this.savePiece();
+					}}>
+						<label>
+							Name:
+							<input type="text" name="name" required size="15"
+							       onInput={e => {
+									   this.updatePieceName(e.target.value);
+								   }}
+							       value={this.state.gridPieceName ? this.state.gridPieceName : ''} />
+						</label>
+						<input className="button" type="submit" value="Save piece" />
+						<button className="delete-button" onClick={e => {
+							e.preventDefault();
+							this.deletePiece();
+						}}>Delete piece</button>
+						<button className="delete-button" onClick={this.initGridCells}>Clear grid</button>
+					</form>
+				</div>
+				<div className="tile-options">
+					<h3>Tile Options</h3>
+					<form>
+
+						<button className="delete-button" onClick={e => {
+							e.preventDefault();
+							this.deleteTile();
+						}}>Delete tile</button>
+					</form>
 				</div>
 			</div>
 		);

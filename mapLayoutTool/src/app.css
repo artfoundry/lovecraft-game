@@ -6,9 +6,13 @@ h3 {
 .tool-container {
 	display: grid;
 	gap: 10px;
+	grid-template-columns: auto 480px auto;
+	grid-template-rows: auto 170px 300px;
 	grid-template-areas:
     "pieces tiles tiles"
-    "pieces grid params";
+    "pieces grid piece-options"
+	"pieces grid tile-options";
+	padding: 10px;
 	background-color: gray;
 }
 
@@ -18,7 +22,7 @@ h3 {
 	font-size: 10px;
 	background-color: black;
 	color: white;
-	overflow-y: scroll;
+	overflow-y: auto;
 }
 
 .tiles-container div {
@@ -30,7 +34,18 @@ h3 {
 
 .existing-pieces {
 	grid-area: pieces;
-	padding: 10px;
+	max-height: 580px;
+	min-width: 150px;
+	font-size: 12px;
+	overflow-y: auto;
+}
+
+.piece {
+	margin: 5px;
+	padding: 5px;
+	background-color: darkgray;
+	cursor: pointer;
+	border: 1px gray solid;
 }
 
 .grid {
@@ -49,7 +64,38 @@ h3 {
 	border-image: none;
 }
 
-.parameters {
-	grid-area: params;
+.piece-options {
+	grid-area: piece-options;
+	padding-bottom: 10px;
+	font-size: 12px;
+	border-bottom: 1px black solid;
+	text-align: center;
+}
+
+.tile-options {
+	grid-area: tile-options;
+	min-height: 300px;
 	padding: 10px;
+	font-size: 12px;
+}
+
+form {
+	display: flex;
+	flex-direction: column;
+}
+
+input {
+	margin: 3px;
+}
+
+button, .button {
+	margin: 5px;
+	padding: 2px 5px;
+	border-radius: 5px;
+	border: 2px blue solid;
+	cursor: pointer;
+}
+
+.delete-button {
+	border: 2px red solid;
 }

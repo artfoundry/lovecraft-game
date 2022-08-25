@@ -18,11 +18,11 @@ let iosocket = null;
 
 /*************
  * loadComms
- * Starts Express game server, http port listening, io listening, and io socket for communicating with client.
+ * Starts Express game server, http port listening, io listening, and sets iosocket for communicating with client.
  ************/
 function loadComms() {
 	app.get('/', (req, res) => {
-		res.send('Org backend server started');
+		res.send('File access backend server started');
 	});
 
 	httpserver.listen(HTTP_PORT, () => console.log(`File access server listening on port ${HTTP_PORT}!`));
@@ -32,10 +32,22 @@ function loadComms() {
 
 		iosocket = socket;
 
-		// initListeners();
+		initListeners();
 	});
 	io.on('disconnect', () => {
-		console.log('disconnected');
+		console.log('disconnected from client');
+	});
+}
+
+function initListeners() {
+	iosocket.on('load-pieces', () => {
+		fs.readFile('mapData.json', 'utf8', (err, data) => {
+			if (err) {
+				console.log(err)
+			} else {
+				iosocket.emit('sending-pieces', data);
+			}
+		});
 	});
 }
 
