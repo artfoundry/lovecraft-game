@@ -224,8 +224,8 @@ class Tool extends React.Component {
 	layoutTiles() {
 		let tiles = [];
 		let classNames = '';
-		let selectedAltClasses = '';
 		for (const tileName of Object.keys(this.tileData)) {
+			let selectedAltClasses = '';
 			classNames = 'tiles ' + tileName;
 			if (this.state.altClassOpeningOneSelectMode || this.state.altClassOpeningTwoSelectMode || this.state.altClassBothOpeningsSelectMode) {
 				if (this.state.gridPieceData[this.state.gridTileIdSelected].altClasses[this.state.altClassOpeningOneSelected] === tileName) {
