@@ -185,28 +185,88 @@ class Tool extends React.Component {
 			gridTileIdSelected: '',
 			pieceNameSelected: '',
 			gridPieceName: '',
-			gridPieceData: {}
+			gridPieceData: {},
+			neighborSelectMode: false,
+			neighborTypeSelection: 'toDelete',
+			altClassOpeningOneSelectMode: false, // for selecting the 1st opening tile and template tile for setting alt class for when opening is closed
+			altClassOpeningTwoSelectMode: false, // for selecting a 2nd opening tile and template tile (if needed) for setting alt class for when opening is closed
+			altClassBothOpeningsSelectMode: false, // for selecting template tile to use when both opening tiles are closed
+			altClassOpeningOneSelected: '', // the 1st opening tile in the grid that, when closed, causes gridTileIdSelected to use alt class
+			altClassOpeningTwoSelected: '', // a 2nd opening tile in the grid that, when closed, causes gridTileIdSelected to use 2nd alt class
+			instructions: ''
 		};
 	}
 
-	initGridCells = () => {
+	initGridCells = (callback) => {
 		let cells = {};
 		for (let r = 0; r < 15; r++) {
 			for (let c = 0; c < 15; c++) {
 				cells[c + '-' + r] = {};
 			}
 		}
-		this.setState({gridPieceData: cells, gridDataDone: true});
+		this.setState({
+			gridPieceName: '',
+			gridPieceData: cells,
+			gridTileIdSelected: '',
+			pieceNameSelected: '',
+			neighborSelectMode: false,
+			altClassOpeningOneSelectMode: false,
+			altClassOpeningTwoSelectMode: false,
+			altClassBothOpeningsSelectMode: false,
+			altClassOpeningOneSelected: '',
+			altClassOpeningTwoSelected: '',
+			gridDataDone: true
+		}, () => {
+			if (callback) callback();
+		});
 	}
 
 	layoutTiles() {
 		let tiles = [];
+		let classNames = '';
 		for (const tileName of Object.keys(this.tileData)) {
+			let selectedAltClasses = '';
+			if (this.state.altClassOpeningOneSelectMode || this.state.altClassOpeningTwoSelectMode || this.state.altClassBothOpeningsSelectMode) {
+				if (this.state.gridPieceData[this.state.gridTileIdSelected].altClasses[this.state.altClassOpeningOneSelected] === tileName) {
+					selectedAltClasses += ' selected-alt-class-one';
+				} else if (this.state.gridPieceData[this.state.gridTileIdSelected].altClasses[this.state.altClassOpeningTwoSelected] === tileName) {
+					selectedAltClasses += ' selected-alt-class-two';
+				} else if (this.state.gridPieceData[this.state.gridTileIdSelected].altClasses.both === tileName) {
+					selectedAltClasses += ' selected-alt-class-both';
+				}
+			}
+			classNames = 'tiles ' + tileName + selectedAltClasses;
 			tiles.push(
 				<div key={tileName}>
-					<img className={'tiles ' + tileName + (this.state.tileNameSelected === tileName && !this.state.gridTileIdSelected ? ' selected' : '')}
+					<img className={classNames}
 					     onClick={() => {
-							 this.state.tileNameSelected !== '' ? this.selectTile('', '') : this.selectTile(tileName, '');
+						    if ((this.state.altClassOpeningOneSelectMode && this.state.altClassOpeningOneSelected !== '') ||
+							    (this.state.altClassOpeningTwoSelectMode && this.state.altClassOpeningTwoSelected !== '') ||
+							    (this.state.altClassBothOpeningsSelectMode)){
+								let altClassToSet = '';
+								if (this.state.altClassOpeningOneSelectMode) {
+									altClassToSet = this.state.altClassOpeningOneSelected;
+								} else if (this.state.altClassOpeningTwoSelectMode) {
+									altClassToSet = this.state.altClassOpeningTwoSelected;
+								} else if (this.state.altClassBothOpeningsSelectMode) {
+									altClassToSet = 'both';
+								}
+								this.setState(prevState => ({
+									gridPieceData: {
+										...prevState.gridPieceData,
+										[this.state.gridTileIdSelected]: {
+											...prevState.gridPieceData[this.state.gridTileIdSelected],
+											altClasses: {
+												...prevState.gridPieceData[this.state.gridTileIdSelected].altClasses,
+												[altClassToSet]: tileName
+											}
+										}
+									},
+									instructions: ''
+								}));
+						    } else {
+						        this.state.tileNameSelected !== '' ? this.selectTile('', '') : this.selectTile(tileName, '');
+						    }
 					     }}
 					     style={{width: this.tileSize + 'px', height: this.tileSize + 'px'}}
 					/>
@@ -219,41 +279,92 @@ class Tool extends React.Component {
 
 	layoutGrid() {
 		let gridCellEls = [];
-		const layoutRow = (r) => {
-			let row = [];
-			for (let c = 0; c < 15; c++) {
-				const id = c + '-' + r;
-				const tileDataClasses = this.state.gridPieceData[id].classes || '';
-				let classes = this.state.gridTileIdSelected === id ? ' selected' : '';
-				classes += Object.keys(this.state.gridPieceData[id]).length === 0 ? '' : ` tiles ${tileDataClasses}`;
-				row.push(<GridCell
-					key={id}
-					idProp={id}
-					clickProp={() => {
-						// if a tile already exists in this grid space
-						if (classes.includes('tiles')) {
-							// if neither tile template nor other grid tile is selected then select this grid tile
-							if (this.state.tileNameSelected === '' && this.state.gridTileIdSelected === '') {
-								this.selectTile('', id);
-							// or if the tile here is already selected, then unselect it
-							} else if (this.state.gridTileIdSelected === id) {
-								this.selectTile('', '');
-							}
-						// if a tile template is selected or a grid tile is selected, then insert tile here
-						} else if (this.state.tileNameSelected !== '' || this.state.gridTileIdSelected !== '') {
-							this.insertTile(id);
-						}
-					}}
-					classesProp={classes}
-					styleProp={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
-				);
-			}
-			return row;
-		}
+
 		for (let r = 0; r < 15; r++) {
-			gridCellEls.push(<div key={r} className="grid-row" style={{height: this.tileSize + 'px'}}>{layoutRow(r)}</div>);
+			gridCellEls.push(<div key={r} className="grid-row" style={{height: this.tileSize + 'px'}}>{this.layoutGridRow(r)}</div>);
 		}
 		return gridCellEls;
+	}
+
+	layoutGridRow(r) {
+		let row = [];
+		for (let c = 0; c < 15; c++) {
+			const id = c + '-' + r;
+			const tileDataClasses = this.state.gridPieceData[id].classes || '';
+			let classes = this.state.gridTileIdSelected === id ? ' selected' : '';
+			classes += Object.keys(this.state.gridPieceData[id]).length === 0 ? '' : ` tiles ${tileDataClasses}`;
+			if (this.state.neighborSelectMode) {
+				for (const [neighborType, neighborPosArray] of Object.entries(this.state.gridPieceData[this.state.gridTileIdSelected].neighbors)) {
+					if (neighborPosArray.includes(id) && neighborType === this.state.neighborTypeSelection) {
+						classes += ' selected-neighbor';
+						break;
+					}
+				}
+			} else if (this.state.altClassOpeningOneSelectMode || this.state.altClassOpeningTwoSelectMode || this.state.altClassBothOpeningsSelectMode) {
+				if (this.state.altClassOpeningOneSelected === id) {
+					classes += ' selected-alt-class-one';
+				} else if (this.state.altClassOpeningTwoSelected === id) {
+					classes += ' selected-alt-class-two';
+				}
+			}
+			row.push(<GridCell
+				key={id}
+				idProp={id}
+				clickProp={() => this.handleGridTileClick(classes, id)}
+				classesProp={classes}
+				styleProp={{width: this.tileSize + 'px', height: this.tileSize + 'px'}} />
+			);
+		}
+		return row;
+	}
+
+	handleGridTileClick(classes, id) {
+		if (classes.includes('tiles') && (this.state.neighborSelectMode ||
+			this.state.altClassOpeningOneSelectMode || this.state.altClassOpeningTwoSelectMode)) {
+			if (this.state.neighborSelectMode) {
+				let currentNeighborsState = [...this.state.gridPieceData[this.state.gridTileIdSelected].neighbors[this.state.neighborTypeSelection]]
+				if (currentNeighborsState.includes(id)) {
+					currentNeighborsState = currentNeighborsState.filter(tilePos => tilePos !== id);
+				} else {
+					currentNeighborsState.push(id);
+				}
+				this.setState(prevState => ({
+					gridPieceData: {
+						...prevState.gridPieceData,
+						[this.state.gridTileIdSelected]: {
+							...prevState.gridPieceData[this.state.gridTileIdSelected],
+							neighbors: {
+								...this.state.gridPieceData[this.state.gridTileIdSelected].neighbors,
+								[this.state.neighborTypeSelection]: currentNeighborsState
+							}
+						}
+					}
+				}));
+			} else if (this.state.altClassOpeningOneSelectMode) {
+				this.setState(prevState => ({
+					altClassOpeningOneSelected: prevState.altClassOpeningOneSelected === '' ? id : '',
+					instructions: 'Now select the alt class from the Tile Templates that will replace the tile highlighted in blue.'
+				}));
+			} else if (this.state.altClassOpeningTwoSelectMode) {
+				this.setState(prevState => ({
+					altClassOpeningTwoSelected: prevState.altClassOpeningTwoSelected === '' ? id : '',
+					instructions: 'Now select the alt class from the Tile Templates that will replace the tile highlighted in blue.'
+				}));
+			}
+		} else {
+			// if another grid tile is selected or neither tile template nor other grid tile is selected then select this grid tile
+			if (classes.includes('tiles') &&
+				((this.state.gridTileIdSelected !== id && this.state.gridTileIdSelected !== '') ||
+				(this.state.tileNameSelected === '' && this.state.gridTileIdSelected === ''))) {
+				this.selectTile('', id);
+			// or if the tile here is already selected, then unselect it
+			} else if (this.state.gridTileIdSelected === id) {
+				this.selectTile('', '');
+			// or if a tile template is selected or a grid tile is selected and space clicked on is empty, then insert tile here
+			} else if (this.state.tileNameSelected !== '' || (this.state.gridTileIdSelected !== '' && !classes.includes('tiles'))) {
+				this.insertTile(id);
+			}
+		}
 	}
 
 	populatePieceList = () => {
@@ -267,30 +378,32 @@ class Tool extends React.Component {
 		let pieces = [];
 		for (const pieceName of Object.keys(this.state.pieces)) {
 			pieces.push(
-				<div key={pieceName}
+				<button key={pieceName}
 				     className={'piece' + (this.state.pieceNameSelected === pieceName ? ' selected' : '')}
+				     disabled={this.state.altClassOpeningOneSelectMode ||
+				            this.state.altClassOpeningTwoSelectMode ||
+				            this.state.altClassBothOpeningsSelectMode ||
+				            this.state.neighborSelectMode}
 				     onClick={() => {
-						 if (this.state.pieceNameSelected !== pieceName) {
-							 this.showPiece(pieceName);
-						 }
-				     }}
-				>
+					    this.showPiece(pieceName);
+					 }}>
 					{pieceName}
-				</div>
+				</button>
 			);
 		}
 		return pieces;
 	}
 
 	showPiece = (pieceName) => {
-		this.initGridCells();
-		this.setState({
-			pieceNameSelected: pieceName,
-			gridPieceName: pieceName
+		this.initGridCells(() => {
+			this.setState({
+				pieceNameSelected: pieceName,
+				gridPieceName: pieceName
+			});
+			for (const [tilePos, tileData] of Object.entries(this.state.pieces[pieceName])) {
+				this.insertTile(tilePos, tileData);
+			}
 		});
-		for (const [tilePos, tileData] of Object.entries(this.state.pieces[pieceName])) {
-			this.insertTile(tilePos, tileData);
-		}
 	}
 
 	selectTile = (tileName, tileId) => {
@@ -323,7 +436,7 @@ class Tool extends React.Component {
 					bottomSide: tileData.bottomSide,
 					leftSide: tileData.leftSide,
 					classes: tileData.classes || 'floor',
-					altClasses: tileData.classes || {},
+					altClasses: tileData.altClasses || {},
 					neighbors: tileData.neighbors || {}
 				}
 			},
@@ -347,15 +460,21 @@ class Tool extends React.Component {
 		});
 	}
 
-	updatePieceOptions(options) {
-
-	}
-
 	savePiece = () => {
 		let populatedGridTiles = {};
 
 		for (const [tilePos, tileData] of Object.entries(this.state.gridPieceData)) {
 			if (Object.keys(tileData).length > 0) {
+				const coords = tilePos.split('-');
+				const topTilePos = +coords[0] + '-' + (+coords[1] - 1);
+				const rightTilePos = (+coords[0] + 1) + '-' + +coords[1];
+				const bottomTilePos = +coords[0] + '-' + (+coords[1] + 1);
+				const leftTilePos = (+coords[0] - 1) + '-' + +coords[1];
+				tileData.topSide = this.getSideType(topTilePos);
+				tileData.rightSide = this.getSideType(rightTilePos);
+				tileData.bottomSide = this.getSideType(bottomTilePos);
+				tileData.leftSide = this.getSideType(leftTilePos);
+				tileData.piece = this.state.gridPieceName;
 				populatedGridTiles[tilePos] = tileData;
 			}
 		}
@@ -363,8 +482,21 @@ class Tool extends React.Component {
 			pieces: {
 				...prevState.pieces,
 				[this.state.gridPieceName]: populatedGridTiles
-			}
-		}), () => {alert('Piece saved')});
+			},
+			instructions: 'Piece saved'
+		}));
+	}
+
+	getSideType(tilePos) {
+		let side = ''; // default value for target tile being floor/door
+
+		// if target tile is nonexistent (off grid) or empty
+		if (!this.state.gridPieceData[tilePos] || Object.keys(this.state.gridPieceData[tilePos]).length === 0) {
+			side = 'opening';
+		} else if (this.state.gridPieceData[tilePos].type === 'wall') {
+			side = 'wall';
+		}
+		return side;
 	}
 
 	deletePiece = () => {
@@ -382,6 +514,12 @@ class Tool extends React.Component {
 		}));
 	}
 
+	changeNeighborSelectionType(e) {
+		if (e.target.checked) {
+			this.setState({neighborTypeSelection: e.target.value});
+		}
+	}
+
 	componentDidMount() {
 		this.initGridCells();
 		this.populatePieceList();
@@ -390,16 +528,21 @@ class Tool extends React.Component {
 	render() {
 		return (
 			<div className="tool-container">
+
 				<div className="tiles-container">
+					<h3>Tile Templates</h3>
 					{this.layoutTiles()}
 				</div>
+
 				<div className="existing-pieces">
 					<h3>Existing Pieces</h3>
 					{this.state.piecesLoaded && this.layoutPieces()}
 				</div>
+
 				<div className="grid">
 					{this.state.gridDataDone && this.layoutGrid()}
 				</div>
+
 				<div className="piece-options">
 					<h3>Map Piece Options</h3>
 					<form onSubmit={e => {
@@ -414,23 +557,181 @@ class Tool extends React.Component {
 								   }}
 							       value={this.state.gridPieceName ? this.state.gridPieceName : ''} />
 						</label>
-						<input className="button" type="submit" value="Save piece" />
-						<button className="delete-button" onClick={e => {
-							e.preventDefault();
-							this.deletePiece();
-						}}>Delete piece</button>
-						<button className="delete-button" onClick={this.initGridCells}>Clear grid</button>
+						<button type="submit" value="Save piece"
+						        disabled={this.state.gridPieceName === ''||
+						                this.state.altClassOpeningOneSelectMode ||
+								        this.state.altClassOpeningOneSelectMode ||
+								        this.state.altClassOpeningTwoSelectMode ||
+								        this.state.altClassBothOpeningsSelectMode ||
+								        this.state.neighborSelectMode}>
+							Save piece
+						</button>
+						<button className="delete-button"
+						        disabled={this.state.altClassOpeningOneSelectMode ||
+						        this.state.altClassOpeningOneSelectMode ||
+						        this.state.altClassOpeningTwoSelectMode ||
+						        this.state.altClassBothOpeningsSelectMode ||
+						        this.state.neighborSelectMode}
+						        onClick={e => {
+									e.preventDefault();
+									this.deletePiece();
+								}}>
+							Delete piece
+						</button>
+						<button className="delete-button"
+						        disabled={this.state.altClassOpeningOneSelectMode ||
+								        this.state.altClassOpeningOneSelectMode ||
+								        this.state.altClassOpeningTwoSelectMode ||
+								        this.state.altClassBothOpeningsSelectMode ||
+								        this.state.neighborSelectMode}
+						        onClick={(e) => {
+							        e.preventDefault();
+									this.initGridCells();
+						        }}>
+							Clear grid
+						</button>
 					</form>
 				</div>
+
 				<div className="tile-options">
 					<h3>Tile Options</h3>
 					<form>
-
-						<button className="delete-button" onClick={e => {
-							e.preventDefault();
-							this.deleteTile();
-						}}>Delete tile</button>
+						<div className="subsection">
+							<fieldset>
+								<legend>Set neighbors:</legend>
+								<div>
+									<input id="neighbor-to-delete"
+									       type="radio" name="neighbor-type" value="toDelete"
+									       defaultChecked
+									       onChange={e => {this.changeNeighborSelectionType(e)}} />
+									<label htmlFor="neighbor-to-delete">To delete</label>
+								</div>
+								<div>
+									<input id="neighbor-to-change-class"
+									       type="radio" name="neighbor-type" value="toChangeClass"
+									       onChange={e => {this.changeNeighborSelectionType(e)}} />
+									<label htmlFor="neighbor-to-change-class">To change class</label>
+								</div>
+								<div>
+									<input id="neighbor-to-change-side-type"
+									       type="radio" name="neighbor-type" value="toChangeSideType"
+									       onChange={e => {this.changeNeighborSelectionType(e)}} />
+									<label htmlFor="neighbor-to-change-side-type">To change side type</label>
+								</div>
+								<div>
+									<input id="neighbor-to-change-type"
+									       type="radio" name="neighbor-type" value="toChangeType"
+									       onChange={e => {this.changeNeighborSelectionType(e)}} />
+									<label htmlFor="neighbor-to-change-type">To change type</label>
+								</div>
+								<button className={'multi-select-button' + (this.state.neighborSelectMode ? ' select-mode' : '')}
+								        disabled={this.state.gridTileIdSelected === '' ||
+										        this.state.altClassOpeningOneSelectMode ||
+										        this.state.altClassOpeningTwoSelectMode ||
+										        this.state.altClassBothOpeningsSelectMode}
+								        onClick={e => {
+											e.preventDefault();
+											this.setState(prevState => ({neighborSelectMode: !prevState.neighborSelectMode}));
+										}}>
+									Select tiles
+								</button>
+							</fieldset>
+						</div>
+						<div className="subsection">
+							<fieldset>
+								<legend>Set alt classes:</legend>
+								<div className="alt-class-opening-one">
+									<input id="set-opening-one"
+									       type="radio" name="set-alt-classes" value="openingOne"
+									       defaultChecked
+									       onClick={() => {
+											   if (this.state.altClassOpeningTwoSelectMode || this.state.altClassBothOpeningsSelectMode) {
+												   this.setState({
+													   altClassOpeningOneSelectMode: true,
+													   altClassOpeningTwoSelectMode: false,
+													   altClassBothOpeningsSelectMode: false,
+													   instructions: 'First select the opening tile in the grid that, when closed, causes this tile to use its alt class'
+												   });
+											   }
+									       }}/>
+									<label htmlFor="set-opening-one"><b>Opening one: </b></label>
+									<span>{this.state.altClassOpeningOneSelected} </span>
+								</div>
+								<div className="alt-class-opening-two">
+									<input id="set-opening-two"
+									       type="radio" name="set-alt-classes" value="openingTwo"
+									       onClick={() => {
+											   if (this.state.altClassOpeningOneSelectMode || this.state.altClassBothOpeningsSelectMode) {
+											       this.setState({
+												       altClassOpeningOneSelectMode: false,
+												       altClassOpeningTwoSelectMode: true,
+												       altClassBothOpeningsSelectMode: false,
+												       instructions: 'First select the opening tile in the grid that, when closed, causes this tile to use its alt class'
+											       });
+											   }
+									       }}/>
+									<label htmlFor="set-opening-two"><b>Opening two: </b></label>
+									<span>{this.state.altClassOpeningTwoSelected} </span>
+								</div>
+								<div className="alt-class-opening-both">
+									<input id="set-opening-both"
+									       type="radio" name="set-alt-classes" value="openingBoth"
+									       onClick={() => {
+										       if (this.state.altClassOpeningOneSelectMode || this.state.altClassOpeningTwoSelectMode) {
+											       this.setState({
+												       altClassOpeningOneSelectMode: false,
+												       altClassOpeningTwoSelectMode: false,
+												       altClassBothOpeningsSelectMode: true,
+												       instructions: 'Only need to select a Template tile for this'
+											       });
+										       }
+									       }}/>
+									<label htmlFor="set-opening-both"><b>Both</b></label>
+								</div>
+								<button className={'multi-select-button' +
+										(this.state.altClassOpeningOneSelectMode ||
+										this.state.altClassOpeningTwoSelectMode ||
+										this.state.altClassBothOpeningsSelectMode ? ' select-mode' : '')}
+								        disabled={this.state.gridTileIdSelected === '' || this.state.neighborSelectMode}
+								        onClick={e => {
+											e.preventDefault();
+											let instructions = '';
+											let altClassOpeningOneSelectMode = false;
+											const altClassOpeningTwoSelectMode = false;
+											const altClassBothOpeningsSelectMode = false;
+											if (!this.state.altClassOpeningOneSelectMode && !this.state.altClassOpeningTwoSelectMode) {
+									            instructions = 'First select the opening tile in the grid that, when closed, causes this tile to use its alt class';
+												altClassOpeningOneSelectMode = true;
+											}
+											this.setState({
+												altClassOpeningOneSelected: '',
+												altClassOpeningTwoSelected: '',
+												altClassOpeningOneSelectMode,
+												altClassOpeningTwoSelectMode,
+												altClassBothOpeningsSelectMode,
+												instructions
+											});
+										}}>
+									Select template as alt
+								</button>
+							</fieldset>
+						</div>
+						<button className="delete-button"
+						        disabled={this.state.gridTileIdSelected === '' ||
+						                this.state.altClassOpeningOneSelectMode ||
+						                this.state.altClassOpeningTwoSelectMode ||
+						                this.state.altClassBothOpeningsSelectMode ||
+						                this.state.neighborSelectMode}
+						        onClick={e => {
+									e.preventDefault();
+									this.deleteTile();}}>
+							Delete tile
+						</button>
 					</form>
+				</div>
+				<div className={'instructions' + (this.state.instructions === '' ? ' hidden' : '')}
+					onClick={e => this.setState({instructions: ''})}>
+					{this.state.instructions}
 				</div>
 			</div>
 		);
