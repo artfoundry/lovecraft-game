@@ -224,8 +224,9 @@ class Tool extends React.Component {
 	layoutTiles() {
 		let tiles = [];
 		let classNames = '';
+		let selectedAltClasses = '';
 		for (const tileName of Object.keys(this.tileData)) {
-			let selectedAltClasses = '';
+			classNames = 'tiles ' + tileName;
 			if (this.state.altClassOpeningOneSelectMode || this.state.altClassOpeningTwoSelectMode || this.state.altClassBothOpeningsSelectMode) {
 				if (this.state.gridPieceData[this.state.gridTileIdSelected].altClasses[this.state.altClassOpeningOneSelected] === tileName) {
 					selectedAltClasses += ' selected-alt-class-one';
@@ -234,15 +235,17 @@ class Tool extends React.Component {
 				} else if (this.state.gridPieceData[this.state.gridTileIdSelected].altClasses.both === tileName) {
 					selectedAltClasses += ' selected-alt-class-both';
 				}
+				classNames += selectedAltClasses;
+			} else if (this.state.tileNameSelected === tileName) {
+				classNames += ' selected';
 			}
-			classNames = 'tiles ' + tileName + selectedAltClasses;
 			tiles.push(
 				<div key={tileName}>
 					<img className={classNames}
 					     onClick={() => {
 						    if ((this.state.altClassOpeningOneSelectMode && this.state.altClassOpeningOneSelected !== '') ||
 							    (this.state.altClassOpeningTwoSelectMode && this.state.altClassOpeningTwoSelected !== '') ||
-							    (this.state.altClassBothOpeningsSelectMode)){
+							    (this.state.altClassBothOpeningsSelectMode)) {
 								let altClassToSet = '';
 								if (this.state.altClassOpeningOneSelectMode) {
 									altClassToSet = this.state.altClassOpeningOneSelected;
@@ -322,11 +325,14 @@ class Tool extends React.Component {
 		if (classes.includes('tiles') && (this.state.neighborSelectMode ||
 			this.state.altClassOpeningOneSelectMode || this.state.altClassOpeningTwoSelectMode)) {
 			if (this.state.neighborSelectMode) {
-				let currentNeighborsState = [...this.state.gridPieceData[this.state.gridTileIdSelected].neighbors[this.state.neighborTypeSelection]]
-				if (currentNeighborsState.includes(id)) {
-					currentNeighborsState = currentNeighborsState.filter(tilePos => tilePos !== id);
+				let currentNeighborsState = {...this.state.gridPieceData[this.state.gridTileIdSelected].neighbors};
+				if (currentNeighborsState[this.state.neighborTypeSelection] && currentNeighborsState[this.state.neighborTypeSelection].includes(id)) {
+					currentNeighborsState[this.state.neighborTypeSelection] = currentNeighborsState[this.state.neighborTypeSelection].filter(tilePos => tilePos !== id);
 				} else {
-					currentNeighborsState.push(id);
+					if (!currentNeighborsState[this.state.neighborTypeSelection]) {
+						currentNeighborsState = {...currentNeighborsState, [this.state.neighborTypeSelection]: []};
+					}
+					currentNeighborsState[this.state.neighborTypeSelection].push(id);
 				}
 				this.setState(prevState => ({
 					gridPieceData: {
@@ -335,7 +341,7 @@ class Tool extends React.Component {
 							...prevState.gridPieceData[this.state.gridTileIdSelected],
 							neighbors: {
 								...this.state.gridPieceData[this.state.gridTileIdSelected].neighbors,
-								[this.state.neighborTypeSelection]: currentNeighborsState
+								[this.state.neighborTypeSelection]: currentNeighborsState[this.state.neighborTypeSelection]
 							}
 						}
 					}
@@ -371,6 +377,9 @@ class Tool extends React.Component {
 		this.socket.emit('load-pieces');
 		this.socket.on('sending-pieces', (data) => {
 			this.setState({pieces: JSON.parse(data), piecesLoaded: true});
+		});
+		this.socket.on('data-saved', () => {
+			this.setState({instructions: 'Map data saved successfully'});
 		});
 	}
 
@@ -484,7 +493,9 @@ class Tool extends React.Component {
 				[this.state.gridPieceName]: populatedGridTiles
 			},
 			instructions: 'Piece saved'
-		}));
+		}), () => {
+			this.socket.emit('save-map-data', JSON.stringify(this.state.pieces));
+		});
 	}
 
 	getSideType(tilePos) {
@@ -502,7 +513,9 @@ class Tool extends React.Component {
 	deletePiece = () => {
 		let pieces = {...this.state.pieces};
 		delete pieces[this.state.gridPieceName];
-		this.setState({pieces, gridPieceName: '', gridPieceData: {}});
+		this.setState({pieces, gridPieceName: '', gridPieceData: {}}, () => {
+			this.socket.emit('save-map-data', JSON.stringify(this.state.pieces));
+		});
 		this.initGridCells();
 	}
 

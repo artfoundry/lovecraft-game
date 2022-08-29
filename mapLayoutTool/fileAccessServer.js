@@ -49,6 +49,15 @@ function initListeners() {
 			}
 		});
 	});
+	iosocket.on('save-map-data', (data) => {
+		fs.writeFile('mapData.json', data, err => {
+			if (err) {
+				console.log(err)
+			} else {
+				iosocket.emit('data-saved');
+			}
+		});
+	});
 }
 
 loadComms();
