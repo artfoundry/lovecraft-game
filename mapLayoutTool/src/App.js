@@ -479,10 +479,10 @@ class Tool extends React.Component {
 				const rightTilePos = (+coords[0] + 1) + '-' + +coords[1];
 				const bottomTilePos = +coords[0] + '-' + (+coords[1] + 1);
 				const leftTilePos = (+coords[0] - 1) + '-' + +coords[1];
-				tileData.topSide = this.getSideType(topTilePos);
-				tileData.rightSide = this.getSideType(rightTilePos);
-				tileData.bottomSide = this.getSideType(bottomTilePos);
-				tileData.leftSide = this.getSideType(leftTilePos);
+				tileData.topSide = this.getSideType(tilePos, topTilePos, 'top');
+				tileData.rightSide = this.getSideType(tilePos, rightTilePos, 'right');
+				tileData.bottomSide = this.getSideType(tilePos, bottomTilePos, 'bottom');
+				tileData.leftSide = this.getSideType(tilePos, leftTilePos, 'left');
 				tileData.piece = this.state.gridPieceName;
 				populatedGridTiles[tilePos] = tileData;
 			}
@@ -491,21 +491,30 @@ class Tool extends React.Component {
 			pieces: {
 				...prevState.pieces,
 				[this.state.gridPieceName]: populatedGridTiles
-			},
-			instructions: 'Piece saved'
+			}
 		}), () => {
 			this.socket.emit('save-map-data', JSON.stringify(this.state.pieces));
 		});
 	}
 
-	getSideType(tilePos) {
-		let side = ''; // default value for target tile being floor/door
+	getSideType(mainTilePos, sideTilePos, direction) {
+		let side = this.state.gridPieceData[mainTilePos].type === 'wall' ? 'wall' : '';
 
-		// if target tile is nonexistent (off grid) or empty
-		if (!this.state.gridPieceData[tilePos] || Object.keys(this.state.gridPieceData[tilePos]).length === 0) {
+		// if side tile is nonexistent (off grid) or empty and either main tile is floor or
+		// main tile is a door facing the direction of the side tile, then the side is an opening
+		if ((!this.state.gridPieceData[sideTilePos] || Object.keys(this.state.gridPieceData[sideTilePos]).length === 0) && (
+			this.state.gridPieceData[mainTilePos].type === 'floor' ||
+			((direction === 'top' || direction === 'bottom') && this.state.gridPieceData[mainTilePos].classes === 'top-bottom-door') ||
+			(direction === 'right' && this.state.gridPieceData[mainTilePos].classes === 'right-door') ||
+			(direction === 'left' && this.state.gridPieceData[mainTilePos].classes === 'left-door')))
+		{
 			side = 'opening';
-		} else if (this.state.gridPieceData[tilePos].type === 'wall') {
-			side = 'wall';
+		} else if (this.state.gridPieceData[sideTilePos] && Object.keys(this.state.gridPieceData[sideTilePos]).length > 0) {
+			if (this.state.gridPieceData[sideTilePos].type === 'wall') {
+				side = 'wall';
+			} else if (this.state.gridPieceData[sideTilePos].type === 'door') {
+				side = 'door';
+			}
 		}
 		return side;
 	}
