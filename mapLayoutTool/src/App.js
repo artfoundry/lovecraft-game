@@ -383,7 +383,7 @@ class Tool extends React.Component {
 					instructions: 'Now select the alt class from the Tile Templates that will replace the tile highlighted in blue.'
 				}));
 			}
-		} else {
+		} else if (!this.state.altClassOpeningOneSelectMode && !this.state.altClassOpeningTwoSelectMode && !this.state.altClassBothOpeningsSelectMode) {
 			// if another grid tile is selected or neither tile template nor other grid tile is selected then select this grid tile
 			if (classes.includes('tiles') &&
 				((this.state.gridTileIdSelected !== id && this.state.gridTileIdSelected !== '') ||
