@@ -763,7 +763,7 @@ class Tool extends React.Component {
 												instructions
 											});
 										}}>
-									Select template as alt
+									Select alts
 								</button>
 							</fieldset>
 						</div>
