@@ -1,0 +1,163 @@
+h3 {
+	text-align: center;
+	margin-top: 0;
+}
+
+.tool-container {
+	display: grid;
+	gap: 10px;
+	grid-template-columns: auto 480px auto;
+	grid-template-rows: 80px 170px auto;
+	grid-template-areas:
+    "pieces tiles tiles"
+    "pieces grid piece-options"
+	"pieces grid tile-options";
+	justify-items: center;
+	padding: 10px;
+	background-color: gray;
+}
+
+.tiles-container {
+	grid-area: tiles;
+	padding: 5px;
+	font-size: 10px;
+	background-color: black;
+	color: white;
+	overflow-y: auto;
+	text-align: center;
+}
+
+.tiles-container div {
+	display: inline-flex;
+	flex-direction: column;
+	align-items: center;
+	margin: 5px;
+}
+
+.existing-pieces {
+	grid-area: pieces;
+	max-height: 630px;
+	min-width: 100px;
+	font-size: 12px;
+	overflow-y: auto;
+	text-align: center;
+}
+
+.piece {
+	margin: 5px;
+	padding: 5px;
+	background-color: darkgray;
+	cursor: pointer;
+	border: 1px gray solid;
+}
+
+.grid {
+	grid-area: grid;
+	display: flex;
+	flex-direction: column;
+	text-align: center;
+	background-color: black;
+	cursor: pointer;
+}
+
+.grid-cell {
+	display: inline-block;
+	box-sizing: border-box;
+	border: none;
+	border-image: none;
+}
+
+.piece-options {
+	grid-area: piece-options;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	width: 100%;
+	padding: 10px;
+	font-size: 12px;
+	text-align: center;
+	background-color: darkgrey;
+	box-sizing: border-box;
+}
+
+.tile-options {
+	grid-area: tile-options;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	width: 100%;
+	padding: 10px;
+	font-size: 12px;
+	background-color: darkgrey;
+	box-sizing: border-box;
+}
+
+.subsection {
+	padding-top: 5px;
+	padding-bottom: 5px;
+}
+
+.instructions {
+	position: absolute;
+	width: 200px;
+	height: 100px;
+	padding: 10px;
+	left: calc(50% - 100px);
+	top: 50%;
+	border: 2px yellow solid;
+	border-radius: 5px;
+	background-color: white;
+	color: black;
+	z-index: 2;
+}
+
+fieldset {
+	text-align: left;
+}
+
+input {
+	margin: 3px;
+}
+
+select {
+	width: 60px;
+}
+
+button, .button {
+	width: 130px;
+	margin: 5px;
+	padding: 2px 5px;
+	border-radius: 5px;
+	border: 2px blue solid;
+	cursor: pointer;
+	font-size: 11px;
+}
+
+.delete-button {
+	border-color: red;
+}
+
+.multi-select-button, .neighbor-tile {
+	border-color: yellow;
+}
+
+.select-mode {
+	background-color: lightyellow;
+}
+
+.alt-class-opening-one {
+	color: teal;
+}
+
+.alt-class-opening-two {
+	color: crimson;
+}
+
+.alt-class-opening-both {
+	color: green;
+}
+
+.hidden {
+	display: none;
+}

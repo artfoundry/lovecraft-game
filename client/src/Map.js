@@ -1,5 +1,5 @@
 import React from "react";
-import MapData from "./mapData";
+import * as MapData from "./mapData.json";
 import {Exit, LightElement, Player, Tile} from "./VisualElements";
 
 class Map extends React.Component {
@@ -8,9 +8,8 @@ class Map extends React.Component {
 
 		this.pageFirstLoaded = true;
 		this.initialMapLoad = true;
-
 		this.tileSize = 32;
-		this.mapPieces = MapData();
+		this.mapPieces = MapData;
 		this.mapTileLimit = 500;
 		this.firstPiecePosition = {xPos: 5, yPos: 5};
 		this.OPPOSITE_SIDE = {
@@ -128,7 +127,6 @@ class Map extends React.Component {
 		while (mapTilesAvailableForPiece < numOfTilesInPiece && mapOpeningsCounter < mapOpenings.length) {
 			mapOpening = mapOpenings[mapOpeningsCounter];
 			const mapOpeningTileCoords = Object.keys(mapOpening)[0].split('-');
-			mapOpeningTileCoords.forEach((coord,i,arr) => arr[i] = +coord);
 
 			// for a map opening, check each piece opening to see if piece fits there
 			// if mapTilesAvailableForPiece == numOfTilesInPiece, then piece fits in the map and can stop looking
@@ -144,8 +142,8 @@ class Map extends React.Component {
 					const xAdjust = mapOpeningOpenSide === 'leftSide' ? -1 : mapOpeningOpenSide === 'rightSide' ? 1 : 0;
 					const yAdjust = mapOpeningOpenSide === 'topSide' ? -1 : mapOpeningOpenSide === 'bottomSide' ? 1 : 0;
 					// these are the coords for where in the map to place the piece's tile that contains the opening
-					const mapOpeningXOffset = mapOpeningTileCoords[0] + xAdjust;
-					const mapOpeningYOffset = mapOpeningTileCoords[1] + yAdjust;
+					const mapOpeningXOffset = +mapOpeningTileCoords[0] + xAdjust;
+					const mapOpeningYOffset = +mapOpeningTileCoords[1] + yAdjust;
 					const adjustedPieceOpeningCoords = mapOpeningXOffset + '-' + mapOpeningYOffset;
 					adjustedPieceOpening = {[adjustedPieceOpeningCoords]: pieceOpeningOpenSide};
 
@@ -287,15 +285,17 @@ class Map extends React.Component {
 							};
 						// or if it and neighbors will be deleted, then change neighboring door to wall
 						} else if (tileData.neighbors.toChangeType){
-							this.mapLayoutTemp[tileData.neighbors.toChangeType] = {
-								...this.mapLayoutTemp[tileData.neighbors.toChangeType],
-								type: 'wall',
-								walkable: false,
-								topSide: 'wall',
-								rightSide: 'wall',
-								bottomSide: 'wall',
-								leftSide: 'wall'
-							};
+							tileData.neighbors.toChangeType.forEach(tileToChange => {
+								this.mapLayoutTemp[tileToChange] = {
+									...this.mapLayoutTemp[tileToChange],
+									type: 'wall',
+									walkable: false,
+									topSide: 'wall',
+									rightSide: 'wall',
+									bottomSide: 'wall',
+									leftSide: 'wall'
+								};
+							});
 						}
 
 						// go through all neighbors and delete them or change class/side as specified in mapData
@@ -311,9 +311,6 @@ class Map extends React.Component {
 									newTileClasses = this.mapLayoutTemp[neighborLoc].altClasses.both;
 								}
 							}
-			if (newTileClasses.includes('right-wall') && this.mapLayoutTemp[neighborLoc].type === 'floor') {
-				console.log(tileData, this.mapLayoutTemp[neighborLoc])
-			}
 							this.mapLayoutTemp[neighborLoc].classes = newTileClasses;
 						});
 						if (tileData.neighbors.toDelete) {
@@ -321,7 +318,11 @@ class Map extends React.Component {
 								delete this.mapLayoutTemp[tileToDelete];
 							});
 						}
-						this.mapLayoutTemp[tileData.neighbors.toChangeSideType][tileSide] = 'wall';
+						if (tileData.neighbors.toChangeSideType) {
+							tileData.neighbors.toChangeSideType.forEach(tileToChange => {
+								this.mapLayoutTemp[tileToChange][tileSide] = 'wall';
+							});
+						}
 					}
 				}
 			}
@@ -446,6 +447,7 @@ class Map extends React.Component {
 					`${+coords[0]}-${+coords[1]+1}`,
 					`${+coords[0]+1}-${+coords[1]+1}`
 				].filter(tile => this.state.mapLayout[tile] && this.state.mapLayout[tile].type === 'wall');
+
 				surroundingTilesList.push(visitedTile);
 				surroundingTilesList.forEach(tile => {
 					surroundingTilesCoords[tile] = {

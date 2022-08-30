@@ -1,0 +1,117 @@
+.selected {
+	border: 1px blue solid;
+}
+
+.selected-neighbor {
+	border: 1px yellow solid
+}
+
+.selected-alt-class-one {
+	border: 1px teal solid;
+}
+
+.selected-alt-class-two {
+	border: 1px crimson solid;
+}
+
+.selected-alt-class-both {
+	border: 1px green solid;
+}
+
+.tiles {
+	content: url('../../assets/tilesets/Catacombs/catacombs.png');
+	cursor: pointer;
+	box-sizing: border-box;
+}
+
+/* FLOORS */
+
+.floor {
+	object-position: -128px -160px;
+	object-fit: none;
+}
+
+/* WALLS */
+
+.top-left-wall {
+	object-position: 0 0;
+	object-fit: none;
+}
+
+.top-wall {
+	object-position: -32px 0;
+	object-fit: none;
+}
+
+.top-right-wall {
+	object-position: -160px 0;
+	object-fit: none;
+}
+
+.left-wall {
+	object-position: 0 -32px;
+	object-fit: none;
+}
+
+.right-wall {
+	object-position: -160px -32px;
+	object-fit: none;
+}
+
+.bottom-left-wall {
+	object-position: 0 -64px;
+	object-fit: none;
+}
+
+.bottom-wall {
+	object-position: -32px -64px;
+	object-fit: none;
+}
+
+.bottom-right-wall {
+	object-position: -160px -64px;
+	object-fit: none;
+}
+
+.bottom-left-inverse-wall {
+	object-position: 0 -96px;
+	object-fit: none;
+}
+
+.bottom-right-inverse-wall {
+	object-position: -32px -96px;
+	object-fit: none;
+}
+
+.top-left-inverse-wall {
+	object-position: -64px -96px;
+	object-fit: none;
+}
+
+.top-right-inverse-wall {
+	object-position: -96px -96px;
+	object-fit: none;
+}
+
+.T-shaped-wall {
+	object-position: -128px -96px;
+	object-fit: none;
+}
+
+
+/* DOORS */
+
+.left-door {
+	object-position: -192px 0;
+	object-fit: none;
+}
+
+.right-door {
+	object-position: -224px 0;
+	object-fit: none;
+}
+
+.top-bottom-door {
+	object-position: -192px -32px;
+	object-fit: none;
+}
