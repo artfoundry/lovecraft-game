@@ -193,6 +193,9 @@ class Tool extends React.Component {
 			altClassBothOpeningsSelectMode: false, // for selecting template tile to use when both opening tiles are closed
 			altClassOpeningOneSelected: '', // the 1st opening tile in the grid that, when closed, causes gridTileIdSelected to use alt class
 			altClassOpeningTwoSelected: '', // a 2nd opening tile in the grid that, when closed, causes gridTileIdSelected to use 2nd alt class
+			altClassOne: '',
+			altClassTwo: '',
+			altClassBoth: '',
 			instructions: ''
 		};
 	}
@@ -205,16 +208,22 @@ class Tool extends React.Component {
 			}
 		}
 		this.setState({
-			gridPieceName: '',
-			gridPieceData: cells,
+			tileNameSelected: '',
 			gridTileIdSelected: '',
 			pieceNameSelected: '',
+			gridPieceName: '',
+			gridPieceData: cells,
 			neighborSelectMode: false,
-			altClassOpeningOneSelectMode: false,
-			altClassOpeningTwoSelectMode: false,
-			altClassBothOpeningsSelectMode: false,
-			altClassOpeningOneSelected: '',
-			altClassOpeningTwoSelected: '',
+			neighborTypeSelection: 'toDelete',
+			altClassOpeningOneSelectMode: false, // for selecting the 1st opening tile and template tile for setting alt class for when opening is closed
+			altClassOpeningTwoSelectMode: false, // for selecting a 2nd opening tile and template tile (if needed) for setting alt class for when opening is closed
+			altClassBothOpeningsSelectMode: false, // for selecting template tile to use when both opening tiles are closed
+			altClassOpeningOneSelected: '', // the 1st opening tile in the grid that, when closed, causes gridTileIdSelected to use alt class
+			altClassOpeningTwoSelected: '', // a 2nd opening tile in the grid that, when closed, causes gridTileIdSelected to use 2nd alt class
+			altClassOne: '',
+			altClassTwo: '',
+			altClassBoth: '',
+			instructions: '',
 			gridDataDone: true
 		}, () => {
 			if (callback) callback();
@@ -228,9 +237,9 @@ class Tool extends React.Component {
 			let selectedAltClasses = '';
 			classNames = 'tiles ' + tileName;
 			if (this.state.altClassOpeningOneSelectMode || this.state.altClassOpeningTwoSelectMode || this.state.altClassBothOpeningsSelectMode) {
-				if (this.state.gridPieceData[this.state.gridTileIdSelected].altClasses[this.state.altClassOpeningOneSelected] === tileName) {
+				if (this.state.altClassOpeningOneSelected !== '' && this.state.gridPieceData[this.state.gridTileIdSelected].altClasses[this.state.altClassOpeningOneSelected] === tileName) {
 					selectedAltClasses += ' selected-alt-class-one';
-				} else if (this.state.gridPieceData[this.state.gridTileIdSelected].altClasses[this.state.altClassOpeningTwoSelected] === tileName) {
+				} else if (this.state.altClassOpeningTwoSelected !== '' && this.state.gridPieceData[this.state.gridTileIdSelected].altClasses[this.state.altClassOpeningTwoSelected] === tileName) {
 					selectedAltClasses += ' selected-alt-class-two';
 				} else if (this.state.gridPieceData[this.state.gridTileIdSelected].altClasses.both === tileName) {
 					selectedAltClasses += ' selected-alt-class-both';
@@ -243,16 +252,19 @@ class Tool extends React.Component {
 				<div key={tileName}>
 					<img className={classNames}
 					     onClick={() => {
-						    if ((this.state.altClassOpeningOneSelectMode && this.state.altClassOpeningOneSelected !== '') ||
-							    (this.state.altClassOpeningTwoSelectMode && this.state.altClassOpeningTwoSelected !== '') ||
-							    (this.state.altClassBothOpeningsSelectMode)) {
+						    if (this.state.altClassOpeningOneSelected !== '' || this.state.altClassOpeningTwoSelected !== '' ||
+							    this.state.altClassBothOpeningsSelectMode) {
+								let openingTileToSet = '';
 								let altClassToSet = '';
 								if (this.state.altClassOpeningOneSelectMode) {
-									altClassToSet = this.state.altClassOpeningOneSelected;
+									openingTileToSet = this.state.altClassOpeningOneSelected;
+									altClassToSet = 'altClassOne';
 								} else if (this.state.altClassOpeningTwoSelectMode) {
-									altClassToSet = this.state.altClassOpeningTwoSelected;
+									openingTileToSet = this.state.altClassOpeningTwoSelected;
+									altClassToSet = 'altClassTwo';
 								} else if (this.state.altClassBothOpeningsSelectMode) {
-									altClassToSet = 'both';
+									openingTileToSet = 'both';
+									altClassToSet = 'altClassBoth';
 								}
 								this.setState(prevState => ({
 									gridPieceData: {
@@ -261,13 +273,14 @@ class Tool extends React.Component {
 											...prevState.gridPieceData[this.state.gridTileIdSelected],
 											altClasses: {
 												...prevState.gridPieceData[this.state.gridTileIdSelected].altClasses,
-												[altClassToSet]: tileName
+												[openingTileToSet]: tileName
 											}
 										}
 									},
+									[altClassToSet]: tileName,
 									instructions: ''
 								}));
-						    } else {
+						    } else if (!this.state.altClassOpeningOneSelectMode && !this.state.altClassOpeningTwoSelectMode && !this.state.altClassBothOpeningsSelectMode) {
 						        this.state.tileNameSelected !== '' ? this.selectTile('', '') : this.selectTile(tileName, '');
 						    }
 					     }}
@@ -294,8 +307,21 @@ class Tool extends React.Component {
 		for (let c = 0; c < 15; c++) {
 			const id = c + '-' + r;
 			const tileDataClasses = this.state.gridPieceData[id].classes || '';
-			let classes = this.state.gridTileIdSelected === id ? ' selected' : '';
-			classes += Object.keys(this.state.gridPieceData[id]).length === 0 ? '' : ` tiles ${tileDataClasses}`;
+			let classes = Object.keys(this.state.gridPieceData[id]).length > 0 ? ' tiles' : '';
+			// if alt class selection mode is on and an alt class has been selected, show that class in the grid
+			if (this.state.gridTileIdSelected === id && this.state.altClassOpeningOneSelectMode && this.state.altClassOne !== '') {
+				classes += ` ${this.state.altClassOne}`;
+			} else if (this.state.gridTileIdSelected === id && this.state.altClassOpeningTwoSelectMode && this.state.altClassTwo !== '') {
+				classes += ` ${this.state.altClassTwo}`;
+			} else if (this.state.gridTileIdSelected === id && this.state.altClassBothOpeningsSelectMode && this.state.altClassBoth !== ''){
+				classes += ` ${this.state.altClassBoth}`;
+			// otherwise show the tile's normal class
+			} else {
+				classes += ` ${tileDataClasses}`;
+			}
+			if (this.state.gridTileIdSelected === id) {
+				classes += ' selected';
+			}
 			if (this.state.neighborSelectMode) {
 				for (const [neighborType, neighborPosArray] of Object.entries(this.state.gridPieceData[this.state.gridTileIdSelected].neighbors)) {
 					if (neighborPosArray.includes(id) && neighborType === this.state.neighborTypeSelection) {
@@ -728,6 +754,9 @@ class Tool extends React.Component {
 											this.setState({
 												altClassOpeningOneSelected: '',
 												altClassOpeningTwoSelected: '',
+												altClassOne: '',
+												altClassTwo: '',
+												altClassBoth: '',
 												altClassOpeningOneSelectMode,
 												altClassOpeningTwoSelectMode,
 												altClassBothOpeningsSelectMode,
