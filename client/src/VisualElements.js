@@ -29,7 +29,7 @@ function Tile(props) {
 		<div className={`tile ${props.classStrProp}${randomizedVariantSuffix}`}
 		     style={{...props.styleProp, fontSize: '18px'}}
 		     data-tile-num={props.tileNameProp}
-		     onClick={(e) => {
+		     onClick={e => {
 			     props.placePlayerProp(props.tileNameProp, e);
 		     }}>
 		</div>
