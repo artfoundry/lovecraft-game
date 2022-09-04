@@ -31,8 +31,13 @@ function Tile(props) {
 		     data-tile-num={props.tileNameProp}
 		     onClick={(e) => {
 			     props.placePlayerProp(props.tileNameProp, e);
-		     }} />
+		     }}>
+		</div>
 	);
+}
+
+function Door(props) {
+	return (<div className={props.classProp} style={props.styleProp} />);
 }
 
 function LightElement(props) {
@@ -43,4 +48,4 @@ function LightElement(props) {
 	);
 }
 
-export {Player, Exit, Tile, LightElement};
+export {Player, Exit, Tile, Door, LightElement};

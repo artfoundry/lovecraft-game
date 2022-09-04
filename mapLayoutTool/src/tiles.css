@@ -19,7 +19,7 @@
 }
 
 .tiles {
-	content: url('../../assets/tilesets/Catacombs/catacombs.png');
+	content: url('../../client/src/assets/tilesets/Catacombs/catacombs.png');
 	cursor: pointer;
 	box-sizing: border-box;
 }
@@ -101,17 +101,17 @@
 
 /* DOORS */
 
-.left-door {
+.left-doorway {
 	object-position: -192px 0;
 	object-fit: none;
 }
 
-.right-door {
+.right-doorway {
 	object-position: -224px 0;
 	object-fit: none;
 }
 
-.top-bottom-door {
+.top-bottom-doorway {
 	object-position: -192px -32px;
 	object-fit: none;
 }

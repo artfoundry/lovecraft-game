@@ -1,5 +1,5 @@
 .catacombs {
-	background-image: url('../../assets/tilesets/Catacombs/catacombs.png');
+	background-image: url('assets/tilesets/Catacombs/catacombs.png');
 }
 
 /* FLOORS */
@@ -109,16 +109,57 @@
 
 /* DOORS */
 
-.left-door {
+.left-doorway {
 	background-position: -192px 0;
 }
 
-.right-door {
+.right-doorway {
 	background-position: -224px 0;
 }
 
-.top-bottom-door {
+.top-bottom-doorway {
 	background-position: -192px -32px;
+}
+
+.front-door {
+	position: relative;
+	width: 32px;
+	height: 32px;
+	background-position: -192px -64px;
+}
+
+.front-door-open {
+	position: relative;
+	width: 32px;
+	height: 32px;
+	top: 16px;
+	left: -16px;
+	background-position: -224px -64px;
+}
+
+.side-door {
+	position: relative;
+	width: 32px;
+	height: 32px;
+	background-position: -224px -64px;
+}
+
+.left-side-door-open {
+	position: relative;
+	width: 32px;
+	height: 32px;
+	top: -16px;
+	left: -16px;
+	background-position: -192px -64px;
+}
+
+.right-side-door-open {
+	position: relative;
+	width: 32px;
+	height: 32px;
+	top: -16px;
+	left: 16px;
+	background-position: -192px -64px;
 }
 
 /* OBJECTS */
@@ -127,7 +168,7 @@
 	position: absolute;
 	z-index: 1;
 	pointer-events: none;
-	content: url('../../assets/tilesets/Catacombs/mainlevbuild.png');
+	content: url('assets/tilesets/Catacombs/catacombs.png');
 	object-fit: none;
-	object-position: -736px -65px;
+	object-position: -224px -192px;
 }

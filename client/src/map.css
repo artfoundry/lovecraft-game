@@ -18,3 +18,9 @@
 	margin: auto;
 	z-index: 0;
 }
+
+.objects {
+	position: relative;
+	margin: auto;
+	z-index: 1;
+}

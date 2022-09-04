@@ -18,7 +18,9 @@
 .env.development.local
 .env.test.local
 .env.production.local
-
+assets_unused/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+notes
+mapLayoutTool/mapData_orig_backup.json

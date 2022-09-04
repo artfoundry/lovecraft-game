@@ -140,8 +140,8 @@ class Tool extends React.Component {
 				bottomSide: '',
 				leftSide: ''
 			},
-			'left-door': {
-				classes: 'left-door',
+			'left-doorway': {
+				classes: 'left-doorway',
 				type: 'door',
 				walkable: true,
 				topSide: 'wall',
@@ -149,8 +149,8 @@ class Tool extends React.Component {
 				bottomSide: 'wall',
 				leftSide: ''
 			},
-			'right-door': {
-				classes: 'right-door',
+			'right-doorway': {
+				classes: 'right-doorway',
 				type: 'door',
 				walkable: true,
 				topSide: 'wall',
@@ -158,8 +158,8 @@ class Tool extends React.Component {
 				bottomSide: 'wall',
 				leftSide: ''
 			},
-			'top-bottom-door': {
-				classes: 'top-bottom-door',
+			'top-bottom-doorway': {
+				classes: 'top-bottom-doorway',
 				type: 'door',
 				walkable: true,
 				topSide: '',
@@ -530,9 +530,9 @@ class Tool extends React.Component {
 		// main tile is a door facing the direction of the side tile, then the side is an opening
 		if ((!this.state.gridPieceData[sideTilePos] || Object.keys(this.state.gridPieceData[sideTilePos]).length === 0) && (
 			this.state.gridPieceData[mainTilePos].type === 'floor' ||
-			((direction === 'top' || direction === 'bottom') && this.state.gridPieceData[mainTilePos].classes === 'top-bottom-door') ||
-			(direction === 'right' && this.state.gridPieceData[mainTilePos].classes === 'right-door') ||
-			(direction === 'left' && this.state.gridPieceData[mainTilePos].classes === 'left-door')))
+			((direction === 'top' || direction === 'bottom') && this.state.gridPieceData[mainTilePos].classes === 'top-bottom-doorway') ||
+			(direction === 'right' && this.state.gridPieceData[mainTilePos].classes === 'right-doorway') ||
+			(direction === 'left' && this.state.gridPieceData[mainTilePos].classes === 'left-doorway')))
 		{
 			side = 'opening';
 		} else if (this.state.gridPieceData[sideTilePos] && Object.keys(this.state.gridPieceData[sideTilePos]).length > 0) {

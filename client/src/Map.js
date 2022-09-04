@@ -1,6 +1,7 @@
 import React from "react";
 import * as MapData from "./mapData.json";
-import {Exit, LightElement, Player, Tile} from "./VisualElements";
+import {Exit, LightElement, Player, Tile, Door} from "./VisualElements";
+import {StoneDoor} from "./Audio";
 
 class Map extends React.Component {
 	constructor(props) {
@@ -20,6 +21,9 @@ class Map extends React.Component {
 		};
 
 		this.mapLayoutTemp = {};
+		this.sfxSelectors = {
+			catacombs: {}
+		};
 
 		this.state = {
 			playerPos: {},
@@ -209,6 +213,9 @@ class Map extends React.Component {
 								}
 								pieceAdjustedTilePositions[newXPos + '-' + newYPos].neighbors = updatedNeighbors;
 							}
+							if (tileData.type === 'door') {
+								pieceAdjustedTilePositions[newXPos + '-' + newYPos].doorIsOpen = false;
+							}
 						}
 						tilePosIndex++;
 					}
@@ -286,6 +293,7 @@ class Map extends React.Component {
 						// or if it and neighbors will be deleted, then change neighboring door to wall
 						} else if (tileData.neighbors.toChangeType){
 							tileData.neighbors.toChangeType.forEach(tileToChange => {
+								delete this.mapLayoutTemp[tileToChange].doorIsOpen;
 								this.mapLayoutTemp[tileToChange] = {
 									...this.mapLayoutTemp[tileToChange],
 									type: 'wall',
@@ -415,7 +423,7 @@ class Map extends React.Component {
 
 			// move is invalid if through a wall
 			if (this.state.mapLayout[playerLoc][playerMovementSide[0]] === 'wall' ||
-				this.state.mapLayout[tileLoc][this.OPPOSITE_SIDE[playerMovementSide[0]]] === 'wall')
+				(this.state.mapLayout[tileLoc].type === 'door' && !this.state.mapLayout[tileLoc].doorIsOpen))
 				// below is for possibly moving diagonally
 				// || this.state.mapLayout[playerLoc][playerMovementSide[1]] === 'wall' ||
 				// this.state.mapLayout[tileLoc][this.OPPOSITE_SIDE[playerMovementSide[1]]] === 'wall'
@@ -424,7 +432,7 @@ class Map extends React.Component {
 			}
 		} else {
 			// new position generated randomly
-			const tileList = Object.keys(this.state.mapLayout).filter(tilePos => this.state.mapLayout[tilePos].walkable);
+			const tileList = Object.keys(this.state.mapLayout).filter(tilePos => this.state.mapLayout[tilePos].type === 'floor');
 			const randomIndex = Math.floor(Math.random() * tileList.length);
 			tileLoc = tileList[randomIndex];
 			coords = tileLoc.split('-');
@@ -484,9 +492,14 @@ class Map extends React.Component {
 		}
 	}
 
+	// calculates the middle of the game window for placing main character
 	calculatePlayerTransform() {
 		return {xPos: Math.floor(window.outerWidth/(this.tileSize * 2)) * this.tileSize,
 			yPos: Math.floor(window.innerHeight/(this.tileSize * 2)) * this.tileSize};
+	}
+
+	calculateObjectTransform(xPos, yPos) {
+		return `${xPos * this.tileSize}px, ${yPos * this.tileSize}px`;
 	}
 
 	moveMap = (callback) => {
@@ -518,6 +531,44 @@ class Map extends React.Component {
 			const actionButtonCallback = this.resetMap;
 			this.showDialog(dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback);
 		}
+	}
+
+	addObjects = () => {
+		let objects = [];
+
+		for (const [tilePos, tileData] of Object.entries(this.state.mapLayout)) {
+			const tileCoords = tilePos.split('-');
+			if (tileData.type === 'door') {
+				let doorClass = this.state.currentMap;
+				if (tileData.classes.includes('top-bottom-door')) {
+					doorClass = tileData.doorIsOpen ? ' front-door-open' : ' front-door';
+				} else if (tileData.classes.includes('left-door')) {
+					doorClass = tileData.doorIsOpen ? ' left-side-door-open' : ' side-door';
+				} else {
+					doorClass = tileData.doorIsOpen ? ' right-side-door-open' : ' side-door';
+				}
+				objects.push(<Door
+					key={`object-${tilePos}`}
+					styleProp={{
+						transform: `translate(${this.calculateObjectTransform(+tileCoords[0], +tileCoords[1])})`,
+						position: 'absolute'
+					}}
+					classProp={doorClass}
+				/>)
+			} else {
+				objects.push(<div
+					key={`object-${tilePos}`}
+					style={{
+						transform: `translate(${this.calculateObjectTransform(+tileCoords[0], +tileCoords[1])})`,
+						position: 'absolute',
+						width: this.tileSize + 'px',
+						height: this.tileSize + 'px'
+					}}
+					className=''
+				/>)
+			}
+		}
+		return objects;
 	}
 
 	addLighting() {
@@ -571,10 +622,12 @@ class Map extends React.Component {
 			twoAway: {floors: {}, walls: {}},
 			threeAway: {floors: {}, walls: {}}
 		};
+		let minXBoundary = (centerTile.xPos - 3) < 0 ? 0 : centerTile.xPos - 3;
+		let minYBoundary = (centerTile.yPos - 3) < 0 ? 0 : centerTile.yPos - 3;
 
 		// collect all tiles that are 1-3 tiles away from center
-		for (let xCount = (centerTile.xPos - 3) < 0 ? 0 : centerTile.xPos - 3; xCount <= centerTile.xPos + 3; xCount++) {
-			for (let yCount = (centerTile.yPos - 3) < 0 ? 0 : centerTile.yPos - 3; yCount <= centerTile.yPos + 3; yCount++) {
+		for (let xCount = minXBoundary; xCount <= centerTile.xPos + 3; xCount++) {
+			for (let yCount = minYBoundary; yCount <= centerTile.yPos + 3; yCount++) {
 				const tilePos = xCount + '-' + yCount;
 				const currentTile = this.state.mapLayout[tilePos];
 				if (currentTile && tilePos !== centerTilePos) {
@@ -582,19 +635,19 @@ class Map extends React.Component {
 					const vertDeltaFromCenter = Math.abs(centerTile.yPos - currentTile.yPos);
 
 					if (horizDeltaFromCenter <= 1 && vertDeltaFromCenter <= 1) {
-						if (currentTile.type === 'wall') {
+						if (currentTile.type === 'wall' || (currentTile.type === 'door' && !currentTile.doorIsOpen)) {
 							lineOfSightTiles.oneAway.walls[tilePos] = currentTile;
 						} else {
 							lineOfSightTiles.oneAway.floors[tilePos] = currentTile;
 						}
 					} else if (horizDeltaFromCenter <= 2 && vertDeltaFromCenter <= 2) {
-						if (currentTile.type === 'wall') {
+						if (currentTile.type === 'wall' || (currentTile.type === 'door' && !currentTile.doorIsOpen)) {
 							nearbyTiles.twoAway.walls[tilePos] = currentTile;
 						} else {
 							nearbyTiles.twoAway.floors[tilePos] = currentTile;
 						}
 					} else if (horizDeltaFromCenter <= 3 && vertDeltaFromCenter <= 3) {
-						if (currentTile.type === 'wall') {
+						if (currentTile.type === 'wall' || (currentTile.type === 'door' && !currentTile.doorIsOpen)) {
 							nearbyTiles.threeAway.walls[tilePos] = currentTile;
 						} else {
 							nearbyTiles.threeAway.floors[tilePos] = currentTile;
@@ -619,7 +672,7 @@ class Map extends React.Component {
 				// if one of the 1 away tiles that has line of sight is between the current 2 away tile and center tile...
 				if (outerTileHasLOS)
 				{
-					if (twoAwayTileData.type === 'wall') {
+					if (twoAwayTileData.type === 'wall' || (twoAwayTileData.type === 'door' && !twoAwayTileData.doorIsOpen)) {
 						lineOfSightTiles.twoAway.walls[twoAwayTilePos] = twoAwayTileData;
 					} else {
 						lineOfSightTiles.twoAway.floors[twoAwayTilePos] = twoAwayTileData;
@@ -644,7 +697,7 @@ class Map extends React.Component {
 					// if one of the 1 away tiles that has line of sight is between the current 2 away tile and center tile...
 					if (outerTileHasLOS)
 					{
-						if (threeAwayTileData.type === 'wall') {
+						if (threeAwayTileData.type === 'wall' || (threeAwayTileData.type === 'door' && !threeAwayTileData.doorIsOpen)) {
 							lineOfSightTiles.threeAway.walls[threeAwayTilePos] = threeAwayTileData;
 						} else {
 							lineOfSightTiles.threeAway.floors[threeAwayTilePos] = threeAwayTileData;
@@ -679,7 +732,7 @@ class Map extends React.Component {
 	}
 
 	placeExit = () => {
-		const tilePositions = Object.keys(this.state.mapLayout).filter(tilePos => this.state.mapLayout[tilePos].walkable);
+		const tilePositions = Object.keys(this.state.mapLayout).filter(tilePos => this.state.mapLayout[tilePos].type === 'floor');
 		let exitPosition = tilePositions[Math.floor(Math.random() * tilePositions.length)];
 		const playerPos = this.state.playerPos.xPos + '-' + this.state.playerPos.yPos;
 		while (exitPosition === playerPos) {
@@ -689,12 +742,53 @@ class Map extends React.Component {
 		this.setState({exitPosition: {xPos: +exitCoords[0], yPos: +exitCoords[1]}, exitPlaced: true});
 	}
 
+	toggleDoor() {
+		const playerPos = this.state.playerPos.xPos + '-' + this.state.playerPos.yPos;
+		const playerPosTile = this.state.mapLayout[playerPos];
+		const playerPosTileSides = [playerPosTile.leftSide, playerPosTile.rightSide, playerPosTile.topSide, playerPosTile.bottomSide];
+		const doorLocation = playerPosTileSides.indexOf('door');
+		const doorTileDirections = [
+			(this.state.playerPos.xPos - 1) + '-' + this.state.playerPos.yPos,
+			(this.state.playerPos.xPos + 1) + '-' + this.state.playerPos.yPos,
+			this.state.playerPos.xPos + '-' + (this.state.playerPos.yPos - 1),
+			this.state.playerPos.xPos + '-' + (this.state.playerPos.yPos + 1)
+		];
+		if (doorLocation >= 0) {
+			this.sfxSelectors[this.state.currentMap].door.play();
+			const doorTilePos = doorTileDirections[doorLocation];
+			this.setState(prevState => ({
+				mapLayout: {
+					...prevState.mapLayout,
+					[doorTilePos]: {
+						...prevState.mapLayout[doorTilePos],
+						doorIsOpen: !prevState.mapLayout[doorTilePos].doorIsOpen
+					}
+				}
+			}));
+		}
+	}
+
+	populateSfxSelectors() {
+		this.sfxSelectors.catacombs['door'] = document.getElementById('sfx-stonedoor');
+	}
+
+	setupSoundEffects = () => {
+		let effects = [];
+
+		effects.push(<StoneDoor key='sfx-stonedoor' idProp='sfx-stonedoor' />);
+
+		return effects;
+	}
+
 	setupKeyListeners() {
 		document.addEventListener('keydown', (e) => {
-			if (e.code.startsWith('Arrow') || e.code === 'Space') {
+			if (e.code.startsWith('Arrow')) {
 				e.preventDefault();
+				this.placePlayer('', e);
+			} else if (e.code === 'Space') {
+				e.preventDefault();
+				this.toggleDoor();
 			}
-			this.placePlayer('', e);
 		});
 	}
 
@@ -720,6 +814,7 @@ class Map extends React.Component {
 	componentDidMount() {
 		if (this.initialMapLoad) {
 			this.layoutPieces();
+			this.populateSfxSelectors();
 		}
 	}
 
@@ -733,24 +828,24 @@ class Map extends React.Component {
 		return (
 			<div className="world" style={{width: `${Math.floor(window.outerWidth/this.tileSize) * this.tileSize}px`}}>
 				<div className="map" style={this.state.mapPosition}>
-					{ this.state.mapLayoutDone &&
-						<this.createAllPieces />
-					}
+					{ this.state.mapLayoutDone && <this.createAllPieces /> }
 					{ this.state.exitPlaced &&
 						<Exit
 							styleProp={{
-								transform: `translate(${this.state.exitPosition.xPos * this.tileSize}px, ${this.state.exitPosition.yPos * this.tileSize}px)`,
+								transform: `translate(${this.calculateObjectTransform(this.state.exitPosition.xPos, this.state.exitPosition.yPos)})`,
 								width: this.tileSize + 'px',
 								height: this.tileSize + 'px'
 							}}
 							tileNameProp={this.state.exitPosition.xPos + '-' + this.state.exitPosition.yPos} />
 					}
 				</div>
-				<div className="lighting" style={this.state.mapPosition}>
-					{ this.state.playerPlaced &&
-						<this.addLighting />
-					}
+				<div className="objects" style={this.state.mapPosition}>
+					{ this.state.playerPlaced && <this.addObjects /> }
 				</div>
+				<div className="lighting" style={this.state.mapPosition}>
+					{ this.state.playerPlaced && <this.addLighting /> }
+				</div>
+				{ <this.setupSoundEffects /> }
 				{ this.state.mapLayoutDone &&
 					<Player dataLocProp={this.state.playerPos}
 					        styleProp={{
