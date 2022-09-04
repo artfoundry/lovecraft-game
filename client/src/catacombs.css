@@ -121,15 +121,20 @@
 	background-position: -192px -32px;
 }
 
+
+/* OBJECTS */
+
+.object {
+	position: absolute;
+}
+
 .front-door {
-	position: relative;
 	width: 32px;
 	height: 32px;
 	background-position: -192px -64px;
 }
 
 .front-door-open {
-	position: relative;
 	width: 32px;
 	height: 32px;
 	top: 16px;
@@ -138,14 +143,12 @@
 }
 
 .side-door {
-	position: relative;
 	width: 32px;
 	height: 32px;
 	background-position: -224px -64px;
 }
 
 .left-side-door-open {
-	position: relative;
 	width: 32px;
 	height: 32px;
 	top: -16px;
@@ -154,7 +157,6 @@
 }
 
 .right-side-door-open {
-	position: relative;
 	width: 32px;
 	height: 32px;
 	top: -16px;
@@ -162,12 +164,8 @@
 	background-position: -192px -64px;
 }
 
-/* OBJECTS */
-
 .exit {
 	position: absolute;
-	z-index: 1;
-	pointer-events: none;
 	content: url('assets/tilesets/Catacombs/catacombs.png');
 	object-fit: none;
 	object-position: -224px -192px;

@@ -34,7 +34,6 @@ class Map extends React.Component {
 			mapLayoutDone: false,
 			mapPosition: {},
 			exitPosition: {},
-			exitPlaced: false,
 			lighting: {}
 		};
 
@@ -65,7 +64,7 @@ class Map extends React.Component {
 			this.initialMapLoad = false;
 			this.setState({mapLayoutDone: true, mapLayout: {...this.mapLayoutTemp}}, () => {
 				this.placePlayer(null, null, () => {
-					this.placeExit();
+					this.setExitPosition();
 					if (this.pageFirstLoaded) {
 						this.pageFirstLoaded = false;
 						this.setupKeyListeners();
@@ -534,12 +533,40 @@ class Map extends React.Component {
 	}
 
 	addObjects = () => {
+		let allObjects = [];
+		allObjects.push(...this.addDoors(), this.addExit());
+
+		return allObjects;
+	}
+
+	setExitPosition() {
+		const tilePositions = Object.keys(this.state.mapLayout).filter(tilePos => this.state.mapLayout[tilePos].type === 'floor');
+		let exitPosition = tilePositions[Math.floor(Math.random() * tilePositions.length)];
+		const playerPos = this.state.playerPos.xPos + '-' + this.state.playerPos.yPos;
+		while (exitPosition === playerPos) {
+			exitPosition = tilePositions[Math.floor(Math.random() * tilePositions.length)];
+		}
+		const exitCoords = exitPosition.split('-');
+		this.setState({exitPosition: {xPos: +exitCoords[0], yPos: +exitCoords[1]}});
+	}
+
+	addExit() {
+		return (<Exit
+			key={'exit-' + this.state.exitPosition.xPos + '-' + this.state.exitPosition.yPos}
+			styleProp={{
+				transform: `translate(${this.calculateObjectTransform(this.state.exitPosition.xPos, this.state.exitPosition.yPos)})`,
+				width: this.tileSize + 'px',
+				height: this.tileSize + 'px'
+			}} />);
+	}
+
+	addDoors() {
 		let objects = [];
 
 		for (const [tilePos, tileData] of Object.entries(this.state.mapLayout)) {
 			const tileCoords = tilePos.split('-');
 			if (tileData.type === 'door') {
-				let doorClass = this.state.currentMap;
+				let doorClass = this.state.currentMap + ' object';
 				if (tileData.classes.includes('top-bottom-door')) {
 					doorClass += tileData.doorIsOpen ? ' front-door-open' : ' front-door';
 				} else if (tileData.classes.includes('left-door')) {
@@ -551,7 +578,6 @@ class Map extends React.Component {
 					key={`object-${tilePos}`}
 					styleProp={{
 						transform: `translate(${this.calculateObjectTransform(+tileCoords[0], +tileCoords[1])})`,
-						position: 'absolute'
 					}}
 					classProp={doorClass}
 				/>)
@@ -560,11 +586,10 @@ class Map extends React.Component {
 					key={`object-${tilePos}`}
 					style={{
 						transform: `translate(${this.calculateObjectTransform(+tileCoords[0], +tileCoords[1])})`,
-						position: 'absolute',
 						width: this.tileSize + 'px',
 						height: this.tileSize + 'px'
 					}}
-					className=''
+					className='object'
 				/>)
 			}
 		}
@@ -731,17 +756,6 @@ class Map extends React.Component {
 		return sides;
 	}
 
-	placeExit = () => {
-		const tilePositions = Object.keys(this.state.mapLayout).filter(tilePos => this.state.mapLayout[tilePos].type === 'floor');
-		let exitPosition = tilePositions[Math.floor(Math.random() * tilePositions.length)];
-		const playerPos = this.state.playerPos.xPos + '-' + this.state.playerPos.yPos;
-		while (exitPosition === playerPos) {
-			exitPosition = tilePositions[Math.floor(Math.random() * tilePositions.length)];
-		}
-		const exitCoords = exitPosition.split('-');
-		this.setState({exitPosition: {xPos: +exitCoords[0], yPos: +exitCoords[1]}, exitPlaced: true});
-	}
-
 	toggleDoor() {
 		const playerPos = this.state.playerPos.xPos + '-' + this.state.playerPos.yPos;
 		const playerPosTile = this.state.mapLayout[playerPos];
@@ -800,11 +814,11 @@ class Map extends React.Component {
 			playerPos: {},
 			playerPlaced: false,
 			playerVisited: {},
+			currentMap: 'catacombs',
 			mapLayout: {},
 			mapLayoutDone: false,
 			mapPosition: {},
 			exitPosition: {},
-			exitPlaced: false,
 			lighting: {}
 		}, () => {
 			this.layoutPieces();
@@ -829,15 +843,6 @@ class Map extends React.Component {
 			<div className="world" style={{width: `${Math.floor(window.outerWidth/this.tileSize) * this.tileSize}px`}}>
 				<div className="map" style={this.state.mapPosition}>
 					{ this.state.mapLayoutDone && <this.createAllPieces /> }
-					{ this.state.exitPlaced &&
-						<Exit
-							styleProp={{
-								transform: `translate(${this.calculateObjectTransform(this.state.exitPosition.xPos, this.state.exitPosition.yPos)})`,
-								width: this.tileSize + 'px',
-								height: this.tileSize + 'px'
-							}}
-							tileNameProp={this.state.exitPosition.xPos + '-' + this.state.exitPosition.yPos} />
-					}
 				</div>
 				<div className="objects" style={this.state.mapPosition}>
 					{ this.state.playerPlaced && <this.addObjects /> }

@@ -13,9 +13,8 @@ function Player(props) {
 function Exit(props) {
 	return (
 		<img alt="exit"
-		     className='exit'
-		     style={props.styleProp}
-		     data-location={props.tileNameProp} />
+		     className='object exit'
+		     style={props.styleProp} />
 	)
 }
 
