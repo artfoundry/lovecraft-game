@@ -541,11 +541,11 @@ class Map extends React.Component {
 			if (tileData.type === 'door') {
 				let doorClass = this.state.currentMap;
 				if (tileData.classes.includes('top-bottom-door')) {
-					doorClass = tileData.doorIsOpen ? ' front-door-open' : ' front-door';
+					doorClass += tileData.doorIsOpen ? ' front-door-open' : ' front-door';
 				} else if (tileData.classes.includes('left-door')) {
-					doorClass = tileData.doorIsOpen ? ' left-side-door-open' : ' side-door';
+					doorClass += tileData.doorIsOpen ? ' left-side-door-open' : ' side-door';
 				} else {
-					doorClass = tileData.doorIsOpen ? ' right-side-door-open' : ' side-door';
+					doorClass += tileData.doorIsOpen ? ' right-side-door-open' : ' side-door';
 				}
 				objects.push(<Door
 					key={`object-${tilePos}`}

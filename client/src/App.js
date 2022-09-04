@@ -12,7 +12,7 @@ class Game extends React.Component {
 
     this.state = {
       dialogClasses: 'dialog',
-      dialogText: 'Find the stairs down to enter a new dungeon! Use mouse or arrow keys to move.',
+      dialogText: 'Find the stairs down to enter a new dungeon! Use mouse or arrow keys to move and space bar to open/close doors.',
       closeButtonText: 'Close',
       actionButtonVisible: false,
       actionButtonText: '',
