@@ -17,7 +17,6 @@ class Tool extends React.Component {
 			'top-left-wall': {
 				classes: 'top-left-wall',
 				type: 'wall',
-				walkable: false,
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
@@ -26,7 +25,6 @@ class Tool extends React.Component {
 			'top-wall': {
 				classes: 'top-wall',
 				type: 'wall',
-				walkable: false,
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
@@ -35,7 +33,6 @@ class Tool extends React.Component {
 			'top-right-wall': {
 				classes: 'top-right-wall',
 				type: 'wall',
-				walkable: false,
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
@@ -44,7 +41,6 @@ class Tool extends React.Component {
 			'left-wall': {
 				classes: 'left-wall',
 				type: 'wall',
-				walkable: false,
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
@@ -53,7 +49,6 @@ class Tool extends React.Component {
 			'right-wall': {
 				classes: 'right-wall',
 				type: 'wall',
-				walkable: false,
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
@@ -62,7 +57,6 @@ class Tool extends React.Component {
 			'bottom-left-wall': {
 				classes: 'bottom-left-wall',
 				type: 'wall',
-				walkable: false,
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
@@ -71,7 +65,6 @@ class Tool extends React.Component {
 			'bottom-wall': {
 				classes: 'bottom-wall',
 				type: 'wall',
-				walkable: false,
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
@@ -80,7 +73,6 @@ class Tool extends React.Component {
 			'bottom-right-wall': {
 				classes: 'bottom-right-wall',
 				type: 'wall',
-				walkable: false,
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
@@ -89,7 +81,6 @@ class Tool extends React.Component {
 			'bottom-left-inverse-wall': {
 				classes: 'bottom-left-inverse-wall',
 				type: 'wall',
-				walkable: false,
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
@@ -98,7 +89,6 @@ class Tool extends React.Component {
 			'bottom-right-inverse-wall': {
 				classes: 'bottom-right-inverse-wall',
 				type: 'wall',
-				walkable: false,
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
@@ -107,7 +97,6 @@ class Tool extends React.Component {
 			'top-left-inverse-wall': {
 				classes: 'top-left-inverse-wall',
 				type: 'wall',
-				walkable: false,
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
@@ -116,7 +105,6 @@ class Tool extends React.Component {
 			'top-right-inverse-wall': {
 				classes: 'top-right-inverse-wall',
 				type: 'wall',
-				walkable: false,
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
@@ -125,7 +113,6 @@ class Tool extends React.Component {
 			'T-shaped-wall': {
 				classes: 'T-shaped-wall',
 				type: 'wall',
-				walkable: false,
 				topSide: 'wall',
 				rightSide: 'wall',
 				bottomSide: 'wall',
@@ -134,7 +121,6 @@ class Tool extends React.Component {
 			'floor': {
 				classes: 'floor',
 				type: 'floor',
-				walkable: true,
 				topSide: '',
 				rightSide: '',
 				bottomSide: '',
@@ -143,7 +129,6 @@ class Tool extends React.Component {
 			'left-doorway': {
 				classes: 'left-doorway',
 				type: 'door',
-				walkable: true,
 				topSide: 'wall',
 				rightSide: '',
 				bottomSide: 'wall',
@@ -152,7 +137,6 @@ class Tool extends React.Component {
 			'right-doorway': {
 				classes: 'right-doorway',
 				type: 'door',
-				walkable: true,
 				topSide: 'wall',
 				rightSide: '',
 				bottomSide: 'wall',
@@ -161,7 +145,6 @@ class Tool extends React.Component {
 			'top-bottom-doorway': {
 				classes: 'top-bottom-doorway',
 				type: 'door',
-				walkable: true,
 				topSide: '',
 				rightSide: 'wall',
 				bottomSide: '',
@@ -465,7 +448,6 @@ class Tool extends React.Component {
 					xPos: +coords[0],
 					yPos: +coords[1],
 					type: tileData.type,
-					walkable: tileData.walkable,
 					topSide: tileData.topSide,
 					rightSide: tileData.rightSide,
 					bottomSide: tileData.bottomSide,

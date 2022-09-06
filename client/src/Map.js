@@ -1,5 +1,5 @@
 import React from "react";
-import * as MapData from "./mapData.json";
+import MapData from "./mapData.json";
 import {Exit, LightElement, Player, Tile, Door} from "./VisualElements";
 import {StoneDoor} from "./Audio";
 
@@ -34,6 +34,7 @@ class Map extends React.Component {
 			mapLayoutDone: false,
 			mapPosition: {},
 			exitPosition: {},
+			exitPlaced: false,
 			lighting: {}
 		};
 
@@ -82,6 +83,41 @@ class Map extends React.Component {
 		return {newPiece, pieceName: filteredPieceNameList[randomIndex]};
 	}
 
+	updateNeighborCoordinates(tileData, xAdjustment, yAdjustment) {
+		let updatedNeighbors = {};
+		for (const [type, neighborCoords] of Object.entries(tileData.neighbors)) {
+			let neighborPos = [];
+			let newXPos = null;
+			let newYPos = null;
+			updatedNeighbors[type] = [];
+			neighborCoords.forEach(coord => {
+				neighborPos = coord.split('-');
+				newXPos = +neighborPos[0] + xAdjustment;
+				newYPos = +neighborPos[1] + yAdjustment;
+				updatedNeighbors[type].push(newXPos + '-' + newYPos);
+			});
+		}
+		return updatedNeighbors;
+	}
+
+	updateAltClassCoordinates(tileData, xAdjustment, yAdjustment) {
+		let updatedAltClasses = {};
+		for (const [pos, classes] of Object.entries(tileData.altClasses)) {
+			if (pos === 'both') {
+				updatedAltClasses.both = classes;
+			} else {
+				let neighborPos = [];
+				let newXPos = null;
+				let newYPos = null;
+				neighborPos = pos.split('-');
+				newXPos = +neighborPos[0] + xAdjustment;
+				newYPos = +neighborPos[1] + yAdjustment;
+				updatedAltClasses[newXPos + '-' + newYPos] = classes;
+			}
+		}
+		return updatedAltClasses;
+	}
+
 	findNewPiecePosition(piece) {
 		let positionFound = false;
 		let updatedPiece = {};
@@ -93,7 +129,15 @@ class Map extends React.Component {
 				const adjustedXPos = this.firstPiecePosition.xPos + tileData.xPos;
 				const adjustedYPos = this.firstPiecePosition.yPos + tileData.yPos;
 				const adjustedPos = adjustedXPos + '-' + adjustedYPos;
-				updatedPiece[adjustedPos] = {...tileData, xPos: adjustedXPos, yPos: adjustedYPos};
+				const updatedAltClasses = this.updateAltClassCoordinates(tileData, this.firstPiecePosition.xPos, this.firstPiecePosition.yPos);
+				const updatedNeighbors = this.updateNeighborCoordinates(tileData, this.firstPiecePosition.xPos, this.firstPiecePosition.yPos);
+				updatedPiece[adjustedPos] = {
+					...tileData,
+					xPos: adjustedXPos,
+					yPos: adjustedYPos,
+					neighbors: updatedNeighbors,
+					altClasses: updatedAltClasses
+				};
 			}
 			return {positionFound, updatedPiece};
 		}
@@ -139,9 +183,9 @@ class Map extends React.Component {
 				pieceOpening = pieceOpenings[pieceOpeningsCounter];
 				const mapOpeningOpenSide = Object.values(mapOpening)[0];
 				const pieceOpeningOpenSide = Object.values(pieceOpening)[0];
+
 				if (pieceOpeningOpenSide === this.OPPOSITE_SIDE[mapOpeningOpenSide]) {
 					const pieceOpeningTileCoords = Object.keys(pieceOpening)[0].split('-');
-					pieceOpeningTileCoords.forEach((coord,i,arr) => arr[i] = +coord);
 					const xAdjust = mapOpeningOpenSide === 'leftSide' ? -1 : mapOpeningOpenSide === 'rightSide' ? 1 : 0;
 					const yAdjust = mapOpeningOpenSide === 'topSide' ? -1 : mapOpeningOpenSide === 'bottomSide' ? 1 : 0;
 					// these are the coords for where in the map to place the piece's tile that contains the opening
@@ -155,10 +199,11 @@ class Map extends React.Component {
 					let isValidPos = true;
 					let tilePosIndex = 0;
 					const tileList = Object.values(piece);
+
 					while (isValidPos && tilePosIndex < tileList.length) {
 						const tileData = tileList[tilePosIndex];
-						const newXPos = mapOpeningXOffset + tileData.xPos - pieceOpeningTileCoords[0];
-						const newYPos = mapOpeningYOffset + tileData.yPos - pieceOpeningTileCoords[1];
+						const newXPos = mapOpeningXOffset + tileData.xPos - +pieceOpeningTileCoords[0];
+						const newYPos = mapOpeningYOffset + tileData.yPos - +pieceOpeningTileCoords[1];
 						const newPosCoords = newXPos + '-' + newYPos;
 						const originalPos = tileData.xPos + '-' + tileData.yPos;
 						// check if location on map where tile would go is empty and within bounds
@@ -172,45 +217,13 @@ class Map extends React.Component {
 								yPos: newYPos,
 								originalPos
 							};
+							const xAdjust = mapOpeningXOffset - +pieceOpeningTileCoords[0];
+							const yAdjust = mapOpeningYOffset - +pieceOpeningTileCoords[1];
 							if (tileData.altClasses) {
-								let updatedAltClasses = {};
-								for (const [pos, classes] of Object.entries(tileData.altClasses)) {
-									if (pos === 'both') {
-										updatedAltClasses.both = classes;
-									} else {
-										let neighborPos = {};
-										let newXPos = null;
-										let newYPos = null;
-										neighborPos = pos.split('-');
-										newXPos = +neighborPos[0] + mapOpeningXOffset - pieceOpeningTileCoords[0];
-										newYPos = +neighborPos[1] + mapOpeningYOffset - pieceOpeningTileCoords[1];
-										updatedAltClasses[newXPos + '-' + newYPos] = classes;
-									}
-								}
-								pieceAdjustedTilePositions[newXPos + '-' + newYPos].altClasses = updatedAltClasses;
+								pieceAdjustedTilePositions[newXPos + '-' + newYPos].altClasses = this.updateAltClassCoordinates(tileData, xAdjust, yAdjust);
 							}
 							if (tileData.neighbors) {
-								let updatedNeighbors = {};
-								for (const [type, neighborCoords] of Object.entries(tileData.neighbors)) {
-									let neighborPos = {};
-									let newXPos = null;
-									let newYPos = null;
-									if (Array.isArray(neighborCoords)) {
-										updatedNeighbors[type] = [];
-										neighborCoords.forEach(coord => {
-											neighborPos = coord.split('-');
-											newXPos = +neighborPos[0] + mapOpeningXOffset - pieceOpeningTileCoords[0];
-											newYPos = +neighborPos[1] + mapOpeningYOffset - pieceOpeningTileCoords[1];
-											updatedNeighbors[type].push(newXPos + '-' + newYPos);
-										});
-									} else {
-										neighborPos = neighborCoords.split('-');
-										newXPos = +neighborPos[0] + mapOpeningXOffset - pieceOpeningTileCoords[0];
-										newYPos = +neighborPos[1] + mapOpeningYOffset - pieceOpeningTileCoords[1];
-										updatedNeighbors[type] = newXPos + '-' + newYPos;
-									}
-								}
-								pieceAdjustedTilePositions[newXPos + '-' + newYPos].neighbors = updatedNeighbors;
+								pieceAdjustedTilePositions[newXPos + '-' + newYPos].neighbors = this.updateNeighborCoordinates(tileData, xAdjust, yAdjust);
 							}
 							if (tileData.type === 'door') {
 								pieceAdjustedTilePositions[newXPos + '-' + newYPos].doorIsOpen = false;
@@ -234,7 +247,8 @@ class Map extends React.Component {
 		return {positionFound, updatedPiece, mapOpening, pieceOpening};
 	}
 
-	// For clearing out the 'opening' type from recently laid piece and matching opening on the map
+	// Inserts piece into mapLayoutTemp and
+	// clears out the 'opening' type from recently laid piece and matching opening on the map
 	// newPiece: Object, copy from this.mapPieces but with updated pos for map layout
 	// mapOpeningToRemove: Object, {[tileCoords relative to map]: side} - undefined for first piece
 	// pieceOpeningToRemove: Object, {[tileCoords relative to piece]: side} - undefined for first piece
@@ -278,12 +292,12 @@ class Map extends React.Component {
 				}
 				for (const [tileSide, sideType] of Object.entries(tileSides)) {
 					if (sideType === 'opening') {
-						// change tile's attributes if it and neighbors won't be deleted, ie. if it's part of a hall, not a room
+						// change tile from opening to a wall if it and neighbors won't be deleted,
+						// ie. if it's part of a hall, not a room
 						if (!tileData.neighbors.toDelete) {
 							this.mapLayoutTemp[tileLoc] = {
 								...this.mapLayoutTemp[tileLoc],
 								type: 'wall',
-								walkable: false,
 								topSide: 'wall',
 								rightSide: 'wall',
 								bottomSide: 'wall',
@@ -296,7 +310,6 @@ class Map extends React.Component {
 								this.mapLayoutTemp[tileToChange] = {
 									...this.mapLayoutTemp[tileToChange],
 									type: 'wall',
-									walkable: false,
 									topSide: 'wall',
 									rightSide: 'wall',
 									bottomSide: 'wall',
@@ -547,7 +560,7 @@ class Map extends React.Component {
 			exitPosition = tilePositions[Math.floor(Math.random() * tilePositions.length)];
 		}
 		const exitCoords = exitPosition.split('-');
-		this.setState({exitPosition: {xPos: +exitCoords[0], yPos: +exitCoords[1]}});
+		this.setState({exitPosition: {xPos: +exitCoords[0], yPos: +exitCoords[1]}, exitPlaced: true});
 	}
 
 	addExit() {
@@ -845,10 +858,10 @@ class Map extends React.Component {
 					{ this.state.mapLayoutDone && <this.createAllPieces /> }
 				</div>
 				<div className="objects" style={this.state.mapPosition}>
-					{ this.state.playerPlaced && <this.addObjects /> }
+					{ this.state.exitPlaced && <this.addObjects /> }
 				</div>
 				<div className="lighting" style={this.state.mapPosition}>
-					{ this.state.playerPlaced && <this.addLighting /> }
+					{ this.state.exitPlaced && <this.addLighting /> }
 				</div>
 				{ <this.setupSoundEffects /> }
 				{ this.state.mapLayoutDone &&
