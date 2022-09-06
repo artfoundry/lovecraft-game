@@ -472,7 +472,7 @@ class Map extends React.Component {
 				surroundingTilesList.forEach(tile => {
 					surroundingTilesCoords[tile] = {
 						xPos: +tile.split('-')[0],
-						yPos: +tile.split('-')[0]
+						yPos: +tile.split('-')[1]
 					}
 				});
 				this.setState(prevState => ({
