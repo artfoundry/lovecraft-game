@@ -1,8 +1,8 @@
-import React from "react";
-import MapData from "./mapData.json";
-import {Exit, LightElement, Player, Tile, Door} from "./VisualElements";
-import {StoneDoor} from "./Audio";
-import {unblockedPathsToNearbyTiles} from "./Utils";
+import React from 'react';
+import MapData from './mapData.json';
+import {Exit, LightElement, Player, Tile, Door} from './VisualElements';
+import {StoneDoor} from './Audio';
+import {unblockedPathsToNearbyTiles} from './Utils';
 
 class Map extends React.Component {
 	constructor(props) {
