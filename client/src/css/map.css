@@ -9,14 +9,14 @@
 .lighting {
 	position: relative;
 	margin: auto;
-	z-index: 3;
+	z-index: 5;
 	pointer-events: none;
 }
 
-.map {
+.creatures {
 	position: relative;
 	margin: auto;
-	z-index: 0;
+	z-index: 2;
 }
 
 .objects {
@@ -24,4 +24,10 @@
 	margin: auto;
 	z-index: 1;
 	pointer-events: none;
+}
+
+.map {
+	position: relative;
+	margin: auto;
+	z-index: 0;
 }

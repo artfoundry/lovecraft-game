@@ -1,0 +1,15 @@
+{
+	"catacombs": {
+		"name": "catacombs",
+		"creatures": {
+			"ghoul": {
+				"count": 10,
+				"floors": 1
+			},
+			"ghast": {
+				"count": 10,
+				"floors": 2
+			}
+		}
+	}
+}

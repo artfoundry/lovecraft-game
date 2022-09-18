@@ -1,0 +1,8 @@
+.player {
+	position: absolute;
+	z-index: 4;
+}
+
+.privateEye {
+	content: url('../assets/characters/players/investigator2.png')
+}

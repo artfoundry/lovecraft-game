@@ -1,5 +1,5 @@
 .catacombs {
-	background-image: url('assets/tilesets/Catacombs/catacombs.png');
+	background-image: url('../assets/tilesets/Catacombs/catacombs.png');
 }
 
 /* FLOORS */
@@ -166,7 +166,7 @@
 
 .exit {
 	position: absolute;
-	content: url('assets/tilesets/Catacombs/catacombs.png');
+	content: url('../assets/tilesets/Catacombs/catacombs.png');
 	object-fit: none;
 	object-position: -224px -192px;
 }

@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {randomTileVariant} from './Utils';
 
-function Player(props) {
+function Character(props) {
 	return (
-		<img alt="player"
-		     className='player'
+		<img alt={props.classesProp}
+		     className={props.classesProp}
 		     style={props.styleProp}
 		     data-location={`${props.dataLocProp.xPos}-${props.dataLocProp.yPos}`} />
 	)
@@ -29,7 +29,7 @@ function Tile(props) {
 		     style={{...props.styleProp, fontSize: '18px'}}
 		     data-tile-num={props.tileNameProp}
 		     onClick={e => {
-			     props.placePlayerProp(props.tileNameProp, e);
+			     props.moveCharacterProp(props.tileNameProp, e);
 		     }}>
 		</div>
 	);
@@ -47,4 +47,4 @@ function LightElement(props) {
 	);
 }
 
-export {Player, Exit, Tile, Door, LightElement};
+export {Character, Exit, Tile, Door, LightElement};

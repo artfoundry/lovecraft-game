@@ -1,0 +1,11 @@
+.creature {
+	position: absolute;
+}
+
+.ghoul {
+	content: url('../assets/characters/creatures/ghoul.gif');
+}
+
+.ghast {
+	content: url('../assets/characters/creatures/ghast.png');
+}

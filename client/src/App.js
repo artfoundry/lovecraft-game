@@ -1,10 +1,12 @@
 import React from 'react';
 import Map from './Map';
-import './app.css';
-import './map.css';
-import './visualElements.css';
-import './catacombs.css'
-import './creature.css';
+import PlayerCharacterTypes from './playerCharacterTypes.json';
+import './css/app.css';
+import './css/map.css';
+import './css/visualElements.css';
+import './css/catacombs.css'
+import './css/creatures.css';
+import './css/playerCharacters.css';
 
 class Game extends React.Component {
   constructor() {
@@ -16,7 +18,9 @@ class Game extends React.Component {
       closeButtonText: 'Close',
       actionButtonVisible: false,
       actionButtonText: '',
-      actionButtonCallback: null
+      actionButtonCallback: null,
+      playerCharacters: PlayerCharacterTypes,
+      currentLocation: 'catacombs'
     }
   }
 
@@ -50,7 +54,10 @@ class Game extends React.Component {
             </div>
           </div>
 
-          <Map showDialogProp={this.showDialog} />
+          <Map
+              showDialogProp={this.showDialog}
+              pcProp={this.state.playerCharacters}
+              locationProp={this.state.currentLocation} />
         </div>
     );
   }

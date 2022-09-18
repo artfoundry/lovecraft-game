@@ -1,8 +1,10 @@
-import React from "react";
-import MapData from "./mapData.json";
-import {Exit, LightElement, Player, Tile, Door} from "./VisualElements";
-import {StoneDoor} from "./Audio";
-import {unblockedPathsToNearbyTiles} from "./Utils";
+import React from 'react';
+import MapData from './mapData.json';
+import GameLocations from './gameLocations.json';
+import CreatureData from './creatureTypes.json';
+import {Exit, LightElement, Character, Tile, Door} from './VisualElements';
+import {StoneDoor} from './Audio';
+import {unblockedPathsToNearbyTiles} from './Utils';
 
 class Map extends React.Component {
 	constructor(props) {
@@ -11,7 +13,7 @@ class Map extends React.Component {
 		this.pageFirstLoaded = true;
 		this.initialMapLoad = true;
 		this.tileSize = 32;
-		this.mapPieces = MapData;
+		this.characterSizePercentage = 0.625;
 		this.mapTileLimit = 500;
 		this.firstPiecePosition = {xPos: 5, yPos: 5};
 		this.OPPOSITE_SIDE = {
@@ -25,29 +27,32 @@ class Map extends React.Component {
 		this.sfxSelectors = {
 			catacombs: {}
 		};
+		this.currentMapData = GameLocations[this.props.locationProp];
 
 		this.state = {
+			playerCharacters: this.props.pcProp,
 			playerPos: {},
 			playerPlaced: false,
 			playerVisited: {},
-			currentMap: 'catacombs',
 			mapLayout: {},
 			mapLayoutDone: false,
 			mapPosition: {},
 			exitPosition: {},
 			exitPlaced: false,
-			lighting: {}
+			lighting: {},
+			mapCreatures: {}
+
 		};
 
 		this.showDialog = this.props.showDialogProp;
-		this.createAllPieces = this.createAllPieces.bind(this);
+		this.createAllMapPieces = this.createAllMapPieces.bind(this);
 		this.addLighting = this.addLighting.bind(this);
 	}
 
 	layoutPieces = () => {
 		let numPiecesTried = 0;
 		let attemptedPieces = [];
-		const numPieceTemplates = Object.keys(this.mapPieces).length;
+		const numPieceTemplates = Object.keys(MapData).length;
 
 		while (numPiecesTried < numPieceTemplates && Object.keys(this.mapLayoutTemp).length < this.mapTileLimit) {
 			const {newPiece, pieceName} = this.chooseNewRandomPiece(attemptedPieces);
@@ -64,11 +69,17 @@ class Map extends React.Component {
 
 		if (this.initialMapLoad) {
 			this.initialMapLoad = false;
-			this.setState({mapLayoutDone: true, mapLayout: {...this.mapLayoutTemp}}, () => {
-				this.placePlayer(null, null, () => {
-					this.setExitPosition();
+			this.setState({
+				mapLayoutDone: true,
+				mapLayout: {...this.mapLayoutTemp}
+			}, () => {
+				this.moveCharacter(null, null, () => {
+			// need to find the correct place for this
+					let mapCreatures = this.setInitialCreatureData();
+					this.setState({mapCreatures});
 					if (this.pageFirstLoaded) {
 						this.pageFirstLoaded = false;
+						this.setExitPosition();
 						this.setupKeyListeners();
 					}
 				});
@@ -77,10 +88,10 @@ class Map extends React.Component {
 	}
 
 	chooseNewRandomPiece(attemptedPieces) {
-		const pieceNamesList = Object.keys(this.mapPieces);
+		const pieceNamesList = Object.keys(MapData);
 		const filteredPieceNameList = pieceNamesList.filter(name => attemptedPieces.indexOf(name) < 0);
 		const randomIndex = Math.floor(Math.random() * filteredPieceNameList.length);
-		const newPiece = this.mapPieces[filteredPieceNameList[randomIndex]];
+		const newPiece = MapData[filteredPieceNameList[randomIndex]];
 		return {newPiece, pieceName: filteredPieceNameList[randomIndex]};
 	}
 
@@ -252,7 +263,7 @@ class Map extends React.Component {
 
 	// Inserts piece into mapLayoutTemp and
 	// clears out the 'opening' type from recently laid piece and matching opening on the map
-	// newPiece: Object, copy from this.mapPieces but with updated pos for map layout
+	// newPiece: Object, copy from MapData but with updated pos for map layout
 	// mapOpeningToRemove: Object, {[tileCoords relative to map]: side} - undefined for first piece
 	// pieceOpeningToRemove: Object, {[tileCoords relative to piece]: side} - undefined for first piece
 	updateMapLayout(newPiece, mapOpeningToRemove, pieceOpeningToRemove) {
@@ -352,7 +363,19 @@ class Map extends React.Component {
 		}
 	}
 
-	createAllPieces() {
+	setInitialCreatureData() {
+		let mapCreatures = {};
+		for (const [name, stats] of Object.entries(this.currentMapData.creatures)) {
+			mapCreatures[name] = {
+				...CreatureData[name],
+				...stats,
+				tileCoords: this.setInitialCreatureCoords(mapCreatures)
+			};
+		}
+		return mapCreatures;
+	}
+
+	createAllMapPieces() {
 		let tiles = [];
 		for (const tilePos of Object.keys(this.state.mapLayout)) {
 			tiles.push(this.createMapTile(tilePos));
@@ -361,7 +384,7 @@ class Map extends React.Component {
 	}
 
 	createMapTile(tilePos) {
-		let allClasses = this.state.currentMap;
+		let allClasses = this.currentMapData.name;
 		const tileData = this.state.mapLayout[tilePos];
 
 		if (tileData.classes && tileData.classes !== '') {
@@ -384,10 +407,10 @@ class Map extends React.Component {
 			styleProp={tileStyle}
 			tileNameProp={tileData.xPos + '-' + tileData.yPos}
 			classStrProp={allClasses}
-			placePlayerProp={this.placePlayer} />);
+			moveCharacterProp={this.moveCharacter} />);
 	}
 
-	placePlayer = (tileLoc, e, callback = null) => {
+	moveCharacter = (tileLoc, e, initialSetupCallback = null) => {
 		let coords = [];
 		let invalidMove = false;
 		let playerMovementSide = [];
@@ -447,9 +470,7 @@ class Map extends React.Component {
 			}
 		} else {
 			// new position generated randomly
-			const tileList = Object.keys(this.state.mapLayout).filter(tilePos => this.state.mapLayout[tilePos].type === 'floor');
-			const randomIndex = Math.floor(Math.random() * tileList.length);
-			tileLoc = tileList[randomIndex];
+			tileLoc = this.generateRandomLocation();
 			coords = tileLoc.split('-');
 		}
 
@@ -489,7 +510,7 @@ class Map extends React.Component {
 					},
 					playerPlaced: true
 				}), () => {
-					this.moveMap(callback);
+					this.moveMap(initialSetupCallback);
 					this.checkForExit();
 				});
 			} else {
@@ -500,11 +521,36 @@ class Map extends React.Component {
 					},
 					playerPlaced: true
 				}, () => {
-					this.moveMap(callback);
+					this.moveMap(initialSetupCallback);
 					this.checkForExit();
 				});
 			}
 		}
+	}
+
+	// mapCreatures is temp list of creature data (before setting state)
+	// for checking to make sure random location doesn't already have a creature there
+	generateRandomLocation(mapCreatures = {}) {
+		let emptyLocFound = false;
+		let tileList = Object.keys(this.state.mapLayout).filter(tilePos => this.state.mapLayout[tilePos].type === 'floor');
+		let creatureLocList = Object.values(mapCreatures).length > 0 ? Object.values(mapCreatures).map(creature => creature.tileCoords) : null;
+		let randomIndex = 0;
+		let tilePos = '';
+		const exitPos = Object.values(this.state.exitPosition).length > 0 ?`${this.state.exitPosition.xPos}-${this.state.exitPosition.yPos}` : null;
+	// will need to include other pc positions
+		const playerPos = Object.values(this.state.playerPos).length > 0 ? `${this.state.playerPos.xPos}-${this.state.playerPos.yPos}` : null;
+
+		while (!emptyLocFound && tileList.length > 0) {
+			randomIndex = Math.floor(Math.random() * tileList.length);
+			tilePos = tileList[randomIndex];
+	// also will need to search object locations once I've set up storage for them
+			if (!(exitPos && tilePos === exitPos) && !(creatureLocList && creatureLocList.includes(tilePos)) && !(playerPos && tilePos === playerPos)) {
+				emptyLocFound = true;
+			} else {
+				tileList.splice(randomIndex, 1);
+			}
+		}
+		return tilePos;
 	}
 
 	// calculates the middle of the game window for placing main character
@@ -517,7 +563,12 @@ class Map extends React.Component {
 		return `${xPos * this.tileSize}px, ${yPos * this.tileSize}px`;
 	}
 
-	moveMap = (callback) => {
+	setInitialCreatureCoords(mapCreatures) {
+		const newPosition = this.generateRandomLocation(mapCreatures).split('-');
+		return {xPos: +newPosition[0], yPos: +newPosition[1]};
+	}
+
+	moveMap = (initialSetupCallback) => {
 		const playerTransform = this.calculatePlayerTransform();
 		const playerXPos = this.state.playerPos.xPos * this.tileSize;
 		const playerYPos = this.state.playerPos.yPos * this.tileSize;
@@ -529,8 +580,8 @@ class Map extends React.Component {
 				transform: `translate(${newXPos}px, ${newYPos}px)`
 			}
 		}, () => {
-			if (callback) {
-				callback(); // only for setting up keys listener during setup
+			if (initialSetupCallback) {
+				initialSetupCallback(); // only for setting up keys listener during setup
 			}
 		})
 	}
@@ -546,6 +597,39 @@ class Map extends React.Component {
 			const actionButtonCallback = this.resetMap;
 			this.showDialog(dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback);
 		}
+	}
+
+	addCharacters = (props) => {
+	// need to loop through 'count' of creatures and unique naming of each to add them all to characters object
+		const characters = props.typeProp === 'players' ? {...this.state.playerCharacters} : {...this.state.mapCreatures};
+		const characterNames = Object.keys(characters);
+		let characterList = [];
+		let characterTransform = null;
+		characterNames.forEach(name => {
+			if (characters[name].type === 'player') {
+				// need to make adjustment for each player character
+				characterTransform = this.calculatePlayerTransform();
+				characterTransform = `${characterTransform.xPos}px, ${characterTransform.yPos}px`;
+			} else {
+				const creatureCoords = this.state.mapCreatures[name].tileCoords;
+				characterTransform = this.calculateObjectTransform(creatureCoords.xPos, creatureCoords.yPos);
+			}
+
+			characterList.push(
+				<Character
+					key={name + Math.random()}
+					classesProp={`${characters[name].type} ${name}`}
+					dataLocProp={this.state.playerPos}
+					styleProp={{
+						transform: `translate(${characterTransform})`,
+						width: (this.tileSize * this.characterSizePercentage) + 'px',
+						height: (this.tileSize * this.characterSizePercentage) + 'px',
+						margin: '4px'
+					}}
+				/>
+			)
+		});
+		return characterList;
 	}
 
 	addObjects = () => {
@@ -582,7 +666,7 @@ class Map extends React.Component {
 		for (const [tilePos, tileData] of Object.entries(this.state.mapLayout)) {
 			const tileCoords = tilePos.split('-');
 			if (tileData.type === 'door') {
-				let doorClass = this.state.currentMap + ' object';
+				let doorClass = this.currentMapData.name + ' object';
 				if (tileData.classes.includes('top-bottom-door')) {
 					doorClass += tileData.doorIsOpen ? ' front-door-open' : ' front-door';
 				} else if (tileData.classes.includes('left-door')) {
@@ -683,7 +767,7 @@ class Map extends React.Component {
 			this.state.playerPos.xPos + '-' + (this.state.playerPos.yPos + 1)
 		];
 		if (doorLocation >= 0) {
-			this.sfxSelectors[this.state.currentMap].door.play();
+			this.sfxSelectors[this.currentMapData.name].door.play();
 			const doorTilePos = doorTileDirections[doorLocation];
 			this.setState(prevState => ({
 				mapLayout: {
@@ -713,7 +797,7 @@ class Map extends React.Component {
 		document.addEventListener('keydown', (e) => {
 			if (e.code.startsWith('Arrow')) {
 				e.preventDefault();
-				this.placePlayer('', e);
+				this.moveCharacter('', e);
 			} else if (e.code === 'Space') {
 				e.preventDefault();
 				this.toggleDoor();
@@ -753,11 +837,10 @@ class Map extends React.Component {
 
 	// Add below for testing: <button onClick={this.resetMap}>Reset</button>
 	render() {
-		const playerTransform = this.calculatePlayerTransform();
 		return (
 			<div className="world" style={{width: `${Math.floor(window.outerWidth/this.tileSize) * this.tileSize}px`}}>
 				<div className="map" style={this.state.mapPosition}>
-					{ this.state.mapLayoutDone && <this.createAllPieces /> }
+					{ this.state.mapLayoutDone && <this.createAllMapPieces /> }
 				</div>
 				<div className="objects" style={this.state.mapPosition}>
 					{ this.state.exitPlaced && <this.addObjects /> }
@@ -765,16 +848,11 @@ class Map extends React.Component {
 				<div className="lighting" style={this.state.mapPosition}>
 					{ this.state.exitPlaced && <this.addLighting /> }
 				</div>
+				<div className="creatures" style={this.state.mapPosition}>
+					{ this.state.mapLayoutDone && <this.addCharacters typeProp='creatures' /> }
+				</div>
+				{ this.state.mapLayoutDone && <this.addCharacters typeProp='players' /> }
 				{ <this.setupSoundEffects /> }
-				{ this.state.mapLayoutDone &&
-					<Player dataLocProp={this.state.playerPos}
-					        styleProp={{
-								transform: `translate(${playerTransform.xPos}px, ${playerTransform.yPos}px)`,
-						        width: (this.tileSize * 0.65) + 'px',
-						        height: (this.tileSize * 0.65) + 'px',
-						        margin: '4px'
-							}} />
-				}
 			</div>
 		);
 	}
