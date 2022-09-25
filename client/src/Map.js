@@ -74,12 +74,11 @@ class Map extends React.Component {
 				mapLayout: {...this.mapLayoutTemp}
 			}, () => {
 				this.moveCharacter(null, null, () => {
-			// need to find the correct place for this
+					this.setExitPosition();
 					let mapCreatures = this.setInitialCreatureData();
 					this.setState({mapCreatures});
 					if (this.pageFirstLoaded) {
 						this.pageFirstLoaded = false;
-						this.setExitPosition();
 						this.setupKeyListeners();
 					}
 				});
@@ -375,6 +374,11 @@ class Map extends React.Component {
 		return mapCreatures;
 	}
 
+	setInitialCreatureCoords(mapCreatures) {
+		const newPosition = this.generateRandomLocation(mapCreatures).split('-');
+		return {xPos: +newPosition[0], yPos: +newPosition[1]};
+	}
+
 	createAllMapPieces() {
 		let tiles = [];
 		for (const tilePos of Object.keys(this.state.mapLayout)) {
@@ -532,6 +536,7 @@ class Map extends React.Component {
 	// for checking to make sure random location doesn't already have a creature there
 	generateRandomLocation(mapCreatures = {}) {
 		let emptyLocFound = false;
+		// list of available floor tiles on which to place stuff
 		let tileList = Object.keys(this.state.mapLayout).filter(tilePos => this.state.mapLayout[tilePos].type === 'floor');
 		let creatureLocList = Object.values(mapCreatures).length > 0 ? Object.values(mapCreatures).map(creature => creature.tileCoords) : null;
 		let randomIndex = 0;
@@ -547,6 +552,7 @@ class Map extends React.Component {
 			if (!(exitPos && tilePos === exitPos) && !(creatureLocList && creatureLocList.includes(tilePos)) && !(playerPos && tilePos === playerPos)) {
 				emptyLocFound = true;
 			} else {
+				// remove tile from list of available locations
 				tileList.splice(randomIndex, 1);
 			}
 		}
@@ -561,11 +567,6 @@ class Map extends React.Component {
 
 	calculateObjectTransform(xPos, yPos) {
 		return `${xPos * this.tileSize}px, ${yPos * this.tileSize}px`;
-	}
-
-	setInitialCreatureCoords(mapCreatures) {
-		const newPosition = this.generateRandomLocation(mapCreatures).split('-');
-		return {xPos: +newPosition[0], yPos: +newPosition[1]};
 	}
 
 	moveMap = (initialSetupCallback) => {
@@ -674,23 +675,27 @@ class Map extends React.Component {
 				} else {
 					doorClass += tileData.doorIsOpen ? ' right-side-door-open' : ' side-door';
 				}
-				objects.push(<Door
-					key={`object-${tilePos}`}
-					styleProp={{
-						transform: `translate(${this.calculateObjectTransform(+tileCoords[0], +tileCoords[1])})`,
-					}}
-					classProp={doorClass}
-				/>)
+				objects.push(
+					<Door
+						key={`object-${tilePos}`}
+						styleProp={{
+							transform: `translate(${this.calculateObjectTransform(+tileCoords[0], +tileCoords[1])})`,
+						}}
+						classProp={doorClass}
+					/>
+				)
 			} else {
-				objects.push(<div
-					key={`object-${tilePos}`}
-					style={{
-						transform: `translate(${this.calculateObjectTransform(+tileCoords[0], +tileCoords[1])})`,
-						width: this.tileSize + 'px',
-						height: this.tileSize + 'px'
-					}}
-					className='object'
-				/>)
+				objects.push(
+					<div
+						key={`object-${tilePos}`}
+						style={{
+							transform: `translate(${this.calculateObjectTransform(+tileCoords[0], +tileCoords[1])})`,
+							width: this.tileSize + 'px',
+							height: this.tileSize + 'px'
+						}}
+						className='object'
+					/>
+				)
 			}
 		}
 		return objects;
@@ -818,6 +823,7 @@ class Map extends React.Component {
 			mapLayoutDone: false,
 			mapPosition: {},
 			exitPosition: {},
+			exitPlaced: false,
 			lighting: {}
 		}, () => {
 			this.layoutPieces();

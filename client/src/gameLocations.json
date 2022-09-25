@@ -2,6 +2,10 @@
 	"catacombs": {
 		"name": "catacombs",
 		"creatures": {
+			"elderThing": {
+				"count": 10,
+				"floors": 1
+			},
 			"ghoul": {
 				"count": 10,
 				"floors": 1
