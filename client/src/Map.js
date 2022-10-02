@@ -12,8 +12,8 @@ class Map extends React.Component {
 
 		this.pageFirstLoaded = true;
 		this.initialMapLoad = true;
-		this.tileSize = 32;
-		this.characterSizePercentage = 0.625;
+		this.tileSize = 64;
+		this.characterSizePercentage = 0.7;
 		this.mapTileLimit = 500;
 		this.firstPiecePosition = {xPos: 5, yPos: 5};
 		this.OPPOSITE_SIDE = {
@@ -623,9 +623,9 @@ class Map extends React.Component {
 					dataLocProp={this.state.playerPos}
 					styleProp={{
 						transform: `translate(${characterTransform})`,
-						width: (this.tileSize * this.characterSizePercentage) + 'px',
-						height: (this.tileSize * this.characterSizePercentage) + 'px',
-						margin: '4px'
+						width: Math.round(this.tileSize * this.characterSizePercentage) + 'px',
+						height: Math.round(this.tileSize * this.characterSizePercentage) + 'px',
+						margin: Math.round(this.tileSize / 8) + 'px'
 					}}
 				/>
 			)

@@ -5,27 +5,27 @@
 /* FLOORS */
 
 .floor-one {
-	background-position: -128px -160px;
+	background-position: -256px -320px;
 }
 
 .floor-two {
-	background-position: -160px -160px;
+	background-position: -320px -320px;
 }
 
 .floor-three {
-	background-position: -128px -192px;
+	background-position: -256px -386px;
 }
 
 .floor-four {
-	background-position: -160px -192px;
+	background-position: -320px -386px;
 }
 
 .floor-five {
-	background-position: -128px -224px;
+	background-position: -256px -224px;
 }
 
 .floor-six {
-	background-position: -160px -224px;
+	background-position: -320px -224px;
 }
 
 /* WALLS */
@@ -35,90 +35,90 @@
 }
 
 .top-wall-one {
-	background-position: -32px 0;
-}
-
-.top-wall-two {
 	background-position: -64px 0;
 }
 
-.top-wall-three {
-	background-position: -96px 0;
-}
-
-.top-wall-four {
+.top-wall-two {
 	background-position: -128px 0;
 }
 
+.top-wall-three {
+	background-position: -192px 0;
+}
+
+.top-wall-four {
+	background-position: -256px 0;
+}
+
 .top-right-wall {
-	background-position: -160px 0;
+	background-position: -320px 0;
 }
 
 .left-wall {
-	background-position: 0 -32px;
-}
-
-.right-wall {
-	background-position: -160px -32px;
-}
-
-.bottom-left-wall {
 	background-position: 0 -64px;
 }
 
+.right-wall {
+	background-position: -320px -64px;
+}
+
+.bottom-left-wall {
+	background-position: 0 -128px;
+}
+
 .bottom-wall-one {
-	background-position: -32px -64px;
+	background-position: -64px -128px;
 }
 
 .bottom-wall-two {
-	background-position: -64px -64px;
+	background-position: -128px -128px;
 }
 
 .bottom-wall-three {
-	background-position: -96px -64px;
+	background-position: -192px -128px;
 }
 
 .bottom-wall-four {
-	background-position: -128px -64px;
+	background-position: -256px -128px;
 }
 
 .bottom-right-wall {
-	background-position: -160px -64px;
+	background-position: -320px -128px;
 }
 
 .bottom-left-inverse-wall {
-	background-position: 0 -96px;
+	background-position: 0 -192px;
 }
 
 .bottom-right-inverse-wall {
-	background-position: -32px -96px;
+	background-position: -64px -192px;
 }
 
 .top-left-inverse-wall {
-	background-position: -64px -96px;
+	background-position: -128px -192px;
 }
 
 .top-right-inverse-wall {
-	background-position: -96px -96px;
+	background-position: -192px -192px;
 }
 
 .T-shaped-wall {
-	background-position: -128px -96px;
+	background-position: -256px -192px;
 }
 
 
 /* DOORS */
 
 .left-doorway {
-	background-position: -192px 0;
+	background-position: -386px 0;
 }
 
 .right-doorway {
-	background-position: -224px 0;
+	background-position: -448px 0;
 }
 
 .top-bottom-doorway {
-	background-position: -192px -32px;
+	background-position: -386px -64px;
 }
 
 
@@ -129,43 +129,43 @@
 }
 
 .front-door {
-	width: 32px;
-	height: 32px;
-	background-position: -192px -64px;
+	width: 64px;
+	height: 64px;
+	background-position: -386px -128px;
 	z-index: 1;
 }
 
 .front-door-open {
-	width: 32px;
-	height: 32px;
-	top: 16px;
-	left: -16px;
-	background-position: -224px -64px;
+	width: 64px;
+	height: 64px;
+	top: 32px;
+	left: -32px;
+	background-position: -448px -128px;
 	z-index: 1;
 }
 
 .side-door {
-	width: 32px;
-	height: 32px;
-	background-position: -224px -64px;
+	width: 64px;
+	height: 64px;
+	background-position: -448px -128px;
 	z-index: 1;
 }
 
 .left-side-door-open {
-	width: 32px;
-	height: 32px;
-	top: -16px;
-	left: -16px;
-	background-position: -192px -64px;
+	width: 64px;
+	height: 64px;
+	top: -32px;
+	left: -32px;
+	background-position: -386px -128px;
 	z-index: 1;
 }
 
 .right-side-door-open {
-	width: 32px;
-	height: 32px;
-	top: -16px;
-	left: 16px;
-	background-position: -192px -64px;
+	width: 64px;
+	height: 64px;
+	top: -32px;
+	left: 32px;
+	background-position: -386px -128px;
 	z-index: 1;
 }
 
@@ -173,6 +173,6 @@
 	position: absolute;
 	content: url('../assets/tilesets/Catacombs/catacombs.png');
 	object-fit: none;
-	object-position: -224px -192px;
+	object-position: -448px -386px;
 	z-index: 0;
 }
