@@ -15,8 +15,24 @@ export function randomTileVariant() {
 	return types[Math.floor(Math.random() * types.length)];
 }
 
-// Find all tiles out to 3 rings surrounding center,
-// then find tiles of those that have unblocked lines of sight(LOS) to the center
+// returns 0, 1, or -1;
+export function randomTileMovementValue() {
+	return Math.round(Math.random()) * (Math.round(Math.random()) === 0 ? 1 : -1);
+}
+
+/**
+ * Find all tiles out to 3 rings surrounding center,
+ * then find tiles of those that have unblocked lines of sight(LOS) to the center
+ * @param mapLayout {object} : map layout from state
+ * @param centerTilePos {string} : position of player (ex. '1-2')
+ * @returns {
+ *  {
+ *      oneAway: {floors: {tilePosString: {xPos, yPos}}, walls: {tilePosString: {xPos, yPos}}},
+ *      twoAway: {floors: {tilePosString: {xPos, yPos}}, walls: {tilePosString: {xPos, yPos}}},
+ *      threeAway: {floors: {tilePosString: {xPos, yPos}}, walls: {tilePosString: {xPos, yPos}}}
+ *  }
+ * }
+ */
 export function unblockedPathsToNearbyTiles(mapLayout, centerTilePos) {
 	const centerTile = mapLayout[centerTilePos];
 	let nearbyTiles = {

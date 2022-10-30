@@ -3,18 +3,24 @@
     "type": "creature",
     "level": 6,
     "strength": 4,
-    "hp": 50
+    "maxHP": 50,
+    "range": 3,
+    "moveSpeed": 1
   },
   "ghast": {
     "type": "creature",
     "level": 3,
     "strength": 3,
-    "hp": 15
+    "maxHP": 15,
+    "range": 1,
+    "moveSpeed": 1
   },
   "ghoul": {
     "type": "creature",
     "level": 2,
     "strength": 2,
-    "hp": 10
+    "maxHP": 10,
+    "range": 1,
+    "moveSpeed": 1
   }
 }

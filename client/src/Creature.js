@@ -1,16 +1,10 @@
 import React from "react";
 
 class Creature extends React.Component {
-	constructor() {
+	constructor(type) {
 		super();
 
-		this.type = '';
-		this.movement = 1;
-		this.range = 1;
-	}
-
-	move() {
-
+		this.type = type;
 	}
 
 	attack() {
