@@ -500,25 +500,28 @@ class Map extends React.Component {
 			let newCreaturePos = {};
 			const lineOfSightTiles = unblockedPathsToNearbyTiles(this.state.mapLayout, creaturePos);
 			const playerPos = `${this.state.playerCoords.xPos}-${this.state.playerCoords.yPos}`;
-		// will need to update this with a loop to check each player char
+	// will need to update this with a loop to check each player char
 			const playerDistance =  lineOfSightTiles.oneAway.floors[playerPos] ? 1 :
 									lineOfSightTiles.twoAway.floors[playerPos] ? 2 :
 									lineOfSightTiles.threeAway.floors[playerPos] ? 3 : -1;
 
+			// if a player char is nearby...
 			if (playerDistance > -1) {
+				// if creature is low on health
 				if (creatureData.currentHP < (creatureData.maxHP * this.creatureSurvivalHpPercent)) {
 					// move away from player
 					newCreaturePos = this.moveCreaturePosRelativeToChar(creatureData, -1);
 					this.storeNewCreatureCoords(creatureID, newCreaturePos);
+				// or if player char is within attack range, then attack
 				} else if (playerDistance <= creatureData.range) {
 					this.creatureInstances[creatureID].attack(); // incomplete method
+				// otherwise move creature toward player
 				} else {
-					// move creature toward player
 					newCreaturePos = this.moveCreaturePosRelativeToChar(creatureData, 1);
 					this.storeNewCreatureCoords(creatureID, newCreaturePos);
 				}
+			// otherwise, no player char nearby, so move creature in random direction (including possibly not moving at all)
 			} else {
-				// move creature in random direction (including possibly not moving at all)
 				let allCreatureMoves = [];
 				let newRandX = 0;
 				let newRandY = 0;
@@ -714,7 +717,6 @@ class Map extends React.Component {
 	}
 
 	addCharacters = (props) => {
-	// need to loop through 'count' of creatures and unique naming of each to add them all to characters object
 		const characters = props.typeProp === 'players' ? {...this.state.playerCharacters} : {...this.state.mapCreatures};
 		const characterNames = Object.keys(characters);
 		let characterList = [];

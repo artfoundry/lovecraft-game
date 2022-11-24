@@ -1,6 +1,44 @@
 {
   "privateEye": {
+    "name": "Joseph Hide",
     "type": "player",
-    "profession": "Private Investigator"
+    "profession": "Private Investigator",
+    "strength": 5,
+    "agility": 5,
+    "mentalAcuity": 4,
+    "startingHP": 10,
+    "startingSanity": 8,
+    "skills": {
+
+    },
+    "items": ["Revolver", "Ammo: handgun"]
+  },
+  "archaeologist": {
+    "name": "Mary Simpleton",
+    "type": "player",
+    "profession": "Archaeologist",
+    "strength": 3,
+    "agility": 5,
+    "mentalAcuity": 6,
+    "startingHP": 8,
+    "startingSanity": 10,
+    "skills": {
+
+    },
+    "items": ["Lantern"]
+  },
+  "chemist": {
+    "name": "Helen Abernathy",
+    "type": "player",
+    "profession": "Chemist",
+    "strength": 2,
+    "agility": 3,
+    "mentalAcuity": 7,
+    "startingHP": 6,
+    "startingSanity": 10,
+    "skills": {
+
+    },
+    "items": ["Acid concoction", "Pharmaceuticals"]
   }
 }
