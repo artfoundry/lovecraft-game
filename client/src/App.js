@@ -13,13 +13,15 @@ class Game extends React.Component {
     super();
 
     this.state = {
+      startingPC: 'privateEye',
+      activePC: 'privateEye',
       dialogClasses: 'dialog',
       dialogText: 'Find the stairs down to enter a new dungeon! Use mouse or arrow keys to move and space bar to open/close doors.',
       closeButtonText: 'Close',
       actionButtonVisible: false,
       actionButtonText: '',
       actionButtonCallback: null,
-      playerCharacters: PlayerCharacterTypes,
+      pcTypes: PlayerCharacterTypes,
       currentLocation: 'catacombs'
     }
   }
@@ -43,7 +45,7 @@ class Game extends React.Component {
     return (
         <div className="game">
           <div className={this.state.dialogClasses}>
-            <div className="dialog-message">{this.state.dialogText}</div>
+            <div className="dialog-message">{this.state.dialogText} <br /><br /> PC: {`${this.state.pcTypes[this.state.startingPC].name}, ${this.state.pcTypes[this.state.startingPC].profession}`}</div>
             <div className="dialog-buttons">
               <button className="dialog-button" onClick={this.closeDialog}>{this.state.closeButtonText}</button>
               <button className={`dialog-button ${this.state.actionButtonVisible ? '' : 'hide'}`}
@@ -56,7 +58,9 @@ class Game extends React.Component {
 
           <Map
               showDialogProp={this.showDialog}
-              pcProp={this.state.playerCharacters}
+              pcTypesProp={this.state.pcTypes}
+              playerCharsProp={this.state.startingPC}
+              activeCharProp={this.state.activePC}
               locationProp={this.state.currentLocation} />
         </div>
     );
