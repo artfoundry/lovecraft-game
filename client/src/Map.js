@@ -45,8 +45,8 @@ class Map extends React.Component {
 		this.creatureSurvivalHpPercent = 0.25;
 
 		this.state = {
-			playerCharacters: {[this.props.playerCharsProp]: this.props.pcTypesProp[this.props.playerCharsProp]},
-			activeCharacter: this.props.activeCharProp,
+			playerCharacters: {...this.props.playerCharsProp},
+			activeCharacter: this.props.playerCharsProp[this.props.activeCharProp],
 			pcTypes: this.props.pcTypesProp,
 			mapCreatures: {},
 			playerCoords: {},
@@ -62,6 +62,7 @@ class Map extends React.Component {
 		};
 
 		this.showDialog = this.props.showDialogProp;
+		this.updateLog = this.props.logUpdateProp;
 		this.createAllMapPieces = this.createAllMapPieces.bind(this);
 		this.addLighting = this.addLighting.bind(this);
 	}
@@ -517,13 +518,22 @@ class Map extends React.Component {
 					// move away from player
 					newCreaturePos = this.moveCreaturePosRelativeToChar(creatureCoords, -1);
 					this.storeNewCreatureCoords(creatureID, [newCreaturePos]);
+
+					this.updateLog(`Moving ${creatureID} away from player to ${JSON.stringify(newCreaturePos)}`);
+
 				// or if player char is within attack range, then attack
 				} else if (playerDistance <= creatureData.range) {
 					this.creatureInstances[creatureID].attack(); // incomplete method
+
+					this.updateLog(`${creatureID} is attacking player at ${JSON.stringify(playerPos)}`);
+
 				// otherwise move creature toward player
 				} else {
 					newCreaturePos = this.moveCreaturePosRelativeToChar(creatureCoords, 1);
 					this.storeNewCreatureCoords(creatureID, [newCreaturePos]);
+
+					this.updateLog(`Moving ${creatureID} toward player, to ${JSON.stringify(newCreaturePos)}`);
+
 				}
 			// otherwise, no player char nearby, so move creature in random direction (including possibly not moving at all)
 			} else {
@@ -535,6 +545,9 @@ class Map extends React.Component {
 					newRandY = creatureCoords.yPos + randomTileMovementValue();
 					if (this.tileIsFreeToMove({xPos: newRandX, yPos: newRandY})) {
 						allCreatureMoves.push({xPos: newRandX, yPos: newRandY});
+
+						this.updateLog(`Moving ${creatureID} randomly to ${newRandX}, ${newRandY}`);
+
 					}
 				}
 				if (allCreatureMoves.length > 0) {
@@ -545,44 +558,45 @@ class Map extends React.Component {
 	}
 
 	moveCharacter = (tileLoc, e, initialSetupCallback = null) => {
-		let coords = [];
+		let newCoords = [];
 		let invalidMove = false;
 		let playerMovementSide = [];
+		let attackedCreature = '';
 		const playerLoc = `${this.state.playerCoords.xPos}-${this.state.playerCoords.yPos}`;
 
 		// new position from moving
 		if (tileLoc || tileLoc === '') {
 
 			//keyboard input
+			let tileCoordsTemp = {...this.state.playerCoords};
 			if (e.code) {
-				tileLoc = {...this.state.playerCoords};
 				switch(e.code) {
 					case 'ArrowLeft':
-						tileLoc.xPos -= 1;
+						tileCoordsTemp.xPos -= 1;
 						playerMovementSide.push('leftSide');
 						break;
 					case 'ArrowRight':
-						tileLoc.xPos += 1;
+						tileCoordsTemp.xPos += 1;
 						playerMovementSide.push('rightSide');
 						break;
 					case 'ArrowUp':
-						tileLoc.yPos -= 1;
+						tileCoordsTemp.yPos -= 1;
 						playerMovementSide.push('topSide');
 						break;
 					case 'ArrowDown':
-						tileLoc.yPos += 1;
+						tileCoordsTemp.yPos += 1;
 						playerMovementSide.push('bottomSide');
 						break;
 				}
-				tileLoc = `${tileLoc.xPos}-${tileLoc.yPos}`;
-				coords = tileLoc.split('-');
+				tileLoc = `${tileCoordsTemp.xPos}-${tileCoordsTemp.yPos}`;
+				newCoords = tileLoc.split('-');
 
 			} else {
 				// mouse/touch input
 
-				coords = tileLoc.split('-');
-				const playerXMovementAmount = Math.abs(+coords[0] - this.state.playerCoords.xPos);
-				const playerYMovementAmount = Math.abs(+coords[1] - this.state.playerCoords.yPos);
+				newCoords = tileLoc.split('-');
+				const playerXMovementAmount = Math.abs(+newCoords[0] - this.state.playerCoords.xPos);
+				const playerYMovementAmount = Math.abs(+newCoords[1] - this.state.playerCoords.yPos);
 				playerMovementSide = this.getSidesBetweenAdjacentTiles(playerLoc, tileLoc);
 
 				// Invalid move if movement is more than 1 square or is =1 diagonal square
@@ -590,6 +604,14 @@ class Map extends React.Component {
 					(playerXMovementAmount > 0 && playerYMovementAmount > 0))
 				{
 					invalidMove = true;
+				}
+			}
+
+			for (const [creatureID, creatureCoords] of Object.entries(this.state.creatureCoords)) {
+				const creaturePos = `${creatureCoords.xPos}-${creatureCoords.yPos}`;
+				const newPlayerPos = `${newCoords[0]}-${newCoords[1]}`;
+				if (newPlayerPos === creaturePos) {
+					attackedCreature = creatureID;
 				}
 			}
 
@@ -605,26 +627,41 @@ class Map extends React.Component {
 		} else {
 			// new position generated randomly
 			tileLoc = this.generateRandomLocation();
-			coords = tileLoc.split('-');
+			newCoords = tileLoc.split('-');
+		}
+
+		if (attackedCreature !== '') {
+			this.updateLog(`NEW TURN: Player ${this.state.activeCharacter.name} attacks ${attackedCreature}`);
+
+			// attack() will modify creature object's hp attribute
+			this.state.activeCharacter.attack(this.state.mapCreatures[attackedCreature]);
+			this.animateCharacter();
+
+			newCoords = playerLoc.split('-');
 		}
 
 		if (!invalidMove) {
-			const visitedTile = `${coords[0]}-${coords[1]}`;
+
+			if (attackedCreature === '') {
+				this.updateLog(`NEW TURN: Player ${this.state.activeCharacter.name} moves to ${newCoords[0]}, ${newCoords[1]}`);
+			}
+
+			const visitedTile = `${newCoords[0]}-${newCoords[1]}`;
 			let playerVisitedUpdatedState = null;
 			if (!this.state.playerVisited[visitedTile]) {
-				const xMinusOne = (+coords[0] - 1) < 0 ? 0 : +coords[0] - 1;
-				const yMinusOne = (+coords[1] - 1) < 0 ? 0 : +coords[1] - 1;
+				const xMinusOne = (+newCoords[0] - 1) < 0 ? 0 : +newCoords[0] - 1;
+				const yMinusOne = (+newCoords[1] - 1) < 0 ? 0 : +newCoords[1] - 1;
 				let surroundingTilesCoords = {};
 				// list of surrounding tiles that are walls
 				let surroundingTilesList = [
 					`${xMinusOne}-${yMinusOne}`,
-					`${+coords[0]}-${yMinusOne}`,
-					`${+coords[0]+1}-${yMinusOne}`,
-					`${xMinusOne}-${+coords[1]}`,
-					`${+coords[0]+1}-${+coords[1]}`,
-					`${xMinusOne}-${+coords[1]+1}`,
-					`${+coords[0]}-${+coords[1]+1}`,
-					`${+coords[0]+1}-${+coords[1]+1}`
+					`${+newCoords[0]}-${yMinusOne}`,
+					`${+newCoords[0]+1}-${yMinusOne}`,
+					`${xMinusOne}-${+newCoords[1]}`,
+					`${+newCoords[0]+1}-${+newCoords[1]}`,
+					`${xMinusOne}-${+newCoords[1]+1}`,
+					`${+newCoords[0]}-${+newCoords[1]+1}`,
+					`${+newCoords[0]+1}-${+newCoords[1]+1}`
 				].filter(tile => this.state.mapLayout[tile] && this.state.mapLayout[tile].type === 'wall');
 
 				surroundingTilesList.push(visitedTile);
@@ -639,8 +676,8 @@ class Map extends React.Component {
 			this.setState(prevState => ({
 				playerVisited: playerVisitedUpdatedState || {...prevState.playerVisited},
 				playerCoords: {
-					xPos: +coords[0],
-					yPos: +coords[1]
+					xPos: +newCoords[0],
+					yPos: +newCoords[1]
 				},
 				playerPlaced: true
 			}), async () => {
@@ -649,6 +686,10 @@ class Map extends React.Component {
 				await this.moveCreatures();
 			});
 		}
+	}
+
+	animateCharacter() {
+
 	}
 
 	// mapCreatures is temp list of creature data (before setting state)
@@ -724,13 +765,15 @@ class Map extends React.Component {
 		const characterNames = Object.keys(characters);
 		let characterList = [];
 		let characterTransform = null;
+		let creatureCoords = this.state.playerCoords;
+
 		characterNames.forEach(name => {
 			if (characters[name].type === 'player') {
 				// need to make adjustment for each player character
 				characterTransform = this.calculatePlayerTransform();
 				characterTransform = `${characterTransform.xPos}px, ${characterTransform.yPos}px`;
 			} else {
-				const creatureCoords = this.state.creatureCoords[name];
+				creatureCoords = this.state.creatureCoords[name];
 				characterTransform = this.calculateObjectTransform(creatureCoords.xPos, creatureCoords.yPos);
 			}
 
@@ -738,9 +781,10 @@ class Map extends React.Component {
 			const nameEndIndex = numberInName > -1 ? numberInName : name.length;
 			characterList.push(
 				<Character
+					idProp={name}
 					key={name + Math.random()}
 					classesProp={`${characters[name].type} ${name.substring(0, nameEndIndex)}`}
-					dataLocProp={this.state.playerCoords}
+					dataLocProp={creatureCoords}
 					styleProp={{
 						transform: `translate(${characterTransform})`,
 						width: Math.round(this.tileSize * this.characterSizePercentage) + 'px',

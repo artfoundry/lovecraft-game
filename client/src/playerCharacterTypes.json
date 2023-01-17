@@ -12,7 +12,8 @@
     "skills": {
 
     },
-    "items": ["Revolver", "Ammo: handgun"]
+    "weapons": ["Revolver"],
+    "items": ["Ammo: handgun"]
   },
   "archaeologist": {
     "name": "Mary Simpleton",
@@ -27,6 +28,7 @@
     "skills": {
 
     },
+    "weapons": [],
     "items": ["Lantern"]
   },
   "chemist": {
@@ -42,6 +44,7 @@
     "skills": {
 
     },
-    "items": ["Acid concoction", "Pharmaceuticals"]
+    "weapons": ["Acid concoction"],
+    "items": ["Pharmaceuticals"]
   }
 }

@@ -1,6 +1,8 @@
 import React from 'react';
 import Map from './Map';
+import Character from "./Character";
 import PlayerCharacterTypes from './playerCharacterTypes.json';
+import UI from './UI';
 import './css/app.css';
 import './css/map.css';
 import './css/visualElements.css';
@@ -13,7 +15,7 @@ class Game extends React.Component {
     super();
 
     this.state = {
-      startingPC: 'privateEye',
+      allPCs: {privateEye: new Character(PlayerCharacterTypes['privateEye'])},
       activePC: 'privateEye',
       dialogClasses: 'dialog',
       dialogText: 'Find the stairs down to enter a new dungeon! Use mouse or arrow keys to move and space bar to open/close doors.',
@@ -22,7 +24,8 @@ class Game extends React.Component {
       actionButtonText: '',
       actionButtonCallback: null,
       pcTypes: PlayerCharacterTypes,
-      currentLocation: 'catacombs'
+      currentLocation: 'catacombs',
+      logText: []
     }
   }
 
@@ -41,11 +44,17 @@ class Game extends React.Component {
     this.setState({dialogClasses: 'hide'});
   }
 
+  updateLog = (logText) => {
+    this.setState(prevState => ({
+      logText: [...prevState.logText, logText]
+    }));
+  }
+
   render() {
     return (
         <div className="game">
           <div className={this.state.dialogClasses}>
-            <div className="dialog-message">{this.state.dialogText} <br /><br /> PC: {`${this.state.pcTypes[this.state.startingPC].name}, ${this.state.pcTypes[this.state.startingPC].profession}`}</div>
+            <div className="dialog-message">{this.state.dialogText} <br /><br /> PC: {`${this.state.allPCs[this.state.activePC].name}, ${this.state.allPCs[this.state.activePC].profession}`}</div>
             <div className="dialog-buttons">
               <button className="dialog-button" onClick={this.closeDialog}>{this.state.closeButtonText}</button>
               <button className={`dialog-button ${this.state.actionButtonVisible ? '' : 'hide'}`}
@@ -56,12 +65,15 @@ class Game extends React.Component {
             </div>
           </div>
 
+          <UI logTextProp={this.state.logText} />
+
           <Map
               showDialogProp={this.showDialog}
               pcTypesProp={this.state.pcTypes}
-              playerCharsProp={this.state.startingPC}
+              playerCharsProp={this.state.allPCs}
               activeCharProp={this.state.activePC}
-              locationProp={this.state.currentLocation} />
+              locationProp={this.state.currentLocation}
+              logUpdateProp={this.updateLog} />
         </div>
     );
   }

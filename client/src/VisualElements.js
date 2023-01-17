@@ -3,7 +3,8 @@ import {randomTileVariant} from './Utils';
 
 function Character(props) {
 	return (
-		<img alt={props.classesProp}
+		<img id={props.idProp}
+			 alt={props.classesProp}
 		     className={props.classesProp}
 		     style={props.styleProp}
 		     data-location={`${props.dataLocProp.xPos}-${props.dataLocProp.yPos}`} />

@@ -1,0 +1,7 @@
+{
+  "Revolver": {
+    "damage": 5,
+    "range": 4,
+    "rounds": 6
+  }
+}
