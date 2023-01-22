@@ -68,7 +68,30 @@ class Map extends React.Component {
 		this.updateCharSelectionState = this.props.charIsSelectedProp;
 		this.createAllMapPieces = this.createAllMapPieces.bind(this);
 		this.addLighting = this.addLighting.bind(this);
-		this.selectCharacter = this.selectCharacter.bind(this);
+		this.selectUnit = this.selectUnit.bind(this);
+	}
+
+	resetMap = () => {
+		this.initialMapLoad = true;
+		this.mapLayoutTemp = {};
+
+		this.setState({
+			mapCreatures: {},
+			selectedCharacter: '',
+			selectedCreature: '',
+			playerCoords: {},
+			creatureCoords: {},
+			playerPlaced: false,
+			playerVisited: {},
+			mapLayout: {},
+			mapLayoutDone: false,
+			mapPosition: {},
+			exitPosition: {},
+			exitPlaced: false,
+			lighting: {}
+		}, () => {
+			this.layoutPieces();
+		});
 	}
 
 	layoutPieces = () => {
@@ -791,7 +814,7 @@ class Map extends React.Component {
 					classesProp={`${characters[name].type} ${name.substring(0, nameEndIndex)} ${isSelectedClass}`}
 					dataLocProp={creatureCoords}
 					dataCharTypeProp={characterType}
-					selectCharacterProp={this.selectCharacter}
+					selectUnitProp={this.selectUnit}
 					styleProp={{
 						transform: `translate(${characterTransform})`,
 						width: Math.round(this.tileSize * this.characterSizePercentage) + 'px',
@@ -936,17 +959,17 @@ class Map extends React.Component {
 	 * MAP INTERACTION
 	 */
 
-	selectCharacter(id, type) {
-		let storeObjectName = '';
+	selectUnit(id, type) {
+		let unitTypeObjectName = '';
 		let unitTypeSelected = '';
 		let unitNameForSelectionStateChg = '';
 		let unitToDeselect = '';
 
 		if (type === 'player') {
-			storeObjectName = 'playerCharacters';
+			unitTypeObjectName = 'playerCharacters';
 			unitTypeSelected = 'selectedCharacter';
 		} else if (type === 'creature') {
-			storeObjectName = 'mapCreatures';
+			unitTypeObjectName = 'mapCreatures';
 			unitTypeSelected = 'selectedCreature';
 		}
 
@@ -964,26 +987,26 @@ class Map extends React.Component {
 
 		this.setState(prevState => ({
 			[unitTypeSelected]: unitNameForSelectionStateChg,
-			[storeObjectName]: {
-				...prevState[storeObjectName],
+			[unitTypeObjectName]: {
+				...prevState[unitTypeObjectName],
 				[id]: {
-					...prevState[storeObjectName][id],
-					isSelected: !prevState[storeObjectName][id].isSelected
+					...prevState[unitTypeObjectName][id],
+					isSelected: !prevState[unitTypeObjectName][id].isSelected
 				}
 			}
 		}), () => {
 			if (unitToDeselect !== '') {
 				this.setState(prevState => ({
-					[storeObjectName]: {
-						...prevState[storeObjectName],
+					[unitTypeObjectName]: {
+						...prevState[unitTypeObjectName],
 						[unitToDeselect]: {
-							...prevState[storeObjectName][unitToDeselect],
-							isSelected: !prevState[storeObjectName][unitToDeselect].isSelected
+							...prevState[unitTypeObjectName][unitToDeselect],
+							isSelected: !prevState[unitTypeObjectName][unitToDeselect].isSelected
 						}
 					}
 				}));
 			}
-			this.updateCharSelectionState(type, this.state[storeObjectName][id].isSelected);
+			this.updateCharSelectionState(type, this.state[unitTypeObjectName][id].isSelected);
 		});
 	}
 
@@ -1046,28 +1069,6 @@ class Map extends React.Component {
 	/**
 	 * TOP LEVEL HANDLERS
 	 */
-
-	resetMap = () => {
-		this.initialMapLoad = true;
-		this.mapLayoutTemp = {};
-
-		this.setState({
-			mapCreatures: {},
-			playerCoords: {},
-			creatureCoords: {},
-			playerPlaced: false,
-			playerVisited: {},
-			currentMap: 'catacombs',
-			mapLayout: {},
-			mapLayoutDone: false,
-			mapPosition: {},
-			exitPosition: {},
-			exitPlaced: false,
-			lighting: {}
-		}, () => {
-			this.layoutPieces();
-		});
-	}
 
 	componentDidMount() {
 		if (this.initialMapLoad) {

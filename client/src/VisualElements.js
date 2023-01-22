@@ -9,7 +9,7 @@ function Character(props) {
 		     style={props.styleProp}
 		     data-location={`${props.dataLocProp.xPos}-${props.dataLocProp.yPos}`}
 			 onClick={e => {
-				 props.selectCharacterProp(props.idProp, props.dataCharTypeProp);
+				 props.selectUnitProp(props.idProp, props.dataCharTypeProp);
 			 }} />
 	)
 }
