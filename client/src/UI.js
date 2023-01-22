@@ -6,7 +6,11 @@ class UI extends React.Component {
 		super(props);
 
 		this.state = {
-			logText: this.props.logTextProp
+			logText: this.props.logTextProp,
+			characterIsSelected: this.props.characterIsSelectedProp,
+			creatureIsSelected: this.props.creatureIsSelectedProp,
+			characterText: this.props.characterInfoTextProp,
+			controlBarContent: this.props.controlsContentProp
 		};
 	}
 
@@ -21,15 +25,33 @@ class UI extends React.Component {
 		return lines;
 	}
 
+	showCharacterInfo() {
+
+	}
+
+	showControlBar() {
+
+	}
+
 	componentDidUpdate(prevProps, prevState, snapShot) {
 		if (prevProps.logTextProp !== this.props.logTextProp) {
 			this.setState({logText: [...this.props.logTextProp]});
+		}
+		if (prevProps.characterIsSelectedProp !== this.props.characterIsSelectedProp) {
+			this.setState(prevState => ({characterIsSelected: !prevState.characterIsSelected}));
+		}
+		if (prevProps.creatureIsSelectedProp !== this.props.creatureIsSelectedProp) {
+			this.setState(prevState => ({creatureIsSelected: !prevState.creatureIsSelected}));
 		}
 	}
 
 	render() {
 		return (
-			<div className="log-container">{this.state.logText && <this.addLogLines />}</div>
+			<div className="ui-container">
+				<div className="log-container">{this.state.logText && <this.addLogLines />}</div>
+				<div className={`character-info-container ${this.state.characterIsSelected || this.state.creatureIsSelected ? '' : 'hide'}`}>{this.state.characterText && <this.showCharacterInfo />}</div>
+				<div className="control-bar-container">{this.state.controlBarContent && <this.showControlBar />}</div>
+			</div>
 		);
 	}
 }

@@ -1,18 +1,51 @@
-.log-container {
+.ui-container {
 	position: fixed;
-	width: 600px;
-	height: 150px;
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr 1fr 300px;
+	grid-template-rows: 1fr 1fr 1fr 1fr 150px;
+	grid-template-areas:
+	"log log log . characterInfo"
+	". . . . characterInfo"
+	". . . . characterInfo"
+	". . . . ."
+	"controlBar controlBar controlBar controlBar controlBar";
+	width: 100%;
+	height: 100%;
 	top: 0;
 	left: 0;
+	z-index: 100;
+	pointer-events: none;
+}
+
+.log-container {
+	grid-area: log;
 	padding: 10px;
 	background-color: gray;
 	opacity: 0.8;
 	color: white;
 	font-size: 20px;
-	z-index: 100;
 	overflow-y: scroll;
+	pointer-events: all;
 }
 
 .log-line {
 	margin: 3px;
+}
+
+.character-info-container {
+	grid-area: characterInfo;
+	background-color: darkslategray;
+	opacity: 0.8;
+	color: white;
+	pointer-events: all;
+}
+
+.control-bar-container {
+	grid-area: controlBar;
+	width: 800px;
+	justify-self: center;
+	background-color: darkslategray;
+	opacity: 0.8;
+	color: white;
+	pointer-events: all;
 }

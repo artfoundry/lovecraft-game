@@ -49,6 +49,8 @@ class Map extends React.Component {
 			activeCharacter: this.props.playerCharsProp[this.props.activeCharProp],
 			pcTypes: this.props.pcTypesProp,
 			mapCreatures: {},
+			selectedCharacter: '',
+			selectedCreature: '',
 			playerCoords: {},
 			creatureCoords: {},
 			playerPlaced: false,
@@ -63,8 +65,10 @@ class Map extends React.Component {
 
 		this.showDialog = this.props.showDialogProp;
 		this.updateLog = this.props.logUpdateProp;
+		this.updateCharSelectionState = this.props.charIsSelectedProp;
 		this.createAllMapPieces = this.createAllMapPieces.bind(this);
 		this.addLighting = this.addLighting.bind(this);
+		this.selectCharacter = this.selectCharacter.bind(this);
 	}
 
 	layoutPieces = () => {
@@ -600,9 +604,7 @@ class Map extends React.Component {
 				playerMovementSide = this.getSidesBetweenAdjacentTiles(playerLoc, tileLoc);
 
 				// Invalid move if movement is more than 1 square or is =1 diagonal square
-				if (playerXMovementAmount > 1 || playerYMovementAmount > 1 ||
-					(playerXMovementAmount > 0 && playerYMovementAmount > 0))
-				{
+				if (playerXMovementAmount > 1 || playerYMovementAmount > 1) {
 					invalidMove = true;
 				}
 			}
@@ -766,6 +768,7 @@ class Map extends React.Component {
 		let characterList = [];
 		let characterTransform = null;
 		let creatureCoords = this.state.playerCoords;
+		let characterType = 'player';
 
 		characterNames.forEach(name => {
 			if (characters[name].type === 'player') {
@@ -775,16 +778,20 @@ class Map extends React.Component {
 			} else {
 				creatureCoords = this.state.creatureCoords[name];
 				characterTransform = this.calculateObjectTransform(creatureCoords.xPos, creatureCoords.yPos);
+				characterType = 'creature';
 			}
 
 			const numberInName = name.search(/\d/);
 			const nameEndIndex = numberInName > -1 ? numberInName : name.length;
+			const isSelectedClass = characters[name].isSelected ? 'selected' : '';
 			characterList.push(
 				<Character
 					idProp={name}
 					key={name + Math.random()}
-					classesProp={`${characters[name].type} ${name.substring(0, nameEndIndex)}`}
+					classesProp={`${characters[name].type} ${name.substring(0, nameEndIndex)} ${isSelectedClass}`}
 					dataLocProp={creatureCoords}
+					dataCharTypeProp={characterType}
+					selectCharacterProp={this.selectCharacter}
 					styleProp={{
 						transform: `translate(${characterTransform})`,
 						width: Math.round(this.tileSize * this.characterSizePercentage) + 'px',
@@ -924,6 +931,62 @@ class Map extends React.Component {
 		return sides;
 	}
 
+
+	/**
+	 * MAP INTERACTION
+	 */
+
+	selectCharacter(id, type) {
+		let storeObjectName = '';
+		let unitTypeSelected = '';
+		let unitNameForSelectionStateChg = '';
+		let unitToDeselect = '';
+
+		if (type === 'player') {
+			storeObjectName = 'playerCharacters';
+			unitTypeSelected = 'selectedCharacter';
+		} else if (type === 'creature') {
+			storeObjectName = 'mapCreatures';
+			unitTypeSelected = 'selectedCreature';
+		}
+
+		if (this.state.selectedCharacter === id || this.state.selectedCreature === id) {
+			// selected character was just clicked to deselect
+			unitNameForSelectionStateChg = '';
+		} else {
+			// no unit previously selected or different unit previously selected
+			unitNameForSelectionStateChg = id;
+
+			if (this.state[unitTypeSelected] !== '') {
+				unitToDeselect = this.state[unitTypeSelected];
+			}
+		}
+
+		this.setState(prevState => ({
+			[unitTypeSelected]: unitNameForSelectionStateChg,
+			[storeObjectName]: {
+				...prevState[storeObjectName],
+				[id]: {
+					...prevState[storeObjectName][id],
+					isSelected: !prevState[storeObjectName][id].isSelected
+				}
+			}
+		}), () => {
+			if (unitToDeselect !== '') {
+				this.setState(prevState => ({
+					[storeObjectName]: {
+						...prevState[storeObjectName],
+						[unitToDeselect]: {
+							...prevState[storeObjectName][unitToDeselect],
+							isSelected: !prevState[storeObjectName][unitToDeselect].isSelected
+						}
+					}
+				}));
+			}
+			this.updateCharSelectionState(type, this.state[storeObjectName][id].isSelected);
+		});
+	}
+
 	toggleDoor() {
 		const playerPos = this.state.playerCoords.xPos + '-' + this.state.playerCoords.yPos;
 		const playerPosTile = this.state.mapLayout[playerPos];
@@ -950,6 +1013,11 @@ class Map extends React.Component {
 		}
 	}
 
+
+	/**
+	 * ELEMENTS AND EVENTS
+	 */
+
 	populateSfxSelectors() {
 		this.sfxSelectors.catacombs['door'] = document.getElementById('sfx-stonedoor');
 	}
@@ -973,6 +1041,11 @@ class Map extends React.Component {
 			}
 		});
 	}
+
+
+	/**
+	 * TOP LEVEL HANDLERS
+	 */
 
 	resetMap = () => {
 		this.initialMapLoad = true;

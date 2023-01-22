@@ -31,3 +31,9 @@
 	margin: auto;
 	z-index: 0;
 }
+
+.selected {
+	outline: 2px dashed red;
+	border-radius: 15px;
+	box-sizing: border-box;
+}

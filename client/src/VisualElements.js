@@ -7,7 +7,10 @@ function Character(props) {
 			 alt={props.classesProp}
 		     className={props.classesProp}
 		     style={props.styleProp}
-		     data-location={`${props.dataLocProp.xPos}-${props.dataLocProp.yPos}`} />
+		     data-location={`${props.dataLocProp.xPos}-${props.dataLocProp.yPos}`}
+			 onClick={e => {
+				 props.selectCharacterProp(props.idProp, props.dataCharTypeProp);
+			 }} />
 	)
 }
 

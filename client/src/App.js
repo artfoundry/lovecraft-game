@@ -23,6 +23,10 @@ class Game extends React.Component {
       actionButtonVisible: false,
       actionButtonText: '',
       actionButtonCallback: null,
+      characterIsSelected: false,
+      creatureIsSelected: false,
+      characterInfoText: '',
+      controlsContent: '',
       pcTypes: PlayerCharacterTypes,
       currentLocation: 'catacombs',
       logText: []
@@ -50,6 +54,11 @@ class Game extends React.Component {
     }));
   }
 
+  updateCharIsSelected = (type, status) => {
+    const storageName = type === 'player' ? 'characterIsSelected' : 'creatureIsSelected';
+    this.setState({[storageName]: status});
+  }
+
   render() {
     return (
         <div className="game">
@@ -65,7 +74,13 @@ class Game extends React.Component {
             </div>
           </div>
 
-          <UI logTextProp={this.state.logText} />
+          <UI
+              logTextProp={this.state.logText}
+              characterInfoTextProp={this.state.characterInfoText}
+              controlsContentProp={this.state.controlsContent}
+              characterIsSelectedProp={this.state.characterIsSelected}
+              creatureIsSelectedProp={this.state.creatureIsSelected}
+          />
 
           <Map
               showDialogProp={this.showDialog}
@@ -73,7 +88,10 @@ class Game extends React.Component {
               playerCharsProp={this.state.allPCs}
               activeCharProp={this.state.activePC}
               locationProp={this.state.currentLocation}
-              logUpdateProp={this.updateLog} />
+              logUpdateProp={this.updateLog}
+              charIsSelectedProp={this.updateCharIsSelected}
+          />
+
         </div>
     );
   }
