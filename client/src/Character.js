@@ -19,7 +19,7 @@ class Character extends React.Component {
 		this.items = props.items;
 	}
 
-	attack() {
+	attack(target) {
 		if (this.activeWeapon) {
 
 		}

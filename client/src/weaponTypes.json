@@ -1,7 +1,7 @@
 {
   "Revolver": {
     "damage": 5,
-    "range": 4,
+    "ranged": true,
     "rounds": 6
   }
 }

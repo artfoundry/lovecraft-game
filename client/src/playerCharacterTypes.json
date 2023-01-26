@@ -12,7 +12,7 @@
     "skills": {
 
     },
-    "weapons": ["Revolver"],
+    "weapons": ["Revolver", "Baseball Bat"],
     "items": ["Ammo: handgun"]
   },
   "archaeologist": {
@@ -28,7 +28,7 @@
     "skills": {
 
     },
-    "weapons": [],
+    "weapons": ["Pickaxe"],
     "items": ["Lantern"]
   },
   "chemist": {

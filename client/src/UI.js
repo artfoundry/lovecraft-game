@@ -1,16 +1,20 @@
-import React from "react";
+import React from 'react';
+import {CharacterControls} from './UIElements';
 import './css/ui.css';
 
 class UI extends React.Component {
 	constructor(props) {
 		super(props);
 
+		this.toggleWeaponHandler = this.props.toggleWeaponProp;
+
 		this.state = {
 			logText: this.props.logTextProp,
 			characterIsSelected: this.props.characterIsSelectedProp,
 			creatureIsSelected: this.props.creatureIsSelectedProp,
 			characterText: this.props.characterInfoTextProp,
-			controlBarContent: this.props.controlsContentProp
+			controlBarContent: this.props.controlsContentProp,
+			weaponButtonSelected: this.props.weaponButtonSelectedProp
 		};
 	}
 
@@ -29,8 +33,33 @@ class UI extends React.Component {
 
 	}
 
-	showControlBar() {
+	toggleWeapon = (characterName, weapon) => {
+		let buttonState = {};
+		// if no weapon selected or weapon selected doesn't match new weapon selected, set weapon state to new weapon
+		if (Object.keys(this.state.weaponButtonSelected).length === 0 ||
+			(this.state.weaponButtonSelected.characterName !== characterName && this.state.weaponButtonSelected.weapon !== weapon))
+		{
+			buttonState = {characterName, weapon};
+		}
+		this.setState({weaponButtonSelected: buttonState});
+		this.toggleWeaponHandler(characterName, weapon);
+	}
 
+	showControlBar = () => {
+		let controlPanels = [];
+
+		for (const [id, info] of Object.entries(this.state.controlBarContent)) {
+			controlPanels.push(
+				<CharacterControls
+					key={id}
+					characterNameProp={info.name}
+					weaponsProp={info.weapons}
+					toggleWeaponButtonProp={this.toggleWeapon}
+					weaponButtonSelectedProp={this.state.weaponButtonSelected}
+				/>
+			)
+		}
+		return controlPanels;
 	}
 
 	componentDidUpdate(prevProps, prevState, snapShot) {

@@ -1,12 +1,12 @@
 .ui-container {
 	position: fixed;
 	display: grid;
-	grid-template-columns: 1fr 1fr 1fr 1fr 300px;
+	grid-template-columns: 300px 1fr 1fr 1fr 300px;
 	grid-template-rows: 1fr 1fr 1fr 1fr 150px;
 	grid-template-areas:
-	"log log log . characterInfo"
-	". . . . characterInfo"
-	". . . . characterInfo"
+	". log log log ."
+	"characterInfo . . . craetureInfo"
+	"characterInfo . . . craetureInfo"
 	". . . . ."
 	"controlBar controlBar controlBar controlBar controlBar";
 	width: 100%;
@@ -20,8 +20,8 @@
 .log-container {
 	grid-area: log;
 	padding: 10px;
-	background-color: gray;
-	opacity: 0.8;
+	background-color: darkslategray;
+	opacity: 0.6;
 	color: white;
 	font-size: 20px;
 	overflow-y: scroll;
@@ -35,17 +35,61 @@
 .character-info-container {
 	grid-area: characterInfo;
 	background-color: darkslategray;
-	opacity: 0.8;
+	color: white;
+	pointer-events: all;
+}
+
+.creature-info-container {
+	grid-area: craetureInfo;
+	background-color: darkslategray;
 	color: white;
 	pointer-events: all;
 }
 
 .control-bar-container {
 	grid-area: controlBar;
-	width: 800px;
+	display: flex;
+	width: 900px;
 	justify-self: center;
 	background-color: darkslategray;
-	opacity: 0.8;
 	color: white;
 	pointer-events: all;
+}
+
+.character-control-container {
+	width: 300px;
+	background-color: gray;
+	border: 2px solid cornflowerblue;
+	border-radius: 5px;
+}
+
+.character-name {
+	display: inline-block;
+	margin: 5px;
+	padding: 3px;
+	font-size: 16px;
+	font-family: "Copperplate Gothic Light", fantasy;
+	border-bottom: 1px solid darkslategray;
+}
+
+.weapon-buttons-container {
+	display: flex;
+	margin: 5px;
+}
+
+.weapon-button {
+	margin: 5px;
+	padding: 5px;
+	border: 1px solid cornflowerblue;
+	border-radius: 5px;
+	background-color: darkslategray;
+}
+
+.weapon-button:hover {
+	border-color: red;
+	cursor: pointer;
+}
+
+.button-selected {
+	background-color: darkred;
 }

@@ -1,4 +1,8 @@
-function rng() {
+export function convertCamelToKabobCase(str) {
+	return str.replace(/([A-Z])/g, match => ('-' + match.toLowerCase()));
+}
+
+export function rng() {
 	const date = new Date().getTime();
 	const dateToStr = date.toString();
 	const randomIndex = Math.floor(Math.random() * dateToStr.length);

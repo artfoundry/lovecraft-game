@@ -8,8 +8,8 @@ function Character(props) {
 		     className={props.classesProp}
 		     style={props.styleProp}
 		     data-location={`${props.dataLocProp.xPos}-${props.dataLocProp.yPos}`}
-			 onClick={e => {
-				 props.selectUnitProp(props.idProp, props.dataCharTypeProp);
+			 onClick={() => {
+				 props.clickUnitProp(props.idProp, props.dataCharTypeProp);
 			 }} />
 	)
 }
