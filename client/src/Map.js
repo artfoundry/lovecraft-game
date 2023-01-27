@@ -45,12 +45,8 @@ class Map extends React.Component {
 		this.creatureSurvivalHpPercent = 0.25;
 
 		this.state = {
-			playerCharacters: {...this.props.playerCharsProp},
 			activeCharacter: this.props.playerCharsProp[this.props.activeCharProp],
 			pcTypes: this.props.pcTypesProp,
-			mapCreatures: {},
-			selectedCharacter: '',
-			selectedCreature: '',
 			weaponButtonSelected: this.props.weaponButtonSelectedProp,
 			playerCoords: {},
 			creatureCoords: {},
@@ -64,13 +60,12 @@ class Map extends React.Component {
 			lighting: {}
 		};
 
-		this.showDialog = this.props.showDialogProp;
+		this.updateMapCreaturesInApp = this.props.updateCreaturesProp;
+		this.setShowDialogProps = this.props.setShowDialogProps;
 		this.updateLog = this.props.logUpdateProp;
-		this.updateCharSelectionState = this.props.charIsSelectedProp;
-		this.toggleWeaponButton = this.props.toggleWeaponButton;
+		this.handleUnitClick = this.props.unitClickHandlerProp;
 		this.createAllMapPieces = this.createAllMapPieces.bind(this);
 		this.addLighting = this.addLighting.bind(this);
-		this.handleUnitClick = this.handleUnitClick.bind(this);
 	}
 
 	resetMap = () => {
@@ -78,9 +73,6 @@ class Map extends React.Component {
 		this.mapLayoutTemp = {};
 
 		this.setState({
-			mapCreatures: {},
-			selectedCharacter: '',
-			selectedCreature: '',
 			playerCoords: {},
 			creatureCoords: {},
 			playerPlaced: false,
@@ -127,8 +119,9 @@ class Map extends React.Component {
 			}, () => {
 				this.moveCharacter(null, null, () => {
 					this.setExitPosition();
-					const {mapCreatures, creatureCoords} = this.setInitialCreatureData();
-					this.setState({mapCreatures, creatureCoords});
+					// const {mapCreatures, creatureCoords} = this.setInitialCreatureData();
+					// this.updateMapCreaturesInApp(mapCreatures);
+					// this.setState({creatureCoords});
 					if (this.pageFirstLoaded) {
 						this.pageFirstLoaded = false;
 						this.setupKeyListeners();
@@ -472,10 +465,6 @@ class Map extends React.Component {
 			moveCharacterProp={this.moveCharacter} />);
 	}
 
-	animateCharacter() {
-
-	}
-
 	// mapCreatures is temp list of creature data (before setting state)
 	// for checking to make sure random location doesn't already have a creature there
 	generateRandomLocation(creatureCoords = {}) {
@@ -517,17 +506,19 @@ class Map extends React.Component {
 		if (this.state.playerCoords.xPos === this.state.exitPosition.xPos &&
 			this.state.playerCoords.yPos === this.state.exitPosition.yPos)
 		{
+			const showDialog = true;
 			const dialogText = 'Do you want to descend to the next level?';
 			const closeButtonText = 'Stay here';
 			const actionButtonVisible = true;
 			const actionButtonText = 'Descend';
 			const actionButtonCallback = this.resetMap;
-			this.showDialog(dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback);
+			const dialogClasses = '';
+			this.setShowDialogProps(showDialog, dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses);
 		}
 	}
 
 	addCharacters = (props) => {
-		const characters = props.typeProp === 'players' ? {...this.state.playerCharacters} : {...this.state.mapCreatures};
+		const characters = props.typeProp === 'players' ? {...this.props.playerCharsProp} : {...this.props.mapCreaturesProp};
 		const characterNames = Object.keys(characters);
 		let characterList = [];
 		let characterTransform = null;
@@ -742,7 +733,7 @@ class Map extends React.Component {
 	}
 
 	moveCreatures() {
-		for (const [creatureID, creatureData] of Object.entries(this.state.mapCreatures)) {
+		for (const [creatureID, creatureData] of Object.entries(this.props.mapCreaturesProp)) {
 			const creatureCoords = this.state.creatureCoords[creatureID];
 			const creaturePos = `${creatureCoords.xPos}-${creatureCoords.yPos}`;
 			let newCreaturePos = {};
@@ -835,16 +826,36 @@ class Map extends React.Component {
 			if (e.code) {
 				switch(e.code) {
 					case 'ArrowLeft':
+					case 'Numpad4':
 						tileCoordsTemp.xPos -= 1;
 						break;
 					case 'ArrowRight':
+					case 'Numpad6':
 						tileCoordsTemp.xPos += 1;
 						break;
 					case 'ArrowUp':
+					case 'Numpad8':
 						tileCoordsTemp.yPos -= 1;
 						break;
 					case 'ArrowDown':
+					case 'Numpad2':
 						tileCoordsTemp.yPos += 1;
+						break;
+					case 'Numpad1':
+						tileCoordsTemp.xPos -= 1;
+						tileCoordsTemp.yPos += 1;
+						break;
+					case 'Numpad3':
+						tileCoordsTemp.xPos += 1;
+						tileCoordsTemp.yPos += 1;
+						break;
+					case 'Numpad7':
+						tileCoordsTemp.xPos -= 1;
+						tileCoordsTemp.yPos -= 1;
+						break;
+					case 'Numpad9':
+						tileCoordsTemp.xPos += 1;
+						tileCoordsTemp.yPos -= 1;
 						break;
 				}
 				tileLoc = `${tileCoordsTemp.xPos}-${tileCoordsTemp.yPos}`;
@@ -863,7 +874,18 @@ class Map extends React.Component {
 				}
 			}
 
-			if (this.state.mapLayout[tileLoc].type === 'wall') {
+			// check if player is trying to move where a creature exists
+			for (const creatureCoords of Object.values(this.state.creatureCoords)) {
+				const creaturePos = `${creatureCoords.xPos}-${creatureCoords.yPos}`;
+				const newPlayerPos = `${newCoords[0]}-${newCoords[1]}`;
+				if (newPlayerPos === creaturePos) {
+					invalidMove = true;
+				}
+			}
+
+			if (this.state.mapLayout[tileLoc].type === 'wall' ||
+				(this.state.mapLayout[tileLoc].type === 'door' && !this.state.mapLayout[tileLoc].doorIsOpen))
+			{
 				invalidMove = true;
 			}
 		} else {
@@ -912,8 +934,10 @@ class Map extends React.Component {
 				playerPlaced: true
 			}), async () => {
 				this.moveMap(initialSetupCallback);
-				this.checkForExit();
-				await this.moveCreatures();
+				if (!initialSetupCallback) {
+					this.checkForExit();
+					await this.moveCreatures();
+				}
 			});
 		}
 	}
@@ -934,67 +958,6 @@ class Map extends React.Component {
 				initialSetupCallback(); // only for setting up keys listener during setup
 			}
 		})
-	}
-
-	handleUnitClick(id, type) {
-		let unitTypeObjectName = '';
-		let unitTypeSelected = '';
-		let unitNameForSelectionStateChg = '';
-		let unitToDeselect = '';
-
-		if (type === 'player') {
-			unitTypeObjectName = 'playerCharacters';
-			unitTypeSelected = 'selectedCharacter';
-		} else if (type === 'creature') {
-			unitTypeObjectName = 'mapCreatures';
-			unitTypeSelected = 'selectedCreature';
-		}
-
-		if (Object.keys(this.state.weaponButtonSelected).length > 0) {
-			// selected unit is getting attacked
-			this.state.activeCharacter.attack(this.state.mapCreatures[id]);
-			if (this.state.mapCreatures[id].currentHP <= 0) {
-				this.deleteCreature(id);
-			}
-			this.animateCharacter();
-			this.toggleWeaponButton(this.state.weaponButtonSelected.characterName, this.state.weaponButtonSelected.weapon);
-		} else {
-			if (this.state.selectedCharacter === id || this.state.selectedCreature === id) {
-				// selected character was just clicked to deselect
-				unitNameForSelectionStateChg = '';
-			} else {
-				// no unit previously selected or different unit previously selected
-				unitNameForSelectionStateChg = id;
-
-				if (this.state[unitTypeSelected] !== '') {
-					unitToDeselect = this.state[unitTypeSelected];
-				}
-			}
-
-			this.setState(prevState => ({
-				[unitTypeSelected]: unitNameForSelectionStateChg,
-				[unitTypeObjectName]: {
-					...prevState[unitTypeObjectName],
-					[id]: {
-						...prevState[unitTypeObjectName][id],
-						isSelected: !prevState[unitTypeObjectName][id].isSelected
-					}
-				}
-			}), () => {
-				if (unitToDeselect !== '') {
-					this.setState(prevState => ({
-						[unitTypeObjectName]: {
-							...prevState[unitTypeObjectName],
-							[unitToDeselect]: {
-								...prevState[unitTypeObjectName][unitToDeselect],
-								isSelected: !prevState[unitTypeObjectName][unitToDeselect].isSelected
-							}
-						}
-					}));
-				}
-				this.updateCharSelectionState(type, this.state[unitTypeObjectName][id].isSelected);
-			});
-		}
 	}
 
 	toggleDoor() {
@@ -1023,10 +986,6 @@ class Map extends React.Component {
 		}
 	}
 
-	deleteCreature() {
-
-	}
-
 
 	/**
 	 * ELEMENTS AND EVENTS
@@ -1046,7 +1005,7 @@ class Map extends React.Component {
 
 	setupKeyListeners() {
 		document.addEventListener('keydown', (e) => {
-			if (e.code.startsWith('Arrow')) {
+			if (e.code.startsWith('Arrow') || e.code.startsWith('Numpad')) {
 				e.preventDefault();
 				this.moveCharacter('', e);
 			} else if (e.code === 'Space') {

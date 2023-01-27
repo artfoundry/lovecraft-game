@@ -14,16 +14,12 @@ class Game extends React.Component {
 	constructor() {
 		super();
 
+		this.initialDialogText = 'Find the stairs down to enter a new dungeon! Use mouse or arrow keys to move and space bar to open/close doors.';
+
 		this.state = {
 			playerCharacters: {privateEye: new Character(PlayerCharacterTypes['privateEye'])},
 			mapCreatures: {},
-			activePC: 'privateEye',
-			dialogClasses: 'dialog',
-			dialogText: 'Find the stairs down to enter a new dungeon! Use mouse or arrow keys to move and space bar to open/close doors.',
-			closeButtonText: 'Close',
-			actionButtonVisible: false,
-			actionButtonText: '',
-			actionButtonCallback: null,
+			activeCharacter: 'privateEye',
 			characterIsSelected: false,
 			creatureIsSelected: false,
 			selectedCharacter: '',
@@ -33,27 +29,21 @@ class Game extends React.Component {
 			controlsContent: '',
 			pcTypes: PlayerCharacterTypes,
 			currentLocation: 'catacombs',
-			logText: []
+			logText: [],
+			showDialog: true,
+			dialogProps: {
+				dialogText: this.initialDialogText,
+				closeButtonText: 'Close',
+				actionButtonVisible: false,
+				actionButtonText: '',
+				actionButtonCallback:  null,
+				dialogClasses: ''
+			}
 		}
 	}
 
 	updateMapCreatures = (creatureData) => {
 		this.setState({mapCreatures: creatureData})
-	}
-
-	showDialog = (dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback) => {
-		this.setState({
-			dialogClasses: 'dialog',
-			dialogText,
-			closeButtonText,
-			actionButtonVisible,
-			actionButtonText,
-			actionButtonCallback
-		});
-	}
-
-	closeDialog = () => {
-		this.setState({dialogClasses: 'hide'});
 	}
 
 	updateLog = (logText) => {
@@ -94,12 +84,17 @@ class Game extends React.Component {
 
 		if (Object.keys(this.state.weaponButtonSelected).length > 0) {
 			// selected unit is getting attacked
-			this.state.activeCharacter.attack(this.state.mapCreatures[id]);
+			const selectedWeaponInfo = this.state.weaponButtonSelected;
+
+		// need to check that creature clicked is within range of weapon's range
+			// attack() directly modifies currentHP in creature object
+			this.state.playerCharacters[this.state.activeCharacter].attack(selectedWeaponInfo.weapon, this.state.mapCreatures[id]);
+
 			if (this.state.mapCreatures[id].currentHP <= 0) {
 				this.deleteCreature(id);
 			}
 			this.animateCharacter();
-			this.toggleWeaponButton(this.state.weaponButtonSelected.characterName, this.state.weaponButtonSelected.weapon);
+			this.toggleWeapon(selectedWeaponInfo.characterName, selectedWeaponInfo.weapon);
 		} else {
 			if (this.state.selectedCharacter === id || this.state.selectedCreature === id) {
 				// selected character was just clicked to deselect
@@ -147,43 +142,34 @@ class Game extends React.Component {
 
 	}
 
+	setShowDialogProps = (showDialog, dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses) => {
+		this.setState({showDialog, dialogProps: {dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses}});
+	}
+
 	render() {
 		return (
 			<div className="game">
-				<div className={this.state.dialogClasses}>
-					<div className="dialog-message">{this.state.dialogText}
-						<br/><br/> PC: {`${this.state.playerCharacters[this.state.activePC].name}, ${this.state.playerCharacters[this.state.activePC].profession}`}
-					</div>
-					<div className="dialog-buttons">
-						<button className="dialog-button"
-						        onClick={this.closeDialog}>{this.state.closeButtonText}</button>
-						<button
-							className={`dialog-button ${this.state.actionButtonVisible ? '' : 'hide'}`}
-							onClick={() => {
-								this.state.actionButtonCallback();
-								this.closeDialog();
-							}}>
-							{this.state.actionButtonText}
-						</button>
-					</div>
-				</div>
 
 				<UI
-					logTextProp={this.state.logText}
-					characterInfoTextProp={this.state.characterInfoText}
-					controlsContentProp={this.state.playerCharacters}
-					characterIsSelectedProp={this.state.characterIsSelected}
-					creatureIsSelectedProp={this.state.creatureIsSelected}
-					weaponButtonSelectedProp={this.state.weaponButtonSelected}
-					toggleWeaponProp={this.toggleWeapon}
+					showDialog={this.state.showDialog}
+					setShowDialogProps={this.setShowDialogProps}
+					dialogProps={this.state.dialogProps}
+					logText={this.state.logText}
+					characterInfoText={this.state.characterInfoText}
+					controlsContent={this.state.playerCharacters}
+					characterIsSelected={this.state.characterIsSelected}
+					creatureIsSelected={this.state.creatureIsSelected}
+					weaponButtonSelected={this.state.weaponButtonSelected}
+					toggleWeapon={this.toggleWeapon}
 				/>
 
 				<Map
-					showDialogProp={this.showDialog}
+					setShowDialogProps={this.setShowDialogProps}
 					pcTypesProp={this.state.pcTypes}
 					playerCharsProp={this.state.playerCharacters}
+					mapCreaturesProp={this.state.mapCreatures}
 					updateCreaturesProp={this.updateMapCreatures}
-					activeCharProp={this.state.activePC}
+					activeCharProp={this.state.activeCharacter}
 					locationProp={this.state.currentLocation}
 					logUpdateProp={this.updateLog}
 					unitClickHandlerProp={this.handleUnitClick}

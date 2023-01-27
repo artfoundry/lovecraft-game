@@ -2,6 +2,13 @@
   "Revolver": {
     "damage": 5,
     "ranged": true,
-    "rounds": 6
+    "rounds": 6,
+    "attackType": "automatic"
+  },
+  "Baseball Bat": {
+    "damage": 2,
+    "ranged": false,
+    "rounds": 0,
+    "attackType": "manual"
   }
 }

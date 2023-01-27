@@ -1,21 +1,38 @@
 import React from 'react';
-import {CharacterControls} from './UIElements';
+import {CharacterControls, DialogWindow} from './UIElements';
 import './css/ui.css';
 
 class UI extends React.Component {
 	constructor(props) {
 		super(props);
 
-		this.toggleWeaponHandler = this.props.toggleWeaponProp;
+		this.toggleWeaponHandler = this.props.toggleWeapon;
 
 		this.state = {
-			logText: this.props.logTextProp,
-			characterIsSelected: this.props.characterIsSelectedProp,
-			creatureIsSelected: this.props.creatureIsSelectedProp,
-			characterText: this.props.characterInfoTextProp,
-			controlBarContent: this.props.controlsContentProp,
-			weaponButtonSelected: this.props.weaponButtonSelectedProp
+			logText: this.props.logText,
+			characterIsSelected: this.props.characterIsSelected,
+			creatureIsSelected: this.props.creatureIsSelected,
+			characterText: this.props.characterInfoText,
+			controlBarContent: this.props.controlsContent,
+			weaponButtonSelected: this.props.weaponButtonSelected
 		};
+	}
+
+	showDialog = () => {
+		return (
+			<DialogWindow
+				classes={this.props.dialogProps.dialogClasses}
+				dialogText={this.props.dialogProps.dialogText}
+				closeButtonText={this.props.dialogProps.closeButtonText}
+				actionButtonVisible={this.props.dialogProps.actionButtonVisible}
+				actionButtonText={this.props.dialogProps.actionButtonText}
+				actionButtonCallback={this.props.dialogProps.actionButtonCallback}
+				closeButtonCallback={this.closeDialog} />
+		)
+	}
+
+	closeDialog = () => {
+		this.props.setShowDialogProps(false);
 	}
 
 	addLogLines = () => {
@@ -63,13 +80,13 @@ class UI extends React.Component {
 	}
 
 	componentDidUpdate(prevProps, prevState, snapShot) {
-		if (prevProps.logTextProp !== this.props.logTextProp) {
-			this.setState({logText: [...this.props.logTextProp]});
+		if (prevProps.logText !== this.props.logText) {
+			this.setState({logText: [...this.props.logText]});
 		}
-		if (prevProps.characterIsSelectedProp !== this.props.characterIsSelectedProp) {
+		if (prevProps.characterIsSelected !== this.props.characterIsSelected) {
 			this.setState(prevState => ({characterIsSelected: !prevState.characterIsSelected}));
 		}
-		if (prevProps.creatureIsSelectedProp !== this.props.creatureIsSelectedProp) {
+		if (prevProps.creatureIsSelected !== this.props.creatureIsSelected) {
 			this.setState(prevState => ({creatureIsSelected: !prevState.creatureIsSelected}));
 		}
 	}
@@ -77,9 +94,10 @@ class UI extends React.Component {
 	render() {
 		return (
 			<div className="ui-container">
-				<div className="log-container">{this.state.logText && <this.addLogLines />}</div>
-				<div className={`character-info-container ${this.state.characterIsSelected || this.state.creatureIsSelected ? '' : 'hide'}`}>{this.state.characterText && <this.showCharacterInfo />}</div>
-				<div className="control-bar-container">{this.state.controlBarContent && <this.showControlBar />}</div>
+				{this.props.showDialog && <this.showDialog />}
+				<div className="log-container ui-panel">{this.state.logText && <this.addLogLines />}</div>
+				<div className={`character-info-container ui-panel ${this.state.characterIsSelected || this.state.creatureIsSelected ? '' : 'hide'}`}>{this.state.characterText && <this.showCharacterInfo />}</div>
+				<div className="control-bar-container ui-panel">{this.state.controlBarContent && <this.showControlBar />}</div>
 			</div>
 		);
 	}

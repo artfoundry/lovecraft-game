@@ -21,4 +21,28 @@ function CharacterControls(props) {
 	);
 }
 
-export {CharacterControls};
+function DialogWindow(props) {
+	return (
+		<div className={`dialog ui-panel ${props.classes}`}>
+			<div className="dialog-message">{props.dialogText}</div>
+			<div className="dialog-buttons">
+				<button className="dialog-button"
+				        onClick={() => {
+							props.closeButtonCallback();
+						}}>
+					{props.closeButtonText}
+				</button>
+				<button
+					className={`dialog-button ${props.actionButtonVisible ? '' : 'hide'}`}
+					onClick={() => {
+						props.actionButtonCallback();
+						props.closeButtonCallback();
+					}}>
+					{props.actionButtonText}
+				</button>
+			</div>
+		</div>
+	);
+}
+
+export {CharacterControls, DialogWindow};

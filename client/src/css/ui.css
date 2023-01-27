@@ -1,12 +1,19 @@
+.ui-panel {
+	background-color: darkslategray;
+	color: white;
+	pointer-events: all;
+	border-radius: 5px;
+}
+
 .ui-container {
 	position: fixed;
 	display: grid;
-	grid-template-columns: 300px 1fr 1fr 1fr 300px;
-	grid-template-rows: 1fr 1fr 1fr 1fr 150px;
+	grid-template-columns: 300px 1fr 400px 1fr 300px;
+	grid-template-rows: 1fr 1fr 250px 1fr 150px;
 	grid-template-areas:
 	". log log log ."
 	"characterInfo . . . craetureInfo"
-	"characterInfo . . . craetureInfo"
+	"characterInfo . dialog . craetureInfo"
 	". . . . ."
 	"controlBar controlBar controlBar controlBar controlBar";
 	width: 100%;
@@ -17,15 +24,48 @@
 	pointer-events: none;
 }
 
+
+.dialog {
+	grid-area: dialog;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-around;
+	align-items: center;
+	z-index: 10;
+	border: 2px solid lightgray;
+	border-radius: 10px;
+	color: lightgray;
+	background-color: darkslategray;
+	text-align: center;
+	padding: 20px;
+	font-size: 24px;
+}
+
+.dialog-message {
+}
+
+.dialog-buttons {
+	display: flex;
+	justify-content: space-around;
+	flex-direction: row;
+	width: 100%;
+}
+
+.dialog-button {
+	width: 100px;
+	height: 30px;
+	background-color: lightgray;
+	border: 2px solid black;
+	border-radius: 5px;
+	cursor: pointer;
+}
+
 .log-container {
 	grid-area: log;
 	padding: 10px;
-	background-color: darkslategray;
 	opacity: 0.6;
-	color: white;
 	font-size: 20px;
 	overflow-y: scroll;
-	pointer-events: all;
 }
 
 .log-line {
@@ -34,26 +74,16 @@
 
 .character-info-container {
 	grid-area: characterInfo;
-	background-color: darkslategray;
-	color: white;
-	pointer-events: all;
 }
 
 .creature-info-container {
 	grid-area: craetureInfo;
-	background-color: darkslategray;
-	color: white;
-	pointer-events: all;
 }
 
 .control-bar-container {
 	grid-area: controlBar;
 	display: flex;
-	width: 900px;
 	justify-self: center;
-	background-color: darkslategray;
-	color: white;
-	pointer-events: all;
 }
 
 .character-control-container {
@@ -92,4 +122,8 @@
 
 .button-selected {
 	background-color: darkred;
+}
+
+.hide {
+	display: none;
 }
