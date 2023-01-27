@@ -119,9 +119,9 @@ class Map extends React.Component {
 			}, () => {
 				this.moveCharacter(null, null, () => {
 					this.setExitPosition();
-					// const {mapCreatures, creatureCoords} = this.setInitialCreatureData();
-					// this.updateMapCreaturesInApp(mapCreatures);
-					// this.setState({creatureCoords});
+					const {mapCreatures, creatureCoords} = this.setInitialCreatureData();
+					this.updateMapCreaturesInApp(mapCreatures);
+					this.setState({creatureCoords});
 					if (this.pageFirstLoaded) {
 						this.pageFirstLoaded = false;
 						this.setupKeyListeners();

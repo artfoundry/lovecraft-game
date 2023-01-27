@@ -59,10 +59,9 @@ class Game extends React.Component {
 
 	toggleWeapon = (characterName, weapon) => {
 		let buttonState = {};
-
 		// if no weapon selected or weapon selected doesn't match new weapon selected, set weapon state to new weapon
 		if (Object.keys(this.state.weaponButtonSelected).length === 0 ||
-			(this.state.weaponButtonSelected.characterName !== characterName && this.state.weaponButtonSelected.weapon !== weapon)) {
+			(this.state.weaponButtonSelected.characterName !== characterName || this.state.weaponButtonSelected.weapon !== weapon)) {
 			buttonState = {characterName, weapon};
 		}
 		this.setState({weaponButtonSelected: buttonState});

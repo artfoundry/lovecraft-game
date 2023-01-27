@@ -6,8 +6,6 @@ class UI extends React.Component {
 	constructor(props) {
 		super(props);
 
-		this.toggleWeaponHandler = this.props.toggleWeapon;
-
 		this.state = {
 			logText: this.props.logText,
 			characterIsSelected: this.props.characterIsSelected,
@@ -51,15 +49,15 @@ class UI extends React.Component {
 	}
 
 	toggleWeapon = (characterName, weapon) => {
-		let buttonState = {};
-		// if no weapon selected or weapon selected doesn't match new weapon selected, set weapon state to new weapon
-		if (Object.keys(this.state.weaponButtonSelected).length === 0 ||
-			(this.state.weaponButtonSelected.characterName !== characterName && this.state.weaponButtonSelected.weapon !== weapon))
-		{
-			buttonState = {characterName, weapon};
-		}
-		this.setState({weaponButtonSelected: buttonState});
-		this.toggleWeaponHandler(characterName, weapon);
+		// let buttonState = {};
+		// // if no weapon selected or weapon selected doesn't match new weapon selected, set weapon state to new weapon
+		// if (Object.keys(this.state.weaponButtonSelected).length === 0 ||
+		// 	(this.state.weaponButtonSelected.characterName !== characterName && this.state.weaponButtonSelected.weapon !== weapon))
+		// {
+		// 	buttonState = {characterName, weapon};
+		// }
+		// this.setState({weaponButtonSelected: buttonState});
+		this.props.toggleWeapon(characterName, weapon);
 	}
 
 	showControlBar = () => {
@@ -71,8 +69,8 @@ class UI extends React.Component {
 					key={id}
 					characterNameProp={info.name}
 					weaponsProp={info.weapons}
-					toggleWeaponButtonProp={this.toggleWeapon}
-					weaponButtonSelectedProp={this.state.weaponButtonSelected}
+					toggleWeaponButtonProp={this.props.toggleWeapon}
+					weaponButtonSelectedProp={this.props.weaponButtonSelected}
 				/>
 			)
 		}
