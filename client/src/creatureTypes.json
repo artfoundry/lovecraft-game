@@ -1,5 +1,6 @@
 {
   "elderThing": {
+    "name": "Elder Thing",
     "type": "creature",
     "level": 6,
     "strength": 4,
@@ -8,11 +9,12 @@
     "initiative": 14,
     "damage": 5,
     "defense": 5,
-    "maxHP": 50,
+    "startingHP": 50,
     "range": 3,
     "moveSpeed": 1
   },
   "ghast": {
+    "name": "Ghast",
     "type": "creature",
     "level": 3,
     "strength": 3,
@@ -21,11 +23,12 @@
     "initiative": 5,
     "damage": 4,
     "defense": 3,
-    "maxHP": 15,
+    "startingHP": 15,
     "range": 1,
     "moveSpeed": 1
   },
   "ghoul": {
+    "name": "Ghoul",
     "type": "creature",
     "level": 2,
     "strength": 2,
@@ -34,8 +37,22 @@
     "initiative": 3,
     "damage": 3,
     "defense": 2,
-    "maxHP": 10,
+    "startingHP": 10,
     "range": 1,
+    "moveSpeed": 1
+  },
+  "shoggoth": {
+    "name": "Shoggoth",
+    "type": "creature",
+    "level": 4,
+    "strength": 8,
+    "agility": 1,
+    "mentalAcuity": 1,
+    "initiative": 2,
+    "damage": 7,
+    "defense": 2,
+    "startingHP": 70,
+    "range": 2,
     "moveSpeed": 1
   }
 }

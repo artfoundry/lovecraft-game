@@ -21,6 +21,53 @@ function CharacterControls(props) {
 	);
 }
 
+function CharacterInfoPanel(props) {
+	const skillList = Object.values(props.characterInfo.skills).map(item => <li key={item + Math.random()}>{item}</li>);
+	const weaponList = Object.values(props.characterInfo.weapons).map(item => <li key={item + Math.random()}>{item}</li>);
+	const itemList = Object.values(props.characterInfo.items).map(item => <li key={item + Math.random()}>{item}</li>);
+	return (
+		<div className={`character-info-container ui-panel ${props.characterIsSelected ? '' : 'hide'}`}>
+			<div>Name: {props.characterInfo.name}</div>
+			<div>Profession: {props.characterInfo.profession}</div>
+			<div>Level: {props.characterInfo.level}</div>
+			<div>XP: {props.characterInfo.xp}</div>
+			<div>Strength: {props.characterInfo.strength}</div>
+			<div>Agility: {props.characterInfo.agility}</div>
+			<div>Mental Acuity: {props.characterInfo.mentalAcuity}</div>
+			<div>Initiative: {props.characterInfo.initiative}</div>
+			<div>Health: {props.characterInfo.currentHP} / {props.characterInfo.startingHP}</div>
+			<div>Sanity: {props.characterInfo.currentSanity} / {props.characterInfo.startingSanity}</div>
+			<div>Skills:
+				<ul>{skillList}</ul>
+			</div>
+			<div>Weapons:
+				<ul>{weaponList}</ul>
+			</div>
+			<div>Items:
+				<ul>{itemList}</ul>
+			</div>
+		</div>
+	);
+}
+
+function CreatureInfoPanel(props) {
+	return (
+		<div className={`creature-info-container ui-panel ${props.creatureIsSelected ? '' : 'hide'}`}>
+			<div>Name: {props.creatureInfo.name}</div>
+			<div>Level: {props.creatureInfo.level}</div>
+			<div>Health: {props.creatureInfo.currentHP} / {props.creatureInfo.startingHP}</div>
+			<div>Strength: {props.creatureInfo.strength}</div>
+			<div>Agility: {props.creatureInfo.agility}</div>
+			<div>Mental Acuity: {props.creatureInfo.mentalAcuity}</div>
+			<div>Initiative: {props.creatureInfo.initiative}</div>
+			<div>Defense: {props.creatureInfo.defense}</div>
+			<div>Damage: {props.creatureInfo.damage}</div>
+			<div>Range: {props.creatureInfo.range}</div>
+			<div>Speed: {props.creatureInfo.moveSpeed}</div>
+		</div>
+	);
+}
+
 function DialogWindow(props) {
 	return (
 		<div className={`dialog ui-panel ${props.classes}`}>
@@ -45,4 +92,4 @@ function DialogWindow(props) {
 	);
 }
 
-export {CharacterControls, DialogWindow};
+export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, DialogWindow};

@@ -21,11 +21,13 @@ class Game extends React.Component {
 			mapCreatures: {},
 			activeCharacter: 'privateEye',
 			characterIsSelected: false,
+			characterInfoText: '',
 			creatureIsSelected: false,
+			creatureInfoText: '',
+			creatureCoordsUpdate: null,
 			selectedCharacter: '',
 			selectedCreature: '',
 			weaponButtonSelected: {},
-			characterInfoText: '',
 			controlsContent: '',
 			pcTypes: PlayerCharacterTypes,
 			currentLocation: 'catacombs',
@@ -42,8 +44,26 @@ class Game extends React.Component {
 		}
 	}
 
-	updateMapCreatures = (creatureData) => {
-		this.setState({mapCreatures: creatureData})
+	updateMapCreatures = (updateData, id) => {
+		if (id) {
+			this.setState(prevState => ({
+				mapCreatures: {
+					...prevState.mapCreatures,
+					[id]: {...prevState.mapCreatures[id], ...updateData}
+				}
+			}), () => {
+				if (this.state.selectedCreature === id) {
+					this.updateInfoText('creatureInfoText', id);
+				}
+			});
+		} else {
+			this.setState({mapCreatures: updateData});
+		}
+	}
+
+	updateInfoText(type, id) {
+		const updatedText = type === 'characterInfoText' ? this.state.playerCharacters[id] : this.state.mapCreatures[id];
+		this.setState({[type]: updatedText});
 	}
 
 	updateLog = (logText) => {
@@ -72,6 +92,7 @@ class Game extends React.Component {
 		let unitTypeSelected = '';
 		let unitNameForSelectionStateChg = '';
 		let unitToDeselect = '';
+		let infoTextToUpdate = '';
 
 		if (type === 'player') {
 			unitTypeObjectName = 'playerCharacters';
@@ -81,16 +102,16 @@ class Game extends React.Component {
 			unitTypeSelected = 'selectedCreature';
 		}
 
-		if (Object.keys(this.state.weaponButtonSelected).length > 0) {
+		if (Object.keys(this.state.weaponButtonSelected).length > 0 && this.state.mapCreatures[id].currentHP > 0) {
 			// selected unit is getting attacked
 			const selectedWeaponInfo = this.state.weaponButtonSelected;
 
-		// need to check that creature clicked is within range of weapon's range
-			// attack() directly modifies currentHP in creature object
-			this.state.playerCharacters[this.state.activeCharacter].attack(selectedWeaponInfo.weapon, this.state.mapCreatures[id]);
+// need to check that creature clicked is within range of weapon's range
+			this.state.playerCharacters[this.state.activeCharacter].attack(selectedWeaponInfo.weapon, id, this.state.mapCreatures[id], this.updateMapCreatures, this.updateLog);
 
 			if (this.state.mapCreatures[id].currentHP <= 0) {
-				this.deleteCreature(id);
+				this.setState({creatureCoordsUpdate: id});
+				this.updateLog(`${id} is dead!`);
 			}
 			this.animateCharacter();
 			this.toggleWeapon(selectedWeaponInfo.characterName, selectedWeaponInfo.weapon);
@@ -101,6 +122,8 @@ class Game extends React.Component {
 			} else {
 				// no unit previously selected or different unit previously selected
 				unitNameForSelectionStateChg = id;
+
+				infoTextToUpdate = type === 'player' ? 'characterInfoText' : 'creatureInfoText';
 
 				if (this.state[unitTypeSelected] !== '') {
 					unitToDeselect = this.state[unitTypeSelected];
@@ -128,16 +151,17 @@ class Game extends React.Component {
 						}
 					}));
 				}
+				this.updateInfoText(infoTextToUpdate, id);
 				this.toggleCharIsSelected(type, this.state[unitTypeObjectName][id].isSelected);
 			});
 		}
 	}
 
-	animateCharacter() {
-
+	resetCreatureCoordsUpdate() {
+		this.setState({creatureCoordsUpdate: null});
 	}
 
-	deleteCreature(id) {
+	animateCharacter() {
 
 	}
 
@@ -155,6 +179,7 @@ class Game extends React.Component {
 					dialogProps={this.state.dialogProps}
 					logText={this.state.logText}
 					characterInfoText={this.state.characterInfoText}
+					creatureInfoText={this.state.creatureInfoText}
 					controlsContent={this.state.playerCharacters}
 					characterIsSelected={this.state.characterIsSelected}
 					creatureIsSelected={this.state.creatureIsSelected}
@@ -164,16 +189,16 @@ class Game extends React.Component {
 
 				<Map
 					setShowDialogProps={this.setShowDialogProps}
-					pcTypesProp={this.state.pcTypes}
-					playerCharsProp={this.state.playerCharacters}
-					mapCreaturesProp={this.state.mapCreatures}
-					updateCreaturesProp={this.updateMapCreatures}
-					activeCharProp={this.state.activeCharacter}
-					locationProp={this.state.currentLocation}
-					logUpdateProp={this.updateLog}
-					unitClickHandlerProp={this.handleUnitClick}
-					charIsSelectedProp={this.toggleCharIsSelected}
-					weaponButtonSelectedProp={this.state.weaponButtonSelected}
+					pcTypes={this.state.pcTypes}
+					playerChars={this.state.playerCharacters}
+					activeChar={this.state.activeCharacter}
+					mapCreatures={this.state.mapCreatures}
+					updateCreatures={this.updateMapCreatures}
+					creatureCoordsUpdate={this.state.creatureCoordsUpdate}
+					creatureUpdateReset={this.resetCreatureCoordsUpdate}
+					currentLocation={this.state.currentLocation}
+					updateLog={this.updateLog}
+					unitClickHandler={this.handleUnitClick}
 				/>
 
 			</div>

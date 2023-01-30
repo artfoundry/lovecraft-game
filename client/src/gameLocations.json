@@ -4,13 +4,13 @@
 		"creatures": {
 			"elderThing": {
 				"count": 10,
-				"floors": 1
+				"floors": 3
 			},
 			"ghoul": {
 				"count": 10,
 				"floors": 1
 			},
-			"ghast": {
+			"shoggoth": {
 				"count": 10,
 				"floors": 2
 			}

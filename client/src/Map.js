@@ -13,7 +13,7 @@ import {randomTileMovementValue, unblockedPathsToNearbyTiles, convertCamelToKabo
  * Creature data structure : {
  * 		...CreatureData[name],
  * 		...GameLocations[location].creatures[name],
- * 		currentHP: CreatureData[name].maxHP,
+ * 		currentHP: CreatureData[name].startingHP,
  * 		tileCoords: {xPos, yPos}
  * 	}
  */
@@ -39,15 +39,13 @@ class Map extends React.Component {
 		this.sfxSelectors = {
 			catacombs: {}
 		};
-		this.currentMapData = GameLocations[this.props.locationProp];
+		this.currentMapData = GameLocations[this.props.currentLocation];
 
 		this.creatureInstances = {};
 		this.creatureSurvivalHpPercent = 0.25;
 
 		this.state = {
-			activeCharacter: this.props.playerCharsProp[this.props.activeCharProp],
-			pcTypes: this.props.pcTypesProp,
-			weaponButtonSelected: this.props.weaponButtonSelectedProp,
+			pcTypes: this.props.pcTypes,
 			playerCoords: {},
 			creatureCoords: {},
 			playerPlaced: false,
@@ -60,10 +58,10 @@ class Map extends React.Component {
 			lighting: {}
 		};
 
-		this.updateMapCreaturesInApp = this.props.updateCreaturesProp;
+		this.updateMapCreatures = this.props.updateCreatures;
 		this.setShowDialogProps = this.props.setShowDialogProps;
-		this.updateLog = this.props.logUpdateProp;
-		this.handleUnitClick = this.props.unitClickHandlerProp;
+		this.updateLog = this.props.updateLog;
+		this.handleUnitClick = this.props.unitClickHandler;
 		this.createAllMapPieces = this.createAllMapPieces.bind(this);
 		this.addLighting = this.addLighting.bind(this);
 	}
@@ -120,7 +118,7 @@ class Map extends React.Component {
 				this.moveCharacter(null, null, () => {
 					this.setExitPosition();
 					const {mapCreatures, creatureCoords} = this.setInitialCreatureData();
-					this.updateMapCreaturesInApp(mapCreatures);
+					this.updateMapCreatures(mapCreatures);
 					this.setState({creatureCoords});
 					if (this.pageFirstLoaded) {
 						this.pageFirstLoaded = false;
@@ -410,16 +408,18 @@ class Map extends React.Component {
 	setInitialCreatureData() {
 		let mapCreatures = {};
 		let creatureCoords = {};
-		for (const [type, stats] of Object.entries(this.currentMapData.creatures)) {
+		for (const [name, stats] of Object.entries(this.currentMapData.creatures)) {
 			for (let i=0; i < stats.count; i++) {
-				const creatureID = type + i;
-				this.creatureInstances[creatureID] = new Creature(type);
+				const coords = this.setInitialCreatureCoords(creatureCoords);
+				const creatureID = name + i;
+				this.creatureInstances[creatureID] = new Creature(CreatureData[name]);
 				mapCreatures[creatureID] = {
-					...CreatureData[type],
+					...CreatureData[name],
 					...stats,
-					currentHP: CreatureData[type].maxHP
+					currentHP: CreatureData[name].startingHP,
+					coords
 				};
-				creatureCoords[creatureID] = this.setInitialCreatureCoords(creatureCoords);
+				creatureCoords[creatureID] = coords;
 			}
 		}
 		return {mapCreatures, creatureCoords};
@@ -465,7 +465,6 @@ class Map extends React.Component {
 			moveCharacterProp={this.moveCharacter} />);
 	}
 
-	// mapCreatures is temp list of creature data (before setting state)
 	// for checking to make sure random location doesn't already have a creature there
 	generateRandomLocation(creatureCoords = {}) {
 		let emptyLocFound = false;
@@ -482,7 +481,11 @@ class Map extends React.Component {
 			randomIndex = Math.floor(Math.random() * tileList.length);
 			tilePos = tileList[randomIndex];
 	// also will need to search object locations once I've set up storage for them
-			if (!(exitPos && tilePos === exitPos) && !(creatureLocList && creatureLocList.includes(tilePos)) && !(playerPos && tilePos === playerPos)) {
+			// comparisons formatted this way because 'null && false' equals null, not false, while '!(null && true)' equals true
+			if (!(exitPos && tilePos === exitPos) &&
+				!(creatureLocList && creatureLocList.includes(tilePos)) &&
+				!(playerPos && tilePos === playerPos))
+			{
 				emptyLocFound = true;
 			} else {
 				// remove tile from list of available locations
@@ -518,7 +521,7 @@ class Map extends React.Component {
 	}
 
 	addCharacters = (props) => {
-		const characters = props.typeProp === 'players' ? {...this.props.playerCharsProp} : {...this.props.mapCreaturesProp};
+		const characters = props.typeProp === 'players' ? {...this.props.playerChars} : {...this.props.mapCreatures};
 		const characterNames = Object.keys(characters);
 		let characterList = [];
 		let characterTransform = null;
@@ -531,7 +534,7 @@ class Map extends React.Component {
 				characterTransform = this.calculatePlayerTransform();
 				characterTransform = `${characterTransform.xPos}px, ${characterTransform.yPos}px`;
 			} else {
-				creatureCoords = this.state.creatureCoords[name];
+				creatureCoords = this.state.creatureCoords[name] || this.props.mapCreatures[name].coords;
 				characterTransform = this.calculateObjectTransform(creatureCoords.xPos, creatureCoords.yPos);
 				characterType = 'creature';
 			}
@@ -540,11 +543,12 @@ class Map extends React.Component {
 			const nameEndIndex = numberInName > -1 ? numberInName : name.length;
 			const isSelectedClass = characters[name].isSelected ? 'selected' : '';
 			const idConvertedToClassName = convertCamelToKabobCase(name.substring(0, nameEndIndex));
+			const isDeadClass = characters[name].currentHP <= 0 ? idConvertedToClassName + '-dead' : '';
 			characterList.push(
 				<Character
 					idProp={name}
 					key={name + Math.random()}
-					classesProp={`${characters[name].type} ${idConvertedToClassName} ${isSelectedClass}`}
+					classesProp={`${characters[name].type} ${idConvertedToClassName} ${isSelectedClass} ${isDeadClass}`}
 					dataLocProp={creatureCoords}
 					dataCharTypeProp={characterType}
 					clickUnitProp={this.handleUnitClick}
@@ -671,17 +675,17 @@ class Map extends React.Component {
 	 * MAP INTERACTION
 	 */
 
-	// Used to determine if creature can move to specified tile (not already occupied and not wall)
+	// Used to determine if creature can move to specified tile (not already occupied, not wall, not closed door)
 	tileIsFreeToMove(tileCoords) {
 		let tileIsAvail = true;
 		const tilePos = `${tileCoords.xPos}-${tileCoords.yPos}`;
 		const tile = this.state.mapLayout[tilePos];
 
 // need to change playerCoords from {xPos, yPos} to collection of player names with coord objects for each
-		const allCharCoords = [...Object.values(this.state.creatureCoords)]; // , ...Object.values(this.state.playerCoords)
+		const allCharCoords = [...Object.values(this.state.creatureCoords), ...Object.values(this.state.playerCoords)];
 		let i = 0;
 
-		if (!tile || tile.type === 'wall') {
+		if (!tile || tile.type === 'wall' || (tile.type === 'door' && !tile.doorIsOpen)) {
 			tileIsAvail = false;
 		} else {
 			while (tileIsAvail && i < allCharCoords.length) {
@@ -694,31 +698,60 @@ class Map extends React.Component {
 		return tileIsAvail;
 	}
 
-	moveCreaturePosRelativeToChar(creatureCoords, directionModifier) {
+	setNewCreaturePosRelativeToChar(creatureCoords, directionModifier) {
 		const oppositeDirMod = -1 * directionModifier;
 		let newCreaturePos = {xPos: creatureCoords.xPos, yPos: creatureCoords.yPos};
 		const newXPos = creatureCoords.xPos + directionModifier;
 		const newOppXPos = creatureCoords.xPos + oppositeDirMod;
 		const newYPos = creatureCoords.yPos + directionModifier;
 		const newOppYPos = creatureCoords.yPos + oppositeDirMod;
-		if (creatureCoords.xPos < this.state.playerCoords.xPos && this.tileIsFreeToMove({xPos: newXPos, yPos: creatureCoords.yPos})) {
+
+		// First check diagonal movement
+		if (creatureCoords.xPos < this.state.playerCoords.xPos &&
+			creatureCoords.yPos < this.state.playerCoords.yPos &&
+			this.tileIsFreeToMove({xPos: newXPos, yPos: newYPos}))
+		{
+			newCreaturePos.xPos = newXPos;
+			newCreaturePos.yPos = newYPos;
+		} else if (creatureCoords.xPos < this.state.playerCoords.xPos &&
+			creatureCoords.yPos > this.state.playerCoords.yPos &&
+			this.tileIsFreeToMove({xPos: newXPos, yPos: newOppYPos}))
+		{
+			newCreaturePos.xPos = newXPos;
+			newCreaturePos.yPos = newOppYPos;
+		} else if (creatureCoords.xPos > this.state.playerCoords.xPos &&
+			creatureCoords.yPos < this.state.playerCoords.yPos &&
+			this.tileIsFreeToMove({xPos: newOppXPos, yPos: newYPos}))
+		{
+			newCreaturePos.xPos = newOppXPos;
+			newCreaturePos.yPos = newYPos;
+		} else if (creatureCoords.xPos > this.state.playerCoords.xPos &&
+			creatureCoords.yPos > this.state.playerCoords.yPos &&
+			this.tileIsFreeToMove({xPos: newOppXPos, yPos: newOppYPos}))
+		{
+			newCreaturePos.xPos = newOppXPos;
+			newCreaturePos.yPos = newOppYPos;
+		}
+		// Then check X movement
+		else if (creatureCoords.xPos < this.state.playerCoords.xPos && this.tileIsFreeToMove({xPos: newXPos, yPos: creatureCoords.yPos})) {
 			newCreaturePos.xPos = newXPos;
 		} else if (creatureCoords.xPos > this.state.playerCoords.xPos && this.tileIsFreeToMove({xPos: newOppXPos, yPos: creatureCoords.yPos})) {
 			newCreaturePos.xPos = newOppXPos;
 		}
-		if (creatureCoords.yPos < this.state.playerCoords.yPos && this.tileIsFreeToMove({xPos: creatureCoords.xPos, yPos: newYPos})) {
+		// Finally check Y movement
+		else if (creatureCoords.yPos < this.state.playerCoords.yPos && this.tileIsFreeToMove({xPos: creatureCoords.xPos, yPos: newYPos})) {
 			newCreaturePos.yPos = newYPos;
 		} else if (creatureCoords.yPos > this.state.playerCoords.yPos && this.tileIsFreeToMove({xPos: creatureCoords.xPos, yPos: newOppYPos})) {
 			newCreaturePos.yPos = newOppYPos;
 		}
+
 		return newCreaturePos;
 	}
 
-	// function modifies newCoords,
-	// but the calling function moveCreatures doesn't do anything further with it anyway
 	storeNewCreatureCoords(creatureID, newCoords) {
-		const hasMultipleMoves = Array.isArray(newCoords) && newCoords.length > 1;
-		const nextCoords = newCoords.shift();
+		let newCoordsArray = newCoords;
+		const hasMultipleMoves = newCoordsArray.length > 1;
+		const nextCoords = newCoordsArray.shift();
 
 		this.setState(prevState => ({
 			creatureCoords: {
@@ -726,65 +759,73 @@ class Map extends React.Component {
 				[creatureID]: {xPos: nextCoords.xPos, yPos: nextCoords.yPos}
 			}
 		}), () => {
-			if (hasMultipleMoves && newCoords.length > 0) {
-				this.storeNewCreatureCoords(creatureID, newCoords);
+			if (hasMultipleMoves && newCoordsArray.length > 0) {
+				this.storeNewCreatureCoords(creatureID, newCoordsArray);
+			} else {
+				const creatureData = {...this.props.mapCreatures};
+				creatureData[creatureID].coords = nextCoords;
+				this.updateMapCreatures(creatureData[creatureID], creatureID);
 			}
 		});
 	}
 
 	moveCreatures() {
-		for (const [creatureID, creatureData] of Object.entries(this.props.mapCreaturesProp)) {
-			const creatureCoords = this.state.creatureCoords[creatureID];
-			const creaturePos = `${creatureCoords.xPos}-${creatureCoords.yPos}`;
-			let newCreaturePos = {};
-			const lineOfSightTiles = unblockedPathsToNearbyTiles(this.state.mapLayout, creaturePos);
-			// will need to update this with a loop to check each player char
-			const playerPos = `${this.state.playerCoords.xPos}-${this.state.playerCoords.yPos}`;
-			const playerDistance =  lineOfSightTiles.oneAway.floors[playerPos] ? 1 :
-				lineOfSightTiles.twoAway.floors[playerPos] ? 2 :
-					lineOfSightTiles.threeAway.floors[playerPos] ? 3 : -1;
+		for (const [creatureID, creatureData] of Object.entries(this.props.mapCreatures)) {
+			if (creatureData.currentHP > 0) {
+				const creatureCoords = this.state.creatureCoords[creatureID];
+				const creaturePos = `${creatureCoords.xPos}-${creatureCoords.yPos}`;
+				let newCreaturePos = {};
+				const lineOfSightTiles = unblockedPathsToNearbyTiles(this.state.mapLayout, creaturePos);
+	// will need to update this with a loop to check each player char
+				const playerPos = `${this.state.playerCoords.xPos}-${this.state.playerCoords.yPos}`;
+				const playerDistance =  lineOfSightTiles.oneAway.floors[playerPos] ? 1 :
+					lineOfSightTiles.twoAway.floors[playerPos] ? 2 :
+						lineOfSightTiles.threeAway.floors[playerPos] ? 3 : -1;
 
-			// if a player char is nearby...
-			if (playerDistance > -1) {
-				// if creature is low on health
-				if (creatureData.currentHP < (creatureData.maxHP * this.creatureSurvivalHpPercent)) {
-					// move away from player
-					newCreaturePos = this.moveCreaturePosRelativeToChar(creatureCoords, -1);
-					this.storeNewCreatureCoords(creatureID, [newCreaturePos]);
+				// if a player char is nearby...
+				if (playerDistance > -1) {
+					// if creature is low on health
+					if (creatureData.currentHP < (creatureData.startingHP * this.creatureSurvivalHpPercent)) {
+						// move away from player
+						for (let i=1; i <= creatureData.moveSpeed; i++) {
+							newCreaturePos = this.setNewCreaturePosRelativeToChar(creatureCoords, -1);
+							this.storeNewCreatureCoords(creatureID, [newCreaturePos]);
 
-					this.updateLog(`Moving ${creatureID} away from player to ${JSON.stringify(newCreaturePos)}`);
+							this.updateLog(`Moving ${creatureID} away from player to ${JSON.stringify(newCreaturePos)}`);
+						}
+						// or if player char is within attack range, then attack
+					} else if (playerDistance <= creatureData.range) {
+						this.creatureInstances[creatureID].attack(); // incomplete method
 
-					// or if player char is within attack range, then attack
-				} else if (playerDistance <= creatureData.range) {
-					this.creatureInstances[creatureID].attack(); // incomplete method
+						this.updateLog(`${creatureID} is attacking player at ${JSON.stringify(playerPos)}`);
 
-					this.updateLog(`${creatureID} is attacking player at ${JSON.stringify(playerPos)}`);
+						// otherwise move creature toward player
+					} else {
+						for (let i=1; i <= creatureData.moveSpeed; i++) {
+							newCreaturePos = this.setNewCreaturePosRelativeToChar(creatureCoords, 1);
+							this.storeNewCreatureCoords(creatureID, [newCreaturePos]);
 
-					// otherwise move creature toward player
-				} else {
-					newCreaturePos = this.moveCreaturePosRelativeToChar(creatureCoords, 1);
-					this.storeNewCreatureCoords(creatureID, [newCreaturePos]);
-
-					this.updateLog(`Moving ${creatureID} toward player, to ${JSON.stringify(newCreaturePos)}`);
-
-				}
-				// otherwise, no player char nearby, so move creature in random direction (including possibly not moving at all)
-			} else {
-				let allCreatureMoves = [];
-				let newRandX = 0;
-				let newRandY = 0;
-				for (let i=1; i <= creatureData.moveSpeed; i++) {
-					newRandX = creatureCoords.xPos + randomTileMovementValue();
-					newRandY = creatureCoords.yPos + randomTileMovementValue();
-					if (this.tileIsFreeToMove({xPos: newRandX, yPos: newRandY})) {
-						allCreatureMoves.push({xPos: newRandX, yPos: newRandY});
-
-						this.updateLog(`Moving ${creatureID} randomly to ${newRandX}, ${newRandY}`);
-
+							this.updateLog(`Moving ${creatureID} toward player, to ${JSON.stringify(newCreaturePos)}`);
+						}
 					}
-				}
-				if (allCreatureMoves.length > 0) {
-					this.storeNewCreatureCoords(creatureID, allCreatureMoves);
+					// otherwise, no player char nearby, so move creature in random direction (including possibly not moving at all)
+				} else {
+					let allCreatureMoves = [];
+					let newRandX = 0;
+					let newRandY = 0;
+					for (let i=1; i <= creatureData.moveSpeed; i++) {
+						newRandX = creatureCoords.xPos + randomTileMovementValue();
+						newRandY = creatureCoords.yPos + randomTileMovementValue();
+						if (this.tileIsFreeToMove({xPos: newRandX, yPos: newRandY})) {
+							allCreatureMoves.push({xPos: newRandX, yPos: newRandY});
+
+							this.updateLog(`Moving ${creatureID} randomly to ${newRandX}, ${newRandY}`);
+
+						}
+					}
+					if (allCreatureMoves.length > 0) {
+						this.storeNewCreatureCoords(creatureID, allCreatureMoves);
+					}
 				}
 			}
 		}
@@ -896,7 +937,7 @@ class Map extends React.Component {
 
 		if (!invalidMove) {
 
-			this.updateLog(`NEW TURN: Player ${this.state.activeCharacter.name} moves to ${newCoords[0]}, ${newCoords[1]}`);
+			this.updateLog(`NEW TURN: Player ${this.props.activeChar} moves to ${newCoords[0]}, ${newCoords[1]}`);
 
 			const visitedTile = `${newCoords[0]}-${newCoords[1]}`;
 			let playerVisitedUpdatedState = null;
@@ -1027,7 +1068,14 @@ class Map extends React.Component {
 		}
 	}
 
-	// componentDidUpdate(prevProps, prevState, snapShot) {}
+	componentDidUpdate(prevProps, prevState, snapShot) {
+		if (prevProps.creatureCoordsUpdate !== this.props.creatureCoordsUpdate) {
+			const currentCreatureCoords = {...this.state.creatureCoords};
+			delete currentCreatureCoords[this.props.creatureCoordsUpdate];
+// overwriting state for all creatureCoords - could cause a problem?
+			this.setState({creatureCoords: {...currentCreatureCoords}});
+		}
+	}
 
 	// shouldComponentUpdate(nextProps, nextState, nextContent) {}
 

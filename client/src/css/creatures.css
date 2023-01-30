@@ -6,10 +6,25 @@
 	content: url('../assets/characters/creatures/ghoul.gif');
 }
 
+.ghoul-dead {
+	content: url('../assets/characters/creatures/ghoul_dead.png');
+}
+
 .ghast {
-	content: url('../assets/characters/creatures/ghast.png');
 }
 
 .elder-thing {
 	content: url('../assets/characters/creatures/elder_128.png');
+}
+
+.elder-thing-dead {
+	content: url('../assets/characters/creatures/elder_128_dead.png');
+}
+
+.shoggoth {
+	content: url('../assets/characters/creatures/shoggoth.png');
+}
+
+.shoggoth-dead {
+	content: url('../assets/characters/creatures/shoggoth_dead.png');
 }

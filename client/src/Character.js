@@ -9,25 +9,40 @@ class Character extends React.Component {
 		this.name = props.name;
 		this.type = props.type;
 		this.profession = props.profession;
-		this.strenth = props.strenth;
+		this.level = 1;
+		this.xp = 0;
+		this.strength = props.strength;
 		this.agility = props.agility;
 		this.mentalAcuity = props.mentalAcuity;
 		this.initiative = props.initiative;
 		this.startingHP = props.startingHP;
+		this.currentHP = props.startingHP;
 		this.startingSanity = props.startingSanity;
+		this.currentSanity = props.startingSanity;
 		this.skills = props.skills;
 		this.weapons = props.weapons;
 		this.items = props.items;
 	}
 
-	attack(weapon, target) {
-		let isHit = false;
-		let rangedStrHitModifier = WeaponTypes[weapon].attackType === 'manual' ? this.strenth / 2 : 0;
-		let damage = 0;
+	attack(weapon, creatureName, creatureData, updateCreature, updateLog) {
+		let isHit, damage, hitRoll, defenseRoll;
+		let rangedStrHitModifier = WeaponTypes[weapon].attackType === 'manual' ? Math.round(this.strength / 2) : 0;
 
 		if (WeaponTypes[weapon].ranged) {
-			isHit = this.agility + rangedStrHitModifier + diceRoll(20) >= target.defense + diceRoll(20);
+			hitRoll = this.agility + rangedStrHitModifier + diceRoll(20);
+			damage = rangedStrHitModifier + WeaponTypes[weapon].damage + diceRoll(6);
+		} else {
+			hitRoll = this.strength + Math.round(this.agility / 2) + diceRoll(20);
+			damage = this.strength + WeaponTypes[weapon].damage + diceRoll(6);
 		}
+		defenseRoll = creatureData.defense + diceRoll(6);
+		isHit = hitRoll >= defenseRoll;
+		updateLog(`Player attacks with ${hitRoll} to hit vs ${defenseRoll} defense`);
+		if (isHit) {
+			creatureData.currentHP -= damage;
+			updateCreature(creatureData, creatureName);
+		}
+		updateLog(`${isHit ? 'Player hits for ' + damage + ' damage' : 'Player misses'}`);
 	}
 }
 
