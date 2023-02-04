@@ -2,14 +2,17 @@ import React, {useState} from 'react';
 import {randomTileVariant} from './Utils';
 
 function Character(props) {
+	const isSelectedClass = props.isSelected ? ' selected' : '';
+	const isDeadClass = props.isDead ? ` ${props.idClassName}-dead` : '';
+	const isInRangeClass = props.isInRange ? ' in-range' : '';
 	return (
-		<img id={props.idProp}
-			 alt={props.classesProp}
-		     className={props.classesProp}
-		     style={props.styleProp}
-		     data-location={`${props.dataLocProp.xPos}-${props.dataLocProp.yPos}`}
+		<img id={props.id}
+			 alt={props.classes}
+		     className={props.characterType + ' ' + props.idClassName + isSelectedClass + isDeadClass + isInRangeClass}
+		     style={props.styles}
+		     data-location={`${props.dataLoc.xPos}-${props.dataLoc.yPos}`}
 			 onClick={() => {
-				 props.clickUnitProp(props.idProp, props.dataCharTypeProp);
+				 props.clickUnit(props.id, props.dataCharType, props.isInRange);
 			 }} />
 	)
 }

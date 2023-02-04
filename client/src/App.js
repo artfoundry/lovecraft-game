@@ -2,6 +2,7 @@ import React from 'react';
 import Map from './Map';
 import Character from "./Character";
 import PlayerCharacterTypes from './playerCharacterTypes.json';
+import WeaponTypes from './weaponTypes.json';
 import UI from './UI';
 import './css/app.css';
 import './css/map.css';
@@ -82,12 +83,12 @@ class Game extends React.Component {
 		// if no weapon selected or weapon selected doesn't match new weapon selected, set weapon state to new weapon
 		if (Object.keys(this.state.weaponButtonSelected).length === 0 ||
 			(this.state.weaponButtonSelected.characterName !== characterName || this.state.weaponButtonSelected.weapon !== weapon)) {
-			buttonState = {characterName, weapon};
+			buttonState = {characterName, weapon, stats: WeaponTypes[weapon]};
 		}
 		this.setState({weaponButtonSelected: buttonState});
 	}
 
-	handleUnitClick = (id, type) => {
+	handleUnitClick = (id, type, isInRange) => {
 		let unitTypeObjectName = '';
 		let unitTypeSelected = '';
 		let unitNameForSelectionStateChg = '';
@@ -102,7 +103,7 @@ class Game extends React.Component {
 			unitTypeSelected = 'selectedCreature';
 		}
 
-		if (Object.keys(this.state.weaponButtonSelected).length > 0 && this.state.mapCreatures[id].currentHP > 0) {
+		if (Object.keys(this.state.weaponButtonSelected).length > 0 && isInRange && this.state.mapCreatures[id].currentHP > 0) {
 			// selected unit is getting attacked
 			const selectedWeaponInfo = this.state.weaponButtonSelected;
 
@@ -199,6 +200,7 @@ class Game extends React.Component {
 					currentLocation={this.state.currentLocation}
 					updateLog={this.updateLog}
 					unitClickHandler={this.handleUnitClick}
+					weaponButtonSelected={this.state.weaponButtonSelected}
 				/>
 
 			</div>

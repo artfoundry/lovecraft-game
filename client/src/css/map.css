@@ -34,6 +34,13 @@
 
 .selected {
 	outline: 2px dashed red;
+	outline-offset: 2px;
+	border-radius: 15px;
+	box-sizing: border-box;
+}
+
+.in-range {
+	border: 2px solid yellow;
 	border-radius: 15px;
 	box-sizing: border-box;
 }

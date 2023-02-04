@@ -520,6 +520,16 @@ class Map extends React.Component {
 		}
 	}
 
+	isCreatureInRange(id, weaponData) {
+		const creatureCoords = this.state.creatureCoords[id];
+		const playerCoords = this.state.playerCoords;
+		let isInRange = true;
+		if (!creatureCoords || (!weaponData.stats.ranged && (Math.abs(creatureCoords.xPos - playerCoords.xPos) > 1 || Math.abs(creatureCoords.yPos - playerCoords.yPos) > 1))) {
+			isInRange = false;
+		}
+		return isInRange;
+	}
+
 	addCharacters = (props) => {
 		const characters = props.typeProp === 'players' ? {...this.props.playerChars} : {...this.props.mapCreatures};
 		const characterNames = Object.keys(characters);
@@ -541,18 +551,21 @@ class Map extends React.Component {
 
 			const numberInName = name.search(/\d/);
 			const nameEndIndex = numberInName > -1 ? numberInName : name.length;
-			const isSelectedClass = characters[name].isSelected ? 'selected' : '';
-			const idConvertedToClassName = convertCamelToKabobCase(name.substring(0, nameEndIndex));
-			const isDeadClass = characters[name].currentHP <= 0 ? idConvertedToClassName + '-dead' : '';
+			const idConvertedToClassName = ' ' + convertCamelToKabobCase(name.substring(0, nameEndIndex));
+
 			characterList.push(
 				<Character
-					idProp={name}
+					id={name}
 					key={name + Math.random()}
-					classesProp={`${characters[name].type} ${idConvertedToClassName} ${isSelectedClass} ${isDeadClass}`}
-					dataLocProp={creatureCoords}
-					dataCharTypeProp={characterType}
-					clickUnitProp={this.handleUnitClick}
-					styleProp={{
+					characterType={characters[name].type}
+					idClassName={idConvertedToClassName}
+					isSelected={characters[name].isSelected}
+					isDead={characters[name].currentHP <= 0}
+					isInRange={(Object.keys(this.props.weaponButtonSelected).length > 0 && characterType === 'creature' && this.isCreatureInRange(name, this.props.weaponButtonSelected))}
+					dataLoc={creatureCoords}
+					dataCharType={characterType}
+					clickUnit={this.handleUnitClick}
+					styles={{
 						transform: `translate(${characterTransform})`,
 						width: Math.round(this.tileSize * this.characterSizePercentage) + 'px',
 						height: Math.round(this.tileSize * this.characterSizePercentage) + 'px',
@@ -983,6 +996,7 @@ class Map extends React.Component {
 		}
 	}
 
+	// For keeping character in center of screen while moving
 	moveMap = (initialSetupCallback) => {
 		const playerTransform = this.calculatePlayerTransform();
 		const playerXPos = this.state.playerCoords.xPos * this.tileSize;
