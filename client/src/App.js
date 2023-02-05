@@ -107,7 +107,6 @@ class Game extends React.Component {
 			// selected unit is getting attacked
 			const selectedWeaponInfo = this.state.weaponButtonSelected;
 
-// need to check that creature clicked is within range of weapon's range
 			this.state.playerCharacters[this.state.activeCharacter].attack(selectedWeaponInfo.weapon, id, this.state.mapCreatures[id], this.updateMapCreatures, this.updateLog);
 
 			if (this.state.mapCreatures[id].currentHP <= 0) {

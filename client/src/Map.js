@@ -474,13 +474,13 @@ class Map extends React.Component {
 		let randomIndex = 0;
 		let tilePos = '';
 		const exitPos = Object.values(this.state.exitPosition).length > 0 ?`${this.state.exitPosition.xPos}-${this.state.exitPosition.yPos}` : null;
-	// will need to include other pc positions
+	// todo: will need to include other pc positions
 		const playerPos = Object.values(this.state.playerCoords).length > 0 ? `${this.state.playerCoords.xPos}-${this.state.playerCoords.yPos}` : null;
 
 		while (!emptyLocFound && tileList.length > 0) {
 			randomIndex = Math.floor(Math.random() * tileList.length);
 			tilePos = tileList[randomIndex];
-	// also will need to search object locations once I've set up storage for them
+	// todo: also will need to search object locations once I've set up storage for them
 			// comparisons formatted this way because 'null && false' equals null, not false, while '!(null && true)' equals true
 			if (!(exitPos && tilePos === exitPos) &&
 				!(creatureLocList && creatureLocList.includes(tilePos)) &&
@@ -537,20 +537,21 @@ class Map extends React.Component {
 		let characterList = [];
 		let characterTransform = null;
 		let creatureCoords = this.state.playerCoords;
-		let creatureIsHidden = true;
+		let creatureIsHidden = false;
 
 		if (props.characterType === 'creature') {
 			lineOfSightTiles = unblockedPathsToNearbyTiles(this.state.mapLayout, this.state.playerCoords.xPos + '-' + this.state.playerCoords.yPos);
 		}
 
 		characterNames.forEach(name => {
-			creatureIsHidden = true;
 			if (props.characterType === 'player') {
-				// need to make adjustment for each player character
+
+				// todo: use calculatePlayerTransform for active char, but calculateObjectTransform for other player chars
+
 				characterTransform = this.calculatePlayerTransform();
 				characterTransform = `${characterTransform.xPos}px, ${characterTransform.yPos}px`;
-				creatureIsHidden = false;
 			} else {
+				creatureIsHidden = true;
 				// coords taken from creatureCoords if creature is still alive, from mapCreatures if dead
 				creatureCoords = this.state.creatureCoords[name] || this.props.mapCreatures[name].coords;
 				characterTransform = this.calculateObjectTransform(creatureCoords.xPos, creatureCoords.yPos);
@@ -708,7 +709,8 @@ class Map extends React.Component {
 		const tilePos = `${tileCoords.xPos}-${tileCoords.yPos}`;
 		const tile = this.state.mapLayout[tilePos];
 
-// need to change playerCoords from {xPos, yPos} to collection of player names with coord objects for each
+		// todo: need to change playerCoords from {xPos, yPos} to collection of player names with coord objects for each
+
 		const allCharCoords = [...Object.values(this.state.creatureCoords), ...Object.values(this.state.playerCoords)];
 		let i = 0;
 
@@ -858,7 +860,7 @@ class Map extends React.Component {
 		}
 	}
 
-	// No longer needed? Was being used in moveCharacter, but from old map paradigm using tile sides to determine valid moves
+	// todo: No longer needed? Was being used in moveCharacter, but from old map paradigm using tile sides to determine valid moves
 	// Since probably no longer needed, can likely remove tile sides from data as well
 	//
 	// getSidesBetweenAdjacentTiles(mainTileLoc, adjTileLoc) {
@@ -1100,7 +1102,9 @@ class Map extends React.Component {
 		if (prevProps.creatureCoordsUpdate !== this.props.creatureCoordsUpdate) {
 			const currentCreatureCoords = {...this.state.creatureCoords};
 			delete currentCreatureCoords[this.props.creatureCoordsUpdate];
-// overwriting state for all creatureCoords - could cause a problem?
+
+			// todo: overwriting state for all creatureCoords - could cause a problem?
+
 			this.setState({creatureCoords: {...currentCreatureCoords}});
 		}
 	}
