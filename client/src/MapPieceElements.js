@@ -2,13 +2,14 @@ import React, {useState} from 'react';
 import {randomTileVariant} from './Utils';
 
 function Character(props) {
-	const isSelectedClass = props.isSelected ? ' selected' : '';
-	const isDeadClass = props.isDead ? ` ${props.idClassName}-dead` : '';
-	const isInRangeClass = props.isInRange ? ' in-range' : '';
+	const isHiddenClass = props.isHidden ? ' hidden' : '';
+	const isSelectedClass = !props.isHidden && props.isSelected ? ' selected' : '';
+	const isDeadClass = !props.isHidden && props.isDead ? ` ${props.idClassName}-dead` : '';
+	const isInRangeClass = !props.isHidden && props.isInRange ? ' in-range' : '';
 	return (
 		<img id={props.id}
 			 alt={props.classes}
-		     className={props.characterType + ' ' + props.idClassName + isSelectedClass + isDeadClass + isInRangeClass}
+		     className={props.characterType + ' ' + props.idClassName + isHiddenClass + isSelectedClass + isDeadClass + isInRangeClass}
 		     style={props.styles}
 		     data-location={`${props.dataLoc.xPos}-${props.dataLoc.yPos}`}
 			 onClick={() => {
@@ -48,9 +49,9 @@ function Door(props) {
 
 function LightElement(props) {
 	return (
-		<div className={props.classStrProp}
-		     style={props.styleProp}
-		     data-tile-num={props.tileNameProp} />
+		<div className={props.classes}
+		     style={props.styles}
+		     data-tile-num={props.tileName} />
 	);
 }
 

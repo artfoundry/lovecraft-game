@@ -531,27 +531,40 @@ class Map extends React.Component {
 	}
 
 	addCharacters = (props) => {
-		const characters = props.typeProp === 'players' ? {...this.props.playerChars} : {...this.props.mapCreatures};
+		const characters = props.characterType === 'player' ? {...this.props.playerChars} : {...this.props.mapCreatures};
 		const characterNames = Object.keys(characters);
+		let lineOfSightTiles = {}
 		let characterList = [];
 		let characterTransform = null;
 		let creatureCoords = this.state.playerCoords;
-		let characterType = 'player';
+		let creatureIsHidden = true;
+
+		if (props.characterType === 'creature') {
+			lineOfSightTiles = unblockedPathsToNearbyTiles(this.state.mapLayout, this.state.playerCoords.xPos + '-' + this.state.playerCoords.yPos);
+		}
 
 		characterNames.forEach(name => {
-			if (characters[name].type === 'player') {
+			creatureIsHidden = true;
+			if (props.characterType === 'player') {
 				// need to make adjustment for each player character
 				characterTransform = this.calculatePlayerTransform();
 				characterTransform = `${characterTransform.xPos}px, ${characterTransform.yPos}px`;
+				creatureIsHidden = false;
 			} else {
+				// coords taken from creatureCoords if creature is still alive, from mapCreatures if dead
 				creatureCoords = this.state.creatureCoords[name] || this.props.mapCreatures[name].coords;
 				characterTransform = this.calculateObjectTransform(creatureCoords.xPos, creatureCoords.yPos);
-				characterType = 'creature';
+				const creatureCoordsStr = creatureCoords.xPos + '-' + creatureCoords.yPos;
+				for (const tileData of Object.values(lineOfSightTiles)) {
+					if (tileData.floors[creatureCoordsStr]) {
+						creatureIsHidden = false;
+					}
+				}
 			}
 
 			const numberInName = name.search(/\d/);
 			const nameEndIndex = numberInName > -1 ? numberInName : name.length;
-			const idConvertedToClassName = ' ' + convertCamelToKabobCase(name.substring(0, nameEndIndex));
+			const idConvertedToClassName = convertCamelToKabobCase(name.substring(0, nameEndIndex));
 
 			characterList.push(
 				<Character
@@ -559,11 +572,12 @@ class Map extends React.Component {
 					key={name + Math.random()}
 					characterType={characters[name].type}
 					idClassName={idConvertedToClassName}
+					isHidden={creatureIsHidden}
 					isSelected={characters[name].isSelected}
 					isDead={characters[name].currentHP <= 0}
-					isInRange={(Object.keys(this.props.weaponButtonSelected).length > 0 && characterType === 'creature' && this.isCreatureInRange(name, this.props.weaponButtonSelected))}
+					isInRange={(Object.keys(this.props.weaponButtonSelected).length > 0 && props.characterType === 'creature' && this.isCreatureInRange(name, this.props.weaponButtonSelected))}
 					dataLoc={creatureCoords}
-					dataCharType={characterType}
+					dataCharType={props.characterType}
 					clickUnit={this.handleUnitClick}
 					styles={{
 						transform: `translate(${characterTransform})`,
@@ -676,9 +690,9 @@ class Map extends React.Component {
 			};
 			tiles.push(<LightElement
 				key={tilePos}
-				styleProp={tileStyle}
-				tileNameProp={this.state.mapLayout[tilePos].xPos + '-' + this.state.mapLayout[tilePos].yPos}
-				classStrProp={allClasses} />);
+				styles={tileStyle}
+				tileName={this.state.mapLayout[tilePos].xPos + '-' + this.state.mapLayout[tilePos].yPos}
+				classes={allClasses} />);
 		}
 		return tiles;
 	}
@@ -1107,9 +1121,9 @@ class Map extends React.Component {
 					{ this.state.exitPlaced && <this.addLighting /> }
 				</div>
 				<div className="creatures" style={this.state.mapPosition}>
-					{ this.state.mapLayoutDone && <this.addCharacters typeProp='creatures' /> }
+					{ this.state.mapLayoutDone && this.state.playerPlaced && <this.addCharacters characterType='creature' /> }
 				</div>
-				{ this.state.mapLayoutDone && <this.addCharacters typeProp='players' /> }
+				{ this.state.mapLayoutDone && <this.addCharacters characterType='player' /> }
 				{ <this.setupSoundEffects /> }
 			</div>
 		);

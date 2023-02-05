@@ -28,9 +28,9 @@ export function randomTileMovementValue() {
  * @param centerTilePos {string} : position of player (ex. '1-2')
  * @returns {
  *  {
- *      oneAway: {floors: {tilePosString: {xPos, yPos}}, walls: {tilePosString: {xPos, yPos}}},
- *      twoAway: {floors: {tilePosString: {xPos, yPos}}, walls: {tilePosString: {xPos, yPos}}},
- *      threeAway: {floors: {tilePosString: {xPos, yPos}}, walls: {tilePosString: {xPos, yPos}}}
+ *      oneAway: {floors: {[tilePosString]: {xPos, yPos}}, walls: {[tilePosString]: {xPos, yPos}}},
+ *      twoAway: {floors: {[tilePosString]: {xPos, yPos}}, walls: {[tilePosString]: {xPos, yPos}}},
+ *      threeAway: {floors: {[tilePosString]: {xPos, yPos}}, walls: {[tilePosString]: {xPos, yPos}}}
  *  }
  * }
  */

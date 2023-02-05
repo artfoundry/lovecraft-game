@@ -32,6 +32,10 @@
 	z-index: 0;
 }
 
+.hidden {
+	display: none;
+}
+
 .selected {
 	outline: 2px dashed red;
 	outline-offset: 2px;
