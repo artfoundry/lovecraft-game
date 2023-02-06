@@ -46,10 +46,11 @@ class UI extends React.Component {
 			controlPanels.push(
 				<CharacterControls
 					key={id}
-					characterNameProp={info.name}
+					characterId={id}
+					characterName={info.name}
 					weaponsProp={info.weapons}
-					toggleWeaponButtonProp={this.props.toggleWeapon}
-					weaponButtonSelectedProp={this.props.weaponButtonSelected}
+					toggleWeaponButton={this.props.toggleWeapon}
+					weaponButtonSelected={this.props.weaponButtonSelected}
 				/>
 			)
 		}

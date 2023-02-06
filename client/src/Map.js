@@ -520,7 +520,7 @@ class Map extends React.Component {
 		}
 	}
 
-	isCreatureInRange(id, weaponData) {
+	isCreatureInRange = (id, weaponData) => {
 		const creatureCoords = this.state.creatureCoords[id];
 		const playerCoords = this.state.playerCoords;
 		let isInRange = true;
@@ -532,7 +532,7 @@ class Map extends React.Component {
 
 	addCharacters = (props) => {
 		const characters = props.characterType === 'player' ? {...this.props.playerChars} : {...this.props.mapCreatures};
-		const characterNames = Object.keys(characters);
+		const characterIDs = Object.keys(characters);
 		let lineOfSightTiles = {}
 		let characterList = [];
 		let characterTransform = null;
@@ -543,7 +543,7 @@ class Map extends React.Component {
 			lineOfSightTiles = unblockedPathsToNearbyTiles(this.state.mapLayout, this.state.playerCoords.xPos + '-' + this.state.playerCoords.yPos);
 		}
 
-		characterNames.forEach(name => {
+		characterIDs.forEach(id => {
 			if (props.characterType === 'player') {
 
 				// todo: use calculatePlayerTransform for active char, but calculateObjectTransform for other player chars
@@ -553,7 +553,7 @@ class Map extends React.Component {
 			} else {
 				creatureIsHidden = true;
 				// coords taken from creatureCoords if creature is still alive, from mapCreatures if dead
-				creatureCoords = this.state.creatureCoords[name] || this.props.mapCreatures[name].coords;
+				creatureCoords = this.state.creatureCoords[id] || this.props.mapCreatures[id].coords;
 				characterTransform = this.calculateObjectTransform(creatureCoords.xPos, creatureCoords.yPos);
 				const creatureCoordsStr = creatureCoords.xPos + '-' + creatureCoords.yPos;
 				for (const tileData of Object.values(lineOfSightTiles)) {
@@ -563,20 +563,19 @@ class Map extends React.Component {
 				}
 			}
 
-			const numberInName = name.search(/\d/);
-			const nameEndIndex = numberInName > -1 ? numberInName : name.length;
-			const idConvertedToClassName = convertCamelToKabobCase(name.substring(0, nameEndIndex));
-
+			const numberInID = id.search(/\d/);
+			const idEndIndex = numberInID > -1 ? numberInID : id.length;
+			const idConvertedToClassName = convertCamelToKabobCase(id.substring(0, idEndIndex));
 			characterList.push(
 				<Character
-					id={name}
-					key={name + Math.random()}
-					characterType={characters[name].type}
+					id={id}
+					key={id + Math.random()}
+					characterType={characters[id].type}
 					idClassName={idConvertedToClassName}
 					isHidden={creatureIsHidden}
-					isSelected={characters[name].isSelected}
-					isDead={characters[name].currentHP <= 0}
-					isInRange={(Object.keys(this.props.weaponButtonSelected).length > 0 && props.characterType === 'creature' && this.isCreatureInRange(name, this.props.weaponButtonSelected))}
+					isSelected={characters[id].isSelected}
+					isDead={characters[id].currentHP <= 0}
+					isInRange={(Object.keys(this.props.weaponButtonSelected).length > 0 && props.characterType === 'creature' && this.isCreatureInRange(id, this.props.weaponButtonSelected))}
 					dataLoc={creatureCoords}
 					dataCharType={props.characterType}
 					clickUnit={this.handleUnitClick}
@@ -805,11 +804,12 @@ class Map extends React.Component {
 				const creaturePos = `${creatureCoords.xPos}-${creatureCoords.yPos}`;
 				let newCreaturePos = {};
 				const lineOfSightTiles = unblockedPathsToNearbyTiles(this.state.mapLayout, creaturePos);
-	// will need to update this with a loop to check each player char
+	// todo: will need to update this with a loop to check each player char
 				const playerPos = `${this.state.playerCoords.xPos}-${this.state.playerCoords.yPos}`;
-				const playerDistance =  lineOfSightTiles.oneAway.floors[playerPos] ? 1 :
+				const playerDistance = lineOfSightTiles.oneAway.floors[playerPos] ? 1 :
 					lineOfSightTiles.twoAway.floors[playerPos] ? 2 :
-						lineOfSightTiles.threeAway.floors[playerPos] ? 3 : -1;
+					lineOfSightTiles.threeAway.floors[playerPos] ? 3 : -1;
+				const activeCharacterData = this.props.playerChars[this.props.activeChar];
 
 				// if a player char is nearby...
 				if (playerDistance > -1) {
@@ -822,11 +822,10 @@ class Map extends React.Component {
 
 							this.updateLog(`Moving ${creatureID} away from player to ${JSON.stringify(newCreaturePos)}`);
 						}
-						// or if player char is within attack range, then attack
+					// or if player char is within attack range, then attack
 					} else if (playerDistance <= creatureData.range) {
-						this.creatureInstances[creatureID].attack(); // incomplete method
-
-						this.updateLog(`${creatureID} is attacking player at ${JSON.stringify(playerPos)}`);
+						this.updateLog(`${creatureID} attacks player at ${JSON.stringify(playerPos)}`);
+						this.creatureInstances[creatureID].attack(this.props.activeChar, activeCharacterData, this.props.updatePlayerChar, this.props.updateLog);
 
 						// otherwise move creature toward player
 					} else {

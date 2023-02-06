@@ -19,6 +19,7 @@ class Game extends React.Component {
 
 		this.state = {
 			playerCharacters: {privateEye: new Character(PlayerCharacterTypes['privateEye'])},
+			pcTypes: PlayerCharacterTypes,
 			mapCreatures: {},
 			activeCharacter: 'privateEye',
 			characterIsSelected: false,
@@ -30,7 +31,6 @@ class Game extends React.Component {
 			selectedCreature: '',
 			weaponButtonSelected: {},
 			controlsContent: '',
-			pcTypes: PlayerCharacterTypes,
 			currentLocation: 'catacombs',
 			logText: [],
 			showDialog: true,
@@ -62,6 +62,12 @@ class Game extends React.Component {
 		}
 	}
 
+	updatePlayerCharacter = (player, updateData) => {
+		this.setState(prevState => ({
+			playerCharacters: {...prevState.playerCharacters, [player]: {...prevState.playerCharacters[player], ...updateData}}
+		}));
+	}
+
 	updateInfoText(type, id) {
 		const updatedText = type === 'characterInfoText' ? this.state.playerCharacters[id] : this.state.mapCreatures[id];
 		this.setState({[type]: updatedText});
@@ -78,12 +84,12 @@ class Game extends React.Component {
 		this.setState({[storageName]: status});
 	}
 
-	toggleWeapon = (characterName, weapon) => {
+	toggleWeapon = (characterId, weaponName) => {
 		let buttonState = {};
 		// if no weapon selected or weapon selected doesn't match new weapon selected, set weapon state to new weapon
 		if (Object.keys(this.state.weaponButtonSelected).length === 0 ||
-			(this.state.weaponButtonSelected.characterName !== characterName || this.state.weaponButtonSelected.weapon !== weapon)) {
-			buttonState = {characterName, weapon, stats: WeaponTypes[weapon]};
+			(this.state.weaponButtonSelected.characterId !== characterId || this.state.weaponButtonSelected.weaponName !== weaponName)) {
+			buttonState = {characterId, weaponName, stats: WeaponTypes[weaponName]};
 		}
 		this.setState({weaponButtonSelected: buttonState});
 	}
@@ -107,14 +113,14 @@ class Game extends React.Component {
 			// selected unit is getting attacked
 			const selectedWeaponInfo = this.state.weaponButtonSelected;
 
-			this.state.playerCharacters[this.state.activeCharacter].attack(selectedWeaponInfo.weapon, id, this.state.mapCreatures[id], this.updateMapCreatures, this.updateLog);
+			this.state.playerCharacters[this.state.activeCharacter].attack(selectedWeaponInfo.stats, id, this.state.mapCreatures[id], this.updateMapCreatures, this.updateLog);
 
 			if (this.state.mapCreatures[id].currentHP <= 0) {
 				this.setState({creatureCoordsUpdate: id});
 				this.updateLog(`${id} is dead!`);
 			}
 			this.animateCharacter();
-			this.toggleWeapon(selectedWeaponInfo.characterName, selectedWeaponInfo.weapon);
+			this.toggleWeapon(selectedWeaponInfo.characterId, selectedWeaponInfo.weaponName);
 		} else {
 			if (this.state.selectedCharacter === id || this.state.selectedCreature === id) {
 				// selected character was just clicked to deselect
@@ -192,6 +198,7 @@ class Game extends React.Component {
 					pcTypes={this.state.pcTypes}
 					playerChars={this.state.playerCharacters}
 					activeChar={this.state.activeCharacter}
+					updatePlayerChar={this.updatePlayerCharacter}
 					mapCreatures={this.state.mapCreatures}
 					updateCreatures={this.updateMapCreatures}
 					creatureCoordsUpdate={this.state.creatureCoordsUpdate}

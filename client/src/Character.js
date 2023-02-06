@@ -1,5 +1,4 @@
 import React from "react";
-import WeaponTypes from './weaponTypes.json';
 import {diceRoll} from './Utils';
 
 class Character extends React.Component {
@@ -22,27 +21,29 @@ class Character extends React.Component {
 		this.skills = props.skills;
 		this.weapons = props.weapons;
 		this.items = props.items;
+		this.defense = this.agility + (this.items.armor ? this.items.armor.value : 0);
+		this.damageReduction = this.items.armor ? this.items.armor.value : 0;
 	}
 
-	attack(weapon, creatureName, creatureData, updateCreature, updateLog) {
+	attack = (weaponStats, creatureId, creatureData, updateCreature, updateLog) => {
 		let isHit, damage, hitRoll, defenseRoll;
-		let rangedStrHitModifier = WeaponTypes[weapon].attackType === 'manual' ? Math.round(this.strength / 2) : 0;
+		let rangedStrHitModifier = weaponStats.attackType === 'manual' ? Math.round(this.strength / 2) : 0;
 
-		if (WeaponTypes[weapon].ranged) {
+		if (weaponStats.ranged) {
 			hitRoll = this.agility + rangedStrHitModifier + diceRoll(20);
-			damage = rangedStrHitModifier + WeaponTypes[weapon].damage + diceRoll(6);
+			damage = rangedStrHitModifier + weaponStats.damage + diceRoll(6);
 		} else {
 			hitRoll = this.strength + Math.round(this.agility / 2) + diceRoll(20);
-			damage = this.strength + WeaponTypes[weapon].damage + diceRoll(6);
+			damage = this.strength + weaponStats.damage + diceRoll(6);
 		}
 		defenseRoll = creatureData.defense + diceRoll(6);
 		isHit = hitRoll >= defenseRoll;
 		updateLog(`Player attacks with ${hitRoll} to hit vs ${defenseRoll} defense`);
 		if (isHit) {
 			creatureData.currentHP -= damage;
-			updateCreature(creatureData, creatureName);
+			updateCreature(creatureData, creatureId);
 		}
-		updateLog(`${isHit ? 'Player hits for ' + damage + ' damage' : 'Player misses'}`);
+		updateLog(isHit ? 'Player hits for ' + damage + ' damage' : 'Player misses');
 	}
 }
 

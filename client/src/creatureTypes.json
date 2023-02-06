@@ -11,7 +11,9 @@
     "defense": 5,
     "startingHP": 50,
     "range": 3,
-    "moveSpeed": 1
+    "attackType": "psychic",
+    "moveSpeed": 1,
+    "skills": {}
   },
   "ghast": {
     "name": "Ghast",
@@ -25,7 +27,9 @@
     "defense": 3,
     "startingHP": 15,
     "range": 1,
-    "moveSpeed": 1
+    "attackType": "melee",
+    "moveSpeed": 1,
+    "skills": {}
   },
   "ghoul": {
     "name": "Ghoul",
@@ -39,7 +43,9 @@
     "defense": 2,
     "startingHP": 10,
     "range": 1,
-    "moveSpeed": 1
+    "attackType": "melee",
+    "moveSpeed": 1,
+    "skills": {}
   },
   "shoggoth": {
     "name": "Shoggoth",
@@ -53,6 +59,8 @@
     "defense": 2,
     "startingHP": 70,
     "range": 2,
-    "moveSpeed": 1
+    "attackType": "melee",
+    "moveSpeed": 1,
+    "skills": {}
   }
 }

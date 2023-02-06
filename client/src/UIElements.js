@@ -2,20 +2,20 @@ import React, {useState} from 'react';
 
 function CharacterControls(props) {
 	let weapons = [];
-	props.weaponsProp.forEach(weapon => {
+	props.weaponsProp.forEach(weaponName => {
 		let buttonStateClass = '';
-		if (props.weaponButtonSelectedProp.characterName === props.characterNameProp && props.weaponButtonSelectedProp.weapon === weapon) {
+		if (props.weaponButtonSelected.characterId === props.characterId && props.weaponButtonSelected.weaponName === weaponName) {
 			buttonStateClass = ' button-selected';
 		}
 		weapons.push(
-			<div className={'weapon-button' + buttonStateClass} key={weapon} onClick={() => {
-				props.toggleWeaponButtonProp(props.characterNameProp, weapon);
-			}}>{weapon}</div>
+			<div className={'weapon-button' + buttonStateClass} key={weaponName} onClick={() => {
+				props.toggleWeaponButton(props.characterId, weaponName);
+			}}>{weaponName}</div>
 		);
 	});
 	return (
 		<div className='character-control-container'>
-			<div className='character-name'>{props.characterNameProp}</div>
+			<div className='character-name'>{props.characterName}</div>
 			<div className='weapon-buttons-container'>{weapons}</div>
 		</div>
 	);
