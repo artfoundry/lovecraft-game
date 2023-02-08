@@ -118,7 +118,7 @@ class Map extends React.Component {
 				this.moveCharacter(null, null, () => {
 					this.setExitPosition();
 					const {mapCreatures, creatureCoords} = this.setInitialCreatureData();
-					this.updateMapCreatures(mapCreatures);
+					this.updateMapCreatures(mapCreatures, null, true);
 					this.setState({creatureCoords});
 					if (this.pageFirstLoaded) {
 						this.pageFirstLoaded = false;
@@ -414,7 +414,7 @@ class Map extends React.Component {
 				const creatureID = name + i;
 				this.creatureInstances[creatureID] = new Creature(CreatureData[name]);
 				mapCreatures[creatureID] = {
-					...CreatureData[name],
+					...this.creatureInstances[creatureID],
 					...stats,
 					currentHP: CreatureData[name].startingHP,
 					coords
@@ -965,7 +965,7 @@ class Map extends React.Component {
 
 		if (!invalidMove) {
 
-			this.updateLog(`NEW TURN: Player ${this.props.activeChar} moves to ${newCoords[0]}, ${newCoords[1]}`);
+			this.updateLog(`NEW TURN: Player ${this.props.playerChars[this.props.activeChar].name} moves to ${newCoords[0]}, ${newCoords[1]}`);
 
 			const visitedTile = `${newCoords[0]}-${newCoords[1]}`;
 			let playerVisitedUpdatedState = null;
@@ -1024,8 +1024,9 @@ class Map extends React.Component {
 				transform: `translate(${newXPos}px, ${newYPos}px)`
 			}
 		}, () => {
+			// passed in from layoutPieces after setting mapLayout; called after placing PCs and centering map
 			if (initialSetupCallback) {
-				initialSetupCallback(); // only for setting up keys listener during setup
+				initialSetupCallback();
 			}
 		})
 	}

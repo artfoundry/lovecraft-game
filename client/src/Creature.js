@@ -11,7 +11,7 @@ class Creature extends React.Component {
 		this.strength = props.strength;
 		this.agility = props.agility;
 		this.mentalAcuity = props.mentalAcuity;
-		this.initiative = props.initiative;
+		this.initiative = props.mentalAcuity + props.agility;
 		this.damage = props.damage;
 		this.defense = props.defense;
 		this.startingHP = props.startingHP;

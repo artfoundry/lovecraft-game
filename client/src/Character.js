@@ -13,7 +13,7 @@ class Character extends React.Component {
 		this.strength = props.strength;
 		this.agility = props.agility;
 		this.mentalAcuity = props.mentalAcuity;
-		this.initiative = props.initiative;
+		this.initiative = props.mentalAcuity + props.agility;
 		this.startingHP = props.startingHP;
 		this.currentHP = props.startingHP;
 		this.startingSanity = props.startingSanity;

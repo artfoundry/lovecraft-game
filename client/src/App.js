@@ -10,17 +10,22 @@ import './css/mapPieceElements.css';
 import './css/catacombs.css'
 import './css/creatures.css';
 import './css/playerCharacters.css';
+import {diceRoll} from "./Utils";
 
 class Game extends React.Component {
 	constructor() {
 		super();
 
 		this.initialDialogText = 'Find the stairs down to enter a new dungeon! Use mouse or arrow keys to move and space bar to open/close doors.';
+		this.startingLocation = 'catacombs';
+		this.startingPlayerCharacters = ['privateEye'];
 
 		this.state = {
-			playerCharacters: {privateEye: new Character(PlayerCharacterTypes['privateEye'])},
+			gameSetupComplete: false,
+			playerCharacters: {},
 			pcTypes: PlayerCharacterTypes,
 			mapCreatures: {},
+			unitsTurnOrder: [],
 			activeCharacter: 'privateEye',
 			characterIsSelected: false,
 			characterInfoText: '',
@@ -30,8 +35,8 @@ class Game extends React.Component {
 			selectedCharacter: '',
 			selectedCreature: '',
 			weaponButtonSelected: {},
+			currentLocation: '',
 			controlsContent: '',
-			currentLocation: 'catacombs',
 			logText: [],
 			showDialog: true,
 			dialogProps: {
@@ -45,7 +50,84 @@ class Game extends React.Component {
 		}
 	}
 
-	updateMapCreatures = (updateData, id) => {
+	setupGameState() {
+		const gameReadyCallback = () => {
+			this.setState({gameSetupComplete: true});
+		}
+		this.setupPlayerCharacters();
+		this.setLocation(gameReadyCallback);
+	}
+
+	setupPlayerCharacters() {
+		let playerCharacters = {};
+		this.startingPlayerCharacters.forEach(character => {
+			playerCharacters[character] = new Character(PlayerCharacterTypes[character]);
+		});
+		this.setState({playerCharacters});
+	}
+
+	setLocation(gameReadyCallback) {
+		if (this.startingLocation) {
+			this.setState({currentLocation: this.startingLocation}, gameReadyCallback);
+		} else {
+			// handle location change
+		}
+	}
+
+	setAllUnitsTurnOrder() {
+		let unitsTurnOrder = [];
+		const sortInitiatives = (newUnitId, newUnitInitiative, unitType) => {
+			if (unitsTurnOrder.length === 0) {
+				unitsTurnOrder.push({[newUnitId]: {initiative: newUnitInitiative, unitType}});
+			} else {
+				let i = 0;
+				let notSorted = true;
+				while (i < unitsTurnOrder.length && notSorted) {
+					const sortedUnitId = Object.keys(unitsTurnOrder[i])[0];
+					const sortedUnitOrderInfo = unitsTurnOrder[i][sortedUnitId];
+					const sortedUnitInitValue = sortedUnitOrderInfo.initiative;
+					const sortedUnitTypeCollection = this.state[sortedUnitOrderInfo.unitType];
+					const sortedUnitData = sortedUnitTypeCollection[sortedUnitId];
+					const newUnitTypeCollection = this.state[unitType];
+					const newUnitData = newUnitTypeCollection[newUnitId];
+					// if new init value is greater or
+					// inits are the same and new unit agility is greater
+					// or inits and agilities are the same and new unit mental acuity is greater
+					// or all the same and flip of a coin is 1, then add to the front
+					if (newUnitInitiative > sortedUnitInitValue ||
+						(newUnitInitiative === sortedUnitInitValue && newUnitData.agility > sortedUnitData.agility) ||
+						(newUnitInitiative === sortedUnitInitValue &&
+							newUnitData.agility === sortedUnitData.agility &&
+							newUnitData.mentalAcuity > sortedUnitData.mentalAcuity) ||
+						(newUnitInitiative === sortedUnitInitValue &&
+							newUnitData.agility === sortedUnitData.agility &&
+							newUnitData.mentalAcuity === sortedUnitData.mentalAcuity &&
+							diceRoll(2) === 1)
+					) {
+						unitsTurnOrder.unshift({[newUnitId]: {initiative: newUnitInitiative, unitType}});
+						notSorted = false;
+					} else if (i === unitsTurnOrder.length - 1) {
+						unitsTurnOrder.push({[newUnitId]: {initiative: newUnitInitiative, unitType}});
+						notSorted = false;
+					}
+					i++;
+				}
+			}
+		};
+		const examineInitiatives = (unitType) => {
+			for (const [id, charData] of Object.entries(this.state[unitType])) {
+				const unitInitiative = charData.initiative + diceRoll(6);
+				sortInitiatives(id, unitInitiative, unitType);
+			}
+		};
+
+		examineInitiatives('playerCharacters');
+		examineInitiatives('mapCreatures');
+		this.setState({unitsTurnOrder});
+	}
+
+	// if id is passed in, updating only one creature; otherwise updating all
+	updateMapCreatures = (updateData, id, isInitialCreatureSetup) => {
 		if (id) {
 			this.setState(prevState => ({
 				mapCreatures: {
@@ -58,7 +140,11 @@ class Game extends React.Component {
 				}
 			});
 		} else {
-			this.setState({mapCreatures: updateData});
+			this.setState({mapCreatures: updateData}, () => {
+				if (isInitialCreatureSetup) {
+					this.setAllUnitsTurnOrder();
+				}
+			});
 		}
 	}
 
@@ -163,6 +249,10 @@ class Game extends React.Component {
 		}
 	}
 
+	manageAllUnitTurns() {
+
+	}
+
 	resetCreatureCoordsUpdate() {
 		this.setState({creatureCoordsUpdate: null});
 	}
@@ -173,6 +263,12 @@ class Game extends React.Component {
 
 	setShowDialogProps = (showDialog, dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses) => {
 		this.setState({showDialog, dialogProps: {dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses}});
+	}
+
+	componentDidMount() {
+		if (!this.state.gameSetupComplete) {
+			this.setupGameState();
+		}
 	}
 
 	render() {
@@ -193,21 +289,23 @@ class Game extends React.Component {
 					toggleWeapon={this.toggleWeapon}
 				/>
 
-				<Map
-					setShowDialogProps={this.setShowDialogProps}
-					pcTypes={this.state.pcTypes}
-					playerChars={this.state.playerCharacters}
-					activeChar={this.state.activeCharacter}
-					updatePlayerChar={this.updatePlayerCharacter}
-					mapCreatures={this.state.mapCreatures}
-					updateCreatures={this.updateMapCreatures}
-					creatureCoordsUpdate={this.state.creatureCoordsUpdate}
-					creatureUpdateReset={this.resetCreatureCoordsUpdate}
-					currentLocation={this.state.currentLocation}
-					updateLog={this.updateLog}
-					unitClickHandler={this.handleUnitClick}
-					weaponButtonSelected={this.state.weaponButtonSelected}
-				/>
+				{this.state.gameSetupComplete &&
+					<Map
+						setShowDialogProps={this.setShowDialogProps}
+						pcTypes={this.state.pcTypes}
+						playerChars={this.state.playerCharacters}
+						activeChar={this.state.activeCharacter}
+						updatePlayerChar={this.updatePlayerCharacter}
+						mapCreatures={this.state.mapCreatures}
+						updateCreatures={this.updateMapCreatures}
+						creatureCoordsUpdate={this.state.creatureCoordsUpdate}
+						creatureUpdateReset={this.resetCreatureCoordsUpdate}
+						currentLocation={this.state.currentLocation}
+						updateLog={this.updateLog}
+						unitClickHandler={this.handleUnitClick}
+						weaponButtonSelected={this.state.weaponButtonSelected}
+					/>
+				}
 
 			</div>
 		);
