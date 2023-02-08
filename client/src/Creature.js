@@ -22,7 +22,7 @@ class Creature extends React.Component {
 		this.skills = props.skills;
 	}
 
-	attack(targetID, targetData, updateTarget, updateLog) {
+	attack(targetID, targetData, updateTarget, updateLog, moveCreatureCallback) {
 		let isHit, damage, hitRoll, defenseRoll;
 		let halfStr = Math.round(this.strength / 2);
 		let halfAgility = Math.round(this.agility / 2);
@@ -45,7 +45,7 @@ class Creature extends React.Component {
 		updateLog(`${this.name} attacks with ${hitRoll} to hit vs ${defenseRoll} defense`);
 		if (isHit) {
 			targetData.currentHP -= damage;
-			updateTarget(targetID, targetData);
+			updateTarget(targetID, targetData, moveCreatureCallback);
 		}
 		updateLog(isHit ? `${this.name} hits ${targetData.name} for ${damage} damage` : this.name + ' misses');
 	}

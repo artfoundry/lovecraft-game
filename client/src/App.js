@@ -26,7 +26,8 @@ class Game extends React.Component {
 			pcTypes: PlayerCharacterTypes,
 			mapCreatures: {},
 			unitsTurnOrder: [],
-			activeCharacter: 'privateEye',
+			currentTurn: 0,
+			activeCharacter: '',
 			characterIsSelected: false,
 			characterInfoText: '',
 			creatureIsSelected: false,
@@ -74,18 +75,18 @@ class Game extends React.Component {
 		}
 	}
 
-	setAllUnitsTurnOrder() {
+	setAllUnitsTurnOrder(moveCreatureCallback) {
 		let unitsTurnOrder = [];
 		const sortInitiatives = (newUnitId, newUnitInitiative, unitType) => {
 			if (unitsTurnOrder.length === 0) {
-				unitsTurnOrder.push({[newUnitId]: {initiative: newUnitInitiative, unitType}});
+				unitsTurnOrder.push({[newUnitInitiative]: {id: newUnitId, unitType}});
 			} else {
 				let i = 0;
 				let notSorted = true;
-				while (i < unitsTurnOrder.length && notSorted) {
-					const sortedUnitId = Object.keys(unitsTurnOrder[i])[0];
-					const sortedUnitOrderInfo = unitsTurnOrder[i][sortedUnitId];
-					const sortedUnitInitValue = sortedUnitOrderInfo.initiative;
+				while (notSorted) {
+					const sortedUnitInitValue = Object.keys(unitsTurnOrder[i])[0];
+					const sortedUnitOrderInfo = unitsTurnOrder[i][sortedUnitInitValue];
+					const sortedUnitId = sortedUnitOrderInfo.id;
 					const sortedUnitTypeCollection = this.state[sortedUnitOrderInfo.unitType];
 					const sortedUnitData = sortedUnitTypeCollection[sortedUnitId];
 					const newUnitTypeCollection = this.state[unitType];
@@ -104,30 +105,32 @@ class Game extends React.Component {
 							newUnitData.mentalAcuity === sortedUnitData.mentalAcuity &&
 							diceRoll(2) === 1)
 					) {
-						unitsTurnOrder.unshift({[newUnitId]: {initiative: newUnitInitiative, unitType}});
+						unitsTurnOrder.splice(i, 0, {[newUnitInitiative]: {id: newUnitId, unitType}});
 						notSorted = false;
 					} else if (i === unitsTurnOrder.length - 1) {
-						unitsTurnOrder.push({[newUnitId]: {initiative: newUnitInitiative, unitType}});
+						unitsTurnOrder.push({[newUnitInitiative]: {id: newUnitId, unitType}});
 						notSorted = false;
 					}
 					i++;
 				}
 			}
 		};
-		const examineInitiatives = (unitType) => {
+		const calculateInitiatives = (unitType) => {
 			for (const [id, charData] of Object.entries(this.state[unitType])) {
 				const unitInitiative = charData.initiative + diceRoll(6);
 				sortInitiatives(id, unitInitiative, unitType);
 			}
 		};
 
-		examineInitiatives('playerCharacters');
-		examineInitiatives('mapCreatures');
-		this.setState({unitsTurnOrder});
+		calculateInitiatives('playerCharacters');
+		calculateInitiatives('mapCreatures');
+		this.setState({unitsTurnOrder}, () => {
+			this.updateActiveCharacter(moveCreatureCallback);
+		});
 	}
 
 	// if id is passed in, updating only one creature; otherwise updating all
-	updateMapCreatures = (updateData, id, isInitialCreatureSetup) => {
+	updateMapCreatures = (updateData, id, isInitialCreatureSetup, moveCreatureCallback) => {
 		if (id) {
 			this.setState(prevState => ({
 				mapCreatures: {
@@ -138,20 +141,27 @@ class Game extends React.Component {
 				if (this.state.selectedCreature === id) {
 					this.updateInfoText('creatureInfoText', id);
 				}
+				if (moveCreatureCallback && this.state.mapCreatures[this.state.activeCharacter]) {
+					moveCreatureCallback();
+				}
 			});
 		} else {
 			this.setState({mapCreatures: updateData}, () => {
 				if (isInitialCreatureSetup) {
-					this.setAllUnitsTurnOrder();
+					this.setAllUnitsTurnOrder(moveCreatureCallback);
 				}
 			});
 		}
 	}
 
-	updatePlayerCharacter = (player, updateData) => {
+	updatePlayerCharacter = (player, updateData, moveCreatureCallback) => {
 		this.setState(prevState => ({
 			playerCharacters: {...prevState.playerCharacters, [player]: {...prevState.playerCharacters[player], ...updateData}}
-		}));
+		}), () => {
+			if (moveCreatureCallback && this.state.mapCreatures[this.state.activeCharacter]) {
+				moveCreatureCallback();
+			}
+		});
 	}
 
 	updateInfoText(type, id) {
@@ -181,6 +191,9 @@ class Game extends React.Component {
 	}
 
 	handleUnitClick = (id, type, isInRange) => {
+		if (type === 'creature' && this.state.mapCreatures[id].currentHP <= 0) {
+			return;
+		}
 		let unitTypeObjectName = '';
 		let unitTypeSelected = '';
 		let unitNameForSelectionStateChg = '';
@@ -195,7 +208,7 @@ class Game extends React.Component {
 			unitTypeSelected = 'selectedCreature';
 		}
 
-		if (Object.keys(this.state.weaponButtonSelected).length > 0 && isInRange && this.state.mapCreatures[id].currentHP > 0) {
+		if (Object.keys(this.state.weaponButtonSelected).length > 0 && isInRange) {
 			// selected unit is getting attacked
 			const selectedWeaponInfo = this.state.weaponButtonSelected;
 
@@ -207,6 +220,7 @@ class Game extends React.Component {
 			}
 			this.animateCharacter();
 			this.toggleWeapon(selectedWeaponInfo.characterId, selectedWeaponInfo.weaponName);
+			this.updateCurrentTurn();
 		} else {
 			if (this.state.selectedCharacter === id || this.state.selectedCreature === id) {
 				// selected character was just clicked to deselect
@@ -222,6 +236,7 @@ class Game extends React.Component {
 				}
 			}
 
+			// toggle selected state of clicked unit
 			this.setState(prevState => ({
 				[unitTypeSelected]: unitNameForSelectionStateChg,
 				[unitTypeObjectName]: {
@@ -249,8 +264,20 @@ class Game extends React.Component {
 		}
 	}
 
-	manageAllUnitTurns() {
+	updateCurrentTurn = (moveCreatureCallback) => {
+		const currentTurn = this.state.currentTurn === this.state.unitsTurnOrder.length - 1 ? 0 : this.state.currentTurn + 1;
+		this.setState({currentTurn}, () => {
+			this.updateActiveCharacter(moveCreatureCallback);
+		});
+	}
 
+	updateActiveCharacter(moveCreatureCallback) {
+		const currentTurnUnitInfo = Object.values(this.state.unitsTurnOrder[this.state.currentTurn])[0];
+		this.setState({activeCharacter: currentTurnUnitInfo.id},() => {
+			if (moveCreatureCallback && this.state.mapCreatures[this.state.activeCharacter]) {
+				moveCreatureCallback();
+			}
+		});
 	}
 
 	resetCreatureCoordsUpdate() {
@@ -293,11 +320,14 @@ class Game extends React.Component {
 					<Map
 						setShowDialogProps={this.setShowDialogProps}
 						pcTypes={this.state.pcTypes}
-						playerChars={this.state.playerCharacters}
-						activeChar={this.state.activeCharacter}
+						playerCharacters={this.state.playerCharacters}
+						activeCharacter={this.state.activeCharacter}
 						updatePlayerChar={this.updatePlayerCharacter}
 						mapCreatures={this.state.mapCreatures}
 						updateCreatures={this.updateMapCreatures}
+						currentTurn={this.state.currentTurn}
+						updateCurrentTurn={this.updateCurrentTurn}
+						unitsTurnOrder={this.state.unitsTurnOrder}
 						creatureCoordsUpdate={this.state.creatureCoordsUpdate}
 						creatureUpdateReset={this.resetCreatureCoordsUpdate}
 						currentLocation={this.state.currentLocation}
