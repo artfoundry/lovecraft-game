@@ -118,7 +118,7 @@ class Map extends React.Component {
 				this.moveCharacter(null, null, () => {
 					this.setExitPosition();
 					const {mapCreatures, creatureCoords} = this.setInitialCreatureData();
-					this.updateMapCreatures(mapCreatures, null, true, this.moveCreature);
+					this.updateMapCreatures(mapCreatures, null, true);
 					this.setState({creatureCoords});
 					if (this.pageFirstLoaded) {
 						this.pageFirstLoaded = false;
@@ -792,12 +792,12 @@ class Map extends React.Component {
 			} else {
 				const creatureData = {...this.props.mapCreatures};
 				creatureData[creatureID].coords = nextCoords;
-				this.updateMapCreatures(creatureData[creatureID], creatureID, this.moveCreature);
+				this.updateMapCreatures(creatureData[creatureID], creatureID);
 			}
 		});
 	}
 
-	moveCreature = () => {
+	moveCreature() {
 		const creatureID = this.props.activeCharacter;
 		const creatureData = this.props.mapCreatures[creatureID];
 		if (creatureData.currentHP > 0) {
@@ -821,12 +821,12 @@ class Map extends React.Component {
 						newCreaturePos = this.setNewCreaturePosRelativeToChar(creatureCoords, -1);
 						this.storeNewCreatureCoords(creatureID, [newCreaturePos]);
 
-						this.updateLog(`Moving ${creatureID} away from player to ${JSON.stringify(newCreaturePos)}`);
+						// this.updateLog(`Moving ${creatureID} away from player to ${JSON.stringify(newCreaturePos)}`);
 					}
 				// or if player char is within attack range, then attack
 				} else if (playerDistance <= creatureData.range) {
 					this.updateLog(`${creatureID} attacks player at ${JSON.stringify(playerPos)}`);
-					this.creatureInstances[creatureID].attack('privateEye', activeCharacterData, this.props.updatePlayerChar, this.props.updateLog, this.moveCreature);
+					this.creatureInstances[creatureID].attack('privateEye', activeCharacterData, this.props.updatePlayerChar, this.props.updateLog);
 
 				// otherwise move creature toward player
 				} else {
@@ -834,7 +834,7 @@ class Map extends React.Component {
 						newCreaturePos = this.setNewCreaturePosRelativeToChar(creatureCoords, 1);
 						this.storeNewCreatureCoords(creatureID, [newCreaturePos]);
 
-						this.updateLog(`Moving ${creatureID} toward player, to ${JSON.stringify(newCreaturePos)}`);
+						// this.updateLog(`Moving ${creatureID} toward player, to ${JSON.stringify(newCreaturePos)}`);
 					}
 				}
 			// otherwise, no player char nearby, so move creature in random direction (including possibly not moving at all)
@@ -848,7 +848,7 @@ class Map extends React.Component {
 					if (this.tileIsFreeToMove({xPos: newRandX, yPos: newRandY})) {
 						allCreatureMoves.push({xPos: newRandX, yPos: newRandY});
 
-						this.updateLog(`Moving ${creatureID} randomly to ${newRandX}, ${newRandY}`);
+						// this.updateLog(`Moving ${creatureID} randomly to ${newRandX}, ${newRandY}`);
 					}
 				}
 				if (allCreatureMoves.length > 0) {
@@ -1006,7 +1006,7 @@ class Map extends React.Component {
 				this.moveMap(initialSetupCallback);
 				if (!initialSetupCallback) {
 					this.checkForExit();
-					this.props.updateCurrentTurn(this.moveCreature);
+					this.props.updateCurrentTurn();
 				}
 			});
 		}
@@ -1108,9 +1108,11 @@ class Map extends React.Component {
 
 			this.setState({creatureCoords: {...currentCreatureCoords}});
 		}
+		if (prevProps.activeCharacter !== this.props.activeCharacter && this.props.mapCreatures[this.props.activeCharacter]) {
+			this.moveCreature();
+			this.props.updateCurrentTurn();
+		}
 	}
-
-	// shouldComponentUpdate(nextProps, nextState, nextContent) {}
 
 	// Add below for testing: <button onClick={this.resetMap}>Reset</button>
 	render() {

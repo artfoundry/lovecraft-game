@@ -75,7 +75,7 @@ class Game extends React.Component {
 		}
 	}
 
-	setAllUnitsTurnOrder(moveCreatureCallback) {
+	setAllUnitsTurnOrder() {
 		let unitsTurnOrder = [];
 		const sortInitiatives = (newUnitId, newUnitInitiative, unitType) => {
 			if (unitsTurnOrder.length === 0) {
@@ -125,12 +125,12 @@ class Game extends React.Component {
 		calculateInitiatives('playerCharacters');
 		calculateInitiatives('mapCreatures');
 		this.setState({unitsTurnOrder}, () => {
-			this.updateActiveCharacter(moveCreatureCallback);
+			this.updateActiveCharacter();
 		});
 	}
 
 	// if id is passed in, updating only one creature; otherwise updating all
-	updateMapCreatures = (updateData, id, isInitialCreatureSetup, moveCreatureCallback) => {
+	updateMapCreatures = (updateData, id, isInitialCreatureSetup = false) => {
 		if (id) {
 			this.setState(prevState => ({
 				mapCreatures: {
@@ -141,25 +141,22 @@ class Game extends React.Component {
 				if (this.state.selectedCreature === id) {
 					this.updateInfoText('creatureInfoText', id);
 				}
-				if (moveCreatureCallback && this.state.mapCreatures[this.state.activeCharacter]) {
-					moveCreatureCallback();
-				}
 			});
 		} else {
 			this.setState({mapCreatures: updateData}, () => {
 				if (isInitialCreatureSetup) {
-					this.setAllUnitsTurnOrder(moveCreatureCallback);
+					this.setAllUnitsTurnOrder();
 				}
 			});
 		}
 	}
 
-	updatePlayerCharacter = (player, updateData, moveCreatureCallback) => {
+	updatePlayerCharacter = (player, updateData, isEndOfTurn) => {
 		this.setState(prevState => ({
 			playerCharacters: {...prevState.playerCharacters, [player]: {...prevState.playerCharacters[player], ...updateData}}
 		}), () => {
-			if (moveCreatureCallback && this.state.mapCreatures[this.state.activeCharacter]) {
-				moveCreatureCallback();
+			if (isEndOfTurn) {
+				this.updateCurrentTurn();
 			}
 		});
 	}
@@ -264,20 +261,16 @@ class Game extends React.Component {
 		}
 	}
 
-	updateCurrentTurn = (moveCreatureCallback) => {
+	updateCurrentTurn = () => {
 		const currentTurn = this.state.currentTurn === this.state.unitsTurnOrder.length - 1 ? 0 : this.state.currentTurn + 1;
 		this.setState({currentTurn}, () => {
-			this.updateActiveCharacter(moveCreatureCallback);
+			this.updateActiveCharacter();
 		});
 	}
 
-	updateActiveCharacter(moveCreatureCallback) {
+	updateActiveCharacter() {
 		const currentTurnUnitInfo = Object.values(this.state.unitsTurnOrder[this.state.currentTurn])[0];
-		this.setState({activeCharacter: currentTurnUnitInfo.id},() => {
-			if (moveCreatureCallback && this.state.mapCreatures[this.state.activeCharacter]) {
-				moveCreatureCallback();
-			}
-		});
+		this.setState({activeCharacter: currentTurnUnitInfo.id});
 	}
 
 	resetCreatureCoordsUpdate() {
