@@ -3,7 +3,7 @@
 		"name": "catacombs",
 		"creatures": {
 			"elderThing": {
-				"count": 3,
+				"count": 5,
 				"floors": 3
 			},
 			"ghoul": {
@@ -11,7 +11,7 @@
 				"floors": 1
 			},
 			"shoggoth": {
-				"count": 3,
+				"count": 5,
 				"floors": 2
 			}
 		}

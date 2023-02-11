@@ -7,7 +7,8 @@ class UI extends React.Component {
 		super(props);
 
 		this.state = {
-			logText: this.props.logText
+			logText: this.props.logText,
+			buttonState: ''
 		};
 	}
 
@@ -51,6 +52,8 @@ class UI extends React.Component {
 					weaponsProp={info.weapons}
 					toggleWeaponButton={this.props.toggleWeapon}
 					weaponButtonSelected={this.props.weaponButtonSelected}
+					endTurnCallback={this.props.updateCurrentTurn}
+					isActiveCharacter={this.props.playerCharacters[this.props.activeCharacter]}
 				/>
 			)
 		}
@@ -61,6 +64,10 @@ class UI extends React.Component {
 		if (prevProps.logText !== this.props.logText) {
 			this.setState({logText: [...this.props.logText]});
 		}
+		// if (prevProps.activeCharacter !== this.props.activeCharacter) {
+		// 	let buttonState = this.props.playerCharacters[this.props.activeCharacter] ? '' : ' button-inactive';
+		// 	this.setState({buttonState});
+		// }
 	}
 
 	render() {

@@ -1,6 +1,8 @@
 import React, {useState} from 'react';
 
 function CharacterControls(props) {
+	const [buttonState, updateButtonState] = useState('');
+	const [waitingTurn, updateWaiting] = useState(false); // to allow time for dom to update End Turn button purely for visual feedback; may not need later
 	let weapons = [];
 	props.weaponsProp.forEach(weaponName => {
 		let buttonStateClass = '';
@@ -13,10 +15,21 @@ function CharacterControls(props) {
 			}}>{weaponName}</div>
 		);
 	});
+	if (props.isActiveCharacter && !waitingTurn && buttonState === ' button-inactive') {
+		updateButtonState('');
+	}
 	return (
 		<div className='character-control-container'>
 			<div className='character-name'>{props.characterName}</div>
 			<div className='weapon-buttons-container'>{weapons}</div>
+			<div className={'general-button' + buttonState} onClick={() => {
+				updateButtonState(' button-inactive');
+				updateWaiting(true);
+				props.endTurnCallback();
+				setTimeout(() => {
+					updateWaiting(false);
+				}, 1000);
+			}}>End Turn</div>
 		</div>
 	);
 }

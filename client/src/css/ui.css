@@ -96,11 +96,11 @@
 	background-color: gray;
 	border: 2px solid cornflowerblue;
 	border-radius: 5px;
+	padding: 5px;
 }
 
 .character-name {
 	display: inline-block;
-	margin: 5px;
 	padding: 3px;
 	font-size: 16px;
 	font-family: "Copperplate Gothic Light", fantasy;
@@ -109,7 +109,6 @@
 
 .weapon-buttons-container {
 	display: flex;
-	margin: 5px;
 }
 
 .weapon-button {
@@ -123,6 +122,26 @@
 .weapon-button:hover {
 	border-color: red;
 	cursor: pointer;
+}
+
+.general-button {
+	width: 100px;
+	margin: 5px;
+	padding: 5px;
+	border: 1px solid cornflowerblue;
+	border-radius: 5px;
+	background-color: darkslateblue;
+}
+
+.general-button:hover {
+	border-color: yellow;
+	cursor: pointer;
+}
+
+.button-inactive {
+	cursor: default;
+	pointer-events: none;
+	background-color: dimgray;
 }
 
 .button-selected {

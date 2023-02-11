@@ -19,6 +19,8 @@ class Game extends React.Component {
 		this.initialDialogText = 'Find the stairs down to enter a new dungeon! Use mouse or arrow keys to move and space bar to open/close doors.';
 		this.startingLocation = 'catacombs';
 		this.startingPlayerCharacters = ['privateEye'];
+		this.playerMovesLimit = 3;
+		this.playerActionsLimit = 1;
 
 		this.state = {
 			gameSetupComplete: false,
@@ -28,6 +30,9 @@ class Game extends React.Component {
 			unitsTurnOrder: [],
 			currentTurn: 0,
 			activeCharacter: '',
+			activePlayerMovesCompleted: 0,
+			activePlayerActionsCompleted: 0,
+			currentLocation: '',
 			characterIsSelected: false,
 			characterInfoText: '',
 			creatureIsSelected: false,
@@ -36,7 +41,6 @@ class Game extends React.Component {
 			selectedCharacter: '',
 			selectedCreature: '',
 			weaponButtonSelected: {},
-			currentLocation: '',
 			controlsContent: '',
 			logText: [],
 			showDialog: true,
@@ -151,14 +155,10 @@ class Game extends React.Component {
 		}
 	}
 
-	updatePlayerCharacter = (player, updateData, isEndOfTurn) => {
+	updatePlayerCharacter = (player, updateData) => {
 		this.setState(prevState => ({
 			playerCharacters: {...prevState.playerCharacters, [player]: {...prevState.playerCharacters[player], ...updateData}}
-		}), () => {
-			if (isEndOfTurn) {
-				this.updateCurrentTurn();
-			}
-		});
+		}));
 	}
 
 	updateInfoText(type, id) {
@@ -187,7 +187,7 @@ class Game extends React.Component {
 		this.setState({weaponButtonSelected: buttonState});
 	}
 
-	handleUnitClick = (id, type, isInRange) => {
+	handleUnitClick = (id, type, isInRange, moveCreatureCallback) => {
 		if (type === 'creature' && this.state.mapCreatures[id].currentHP <= 0) {
 			return;
 		}
@@ -206,19 +206,31 @@ class Game extends React.Component {
 		}
 
 		if (Object.keys(this.state.weaponButtonSelected).length > 0 && isInRange) {
-			// selected unit is getting attacked
+			if (this.state.activePlayerActionsCompleted === this.playerActionsLimit) {
+				const showDialog = true;
+				const dialogText = `${this.state.playerCharacters[this.state.activeCharacter].name} has no more actions this turn`;
+				const closeButtonText = 'Ok';
+				const actionButtonVisible = false;
+				const actionButtonText = '';
+				const actionButtonCallback = null;
+				const dialogClasses = '';
+				this.setShowDialogProps(showDialog, dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses);
+				return;
+			}
+
+			// clicked unit is getting attacked
 			const selectedWeaponInfo = this.state.weaponButtonSelected;
 
 			this.state.playerCharacters[this.state.activeCharacter].attack(selectedWeaponInfo.stats, id, this.state.mapCreatures[id], this.updateMapCreatures, this.updateLog);
-
+			this.animateCharacter();
+			this.toggleWeapon(selectedWeaponInfo.characterId, selectedWeaponInfo.weaponName);
 			if (this.state.mapCreatures[id].currentHP <= 0) {
 				this.setState({creatureCoordsUpdate: id});
 				this.updateLog(`${id} is dead!`);
 			}
-			this.animateCharacter();
-			this.toggleWeapon(selectedWeaponInfo.characterId, selectedWeaponInfo.weaponName);
-			this.updateCurrentTurn();
+			this.updateActivePlayerActions();
 		} else {
+			// clicked unit is being selected/deselected
 			if (this.state.selectedCharacter === id || this.state.selectedCreature === id) {
 				// selected character was just clicked to deselect
 				unitNameForSelectionStateChg = '';
@@ -263,7 +275,7 @@ class Game extends React.Component {
 
 	updateCurrentTurn = () => {
 		const currentTurn = this.state.currentTurn === this.state.unitsTurnOrder.length - 1 ? 0 : this.state.currentTurn + 1;
-		this.setState({currentTurn}, () => {
+		this.setState({currentTurn, activePlayerActionsCompleted: 0, activePlayerMovesCompleted: 0}, () => {
 			this.updateActiveCharacter();
 		});
 	}
@@ -271,6 +283,28 @@ class Game extends React.Component {
 	updateActiveCharacter() {
 		const currentTurnUnitInfo = Object.values(this.state.unitsTurnOrder[this.state.currentTurn])[0];
 		this.setState({activeCharacter: currentTurnUnitInfo.id});
+	}
+
+	updateActivePlayerActions() {
+		const activePlayerActionsCompleted = this.state.activePlayerActionsCompleted + 1;
+		this.setState({activePlayerActionsCompleted}, () => {
+			if (this.state.activePlayerMovesCompleted === this.playerMovesLimit && this.state.activePlayerActionsCompleted === this.playerActionsLimit) {
+				setTimeout(() => {
+					this.updateCurrentTurn();
+				}, 500);
+			}
+		});
+	}
+
+	updateActivePlayerMoves = () => {
+		const activePlayerMovesCompleted = this.state.activePlayerMovesCompleted + 1;
+		this.setState({activePlayerMovesCompleted}, () => {
+			if (this.state.activePlayerMovesCompleted === this.playerMovesLimit && this.state.activePlayerActionsCompleted === this.playerActionsLimit) {
+				setTimeout(() => {
+					this.updateCurrentTurn();
+				}, 500);
+			}
+		});
 	}
 
 	resetCreatureCoordsUpdate() {
@@ -281,6 +315,17 @@ class Game extends React.Component {
 
 	}
 
+	/**
+	 * Sets props for main dialog window. showDialog determines whether dialog is shown
+	 * and rest determine dialog content
+	 * @param showDialog: boolean
+	 * @param dialogText: string
+	 * @param closeButtonText: string
+	 * @param actionButtonVisible: boolean
+	 * @param actionButtonText: string
+	 * @param actionButtonCallback: function
+	 * @param dialogClasses: string
+	 */
 	setShowDialogProps = (showDialog, dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses) => {
 		this.setState({showDialog, dialogProps: {dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses}});
 	}
@@ -307,6 +352,9 @@ class Game extends React.Component {
 					creatureIsSelected={this.state.creatureIsSelected}
 					weaponButtonSelected={this.state.weaponButtonSelected}
 					toggleWeapon={this.toggleWeapon}
+					updateCurrentTurn={this.updateCurrentTurn}
+					activeCharacter={this.state.activeCharacter}
+					playerCharacters={this.state.playerCharacters}
 				/>
 
 				{this.state.gameSetupComplete &&
@@ -316,6 +364,9 @@ class Game extends React.Component {
 						playerCharacters={this.state.playerCharacters}
 						activeCharacter={this.state.activeCharacter}
 						updatePlayerChar={this.updatePlayerCharacter}
+						activePlayerMovesCompleted={this.state.activePlayerMovesCompleted}
+						playerMovesLimit={this.playerMovesLimit}
+						updateActivePlayerMoves={this.updateActivePlayerMoves}
 						mapCreatures={this.state.mapCreatures}
 						updateCreatures={this.updateMapCreatures}
 						currentTurn={this.state.currentTurn}

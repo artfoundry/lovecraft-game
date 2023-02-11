@@ -62,6 +62,7 @@ class Map extends React.Component {
 		this.setShowDialogProps = this.props.setShowDialogProps;
 		this.updateLog = this.props.updateLog;
 		this.handleUnitClick = this.props.unitClickHandler;
+		this.updateActivePlayerMoves = this.props.updateActivePlayerMoves;
 		this.createAllMapPieces = this.createAllMapPieces.bind(this);
 		this.addLighting = this.addLighting.bind(this);
 	}
@@ -579,6 +580,7 @@ class Map extends React.Component {
 					dataLoc={creatureCoords}
 					dataCharType={props.characterType}
 					clickUnit={this.handleUnitClick}
+					clickUnitCallback={this.moveCreature}
 					styles={{
 						transform: `translate(${characterTransform})`,
 						width: Math.round(this.tileSize * this.characterSizePercentage) + 'px',
@@ -800,6 +802,8 @@ class Map extends React.Component {
 	moveCreature() {
 		const creatureID = this.props.activeCharacter;
 		const creatureData = this.props.mapCreatures[creatureID];
+		let creatureDidMove = false;
+
 		if (creatureData.currentHP > 0) {
 			const creatureCoords = this.state.creatureCoords[creatureID];
 			const creaturePos = `${creatureCoords.xPos}-${creatureCoords.yPos}`;
@@ -819,6 +823,9 @@ class Map extends React.Component {
 					// move away from player
 					for (let i=1; i <= creatureData.moveSpeed; i++) {
 						newCreaturePos = this.setNewCreaturePosRelativeToChar(creatureCoords, -1);
+						if (newCreaturePos.xPos !== creatureCoords.xPos || newCreaturePos.yPos !== creatureCoords.yPos) {
+							creatureDidMove = true;
+						}
 						this.storeNewCreatureCoords(creatureID, [newCreaturePos]);
 
 						// this.updateLog(`Moving ${creatureID} away from player to ${JSON.stringify(newCreaturePos)}`);
@@ -832,6 +839,9 @@ class Map extends React.Component {
 				} else {
 					for (let i=1; i <= creatureData.moveSpeed; i++) {
 						newCreaturePos = this.setNewCreaturePosRelativeToChar(creatureCoords, 1);
+						if (newCreaturePos.xPos !== creatureCoords.xPos || newCreaturePos.yPos !== creatureCoords.yPos) {
+							creatureDidMove = true;
+						}
 						this.storeNewCreatureCoords(creatureID, [newCreaturePos]);
 
 						// this.updateLog(`Moving ${creatureID} toward player, to ${JSON.stringify(newCreaturePos)}`);
@@ -853,8 +863,12 @@ class Map extends React.Component {
 				}
 				if (allCreatureMoves.length > 0) {
 					this.storeNewCreatureCoords(creatureID, allCreatureMoves);
+					creatureDidMove = true;
 				}
 			}
+		}
+		if (!creatureDidMove) {
+			this.props.updateCurrentTurn();
 		}
 	}
 
@@ -883,6 +897,17 @@ class Map extends React.Component {
 	// }
 
 	moveCharacter = (tileLoc, e, initialSetupCallback = null) => {
+		if (this.props.activePlayerMovesCompleted === this.props.playerMovesLimit) {
+			const showDialog = true;
+			const dialogText = `${this.props.playerCharacters[this.props.activeCharacter].name} has no more moves this turn`;
+			const closeButtonText = 'Ok';
+			const actionButtonVisible = false;
+			const actionButtonText = '';
+			const actionButtonCallback = null;
+			const dialogClasses = '';
+			this.setShowDialogProps(showDialog, dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses);
+			return;
+		}
 		let newCoords = [];
 		let invalidMove = false;
 
@@ -1006,7 +1031,7 @@ class Map extends React.Component {
 				this.moveMap(initialSetupCallback);
 				if (!initialSetupCallback) {
 					this.checkForExit();
-					this.props.updateCurrentTurn();
+					this.props.updateActivePlayerMoves();
 				}
 			});
 		}
