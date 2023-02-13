@@ -4,7 +4,7 @@ import {randomTileVariant} from './Utils';
 function Character(props) {
 	const isHiddenClass = props.isHidden ? ' hidden' : '';
 	const isSelectedClass = !props.isHidden && props.isSelected ? ' selected' : '';
-	const isDeadClass = !props.isHidden && props.isDead ? ` ${props.idClassName}-dead` : '';
+	const isDeadClass = !props.isHidden && props.isDead ? ` ${props.idClassName}-dead dead` : '';
 	const isInRangeClass = !props.isHidden && props.isInRange ? ' in-range' : '';
 	return (
 		<img id={props.id}
@@ -13,7 +13,7 @@ function Character(props) {
 		     style={props.styles}
 		     data-location={`${props.dataLoc.xPos}-${props.dataLoc.yPos}`}
 			 onClick={() => {
-				 props.clickUnit(props.id, props.dataCharType, props.isInRange, props.clickUnitCallback);
+				 props.clickUnit(props.id, props.dataCharType, props.isInRange);
 			 }} />
 	)
 }

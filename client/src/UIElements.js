@@ -86,12 +86,13 @@ function DialogWindow(props) {
 		<div className={`dialog ui-panel ${props.classes}`}>
 			<div className="dialog-message">{props.dialogText}</div>
 			<div className="dialog-buttons">
+				{!props.disableCloseButton &&
 				<button className="dialog-button"
 				        onClick={() => {
 							props.closeButtonCallback();
 						}}>
 					{props.closeButtonText}
-				</button>
+				</button> }
 				<button
 					className={`dialog-button ${props.actionButtonVisible ? '' : 'hide'}`}
 					onClick={() => {

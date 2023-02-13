@@ -7,8 +7,7 @@ class UI extends React.Component {
 		super(props);
 
 		this.state = {
-			logText: this.props.logText,
-			buttonState: ''
+			logText: this.props.logText
 		};
 	}
 
@@ -21,6 +20,7 @@ class UI extends React.Component {
 				actionButtonVisible={this.props.dialogProps.actionButtonVisible}
 				actionButtonText={this.props.dialogProps.actionButtonText}
 				actionButtonCallback={this.props.dialogProps.actionButtonCallback}
+				disableCloseButton={this.props.dialogProps.disableCloseButton}
 				closeButtonCallback={this.closeDialog} />
 		)
 	}
@@ -64,10 +64,6 @@ class UI extends React.Component {
 		if (prevProps.logText !== this.props.logText) {
 			this.setState({logText: [...this.props.logText]});
 		}
-		// if (prevProps.activeCharacter !== this.props.activeCharacter) {
-		// 	let buttonState = this.props.playerCharacters[this.props.activeCharacter] ? '' : ' button-inactive';
-		// 	this.setState({buttonState});
-		// }
 	}
 
 	render() {

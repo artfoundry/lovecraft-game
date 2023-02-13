@@ -580,7 +580,6 @@ class Map extends React.Component {
 					dataLoc={creatureCoords}
 					dataCharType={props.characterType}
 					clickUnit={this.handleUnitClick}
-					clickUnitCallback={this.moveCreature}
 					styles={{
 						transform: `translate(${characterTransform})`,
 						width: Math.round(this.tileSize * this.characterSizePercentage) + 'px',
@@ -993,6 +992,7 @@ class Map extends React.Component {
 			// 	this.updateLog(`NEW TURN: Player ${this.props.playerCharacters[this.props.activeCharacter].name} moves to ${newCoords[0]}, ${newCoords[1]}`);
 			// }
 
+			// Find all visited tiles for determining lighting
 			const visitedTile = `${newCoords[0]}-${newCoords[1]}`;
 			let playerVisitedUpdatedState = null;
 			if (!this.state.playerVisited[visitedTile]) {
@@ -1020,6 +1020,7 @@ class Map extends React.Component {
 				});
 				playerVisitedUpdatedState = {...this.state.playerVisited, ...surroundingTilesCoords};
 			}
+
 			this.setState(prevState => ({
 				playerVisited: playerVisitedUpdatedState || {...prevState.playerVisited},
 				playerCoords: {

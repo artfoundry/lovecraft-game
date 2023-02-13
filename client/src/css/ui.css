@@ -89,14 +89,22 @@
 	grid-area: controlBar;
 	display: flex;
 	justify-self: center;
+	border: 2px solid cornflowerblue;
+	border-bottom: 0;
+	border-radius: 5px 5px 0 0;
 }
 
 .character-control-container {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-evenly;
+	align-items: center;
 	width: 300px;
 	background-color: gray;
-	border: 2px solid cornflowerblue;
-	border-radius: 5px;
 	padding: 5px;
+	border-left: 1px solid cornflowerblue;
+	border-right: 1px solid cornflowerblue;
+	text-align: center;
 }
 
 .character-name {

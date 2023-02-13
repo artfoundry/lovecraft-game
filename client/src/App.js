@@ -143,7 +143,11 @@ class Game extends React.Component {
 				}
 			}), () => {
 				if (this.state.selectedCreature === id) {
-					this.updateInfoText('creatureInfoText', id);
+					if (this.state.mapCreatures[id].currentHP <= 0) {
+						this.updateUnitSelectionStatus(id, 'creature');
+					} else {
+						this.updateInfoText('creatureInfoText', id);
+					}
 				}
 			});
 		} else {
@@ -164,6 +168,65 @@ class Game extends React.Component {
 	updateInfoText(type, id) {
 		const updatedText = type === 'characterInfoText' ? this.state.playerCharacters[id] : this.state.mapCreatures[id];
 		this.setState({[type]: updatedText});
+	}
+
+	updateUnitSelectionStatus(id, type) {
+		let unitTypeObjectName = '';
+		let unitTypeSelected = '';
+		let unitNameForSelectionStateChg = '';
+		let unitToDeselect = '';
+		let infoTextToUpdate = '';
+
+		if (type === 'player') {
+			unitTypeObjectName = 'playerCharacters';
+			unitTypeSelected = 'selectedCharacter';
+		} else if (type === 'creature') {
+			unitTypeObjectName = 'mapCreatures';
+			unitTypeSelected = 'selectedCreature';
+		}
+
+		// clicked unit is being selected/deselected
+		if (this.state.selectedCharacter === id || this.state.selectedCreature === id) {
+			// selected character was just clicked to deselect
+			unitNameForSelectionStateChg = '';
+		} else {
+			// no unit previously selected or different unit previously selected
+			unitNameForSelectionStateChg = id;
+
+			infoTextToUpdate = type === 'player' ? 'characterInfoText' : 'creatureInfoText';
+
+			if (this.state[unitTypeSelected] !== '') {
+				unitToDeselect = this.state[unitTypeSelected];
+			}
+		}
+
+		// toggle selected state of clicked unit
+		this.setState(prevState => ({
+			[unitTypeSelected]: unitNameForSelectionStateChg,
+			[unitTypeObjectName]: {
+				...prevState[unitTypeObjectName],
+				[id]: {
+					...prevState[unitTypeObjectName][id],
+					isSelected: !prevState[unitTypeObjectName][id].isSelected
+				}
+			}
+		}), () => {
+			if (unitToDeselect !== '') {
+				this.setState(prevState => ({
+					[unitTypeObjectName]: {
+						...prevState[unitTypeObjectName],
+						[unitToDeselect]: {
+							...prevState[unitTypeObjectName][unitToDeselect],
+							isSelected: !prevState[unitTypeObjectName][unitToDeselect].isSelected
+						}
+					}
+				}));
+			}
+			this.toggleCharIsSelected(type, this.state[unitTypeObjectName][id].isSelected);
+			if (this.state[unitTypeObjectName][id].isSelected) {
+				this.updateInfoText(infoTextToUpdate, id);
+			}
+		});
 	}
 
 	updateLog = (logText) => {
@@ -187,24 +250,7 @@ class Game extends React.Component {
 		this.setState({weaponButtonSelected: buttonState});
 	}
 
-	handleUnitClick = (id, type, isInRange, moveCreatureCallback) => {
-		if (type === 'creature' && this.state.mapCreatures[id].currentHP <= 0) {
-			return;
-		}
-		let unitTypeObjectName = '';
-		let unitTypeSelected = '';
-		let unitNameForSelectionStateChg = '';
-		let unitToDeselect = '';
-		let infoTextToUpdate = '';
-
-		if (type === 'player') {
-			unitTypeObjectName = 'playerCharacters';
-			unitTypeSelected = 'selectedCharacter';
-		} else if (type === 'creature') {
-			unitTypeObjectName = 'mapCreatures';
-			unitTypeSelected = 'selectedCreature';
-		}
-
+	handleUnitClick = (id, type, isInRange) => {
 		if (Object.keys(this.state.weaponButtonSelected).length > 0 && isInRange) {
 			if (this.state.activePlayerActionsCompleted === this.playerActionsLimit) {
 				const showDialog = true;
@@ -230,46 +276,7 @@ class Game extends React.Component {
 			}
 			this.updateActivePlayerActions();
 		} else {
-			// clicked unit is being selected/deselected
-			if (this.state.selectedCharacter === id || this.state.selectedCreature === id) {
-				// selected character was just clicked to deselect
-				unitNameForSelectionStateChg = '';
-			} else {
-				// no unit previously selected or different unit previously selected
-				unitNameForSelectionStateChg = id;
-
-				infoTextToUpdate = type === 'player' ? 'characterInfoText' : 'creatureInfoText';
-
-				if (this.state[unitTypeSelected] !== '') {
-					unitToDeselect = this.state[unitTypeSelected];
-				}
-			}
-
-			// toggle selected state of clicked unit
-			this.setState(prevState => ({
-				[unitTypeSelected]: unitNameForSelectionStateChg,
-				[unitTypeObjectName]: {
-					...prevState[unitTypeObjectName],
-					[id]: {
-						...prevState[unitTypeObjectName][id],
-						isSelected: !prevState[unitTypeObjectName][id].isSelected
-					}
-				}
-			}), () => {
-				if (unitToDeselect !== '') {
-					this.setState(prevState => ({
-						[unitTypeObjectName]: {
-							...prevState[unitTypeObjectName],
-							[unitToDeselect]: {
-								...prevState[unitTypeObjectName][unitToDeselect],
-								isSelected: !prevState[unitTypeObjectName][unitToDeselect].isSelected
-							}
-						}
-					}));
-				}
-				this.updateInfoText(infoTextToUpdate, id);
-				this.toggleCharIsSelected(type, this.state[unitTypeObjectName][id].isSelected);
-			});
+			this.updateUnitSelectionStatus(id, type);
 		}
 	}
 
@@ -326,8 +333,8 @@ class Game extends React.Component {
 	 * @param actionButtonCallback: function
 	 * @param dialogClasses: string
 	 */
-	setShowDialogProps = (showDialog, dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses) => {
-		this.setState({showDialog, dialogProps: {dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses}});
+	setShowDialogProps = (showDialog, dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses, disableCloseButton) => {
+		this.setState({showDialog, dialogProps: {dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses, disableCloseButton}});
 	}
 
 	componentDidMount() {

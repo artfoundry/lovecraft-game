@@ -2,6 +2,10 @@
 	position: absolute;
 }
 
+.dead {
+	pointer-events: none;
+}
+
 .ghoul {
 	content: url('../assets/characters/creatures/ghoul.gif');
 }
