@@ -11,7 +11,7 @@
     "startingHP": 50,
     "range": 3,
     "attackType": "psychic",
-    "moveSpeed": 1,
+    "moveSpeed": 2,
     "skills": {}
   },
   "ghast": {
@@ -41,7 +41,7 @@
     "startingHP": 10,
     "range": 1,
     "attackType": "melee",
-    "moveSpeed": 1,
+    "moveSpeed": 2,
     "skills": {}
   },
   "shoggoth": {

@@ -134,7 +134,7 @@ class Game extends React.Component {
 	}
 
 	// if id is passed in, updating only one creature; otherwise updating all
-	updateMapCreatures = (updateData, id, isInitialCreatureSetup = false) => {
+	updateMapCreatures = (updateData, id, isInitialCreatureSetup = false, callback) => {
 		if (id) {
 			this.setState(prevState => ({
 				mapCreatures: {
@@ -149,6 +149,7 @@ class Game extends React.Component {
 						this.updateInfoText('creatureInfoText', id);
 					}
 				}
+				if (callback) callback();
 			});
 		} else {
 			this.setState({mapCreatures: updateData}, () => {
@@ -159,10 +160,12 @@ class Game extends React.Component {
 		}
 	}
 
-	updatePlayerCharacter = (player, updateData) => {
+	updatePlayerCharacter = (player, updateData, callback) => {
 		this.setState(prevState => ({
 			playerCharacters: {...prevState.playerCharacters, [player]: {...prevState.playerCharacters[player], ...updateData}}
-		}));
+		}), () => {
+			if (callback) callback();
+		});
 	}
 
 	updateInfoText(type, id) {
@@ -332,6 +335,7 @@ class Game extends React.Component {
 	 * @param actionButtonText: string
 	 * @param actionButtonCallback: function
 	 * @param dialogClasses: string
+	 * @param disableCloseButton: boolean
 	 */
 	setShowDialogProps = (showDialog, dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses, disableCloseButton) => {
 		this.setState({showDialog, dialogProps: {dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses, disableCloseButton}});
