@@ -9,6 +9,8 @@ Working title: War of the Old Ones
 ---
 #### Current status:
 
+3/8/23: (forgot to update status since Aug) PC and Creature classes. Combat. Initiative system (almost done).
+
 8/30/22: Tool for creating map pieces.  See below for instructions.
 
 8/11/22: Randomized dungeon with lighting. One tileset (catacombs).
