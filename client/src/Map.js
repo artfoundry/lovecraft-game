@@ -5,10 +5,11 @@ import CreatureData from './creatureTypes.json';
 import Creature from './Creature';
 import {Exit, LightElement, Character, Tile, Door} from './MapPieceElements';
 import {StoneDoor} from './Audio';
-import {randomTileMovementValue, unblockedPathsToNearbyTiles, convertCamelToKabobCase} from './Utils';
+import {unblockedPathsToNearbyTiles, convertCamelToKabobCase} from './Utils';
 
 /**
  * Map controls entire layout of game elements (objects, tiles, and lighting) as well as movement of players and creatures
+ * Map is made up of pre-defined pieces (using the map tool) that contain tiles
  *
  * Creature data structure : {
  * 		...CreatureData[name],
@@ -27,7 +28,6 @@ class Map extends React.Component {
 		this.tileSize = 64;
 		this.characterSizePercentage = 0.7;
 		this.mapTileLimit = 500;
-		this.firstPiecePosition = {xPos: 5, yPos: 5};
 		this.OPPOSITE_SIDE = {
 			topSide: 'bottomSide',
 			bottomSide: 'topSide',
@@ -92,23 +92,31 @@ class Map extends React.Component {
 	 * MAP LAYOUT
 	 */
 
-	layoutPieces = () => {
+	/**
+	 * Initialization of the map containing loop that chooses and places tiles in temp storage,
+	 * then runs a cleanup function to close up tile openings (halls, doorways) that weren't covered,
+	 * then temp storage is saved into state, after which callback runs that places characters,
+	 * then runs callback that places creatures and saves their coordinates to state,
+	 * then finally sets up keyboard listeners if first time page is loaded
+	 * @private
+	 */
+	layoutPieces() {
 		let numPiecesTried = 0;
 		let attemptedPieces = [];
 		const numPieceTemplates = Object.keys(MapData).length;
 
 		while (numPiecesTried < numPieceTemplates && Object.keys(this.mapLayoutTemp).length < this.mapTileLimit) {
-			const {newPiece, pieceName} = this.chooseNewRandomPiece(attemptedPieces);
+			const {newPiece, pieceName} = this._chooseNewRandomPiece(attemptedPieces);
 			attemptedPieces.push(pieceName);
-			const {positionFound, updatedPiece, mapOpening, pieceOpening} = this.findNewPiecePosition(newPiece);
+			const {positionFound, updatedPiece, mapOpening, pieceOpening} = this._findNewPiecePosition(newPiece);
 
 			if (positionFound) {
-				this.updateMapLayout(updatedPiece, mapOpening, pieceOpening);
+				this._updateMapLayout(updatedPiece, mapOpening, pieceOpening);
 				attemptedPieces = [];
 				numPiecesTried = 0;
 			} else numPiecesTried++;
 		}
-		this.mapCleanup();
+		this._mapCleanup();
 
 		if (this.initialMapLoad) {
 			this.initialMapLoad = false;
@@ -130,7 +138,13 @@ class Map extends React.Component {
 		}
 	}
 
-	chooseNewRandomPiece(attemptedPieces) {
+	/**
+	 * Randomly chooses a new map piece to place on the map from the remaining list of pieces that haven't been tried yet
+	 * @param attemptedPieces: Array (of Strings: piece names)
+	 * @returns {{newPiece: Object, pieceName: String}}
+	 * @private
+	 */
+	_chooseNewRandomPiece(attemptedPieces) {
 		const pieceNamesList = Object.keys(MapData);
 		const filteredPieceNameList = pieceNamesList.filter(name => attemptedPieces.indexOf(name) < 0);
 		const randomIndex = Math.floor(Math.random() * filteredPieceNameList.length);
@@ -138,26 +152,42 @@ class Map extends React.Component {
 		return {newPiece, pieceName: filteredPieceNameList[randomIndex]};
 	}
 
-	// For updating coords from original (from mapdata) to map placement position
-	updateNeighborCoordinates(tileData, xAdjustment, yAdjustment) {
+	/**
+	 * Updates the coordinates for a tile's neighbor attribute (containing a tile's neighbor info for when tiles need to be changed on the map)
+	 * to use the map coordinates instead of the piece's local coordinates
+	 * @param tileData: Object
+	 * @param xAdjustment: Integer
+	 * @param yAdjustment: Integer
+	 * @returns Object (containing arrays of updated positions (string) for each neighboring tile)
+	 * @private
+	 */
+	_updateNeighborCoordinates(tileData, xAdjustment, yAdjustment) {
 		let updatedNeighbors = {};
-		for (const [type, neighborCoords] of Object.entries(tileData.neighbors)) {
-			let neighborPos = [];
-			let newXPos = null;
-			let newYPos = null;
+		for (const [type, neighborPositions] of Object.entries(tileData.neighbors)) {
+			let neighborCoords = [];
+			let newXCoord = null;
+			let newYCoord = null;
 			updatedNeighbors[type] = [];
-			neighborCoords.forEach(coord => {
-				neighborPos = coord.split('-');
-				newXPos = +neighborPos[0] + xAdjustment;
-				newYPos = +neighborPos[1] + yAdjustment;
-				updatedNeighbors[type].push(newXPos + '-' + newYPos);
+			neighborPositions.forEach(pos => {
+				neighborCoords = pos.split('-');
+				newXCoord = +neighborCoords[0] + xAdjustment;
+				newYCoord = +neighborCoords[1] + yAdjustment;
+				updatedNeighbors[type].push(newXCoord + '-' + newYCoord);
 			});
 		}
 		return updatedNeighbors;
 	}
 
-	// For updating coords from original (from mapdata) to map placement position
-	updateAltClassCoordinates(tileData, xAdjustment, yAdjustment) {
+	/**
+	 * Updates the coordinates for a tile's altClasses attribute (containing alternate CSS class info for when tiles need to be changed on the map)
+	 * to use the map coordinates instead of the piece's local coordinates
+	 * @param tileData: Object
+	 * @param xAdjustment: Integer
+	 * @param yAdjustment: Integer
+	 * @returns Object (containing CSS class info)
+	 * @private
+	 */
+	_updateAltClassCoordinates(tileData, xAdjustment, yAdjustment) {
 		let updatedAltClasses = {};
 		for (const [pos, classes] of Object.entries(tileData.altClasses)) {
 			if (pos === 'both') {
@@ -175,19 +205,32 @@ class Map extends React.Component {
 		return updatedAltClasses;
 	}
 
-	findNewPiecePosition(piece) {
+	/**
+	 * Finds a position on the map to place a new piece by looking at each piece's door/hall openings
+	 * and ensuring the new piece has enough space
+	 * @param piece: Object (containing objects with each tile's data)
+	 * @returns Object: {
+	 *      pieceOpening: Object (tile in the new piece that was connected to piece on the map),
+	 *      positionFound: Boolean,
+	 *      updatedPiece: Object (new piece with updated coordinates),
+	 *      mapOpening: Object (tile on the map that the new piece connects to)
+	 * }
+	 * @private
+	 */
+	_findNewPiecePosition(piece) {
 		let positionFound = false;
 		let updatedPiece = {};
 
 		// just for placing first piece
 		if (Object.keys(this.mapLayoutTemp).length === 0) {
+			const firstPiecePosition = {xPos: 5, yPos: 5}; //arbitrary but shifted from 0,0 to allow space for pieces on all sides
 			positionFound = true;
 			for (const tileData of Object.values(piece)) {
-				const adjustedXPos = this.firstPiecePosition.xPos + tileData.xPos;
-				const adjustedYPos = this.firstPiecePosition.yPos + tileData.yPos;
+				const adjustedXPos = firstPiecePosition.xPos + tileData.xPos;
+				const adjustedYPos = firstPiecePosition.yPos + tileData.yPos;
 				const adjustedPos = adjustedXPos + '-' + adjustedYPos;
-				const updatedAltClasses = this.updateAltClassCoordinates(tileData, this.firstPiecePosition.xPos, this.firstPiecePosition.yPos);
-				const updatedNeighbors = this.updateNeighborCoordinates(tileData, this.firstPiecePosition.xPos, this.firstPiecePosition.yPos);
+				const updatedAltClasses = this._updateAltClassCoordinates(tileData, firstPiecePosition.xPos, firstPiecePosition.yPos);
+				const updatedNeighbors = this._updateNeighborCoordinates(tileData, firstPiecePosition.xPos, firstPiecePosition.yPos);
 				updatedPiece[adjustedPos] = {
 					...tileData,
 					xPos: adjustedXPos,
@@ -248,8 +291,8 @@ class Map extends React.Component {
 					// these are the coords for where in the map to place the piece's tile that contains the opening
 					const mapOpeningXOffset = +mapOpeningTileCoords[0] + xAdjust;
 					const mapOpeningYOffset = +mapOpeningTileCoords[1] + yAdjust;
-					const adjustedPieceOpeningCoords = mapOpeningXOffset + '-' + mapOpeningYOffset;
-					adjustedPieceOpening = {[adjustedPieceOpeningCoords]: pieceOpeningOpenSide};
+					const adjustedPieceOpeningPos = mapOpeningXOffset + '-' + mapOpeningYOffset;
+					adjustedPieceOpening = {[adjustedPieceOpeningPos]: pieceOpeningOpenSide};
 
 					// now move all other tiles in the piece to go with the opening tile
 					// and copy in rest of original tile info
@@ -261,10 +304,10 @@ class Map extends React.Component {
 						const tileData = tileList[tilePosIndex];
 						const newXPos = mapOpeningXOffset + tileData.xPos - +pieceOpeningTileCoords[0];
 						const newYPos = mapOpeningYOffset + tileData.yPos - +pieceOpeningTileCoords[1];
-						const newPosCoords = newXPos + '-' + newYPos;
+						const newPos = newXPos + '-' + newYPos;
 						const originalPos = tileData.xPos + '-' + tileData.yPos;
 						// check if location on map where tile would go is empty and within bounds
-						if (this.mapLayoutTemp[newPosCoords] || newXPos < 0 || newYPos < 0) {
+						if (this.mapLayoutTemp[newPos] || newXPos < 0 || newYPos < 0) {
 							isValidPos = false;
 						} else {
 							mapTilesAvailableForPiece++;
@@ -277,10 +320,10 @@ class Map extends React.Component {
 							const xAdjust = mapOpeningXOffset - +pieceOpeningTileCoords[0];
 							const yAdjust = mapOpeningYOffset - +pieceOpeningTileCoords[1];
 							if (tileData.altClasses) {
-								pieceAdjustedTilePositions[newXPos + '-' + newYPos].altClasses = this.updateAltClassCoordinates(tileData, xAdjust, yAdjust);
+								pieceAdjustedTilePositions[newXPos + '-' + newYPos].altClasses = this._updateAltClassCoordinates(tileData, xAdjust, yAdjust);
 							}
 							if (tileData.neighbors) {
-								pieceAdjustedTilePositions[newXPos + '-' + newYPos].neighbors = this.updateNeighborCoordinates(tileData, xAdjust, yAdjust);
+								pieceAdjustedTilePositions[newXPos + '-' + newYPos].neighbors = this._updateNeighborCoordinates(tileData, xAdjust, yAdjust);
 							}
 							if (tileData.type === 'door') {
 								pieceAdjustedTilePositions[newXPos + '-' + newYPos].doorIsOpen = false;
@@ -304,12 +347,15 @@ class Map extends React.Component {
 		return {positionFound, updatedPiece, mapOpening, pieceOpening};
 	}
 
-	// Inserts piece into mapLayoutTemp and
-	// clears out the 'opening' type from recently laid piece and matching opening on the map
-	// newPiece: Object, copy from MapData but with updated pos for map layout
-	// mapOpeningToRemove: Object, {[tileCoords relative to map]: side} - undefined for first piece
-	// pieceOpeningToRemove: Object, {[tileCoords relative to piece]: side} - undefined for first piece
-	updateMapLayout(newPiece, mapOpeningToRemove, pieceOpeningToRemove) {
+	/**
+	 * Inserts piece into mapLayoutTemp and
+	 * clears out the 'opening' from recently laid piece and matching opening on the map
+	 * @param newPiece: Object (newly placed piece with updated coordinates for map layout)
+	 * @param mapOpeningToRemove: Object ({[tileCoords relative to map]: side} - n/a for first piece)
+	 * @param pieceOpeningToRemove: Object ({[tileCoords relative to piece]: side} - n/a for first piece)
+	 * @private
+	 */
+	_updateMapLayout(newPiece, mapOpeningToRemove, pieceOpeningToRemove) {
 		const tilePositions = Object.keys(newPiece);
 		let pieceOpeningTilePos = '';
 		let pieceOpeningSide = '';
@@ -336,8 +382,11 @@ class Map extends React.Component {
 		}
 	}
 
-	// For closing up all remaining openings since map layout is finished
-	mapCleanup() {
+	/**
+	 * For closing up all remaining openings in temp storage since map layout is finished
+	 * @private
+	 */
+	_mapCleanup() {
 		const mapData = {...this.mapLayoutTemp};
 		for (const [tileLoc, tileData] of Object.entries(mapData)) {
 			if (tileData.type !== 'wall') {
@@ -699,9 +748,9 @@ class Map extends React.Component {
 	}
 
 
-	/**
+	/*******************
 	 * MAP INTERACTION
-	 */
+	 *******************/
 
 	// Used to determine if creature can move to specified tile (not already occupied, not wall, not closed door)
 	tileIsFreeToMove(tileCoords) {

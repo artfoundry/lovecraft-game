@@ -165,7 +165,9 @@ class Game extends React.Component {
 			this.state.playerCharacters[this.state.activeCharacter].attack(selectedWeaponInfo.stats, id, this.state.mapCreatures[id], this.updateMapCreatures, this.updateLog);
 			this._animateCharacter();
 			this.toggleWeapon(selectedWeaponInfo.characterId, selectedWeaponInfo.weaponName);
-			this._updateCreatureCoordsFlag(id);
+			if (this.state.mapCreatures[id].currentHP <= 0) {
+				this._updateDeadCreature(id);
+			}
 			this._updateActivePlayerActions();
 		} else {
 			this._updateUnitSelectionStatus(id, type);
@@ -441,16 +443,25 @@ class Game extends React.Component {
 	}
 
 	/**
-	 * Updates to state flag used for indicating if there's an update to creature coords (in Map), such as creature dying
-	 *
+	 * Updates to state the turn order with the dead unit removed and
+	 * a flag used for indicating if there's an update to creature coords (in Map), such as creature dying
 	 * @param id: String
 	 * @private
 	 */
-	_updateCreatureCoordsFlag(id) {
-		if (this.state.mapCreatures[id].currentHP <= 0) {
-			this.setState({creatureCoordsUpdate: id});
-			this.updateLog(`${id} is dead!`);
+	_updateDeadCreature(id) {
+		let unitsTurnOrder = this.state.unitsTurnOrder;
+		let unitNotFound = true;
+		let index = 0;
+		while (unitNotFound && index < this.state.unitsTurnOrder.length) {
+			const unitInfo = Object.values(this.state.unitsTurnOrder[index])[0];
+			if (unitInfo.id === id) {
+				unitNotFound = false;
+				unitsTurnOrder.splice(index, 1);
+			}
+			index++;
 		}
+		this.setState({creatureCoordsUpdate: id, unitsTurnOrder});
+		this.updateLog(`${id} is dead!`);
 	}
 
 	_animateCharacter() {
