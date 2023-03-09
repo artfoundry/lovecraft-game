@@ -55,85 +55,14 @@ class Game extends React.Component {
 		}
 	}
 
-	setupGameState() {
-		const gameReadyCallback = () => {
-			this.setState({gameSetupComplete: true});
-		}
-		this.setupPlayerCharacters();
-		this.setLocation(gameReadyCallback);
-	}
-
-	setupPlayerCharacters() {
-		let playerCharacters = {};
-		this.startingPlayerCharacters.forEach(character => {
-			playerCharacters[character] = new Character(PlayerCharacterTypes[character]);
-		});
-		this.setState({playerCharacters});
-	}
-
-	setLocation(gameReadyCallback) {
-		if (this.startingLocation) {
-			this.setState({currentLocation: this.startingLocation}, gameReadyCallback);
-		} else {
-			// handle location change
-		}
-	}
-
-	setAllUnitsTurnOrder() {
-		let unitsTurnOrder = [];
-		const sortInitiatives = (newUnitId, newUnitInitiative, unitType) => {
-			if (unitsTurnOrder.length === 0) {
-				unitsTurnOrder.push({[newUnitInitiative]: {id: newUnitId, unitType}});
-			} else {
-				let i = 0;
-				let notSorted = true;
-				while (notSorted) {
-					const sortedUnitInitValue = Object.keys(unitsTurnOrder[i])[0];
-					const sortedUnitOrderInfo = unitsTurnOrder[i][sortedUnitInitValue];
-					const sortedUnitId = sortedUnitOrderInfo.id;
-					const sortedUnitTypeCollection = this.state[sortedUnitOrderInfo.unitType];
-					const sortedUnitData = sortedUnitTypeCollection[sortedUnitId];
-					const newUnitTypeCollection = this.state[unitType];
-					const newUnitData = newUnitTypeCollection[newUnitId];
-					// if new init value is greater or
-					// inits are the same and new unit agility is greater
-					// or inits and agilities are the same and new unit mental acuity is greater
-					// or all the same and flip of a coin is 1, then add to the front
-					if (newUnitInitiative > sortedUnitInitValue ||
-						(newUnitInitiative === sortedUnitInitValue && newUnitData.agility > sortedUnitData.agility) ||
-						(newUnitInitiative === sortedUnitInitValue &&
-							newUnitData.agility === sortedUnitData.agility &&
-							newUnitData.mentalAcuity > sortedUnitData.mentalAcuity) ||
-						(newUnitInitiative === sortedUnitInitValue &&
-							newUnitData.agility === sortedUnitData.agility &&
-							newUnitData.mentalAcuity === sortedUnitData.mentalAcuity &&
-							diceRoll(2) === 1)
-					) {
-						unitsTurnOrder.splice(i, 0, {[newUnitInitiative]: {id: newUnitId, unitType}});
-						notSorted = false;
-					} else if (i === unitsTurnOrder.length - 1) {
-						unitsTurnOrder.push({[newUnitInitiative]: {id: newUnitId, unitType}});
-						notSorted = false;
-					}
-					i++;
-				}
-			}
-		};
-		const calculateInitiatives = (unitType) => {
-			for (const [id, charData] of Object.entries(this.state[unitType])) {
-				const unitInitiative = charData.initiative + diceRoll(6);
-				sortInitiatives(id, unitInitiative, unitType);
-			}
-		};
-
-		calculateInitiatives('playerCharacters');
-		calculateInitiatives('mapCreatures');
-		this.setState({unitsTurnOrder}, () => {
-			this.updateActiveCharacter();
-		});
-	}
-
-	// if id is passed in, updating only one creature; otherwise updating all
+	/**
+	 * Updates main creature data collection to state
+	 * If id is passed in, updating only one creature; otherwise updating all
+	 * @param updateData: Object
+	 * @param id: String
+	 * @param isInitialCreatureSetup: Boolean
+	 * @param callback: Function
+	 */
 	updateMapCreatures = (updateData, id, isInitialCreatureSetup = false, callback) => {
 		if (id) {
 			this.setState(prevState => ({
@@ -144,9 +73,9 @@ class Game extends React.Component {
 			}), () => {
 				if (this.state.selectedCreature === id) {
 					if (this.state.mapCreatures[id].currentHP <= 0) {
-						this.updateUnitSelectionStatus(id, 'creature');
+						this._updateUnitSelectionStatus(id, 'creature');
 					} else {
-						this.updateInfoText('creatureInfoText', id);
+						this._updateInfoText('creatureInfoText', id);
 					}
 				}
 				if (callback) callback();
@@ -154,12 +83,18 @@ class Game extends React.Component {
 		} else {
 			this.setState({mapCreatures: updateData}, () => {
 				if (isInitialCreatureSetup) {
-					this.setAllUnitsTurnOrder();
+					this._setAllUnitsTurnOrder();
 				}
 			});
 		}
 	}
 
+	/**
+	 * Updates a player character's data to state
+	 * @param player: String
+	 * @param updateData: Object
+	 * @param callback: Function
+	 */
 	updatePlayerCharacter = (player, updateData, callback) => {
 		this.setState(prevState => ({
 			playerCharacters: {...prevState.playerCharacters, [player]: {...prevState.playerCharacters[player], ...updateData}}
@@ -168,12 +103,259 @@ class Game extends React.Component {
 		});
 	}
 
-	updateInfoText(type, id) {
+	/**
+	 * Updates to state the contents of the log window in UI
+	 * @param logText: String
+	 */
+	updateLog = (logText) => {
+		this.setState(prevState => ({
+			logText: [...prevState.logText, logText]
+		}));
+	}
+
+	/**
+	 * Updates to state whether a PC or NPC is selected
+	 * For quick and public checking of selection status vs _updateUnitSelectionStatus which is private and contains a lot more info
+	 * @param type: String
+	 * @param status: Boolean
+	 */
+	toggleCharIsSelected = (type, status) => {
+		const storageName = type === 'player' ? 'characterIsSelected' : 'creatureIsSelected';
+		this.setState({[storageName]: status});
+	}
+
+	/**
+	 * Updates to state what PC weapon is selected in the UI
+	 * @param characterId: String
+	 * @param weaponName: String
+	 */
+	toggleWeapon = (characterId, weaponName) => {
+		let buttonState = {};
+		// if no weapon selected or weapon selected doesn't match new weapon selected, set weapon state to new weapon
+		if (Object.keys(this.state.weaponButtonSelected).length === 0 ||
+			(this.state.weaponButtonSelected.characterId !== characterId || this.state.weaponButtonSelected.weaponName !== weaponName)) {
+			buttonState = {characterId, weaponName, stats: WeaponTypes[weaponName]};
+		}
+		this.setState({weaponButtonSelected: buttonState});
+	}
+
+	/**
+	 * User click handler for clicking on units to determine if it's being selected or acted upon (ie. attacked)
+	 * @param id
+	 * @param type
+	 * @param isInRange
+	 */
+	handleUnitClick = (id, type, isInRange) => {
+		if (Object.keys(this.state.weaponButtonSelected).length > 0 && isInRange) {
+			if (this.state.activePlayerActionsCompleted === this.playerActionsLimit) {
+				const showDialog = true;
+				const dialogText = `${this.state.playerCharacters[this.state.activeCharacter].name} has no more actions this turn`;
+				const closeButtonText = 'Ok';
+				const actionButtonVisible = false;
+				const actionButtonText = '';
+				const actionButtonCallback = null;
+				const dialogClasses = '';
+				this.setShowDialogProps(showDialog, dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses);
+				return;
+			}
+
+			// clicked unit is getting attacked
+			const selectedWeaponInfo = this.state.weaponButtonSelected;
+
+			this.state.playerCharacters[this.state.activeCharacter].attack(selectedWeaponInfo.stats, id, this.state.mapCreatures[id], this.updateMapCreatures, this.updateLog);
+			this._animateCharacter();
+			this.toggleWeapon(selectedWeaponInfo.characterId, selectedWeaponInfo.weaponName);
+			this._updateCreatureCoordsFlag(id);
+			this._updateActivePlayerActions();
+		} else {
+			this._updateUnitSelectionStatus(id, type);
+		}
+	}
+
+	/**
+	 * Increments and sets to state the current turn number (or resets if on last turn of unitTurnOrder),
+	 * as well as resets number of moves and actions taken by the active PC
+	 * then calls function to update what is the active character
+	 */
+	updateCurrentTurn = () => {
+		const currentTurn = this.state.currentTurn === this.state.unitsTurnOrder.length - 1 ? 0 : this.state.currentTurn + 1;
+		this.setState({currentTurn, activePlayerActionsCompleted: 0, activePlayerMovesCompleted: 0}, () => {
+			this._updateActiveCharacter();
+		});
+	}
+
+	/**
+	 * Increments and sets to state the number of moves made by the active PC,
+	 * then runs callback to update the current turn if PC has used up all actions and moves
+	 */
+	updateActivePlayerMoves = () => {
+		const activePlayerMovesCompleted = this.state.activePlayerMovesCompleted + 1;
+		this.setState({activePlayerMovesCompleted}, () => {
+			if (this.state.activePlayerMovesCompleted === this.playerMovesLimit && this.state.activePlayerActionsCompleted === this.playerActionsLimit) {
+	//todo: don't think timeout is needed anymore
+				// setTimeout(() => {
+				this.updateCurrentTurn();
+				// }, 500);
+			}
+		});
+	}
+
+	/**
+	 * Resets flag used for indicating if there's an update to creature coords (in Map), such as creature dying
+	 */
+	resetCreatureCoordsUpdateFlag = () => {
+		this.setState({creatureCoordsUpdate: null});
+	}
+
+	/**
+	 * Sets props for main dialog window. showDialog determines whether dialog is shown
+	 * and rest determine dialog content
+	 * @param showDialog: boolean
+	 * @param dialogText: string
+	 * @param closeButtonText: string
+	 * @param actionButtonVisible: boolean
+	 * @param actionButtonText: string
+	 * @param actionButtonCallback: function
+	 * @param dialogClasses: string
+	 * @param disableCloseButton: boolean
+	 */
+	setShowDialogProps = (showDialog, dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses, disableCloseButton) => {
+		this.setState({showDialog, dialogProps: {dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses, disableCloseButton}});
+	}
+
+
+
+	/*********************
+	 * PRIVATE FUNCTIONS
+	 *********************/
+
+
+	/**
+	 * Initialization function. gameSetupComplete in callback indicates Map component can render
+	 * @private
+	 */
+	_setupGameState() {
+		const gameReadyCallback = () => {
+			this.setState({gameSetupComplete: true});
+		}
+		this._setupPlayerCharacters();
+		this._setLocation(gameReadyCallback);
+	}
+
+	/**
+	 * Saves starting player chars to state as part of initialization
+	 * @private
+	 */
+	_setupPlayerCharacters() {
+		let playerCharacters = {};
+		this.startingPlayerCharacters.forEach(character => {
+			playerCharacters[character] = new Character(PlayerCharacterTypes[character]);
+		});
+		this.setState({playerCharacters});
+	}
+
+	/**
+	 * Saves new game location to state. For game init, runs callback to set gameSetupComplete to true.
+	 * @param gameReadyCallback: function
+	 * @private
+	 */
+	_setLocation(gameReadyCallback) {
+		if (this.startingLocation) {
+			this.setState({currentLocation: this.startingLocation}, gameReadyCallback);
+		} else {
+			// handle location change
+		}
+	}
+
+	/**
+	 * Sorts list of both player and non-player chars in map based on initiative value for taking turns
+	 * No return value as unitsTurnOrder array is modified directly by address
+	 * @param unitsTurnOrder: Array (of objects)
+	 * @param newUnitId: String
+	 * @param newUnitInitiative: Integer
+	 * @param unitType: String
+	 * @private
+	 */
+	_sortInitiatives (unitsTurnOrder, newUnitId, newUnitInitiative, unitType) {
+		if (unitsTurnOrder.length === 0) {
+			unitsTurnOrder.push({[newUnitInitiative]: {id: newUnitId, unitType}});
+		} else {
+			let i = 0;
+			let notSorted = true;
+			while (notSorted) {
+				const sortedUnitInitValue = Object.keys(unitsTurnOrder[i])[0];
+				const sortedUnitOrderInfo = unitsTurnOrder[i][sortedUnitInitValue];
+				const sortedUnitId = sortedUnitOrderInfo.id;
+				const sortedUnitTypeCollection = this.state[sortedUnitOrderInfo.unitType];
+				const sortedUnitData = sortedUnitTypeCollection[sortedUnitId];
+				const newUnitTypeCollection = this.state[unitType];
+				const newUnitData = newUnitTypeCollection[newUnitId];
+				// if new init value is greater or
+				// inits are the same and new unit agility is greater
+				// or inits and agilities are the same and new unit mental acuity is greater
+				// or all the same and flip of a coin is 1, then add to the front
+				if (newUnitInitiative > sortedUnitInitValue ||
+					(newUnitInitiative === sortedUnitInitValue && newUnitData.agility > sortedUnitData.agility) ||
+					(newUnitInitiative === sortedUnitInitValue &&
+						newUnitData.agility === sortedUnitData.agility &&
+						newUnitData.mentalAcuity > sortedUnitData.mentalAcuity) ||
+					(newUnitInitiative === sortedUnitInitValue &&
+						newUnitData.agility === sortedUnitData.agility &&
+						newUnitData.mentalAcuity === sortedUnitData.mentalAcuity &&
+						diceRoll(2) === 1)
+				) {
+					unitsTurnOrder.splice(i, 0, {[newUnitInitiative]: {id: newUnitId, unitType}});
+					notSorted = false;
+				} else if (i === unitsTurnOrder.length - 1) {
+					unitsTurnOrder.push({[newUnitInitiative]: {id: newUnitId, unitType}});
+					notSorted = false;
+				}
+				i++;
+			}
+		}
+	}
+
+	/**
+	 * Calculates initiative values for each PC and NPC in map,
+	 * then saves turn order array to state,
+	 * then calls function to set the active character (based on turn order)
+	 * @private
+	 */
+	_setAllUnitsTurnOrder() {
+		let unitsTurnOrder = [];
+		const calculateInitiatives = (unitType) => {
+			for (const [id, charData] of Object.entries(this.state[unitType])) {
+				const unitInitiative = charData.initiative + diceRoll(6);
+				this._sortInitiatives(unitsTurnOrder, id, unitInitiative, unitType);
+			}
+		};
+
+		calculateInitiatives('playerCharacters');
+		calculateInitiatives('mapCreatures');
+		this.setState({unitsTurnOrder}, () => {
+			this._updateActiveCharacter();
+		});
+	}
+
+	/**
+	 * Updates character info panels contents to state
+	 * @param type: String
+	 * @param id: String
+	 * @private
+	 */
+	_updateInfoText(type, id) {
 		const updatedText = type === 'characterInfoText' ? this.state.playerCharacters[id] : this.state.mapCreatures[id];
 		this.setState({[type]: updatedText});
 	}
 
-	updateUnitSelectionStatus(id, type) {
+	/**
+	 * Updates to state the status of what PC or NPC (or both) is selected in the UI,
+	 * then calls function to update info panel text for that character
+	 * @param id: String
+	 * @param type: String
+	 * @private
+	 */
+	_updateUnitSelectionStatus(id, type) {
 		let unitTypeObjectName = '';
 		let unitTypeSelected = '';
 		let unitNameForSelectionStateChg = '';
@@ -227,123 +409,60 @@ class Game extends React.Component {
 			}
 			this.toggleCharIsSelected(type, this.state[unitTypeObjectName][id].isSelected);
 			if (this.state[unitTypeObjectName][id].isSelected) {
-				this.updateInfoText(infoTextToUpdate, id);
+				this._updateInfoText(infoTextToUpdate, id);
 			}
 		});
 	}
 
-	updateLog = (logText) => {
-		this.setState(prevState => ({
-			logText: [...prevState.logText, logText]
-		}));
-	}
-
-	toggleCharIsSelected = (type, status) => {
-		const storageName = type === 'player' ? 'characterIsSelected' : 'creatureIsSelected';
-		this.setState({[storageName]: status});
-	}
-
-	toggleWeapon = (characterId, weaponName) => {
-		let buttonState = {};
-		// if no weapon selected or weapon selected doesn't match new weapon selected, set weapon state to new weapon
-		if (Object.keys(this.state.weaponButtonSelected).length === 0 ||
-			(this.state.weaponButtonSelected.characterId !== characterId || this.state.weaponButtonSelected.weaponName !== weaponName)) {
-			buttonState = {characterId, weaponName, stats: WeaponTypes[weaponName]};
-		}
-		this.setState({weaponButtonSelected: buttonState});
-	}
-
-	handleUnitClick = (id, type, isInRange) => {
-		if (Object.keys(this.state.weaponButtonSelected).length > 0 && isInRange) {
-			if (this.state.activePlayerActionsCompleted === this.playerActionsLimit) {
-				const showDialog = true;
-				const dialogText = `${this.state.playerCharacters[this.state.activeCharacter].name} has no more actions this turn`;
-				const closeButtonText = 'Ok';
-				const actionButtonVisible = false;
-				const actionButtonText = '';
-				const actionButtonCallback = null;
-				const dialogClasses = '';
-				this.setShowDialogProps(showDialog, dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses);
-				return;
-			}
-
-			// clicked unit is getting attacked
-			const selectedWeaponInfo = this.state.weaponButtonSelected;
-
-			this.state.playerCharacters[this.state.activeCharacter].attack(selectedWeaponInfo.stats, id, this.state.mapCreatures[id], this.updateMapCreatures, this.updateLog);
-			this.animateCharacter();
-			this.toggleWeapon(selectedWeaponInfo.characterId, selectedWeaponInfo.weaponName);
-			if (this.state.mapCreatures[id].currentHP <= 0) {
-				this.setState({creatureCoordsUpdate: id});
-				this.updateLog(`${id} is dead!`);
-			}
-			this.updateActivePlayerActions();
-		} else {
-			this.updateUnitSelectionStatus(id, type);
-		}
-	}
-
-	updateCurrentTurn = () => {
-		const currentTurn = this.state.currentTurn === this.state.unitsTurnOrder.length - 1 ? 0 : this.state.currentTurn + 1;
-		this.setState({currentTurn, activePlayerActionsCompleted: 0, activePlayerMovesCompleted: 0}, () => {
-			this.updateActiveCharacter();
-		});
-	}
-
-	updateActiveCharacter() {
+	/**
+	 * Updates to state what character is active (PC or NPC)
+	 * @private
+	 */
+	_updateActiveCharacter() {
 		const currentTurnUnitInfo = Object.values(this.state.unitsTurnOrder[this.state.currentTurn])[0];
 		this.setState({activeCharacter: currentTurnUnitInfo.id});
 	}
 
-	updateActivePlayerActions() {
+	/**
+	 * Increments and updates to state number of actions the active PC has done,
+	 * then runs callback to update current turn if all moves and actions are done
+	 * @private
+	 */
+	_updateActivePlayerActions() {
 		const activePlayerActionsCompleted = this.state.activePlayerActionsCompleted + 1;
 		this.setState({activePlayerActionsCompleted}, () => {
 			if (this.state.activePlayerMovesCompleted === this.playerMovesLimit && this.state.activePlayerActionsCompleted === this.playerActionsLimit) {
-				setTimeout(() => {
-					this.updateCurrentTurn();
-				}, 500);
+	//todo: don't think timeout is needed anymore
+				// setTimeout(() => {
+				this.updateCurrentTurn();
+				// }, 500);
 			}
 		});
-	}
-
-	updateActivePlayerMoves = () => {
-		const activePlayerMovesCompleted = this.state.activePlayerMovesCompleted + 1;
-		this.setState({activePlayerMovesCompleted}, () => {
-			if (this.state.activePlayerMovesCompleted === this.playerMovesLimit && this.state.activePlayerActionsCompleted === this.playerActionsLimit) {
-				setTimeout(() => {
-					this.updateCurrentTurn();
-				}, 500);
-			}
-		});
-	}
-
-	resetCreatureCoordsUpdate() {
-		this.setState({creatureCoordsUpdate: null});
-	}
-
-	animateCharacter() {
-
 	}
 
 	/**
-	 * Sets props for main dialog window. showDialog determines whether dialog is shown
-	 * and rest determine dialog content
-	 * @param showDialog: boolean
-	 * @param dialogText: string
-	 * @param closeButtonText: string
-	 * @param actionButtonVisible: boolean
-	 * @param actionButtonText: string
-	 * @param actionButtonCallback: function
-	 * @param dialogClasses: string
-	 * @param disableCloseButton: boolean
+	 * Updates to state flag used for indicating if there's an update to creature coords (in Map), such as creature dying
+	 *
+	 * @param id: String
+	 * @private
 	 */
-	setShowDialogProps = (showDialog, dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses, disableCloseButton) => {
-		this.setState({showDialog, dialogProps: {dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses, disableCloseButton}});
+	_updateCreatureCoordsFlag(id) {
+		if (this.state.mapCreatures[id].currentHP <= 0) {
+			this.setState({creatureCoordsUpdate: id});
+			this.updateLog(`${id} is dead!`);
+		}
 	}
+
+	_animateCharacter() {
+
+	}
+
+
+	/** REACT LIFECYCLE FUNCTIONS **/
 
 	componentDidMount() {
 		if (!this.state.gameSetupComplete) {
-			this.setupGameState();
+			this._setupGameState();
 		}
 	}
 
@@ -384,7 +503,7 @@ class Game extends React.Component {
 						updateCurrentTurn={this.updateCurrentTurn}
 						unitsTurnOrder={this.state.unitsTurnOrder}
 						creatureCoordsUpdate={this.state.creatureCoordsUpdate}
-						creatureUpdateReset={this.resetCreatureCoordsUpdate}
+						creatureUpdateReset={this.resetCreatureCoordsUpdateFlag}
 						currentLocation={this.state.currentLocation}
 						updateLog={this.updateLog}
 						unitClickHandler={this.handleUnitClick}
