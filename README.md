@@ -2,7 +2,9 @@
 
 Working title: War of the Old Ones
 
-WIP
+*WIP*
+
+*CURRENT WORKING BRANCH: initiative-system*
 
 ---
 #### Current status:
