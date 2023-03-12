@@ -63,8 +63,6 @@ class Map extends React.Component {
 		this.updateLog = this.props.updateLog;
 		this.handleUnitClick = this.props.unitClickHandler;
 		this.updateActivePlayerMoves = this.props.updateActivePlayerMoves;
-		this.createAllMapPieces = this.createAllMapPieces.bind(this);
-		this.addLighting = this.addLighting.bind(this);
 	}
 
 	resetMap = () => {
@@ -83,7 +81,7 @@ class Map extends React.Component {
 			exitPlaced: false,
 			lighting: {}
 		}, () => {
-			this.layoutPieces();
+			this._layoutPieces();
 		});
 	}
 
@@ -100,7 +98,7 @@ class Map extends React.Component {
 	 * then finally sets up keyboard listeners if first time page is loaded
 	 * @private
 	 */
-	layoutPieces() {
+	_layoutPieces() {
 		let numPiecesTried = 0;
 		let attemptedPieces = [];
 		const numPieceTemplates = Object.keys(MapData).length;
@@ -125,8 +123,8 @@ class Map extends React.Component {
 				mapLayout: {...this.mapLayoutTemp}
 			}, () => {
 				this.moveCharacter(null, null, () => {
-					this.setExitPosition();
-					const {mapCreatures, creatureCoords} = this.setInitialCreatureData();
+					this._setExitPosition();
+					const {mapCreatures, creatureCoords} = this._setInitialCreatureData();
 					this.updateMapCreatures(mapCreatures, null, true);
 					this.setState({creatureCoords});
 					if (this.pageFirstLoaded) {
@@ -383,7 +381,7 @@ class Map extends React.Component {
 	}
 
 	/**
-	 * For closing up all remaining openings in temp storage since map layout is finished
+	 * For closing up all remaining tile door/hall openings in temp map storage since map layout is finished
 	 * @private
 	 */
 	_mapCleanup() {
@@ -455,12 +453,20 @@ class Map extends React.Component {
 		}
 	}
 
-	setInitialCreatureData() {
+	/**
+	 * Creates initial creature data, giving them starting HP and coords as well as basic stats, etc.
+	 *
+	 * May remove old creatureCoords object now that coords are stored in mapCreatures in App
+	 *
+	 * @returns {{creatureCoords: {}, mapCreatures: {}}}
+	 * @private
+	 */
+	_setInitialCreatureData() {
 		let mapCreatures = {};
 		let creatureCoords = {};
 		for (const [name, stats] of Object.entries(this.currentMapData.creatures)) {
 			for (let i=0; i < stats.count; i++) {
-				const coords = this.setInitialCreatureCoords(creatureCoords);
+				const coords = this._setInitialCreatureCoords(creatureCoords);
 				const creatureID = name + i;
 				this.creatureInstances[creatureID] = new Creature(CreatureData[name]);
 				mapCreatures[creatureID] = {
@@ -475,20 +481,37 @@ class Map extends React.Component {
 		return {mapCreatures, creatureCoords};
 	}
 
-	setInitialCreatureCoords(creatureCoords) {
-		const newPosition = this.generateRandomLocation(creatureCoords).split('-');
+	/**
+	 * Uses _generateRandomLocation to find location for creature, then formats it as coords object
+	 * @param creatureCoords: Object (collection of all creature locations)
+	 * @returns {{yPos: number, xPos: number}}
+	 * @private
+	 */
+	_setInitialCreatureCoords(creatureCoords) {
+		const newPosition = this._generateRandomLocation(creatureCoords).split('-');
 		return {xPos: +newPosition[0], yPos: +newPosition[1]};
 	}
 
-	createAllMapPieces() {
+	/**
+	 * Wrapper called by render() to create all map tile components
+	 * @returns Array (of Tile components)
+	 */
+	createAllMapPieces = () => {
 		let tiles = [];
 		for (const tilePos of Object.keys(this.state.mapLayout)) {
-			tiles.push(this.createMapTile(tilePos));
+			tiles.push(this._createMapTile(tilePos));
 		}
 		return tiles;
 	}
 
-	createMapTile(tilePos) {
+	/**
+	 * Creates Tile component using tilePos from mapLayout,
+	 * then transforms it to the proper x,y coordinates on the page
+	 * @param tilePos: String
+	 * @returns {JSX.Element}: Tile component
+	 * @private
+	 */
+	_createMapTile(tilePos) {
 		let allClasses = this.currentMapData.name;
 		const tileData = this.state.mapLayout[tilePos];
 
@@ -515,8 +538,15 @@ class Map extends React.Component {
 			moveCharacterProp={this.moveCharacter} />);
 	}
 
-	// for checking to make sure random location doesn't already have a creature there
-	generateRandomLocation(creatureCoords = {}) {
+	/**
+	 * Makes list of all tiles, chooses one by one at random,
+	 * and checks them for other creatures, players, and objects to find an empty one
+	 * Can be used to place any character/object
+	 * @param creatureCoords: Object
+	 * @returns {string}
+	 * @private
+	 */
+	_generateRandomLocation(creatureCoords = {}) {
 		let emptyLocFound = false;
 		// list of available floor tiles, in str format, on which to place stuff
 		let tileList = Object.keys(this.state.mapLayout).filter(tilePos => this.state.mapLayout[tilePos].type === 'floor');
@@ -545,17 +575,33 @@ class Map extends React.Component {
 		return tilePos;
 	}
 
-	// calculates the middle of the game window for placing main character
-	calculatePlayerTransform() {
+	/**
+	 * Calculates the middle of the game window for placing main character
+	 * @returns {{yPos: number, xPos: number}}
+	 * @private
+	 */
+	_calculatePlayerTransform() {
 		return {xPos: Math.floor(window.outerWidth/(this.tileSize * 2)) * this.tileSize,
 			yPos: Math.floor(window.innerHeight/(this.tileSize * 2)) * this.tileSize};
 	}
 
-	calculateObjectTransform(xPos, yPos) {
+	/**
+	 * Takes tile position from map and returns transform x,y pixel values
+	 * Used for characters and objects
+	 * @param xPos: integer
+	 * @param yPos: integer
+	 * @returns {string}
+	 * @private
+	 */
+	_calculateObjectTransform(xPos, yPos) {
 		return `${xPos * this.tileSize}px, ${yPos * this.tileSize}px`;
 	}
 
-	checkForExit() {
+	/**
+	 * Checks to see if player char is on exit tile and if so, shows dialog to get player choice of action
+	 * @private
+	 */
+	_checkForExit() {
 		if (this.state.playerCoords.xPos === this.state.exitPosition.xPos &&
 			this.state.playerCoords.yPos === this.state.exitPosition.yPos)
 		{
@@ -570,6 +616,12 @@ class Map extends React.Component {
 		}
 	}
 
+	/**
+	 * Checks to see if a creature is in attacking range of active player character, given choice of weapon
+	 * @param id: String (creature id)
+	 * @param weaponData: Object
+	 * @returns {boolean}
+	 */
 	isCreatureInRange = (id, weaponData) => {
 		const creatureCoords = this.state.creatureCoords[id];
 		const playerCoords = this.state.playerCoords;
@@ -580,6 +632,11 @@ class Map extends React.Component {
 		return isInRange;
 	}
 
+	/**
+	 * Called by render() and spawns all PCs and NPCs/creatures on the map, creating a Character component for each one
+	 * @param props: Object passed from render(): {characterType: String}
+	 * @returns Array (of Character components)
+	 */
 	addCharacters = (props) => {
 		const characters = props.characterType === 'player' ? {...this.props.playerCharacters} : {...this.props.mapCreatures};
 		const characterIDs = Object.keys(characters);
@@ -596,15 +653,15 @@ class Map extends React.Component {
 		characterIDs.forEach(id => {
 			if (props.characterType === 'player') {
 
-				// todo: use calculatePlayerTransform for active char, but calculateObjectTransform for other player chars
+				// todo: use _calculatePlayerTransform for active char, but _calculateObjectTransform for other player chars
 
-				characterTransform = this.calculatePlayerTransform();
+				characterTransform = this._calculatePlayerTransform();
 				characterTransform = `${characterTransform.xPos}px, ${characterTransform.yPos}px`;
 			} else {
 				creatureIsHidden = true;
 				// coords taken from creatureCoords if creature is still alive, from mapCreatures if dead
 				creatureCoords = this.state.creatureCoords[id] || this.props.mapCreatures[id].coords;
-				characterTransform = this.calculateObjectTransform(creatureCoords.xPos, creatureCoords.yPos);
+				characterTransform = this._calculateObjectTransform(creatureCoords.xPos, creatureCoords.yPos);
 				const creatureCoordsStr = creatureCoords.xPos + '-' + creatureCoords.yPos;
 				for (const tileData of Object.values(lineOfSightTiles)) {
 					if (tileData.floors[creatureCoordsStr]) {
@@ -641,14 +698,23 @@ class Map extends React.Component {
 		return characterList;
 	}
 
+	/**
+	 * Wrapper called by render() to run all object spawning functions
+	 * that will add their returned components to an array
+	 * @returns Array (of object components)
+	 */
 	addObjects = () => {
 		let allObjects = [];
-		allObjects.push(...this.addDoors(), this.addExit());
+		allObjects.push(...this._addDoors(), this._addExit());
 
 		return allObjects;
 	}
 
-	setExitPosition() {
+	/**
+	 * Sets to state the position for the exit object
+	 * @private
+	 */
+	_setExitPosition() {
 		const tilePositions = Object.keys(this.state.mapLayout).filter(tilePos => this.state.mapLayout[tilePos].type === 'floor');
 		let exitPosition = tilePositions[Math.floor(Math.random() * tilePositions.length)];
 		const playerPos = this.state.playerCoords.xPos + '-' + this.state.playerCoords.yPos;
@@ -659,17 +725,29 @@ class Map extends React.Component {
 		this.setState({exitPosition: {xPos: +exitCoords[0], yPos: +exitCoords[1]}, exitPlaced: true});
 	}
 
-	addExit() {
+	/**
+	 * Creates Exit component
+	 * Note - may end up broadening this to add other objects too
+	 * @returns {JSX.Element} (Exit component)
+	 * @private
+	 */
+	_addExit() {
 		return (<Exit
 			key={'exit-' + this.state.exitPosition.xPos + '-' + this.state.exitPosition.yPos}
 			styleProp={{
-				transform: `translate(${this.calculateObjectTransform(this.state.exitPosition.xPos, this.state.exitPosition.yPos)})`,
+				transform: `translate(${this._calculateObjectTransform(this.state.exitPosition.xPos, this.state.exitPosition.yPos)})`,
 				width: this.tileSize + 'px',
 				height: this.tileSize + 'px'
 			}} />);
 	}
 
-	addDoors() {
+	/**
+	 * Creates and transforms Door components
+	 * Could be used for other objects and/or merged with _addExit
+	 * @returns Array (of Door components)
+	 * @private
+	 */
+	_addDoors() {
 		let objects = [];
 
 		for (const [tilePos, tileData] of Object.entries(this.state.mapLayout)) {
@@ -687,29 +765,33 @@ class Map extends React.Component {
 					<Door
 						key={`object-${tilePos}`}
 						styleProp={{
-							transform: `translate(${this.calculateObjectTransform(+tileCoords[0], +tileCoords[1])})`,
+							transform: `translate(${this._calculateObjectTransform(+tileCoords[0], +tileCoords[1])})`,
 						}}
 						classProp={doorClass}
 					/>
 				)
-			} else {
-				objects.push(
-					<div
-						key={`object-${tilePos}`}
-						style={{
-							transform: `translate(${this.calculateObjectTransform(+tileCoords[0], +tileCoords[1])})`,
-							width: this.tileSize + 'px',
-							height: this.tileSize + 'px'
-						}}
-						className='object'
-					/>
-				)
+			// } else {
+			// 	objects.push(
+			// 		<div
+			// 			key={`object-${tilePos}`}
+			// 			style={{
+			// 				transform: `translate(${this._calculateObjectTransform(+tileCoords[0], +tileCoords[1])})`,
+			// 				width: this.tileSize + 'px',
+			// 				height: this.tileSize + 'px'
+			// 			}}
+			// 			className='object'
+			// 		/>
+			// 	)
 			}
 		}
 		return objects;
 	}
 
-	addLighting() {
+	/**
+	 * Called by render() to add LightElement tile components to map representing tile lighting
+	 * @returns Array (of LightElement components)
+	 */
+	addLighting = () => {
 		let tiles = [];
 		const playerPosStr = this.state.playerCoords.xPos + '-' + this.state.playerCoords.yPos;
 		const lineOfSightTiles = unblockedPathsToNearbyTiles(this.state.mapLayout, playerPosStr);
@@ -752,7 +834,11 @@ class Map extends React.Component {
 	 * MAP INTERACTION
 	 *******************/
 
-	// Used to determine if creature can move to specified tile (not already occupied, not wall, not closed door)
+	/**
+	 * Used to determine if creature can move to specified tile (ie. not already occupied, not wall, not closed door)
+	 * @param tileCoords: Object
+	 * @returns {boolean}
+	 */
 	tileIsFreeToMove(tileCoords) {
 		let tileIsAvail = true;
 		const tilePos = `${tileCoords.xPos}-${tileCoords.yPos}`;
@@ -776,6 +862,12 @@ class Map extends React.Component {
 		return tileIsAvail;
 	}
 
+	/**
+	 * Finds tile for creature to move to that is either toward (1) or away from (-1) PC(s)
+	 * @param creatureCoords: Object
+	 * @param directionModifier: Integer (1 or -1)
+	 * @returns {{yPos, xPos}}
+	 */
 	findNewCreatureCoordsRelativeToChar(creatureCoords, directionModifier) {
 		const oppositeDirMod = -1 * directionModifier;
 		let newCreatureCoords = {xPos: creatureCoords.xPos, yPos: creatureCoords.yPos};
@@ -783,6 +875,8 @@ class Map extends React.Component {
 		const newOppXPos = creatureCoords.xPos + oppositeDirMod;
 		const newYPos = creatureCoords.yPos + directionModifier;
 		const newOppYPos = creatureCoords.yPos + oppositeDirMod;
+
+	//todo: once multiple PCs are implemented need to change from checking state.playerCoords to either all or nearest PC
 
 		// First check diagonal movement
 		if (creatureCoords.xPos < this.state.playerCoords.xPos &&
@@ -826,6 +920,13 @@ class Map extends React.Component {
 		return newCreatureCoords;
 	}
 
+	/**
+	 * Saves to state new coords for a creature, then either recursively calls again to save next coords in array
+	 * or updates map creature data in App (which then calls callback if there is one)
+	 * @param creatureID: String
+	 * @param newCoords: Array (of coord objects representing each of a creature's moves)
+	 * @param callback: Function (generally either updating current turn or doing creature attack and then updating turn)
+	 */
 	storeNewCreatureCoords(creatureID, newCoords, callback) {
 		let newCoordsArray = newCoords;
 		const nextCoords = newCoordsArray.shift();
@@ -846,6 +947,11 @@ class Map extends React.Component {
 		});
 	}
 
+	/**
+	 * AI for creature behavior
+	 * Basically a creature with a PC in view will either move toward it and/or attack it if in range
+	 * or move away from it if its HP is below a threshold (set by this.creatureSurvivalHpPercent)
+	 */
 	moveCreature() {
 		const creatureID = this.props.activeCharacter;
 		const creatureData = this.props.mapCreatures[creatureID];
@@ -947,7 +1053,6 @@ class Map extends React.Component {
 	}
 
 	// todo: No longer needed? Was being used in moveCharacter, but from old map paradigm using tile sides to determine valid moves
-	// Since probably no longer needed, can likely remove tile sides from data as well
 	//
 	// getSidesBetweenAdjacentTiles(mainTileLoc, adjTileLoc) {
 	// 	let sides = [];
@@ -970,6 +1075,14 @@ class Map extends React.Component {
 	// 	return sides;
 	// }
 
+	/**
+	 * Determines if user's key/tap/click movement command is valid, and if so, updates coords for the active PC
+	 * then calls moveMap to keep the active PC centered on screen
+	 * Also used for initially placing PCs on map load (currently random until entrances are implemented)
+	 * @param tileLoc: String
+	 * @param e: Event object
+	 * @param initialSetupCallback: Function (runs initial map setup functions)
+	 */
 	moveCharacter = (tileLoc, e, initialSetupCallback = null) => {
 		if (this.props.activePlayerMovesCompleted === this.props.playerMovesLimit) {
 			const showDialog = true;
@@ -1057,7 +1170,7 @@ class Map extends React.Component {
 			}
 		} else {
 			// new position generated randomly
-			tileLoc = this.generateRandomLocation();
+			tileLoc = this._generateRandomLocation();
 			newCoords = tileLoc.split('-');
 		}
 
@@ -1106,16 +1219,19 @@ class Map extends React.Component {
 			}), () => {
 				this.moveMap(initialSetupCallback);
 				if (!initialSetupCallback) {
-					this.checkForExit();
+					this._checkForExit();
 					this.props.updateActivePlayerMoves();
 				}
 			});
 		}
 	}
 
-	// For keeping character in center of screen while moving
-	moveMap = (initialSetupCallback) => {
-		const playerTransform = this.calculatePlayerTransform();
+	/**
+	 * For keeping character in center of screen while moving
+	 * @param initialSetupCallback: Function (runs initial map setup functions)
+	 */
+	moveMap(initialSetupCallback) {
+		const playerTransform = this._calculatePlayerTransform();
 		const playerXPos = this.state.playerCoords.xPos * this.tileSize;
 		const playerYPos = this.state.playerCoords.yPos * this.tileSize;
 		const newXPos = playerTransform.xPos - playerXPos;
@@ -1126,13 +1242,17 @@ class Map extends React.Component {
 				transform: `translate(${newXPos}px, ${newYPos}px)`
 			}
 		}, () => {
-			// passed in from layoutPieces after setting mapLayout; called after placing PCs and centering map
+			// passed in from _layoutPieces after setting mapLayout; called after placing PCs and centering map
 			if (initialSetupCallback) {
 				initialSetupCallback();
 			}
 		})
 	}
 
+	/**
+	 * Looks to see if a door is near the active player (since user just tried activating a door)
+	 * then opens/closes it (and plays the sound effect for it)
+	 */
 	toggleDoor() {
 		const playerPos = this.state.playerCoords.xPos + '-' + this.state.playerCoords.yPos;
 		const playerPosTile = this.state.mapLayout[playerPos];
@@ -1145,6 +1265,7 @@ class Map extends React.Component {
 			this.state.playerCoords.xPos + '-' + (this.state.playerCoords.yPos + 1)
 		];
 		if (doorLocation >= 0) {
+	//todo: move play into separate sfx function
 			this.sfxSelectors[this.currentMapData.name].door.play();
 			const doorTilePos = doorTileDirections[doorLocation];
 			this.setState(prevState => ({
@@ -1160,14 +1281,21 @@ class Map extends React.Component {
 	}
 
 
-	/**
+	/***********************
 	 * ELEMENTS AND EVENTS
-	 */
+	 ***********************/
 
+	/**
+	 * Sets up selectors for sound effect elements
+	 */
 	populateSfxSelectors() {
 		this.sfxSelectors.catacombs['door'] = document.getElementById('sfx-stonedoor');
 	}
 
+	/**
+	 * Called by render() to set up array of sound effects elements
+	 * @returns {*[]}
+	 */
 	setupSoundEffects = () => {
 		let effects = [];
 
@@ -1176,6 +1304,9 @@ class Map extends React.Component {
 		return effects;
 	}
 
+	/**
+	 * Sets up listeners for key commands
+	 */
 	setupKeyListeners() {
 		document.addEventListener('keydown', (e) => {
 			if (e.code.startsWith('Arrow') || e.code.startsWith('Numpad')) {
@@ -1189,13 +1320,13 @@ class Map extends React.Component {
 	}
 
 
-	/**
-	 * TOP LEVEL HANDLERS
-	 */
+	/***************************
+	 * REACT LIFECYCLE FUNCTIONS
+	 ***************************/
 
 	componentDidMount() {
 		if (this.initialMapLoad) {
-			this.layoutPieces();
+			this._layoutPieces();
 			this.populateSfxSelectors();
 		}
 	}

@@ -469,7 +469,9 @@ class Game extends React.Component {
 	}
 
 
-	/** REACT LIFECYCLE FUNCTIONS **/
+	/***************************
+	 * REACT LIFECYCLE FUNCTIONS
+	 ***************************/
 
 	componentDidMount() {
 		if (!this.state.gameSetupComplete) {

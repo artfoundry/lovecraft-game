@@ -44,7 +44,7 @@ function Tile(props) {
 }
 
 function Door(props) {
-	return (<div className={props.classProp} style={props.styleProp} />);
+	return <div className={props.classProp} style={props.styleProp} />;
 }
 
 function LightElement(props) {
