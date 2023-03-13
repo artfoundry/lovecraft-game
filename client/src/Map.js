@@ -804,8 +804,12 @@ class Map extends React.Component {
 			} else if (lineOfSightTiles.oneAway.floors[tilePos] || lineOfSightTiles.oneAway.walls[tilePos]) {
 				allClasses += ' bright-light black-light';
 			} else if (lineOfSightTiles.twoAway.floors[tilePos] || lineOfSightTiles.twoAway.walls[tilePos]) {
-				allClasses += ' med-light black-light';
+				allClasses += ' bright-med-light black-light';
 			} else if (lineOfSightTiles.threeAway.floors[tilePos] || lineOfSightTiles.threeAway.walls[tilePos]) {
+				allClasses += ' med-light black-light';
+			} else if (lineOfSightTiles.fourAway.floors[tilePos] || lineOfSightTiles.fourAway.walls[tilePos]) {
+				allClasses += ' med-low-light black-light';
+			} else if (lineOfSightTiles.fiveAway.floors[tilePos] || lineOfSightTiles.fiveAway.walls[tilePos]) {
 				allClasses += ' low-light black-light';
 			} else if (this.state.playerVisited[tilePos]) {
 				allClasses += ' ambient-light black-light';
@@ -962,7 +966,7 @@ class Map extends React.Component {
 			const creaturePos = `${creatureCoords.xPos}-${creatureCoords.yPos}`;
 			let newCreatureCoordsArray = [];
 			const lineOfSightTiles = unblockedPathsToNearbyTiles(this.state.mapLayout, creaturePos);
-// todo: will need to update these with a loop to check each player char
+// todo: will need to update these with a loop to check each player char as well as implement different search distances based on 'sight'/'hearing'
 			let playerPos = '';
 			let playerDistance = 0;
 			let targetPlayerID = '';

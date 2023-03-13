@@ -78,12 +78,12 @@ export function unblockedPathsToNearbyTiles(mapLayout, centerTilePos) {
 		}
 	}
 
-	const compareTiles = (distance, farthestAwayTilePos, farthestAwayTileData, fartherTileData) => {
+	const compareTiles = (distance, farthestTilePos, farthestTileData, fartherTileData) => {
 		const distString = `${numToStr[distance]}Away`;
 		const distPlus1String = `${numToStr[distance+1]}Away`;
 		for (const closestTileData of Object.values(lineOfSightTiles[distString].floors)) {
-			const deltaXFartherTiles = Math.abs(distance === 1 ? farthestAwayTileData.xPos - closestTileData.xPos : farthestAwayTileData.xPos - fartherTileData.xPos);
-			const deltaYFartherTiles = Math.abs(distance === 1 ? farthestAwayTileData.yPos - closestTileData.yPos : farthestAwayTileData.yPos - fartherTileData.yPos);
+			const deltaXFartherTiles = Math.abs(distance === 1 ? farthestTileData.xPos - closestTileData.xPos : farthestTileData.xPos - fartherTileData.xPos);
+			const deltaYFartherTiles = Math.abs(distance === 1 ? farthestTileData.yPos - closestTileData.yPos : farthestTileData.yPos - fartherTileData.yPos);
 			const deltaXCloserTiles = Math.abs(distance === 1 ? closestTileData.xPos - centerTile.xPos : fartherTileData.xPos - closestTileData.xPos);
 			const deltaYCloserTiles = Math.abs(distance === 1 ? closestTileData.yPos - centerTile.yPos : fartherTileData.yPos - closestTileData.yPos);
 			const outerTileHasLOS =
@@ -93,10 +93,10 @@ export function unblockedPathsToNearbyTiles(mapLayout, centerTilePos) {
 			// if one of the 1 away tiles that has line of sight is between the current 2 away tile and center tile...
 			if (outerTileHasLOS)
 			{
-				if (farthestAwayTileData.type === 'wall' || (farthestAwayTileData.type === 'door' && !farthestAwayTileData.doorIsOpen)) {
-					lineOfSightTiles[distPlus1String].walls[farthestAwayTilePos] = farthestAwayTileData;
+				if (farthestTileData.type === 'wall' || (farthestTileData.type === 'door' && !farthestTileData.doorIsOpen)) {
+					lineOfSightTiles[distPlus1String].walls[farthestTilePos] = farthestTileData;
 				} else {
-					lineOfSightTiles[distPlus1String].floors[farthestAwayTilePos] = farthestAwayTileData;
+					lineOfSightTiles[distPlus1String].floors[farthestTilePos] = farthestTileData;
 				}
 			}
 		}
@@ -108,11 +108,15 @@ export function unblockedPathsToNearbyTiles(mapLayout, centerTilePos) {
 		compareTiles(1, twoAwayTilePos, twoAwayTileData);
 	}
 
-	// now find tiles three tiles from center that have line of sight
-	floorsAndWalls = {...nearbyTiles.threeAway.floors, ...nearbyTiles.threeAway.walls};
-	for (const [threeAwayTilePos, threeAwayTileData] of Object.entries(floorsAndWalls)) {
-		for (const twoAwayTileData of Object.values(lineOfSightTiles.twoAway.floors)) {
-			compareTiles(2, threeAwayTilePos, threeAwayTileData, twoAwayTileData);
+	// now find tiles three or more tiles from center that have line of sight
+	for (let dist=3; dist <= MAX_DISTANCE; dist++) {
+		const distString = `${numToStr[dist]}Away`;
+		const distMinus1String = `${numToStr[dist-1]}Away`;
+		floorsAndWalls = {...nearbyTiles[distString].floors, ...nearbyTiles[distString].walls};
+		for (const [farthestTilePos, farthestTileData] of Object.entries(floorsAndWalls)) {
+			for (const fartherTileData of Object.values(lineOfSightTiles[distMinus1String].floors)) {
+				compareTiles(dist-1, farthestTilePos, farthestTileData, fartherTileData);
+			}
 		}
 	}
 
