@@ -41,7 +41,7 @@ class Game extends React.Component {
 			selectedCharacter: '',
 			selectedCreature: '',
 			weaponButtonSelected: {},
-			controlsContent: '',
+			isInCombat: false,
 			logText: [],
 			showDialog: true,
 			dialogProps: {
