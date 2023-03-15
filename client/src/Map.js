@@ -129,7 +129,7 @@ class Map extends React.Component {
 					this.setState({creatureCoords});
 					if (this.pageFirstLoaded) {
 						this.pageFirstLoaded = false;
-						this.setupKeyListeners();
+						this._setupKeyListeners();
 					}
 				});
 			});
@@ -839,249 +839,8 @@ class Map extends React.Component {
 	 *******************/
 
 	/**
-	 * Used to determine if creature can move to specified tile (ie. not already occupied, not wall, not closed door)
-	 * @param tileCoords: Object
-	 * @returns {boolean}
-	 */
-	tileIsFreeToMove(tileCoords) {
-		let tileIsAvail = true;
-		const tilePos = `${tileCoords.xPos}-${tileCoords.yPos}`;
-		const tile = this.state.mapLayout[tilePos];
-
-		// todo: need to change playerCoords from {xPos, yPos} to collection of player names with coord objects for each
-
-		const allCharCoords = [...Object.values(this.state.creatureCoords), ...Object.values(this.state.playerCoords)];
-		let i = 0;
-
-		if (!tile || tile.type === 'wall' || (tile.type === 'door' && !tile.doorIsOpen)) {
-			tileIsAvail = false;
-		} else {
-			while (tileIsAvail && i < allCharCoords.length) {
-				if (allCharCoords[i].xPos === tileCoords.xPos && allCharCoords[i].yPos === tileCoords.yPos) {
-					tileIsAvail = false;
-				}
-				i++;
-			}
-		}
-		return tileIsAvail;
-	}
-
-	/**
-	 * Finds tile for creature to move to that is either toward (1) or away from (-1) PC(s)
-	 * @param creatureCoords: Object
-	 * @param directionModifier: Integer (1 or -1)
-	 * @returns {{yPos, xPos}}
-	 */
-	findNewCreatureCoordsRelativeToChar(creatureCoords, directionModifier) {
-		const oppositeDirMod = -1 * directionModifier;
-		let newCreatureCoords = {xPos: creatureCoords.xPos, yPos: creatureCoords.yPos};
-		const newXPos = creatureCoords.xPos + directionModifier;
-		const newOppXPos = creatureCoords.xPos + oppositeDirMod;
-		const newYPos = creatureCoords.yPos + directionModifier;
-		const newOppYPos = creatureCoords.yPos + oppositeDirMod;
-
-	//todo: once multiple PCs are implemented need to change from checking state.playerCoords to either all or nearest PC
-
-		// First check diagonal movement
-		if (creatureCoords.xPos < this.state.playerCoords.xPos &&
-			creatureCoords.yPos < this.state.playerCoords.yPos &&
-			this.tileIsFreeToMove({xPos: newXPos, yPos: newYPos}))
-		{
-			newCreatureCoords.xPos = newXPos;
-			newCreatureCoords.yPos = newYPos;
-		} else if (creatureCoords.xPos < this.state.playerCoords.xPos &&
-			creatureCoords.yPos > this.state.playerCoords.yPos &&
-			this.tileIsFreeToMove({xPos: newXPos, yPos: newOppYPos}))
-		{
-			newCreatureCoords.xPos = newXPos;
-			newCreatureCoords.yPos = newOppYPos;
-		} else if (creatureCoords.xPos > this.state.playerCoords.xPos &&
-			creatureCoords.yPos < this.state.playerCoords.yPos &&
-			this.tileIsFreeToMove({xPos: newOppXPos, yPos: newYPos}))
-		{
-			newCreatureCoords.xPos = newOppXPos;
-			newCreatureCoords.yPos = newYPos;
-		} else if (creatureCoords.xPos > this.state.playerCoords.xPos &&
-			creatureCoords.yPos > this.state.playerCoords.yPos &&
-			this.tileIsFreeToMove({xPos: newOppXPos, yPos: newOppYPos}))
-		{
-			newCreatureCoords.xPos = newOppXPos;
-			newCreatureCoords.yPos = newOppYPos;
-		}
-		// Then check X movement
-		else if (creatureCoords.xPos < this.state.playerCoords.xPos && this.tileIsFreeToMove({xPos: newXPos, yPos: creatureCoords.yPos})) {
-			newCreatureCoords.xPos = newXPos;
-		} else if (creatureCoords.xPos > this.state.playerCoords.xPos && this.tileIsFreeToMove({xPos: newOppXPos, yPos: creatureCoords.yPos})) {
-			newCreatureCoords.xPos = newOppXPos;
-		}
-		// Finally check Y movement
-		else if (creatureCoords.yPos < this.state.playerCoords.yPos && this.tileIsFreeToMove({xPos: creatureCoords.xPos, yPos: newYPos})) {
-			newCreatureCoords.yPos = newYPos;
-		} else if (creatureCoords.yPos > this.state.playerCoords.yPos && this.tileIsFreeToMove({xPos: creatureCoords.xPos, yPos: newOppYPos})) {
-			newCreatureCoords.yPos = newOppYPos;
-		}
-
-		return newCreatureCoords;
-	}
-
-	/**
-	 * Saves to state new coords for a creature, then either recursively calls again to save next coords in array
-	 * or updates map creature data in App (which then calls callback if there is one)
-	 * @param creatureID: String
-	 * @param newCoords: Array (of coord objects representing each of a creature's moves)
-	 * @param callback: Function (generally either updating current turn or doing creature attack and then updating turn)
-	 */
-	storeNewCreatureCoords(creatureID, newCoords, callback) {
-		let newCoordsArray = newCoords;
-		const nextCoords = newCoordsArray.shift();
-
-		this.setState(prevState => ({
-			creatureCoords: {
-				...prevState.creatureCoords,
-				[creatureID]: {xPos: nextCoords.xPos, yPos: nextCoords.yPos}
-			}
-		}), () => {
-			if (newCoordsArray.length > 0) {
-				this.storeNewCreatureCoords(creatureID, newCoordsArray, callback);
-			} else {
-				const creatureData = {...this.props.mapCreatures};
-				creatureData[creatureID].coords = nextCoords;
-				this.updateMapCreatures(creatureData[creatureID], creatureID, false, callback);
-			}
-		});
-	}
-
-	/**
-	 * AI for creature behavior
-	 * Basically a creature with a PC in view will either move toward it and/or attack it if in range
-	 * or move away from it if its HP is below a threshold (set by this.creatureSurvivalHpPercent)
-	 */
-	moveCreature() {
-		const creatureID = this.props.activeCharacter;
-		const creatureData = this.props.mapCreatures[creatureID];
-		let creatureDidAct = false;
-
-		if (creatureData.currentHP > 0) {
-			let creatureCoords = this.state.creatureCoords[creatureID];
-			const creaturePos = `${creatureCoords.xPos}-${creatureCoords.yPos}`;
-			let newCreatureCoordsArray = [];
-			const lineOfSightTiles = unblockedPathsToNearbyTiles(this.state.mapLayout, creaturePos);
-// todo: will need to update these with a loop to check each player char as well as implement different search distances based on 'sight'/'hearing'
-			let playerPos = '';
-			let playerDistance = 0;
-			let targetPlayerID = '';
-			let targetPlayerPos = '';
-			let targetPlayerDistance = 10; //dummy value
-			let targetPlayerData = this.props.playerCharacters['privateEye'];
-
-			// find closest player for creature to focus on
-			for (const [playerID, playerData] of Object.entries(this.props.playerCharacters)) {
-				playerPos = `${this.state.playerCoords.xPos}-${this.state.playerCoords.yPos}`;
-				playerDistance = lineOfSightTiles.oneAway.floors[playerPos] ? 1 :
-					lineOfSightTiles.twoAway.floors[playerPos] ? 2 :
-					lineOfSightTiles.threeAway.floors[playerPos] ? 3 : -1;
-				if (playerDistance < targetPlayerDistance) {
-					targetPlayerDistance = playerDistance;
-					targetPlayerPos = playerPos;
-					targetPlayerID = playerID;
-					targetPlayerData = playerData;
-				}
-			}
-			// if a player char is nearby...
-			if (targetPlayerDistance > -1) {
-				// if creature is low on health
-				if (creatureData.currentHP < (creatureData.startingHP * this.creatureSurvivalHpPercent)) {
-					// if player char is within attack range, then attack
-					if (targetPlayerDistance <= creatureData.range) {
-						this.updateLog(`${creatureID} attacks player at ${JSON.stringify(targetPlayerPos)}`);
-						this.creatureInstances[creatureID].attack(targetPlayerID, targetPlayerData, this.props.updatePlayerChar, this.props.updateLog);
-					}
-					// then move away from player
-					for (let i=1; i <= creatureData.moveSpeed; i++) {
-						creatureCoords = this.findNewCreatureCoordsRelativeToChar(creatureCoords, -1);
-						newCreatureCoordsArray.push(creatureCoords);
-						// this.updateLog(`Moving ${creatureID} away from player to ${JSON.stringify(newCreatureCoordsArray)}`);
-					}
-					this.storeNewCreatureCoords(creatureID, newCreatureCoordsArray, this.props.updateCurrentTurn);
-				// or if player is out of attack range, move closer
-				} else if (targetPlayerDistance > creatureData.range) {
-					let moves = 1;
-					while (moves <= creatureData.moveSpeed && targetPlayerDistance > creatureData.range) {
-						creatureCoords = this.findNewCreatureCoordsRelativeToChar(creatureCoords, 1);
-						newCreatureCoordsArray.push(creatureCoords);
-						moves++;
-						targetPlayerDistance--;
-						// this.updateLog(`Moving ${creatureID} toward player, to ${JSON.stringify(newCreatureCoordsArray)}`);
-					}
-					this.storeNewCreatureCoords(creatureID, newCreatureCoordsArray, () => {
-						// if player char is within attack range, then attack
-						if (targetPlayerDistance <= creatureData.range) {
-							this.updateLog(`${creatureID} attacks player at ${JSON.stringify(targetPlayerPos)}`);
-							this.creatureInstances[creatureID].attack(targetPlayerID, targetPlayerData, this.props.updatePlayerChar, this.props.updateLog, this.props.updateCurrentTurn);
-						} else {
-							this.props.updateCurrentTurn();
-						}
-					});
-				// otherwise player is in attack range, so attack
-				} else {
-					this.updateLog(`${creatureID} attacks player at ${JSON.stringify(targetPlayerPos)}`);
-					this.creatureInstances[creatureID].attack(targetPlayerID, targetPlayerData, this.props.updatePlayerChar, this.props.updateLog, this.props.updateCurrentTurn);
-
-				}
-				creatureDidAct = true;
-			}
-			// For creatures that don't act, still need to advance turn
-			if (!creatureDidAct) {
-				this.props.updateCurrentTurn();
-			}
-			// otherwise, no player char nearby, so move creature in random direction (including possibly not moving at all)
-			// else {
-			// 	let allCreatureMoves = [];
-			// 	let newRandX = 0;
-			// 	let newRandY = 0;
-			// 	for (let i=1; i <= creatureData.moveSpeed; i++) {
-			// 		newRandX = creatureCoords.xPos + randomTileMovementValue();
-			// 		newRandY = creatureCoords.yPos + randomTileMovementValue();
-			// 		if (this.tileIsFreeToMove({xPos: newRandX, yPos: newRandY})) {
-			// 			allCreatureMoves.push({xPos: newRandX, yPos: newRandY});
-			//
-			// 			// this.updateLog(`Moving ${creatureID} randomly to ${newRandX}, ${newRandY}`);
-			// 		}
-			// 	}
-			// 	if (allCreatureMoves.length > 0) {
-			// 		this.storeNewCreatureCoords(creatureID, allCreatureMoves);
-			// 		creatureDidMove = true;
-			// 	}
-			// }
-		}
-	}
-
-	// todo: No longer needed? Was being used in moveCharacter, but from old map paradigm using tile sides to determine valid moves
-	//
-	// getSidesBetweenAdjacentTiles(mainTileLoc, adjTileLoc) {
-	// 	let sides = [];
-	// 	const adjTile = this.state.mapLayout[adjTileLoc];
-	// 	const mainTile = this.state.mapLayout[mainTileLoc];
-	//
-	// 	if (mainTile.xPos - adjTile.xPos === -1) {
-	// 		sides.push('rightSide');
-	// 	}
-	// 	if (mainTile.xPos - adjTile.xPos === 1) {
-	// 		sides.push('leftSide');
-	// 	}
-	// 	if (mainTile.yPos - adjTile.yPos === -1) {
-	// 		sides.push('bottomSide');
-	// 	}
-	// 	if (mainTile.yPos - adjTile.yPos === 1) {
-	// 		sides.push('topSide');
-	// 	}
-	//
-	// 	return sides;
-	// }
-
-	/**
 	 * Determines if user's key/tap/click movement command is valid, and if so, updates coords for the active PC
-	 * then calls moveMap to keep the active PC centered on screen
+	 * then calls _moveMap to keep the active PC centered on screen
 	 * Also used for initially placing PCs on map load (currently random until entrances are implemented)
 	 * @param tileLoc: String
 	 * @param e: Event object
@@ -1221,7 +980,7 @@ class Map extends React.Component {
 				},
 				playerPlaced: true
 			}), () => {
-				this.moveMap(initialSetupCallback);
+				this._moveMap(initialSetupCallback);
 				if (!initialSetupCallback) {
 					this._checkForExit();
 					this.props.updateActivePlayerMoves();
@@ -1231,10 +990,256 @@ class Map extends React.Component {
 	}
 
 	/**
+	 * Used to determine if creature can move to specified tile (ie. not already occupied, not wall, not closed door)
+	 * @param tileCoords: Object
+	 * @returns {boolean}
+	 * @private
+	 */
+	_tileIsFreeToMove(tileCoords) {
+		let tileIsAvail = true;
+		const tilePos = `${tileCoords.xPos}-${tileCoords.yPos}`;
+		const tile = this.state.mapLayout[tilePos];
+
+		// todo: need to change playerCoords from {xPos, yPos} to collection of player names with coord objects for each
+
+		const allCharCoords = [...Object.values(this.state.creatureCoords), ...Object.values(this.state.playerCoords)];
+		let i = 0;
+
+		if (!tile || tile.type === 'wall' || (tile.type === 'door' && !tile.doorIsOpen)) {
+			tileIsAvail = false;
+		} else {
+			while (tileIsAvail && i < allCharCoords.length) {
+				if (allCharCoords[i].xPos === tileCoords.xPos && allCharCoords[i].yPos === tileCoords.yPos) {
+					tileIsAvail = false;
+				}
+				i++;
+			}
+		}
+		return tileIsAvail;
+	}
+
+	/**
+	 * Finds tile for creature to move to that is either toward (1) or away from (-1) PC(s)
+	 * @param creatureCoords: Object
+	 * @param directionModifier: Integer (1 or -1)
+	 * @returns {{yPos, xPos}}
+	 * @private
+	 */
+	_findNewCreatureCoordsRelativeToChar(creatureCoords, directionModifier) {
+		const oppositeDirMod = -1 * directionModifier;
+		let newCreatureCoords = {xPos: creatureCoords.xPos, yPos: creatureCoords.yPos};
+		const newXPos = creatureCoords.xPos + directionModifier;
+		const newOppXPos = creatureCoords.xPos + oppositeDirMod;
+		const newYPos = creatureCoords.yPos + directionModifier;
+		const newOppYPos = creatureCoords.yPos + oppositeDirMod;
+
+	//todo: once multiple PCs are implemented need to change from checking state.playerCoords to either all or nearest PC
+
+		// First check diagonal movement
+		if (creatureCoords.xPos < this.state.playerCoords.xPos &&
+			creatureCoords.yPos < this.state.playerCoords.yPos &&
+			this._tileIsFreeToMove({xPos: newXPos, yPos: newYPos}))
+		{
+			newCreatureCoords.xPos = newXPos;
+			newCreatureCoords.yPos = newYPos;
+		} else if (creatureCoords.xPos < this.state.playerCoords.xPos &&
+			creatureCoords.yPos > this.state.playerCoords.yPos &&
+			this._tileIsFreeToMove({xPos: newXPos, yPos: newOppYPos}))
+		{
+			newCreatureCoords.xPos = newXPos;
+			newCreatureCoords.yPos = newOppYPos;
+		} else if (creatureCoords.xPos > this.state.playerCoords.xPos &&
+			creatureCoords.yPos < this.state.playerCoords.yPos &&
+			this._tileIsFreeToMove({xPos: newOppXPos, yPos: newYPos}))
+		{
+			newCreatureCoords.xPos = newOppXPos;
+			newCreatureCoords.yPos = newYPos;
+		} else if (creatureCoords.xPos > this.state.playerCoords.xPos &&
+			creatureCoords.yPos > this.state.playerCoords.yPos &&
+			this._tileIsFreeToMove({xPos: newOppXPos, yPos: newOppYPos}))
+		{
+			newCreatureCoords.xPos = newOppXPos;
+			newCreatureCoords.yPos = newOppYPos;
+		}
+		// Then check X movement
+		else if (creatureCoords.xPos < this.state.playerCoords.xPos && this._tileIsFreeToMove({xPos: newXPos, yPos: creatureCoords.yPos})) {
+			newCreatureCoords.xPos = newXPos;
+		} else if (creatureCoords.xPos > this.state.playerCoords.xPos && this._tileIsFreeToMove({xPos: newOppXPos, yPos: creatureCoords.yPos})) {
+			newCreatureCoords.xPos = newOppXPos;
+		}
+		// Finally check Y movement
+		else if (creatureCoords.yPos < this.state.playerCoords.yPos && this._tileIsFreeToMove({xPos: creatureCoords.xPos, yPos: newYPos})) {
+			newCreatureCoords.yPos = newYPos;
+		} else if (creatureCoords.yPos > this.state.playerCoords.yPos && this._tileIsFreeToMove({xPos: creatureCoords.xPos, yPos: newOppYPos})) {
+			newCreatureCoords.yPos = newOppYPos;
+		}
+
+		return newCreatureCoords;
+	}
+
+	/**
+	 * Saves to state new coords for a creature, then either recursively calls again to save next coords in array
+	 * or updates map creature data in App (which then calls callback if there is one)
+	 * @param creatureID: String
+	 * @param newCoords: Array (of coord objects representing each of a creature's moves)
+	 * @param callback: Function (generally either updating current turn or doing creature attack and then updating turn)
+	 * @private
+	 */
+	_storeNewCreatureCoords(creatureID, newCoords, callback) {
+		let newCoordsArray = newCoords;
+		const nextCoords = newCoordsArray.shift();
+
+		this.setState(prevState => ({
+			creatureCoords: {
+				...prevState.creatureCoords,
+				[creatureID]: {xPos: nextCoords.xPos, yPos: nextCoords.yPos}
+			}
+		}), () => {
+			if (newCoordsArray.length > 0) {
+				this._storeNewCreatureCoords(creatureID, newCoordsArray, callback);
+			} else {
+				const creatureData = {...this.props.mapCreatures};
+				creatureData[creatureID].coords = nextCoords;
+				this.updateMapCreatures(creatureData[creatureID], creatureID, false, callback);
+			}
+		});
+	}
+
+	/**
+	 * AI for creature behavior
+	 * Basically a creature with a PC in view will either move toward it and/or attack it if in range
+	 * or move away from it if its HP is below a threshold (set by this.creatureSurvivalHpPercent)
+	 * @private
+	 */
+	_moveCreature() {
+		const creatureID = this.props.activeCharacter;
+		const creatureData = this.props.mapCreatures[creatureID];
+		let creatureDidAct = false;
+
+		if (creatureData.currentHP > 0) {
+			let creatureCoords = this.state.creatureCoords[creatureID];
+			const creaturePos = `${creatureCoords.xPos}-${creatureCoords.yPos}`;
+			let newCreatureCoordsArray = [];
+			const lineOfSightTiles = unblockedPathsToNearbyTiles(this.state.mapLayout, creaturePos);
+// todo: will need to update these with a loop to check each player char as well as implement different search distances based on 'sight'/'hearing'
+			let playerPos = '';
+			let playerDistance = 0;
+			let targetPlayerID = '';
+			let targetPlayerPos = '';
+			let targetPlayerDistance = 10; //dummy value
+			let targetPlayerData = this.props.playerCharacters['privateEye'];
+
+			// find closest player for creature to focus on
+			for (const [playerID, playerData] of Object.entries(this.props.playerCharacters)) {
+				playerPos = `${this.state.playerCoords.xPos}-${this.state.playerCoords.yPos}`;
+				playerDistance = lineOfSightTiles.oneAway.floors[playerPos] ? 1 :
+					lineOfSightTiles.twoAway.floors[playerPos] ? 2 :
+					lineOfSightTiles.threeAway.floors[playerPos] ? 3 : -1;
+				if (playerDistance < targetPlayerDistance) {
+					targetPlayerDistance = playerDistance;
+					targetPlayerPos = playerPos;
+					targetPlayerID = playerID;
+					targetPlayerData = playerData;
+				}
+			}
+			// if a player char is nearby...
+			if (targetPlayerDistance > -1) {
+				// if creature is low on health
+				if (creatureData.currentHP < (creatureData.startingHP * this.creatureSurvivalHpPercent)) {
+					// if player char is within attack range, then attack
+					if (targetPlayerDistance <= creatureData.range) {
+						this.updateLog(`${creatureID} attacks player at ${JSON.stringify(targetPlayerPos)}`);
+						this.creatureInstances[creatureID].attack(targetPlayerID, targetPlayerData, this.props.updatePlayerChar, this.props.updateLog);
+					}
+					// then move away from player
+					for (let i=1; i <= creatureData.moveSpeed; i++) {
+						creatureCoords = this._findNewCreatureCoordsRelativeToChar(creatureCoords, -1);
+						newCreatureCoordsArray.push(creatureCoords);
+						// this.updateLog(`Moving ${creatureID} away from player to ${JSON.stringify(newCreatureCoordsArray)}`);
+					}
+					this._storeNewCreatureCoords(creatureID, newCreatureCoordsArray, this.props.updateCurrentTurn);
+				// or if player is out of attack range, move closer
+				} else if (targetPlayerDistance > creatureData.range) {
+					let moves = 1;
+					while (moves <= creatureData.moveSpeed && targetPlayerDistance > creatureData.range) {
+						creatureCoords = this._findNewCreatureCoordsRelativeToChar(creatureCoords, 1);
+						newCreatureCoordsArray.push(creatureCoords);
+						moves++;
+						targetPlayerDistance--;
+						// this.updateLog(`Moving ${creatureID} toward player, to ${JSON.stringify(newCreatureCoordsArray)}`);
+					}
+					this._storeNewCreatureCoords(creatureID, newCreatureCoordsArray, () => {
+						// if player char is within attack range, then attack
+						if (targetPlayerDistance <= creatureData.range) {
+							this.updateLog(`${creatureID} attacks player at ${JSON.stringify(targetPlayerPos)}`);
+							this.creatureInstances[creatureID].attack(targetPlayerID, targetPlayerData, this.props.updatePlayerChar, this.props.updateLog, this.props.updateCurrentTurn);
+						} else {
+							this.props.updateCurrentTurn();
+						}
+					});
+				// otherwise player is in attack range, so attack
+				} else {
+					this.updateLog(`${creatureID} attacks player at ${JSON.stringify(targetPlayerPos)}`);
+					this.creatureInstances[creatureID].attack(targetPlayerID, targetPlayerData, this.props.updatePlayerChar, this.props.updateLog, this.props.updateCurrentTurn);
+
+				}
+				creatureDidAct = true;
+			}
+			// For creatures that don't act, still need to advance turn
+			if (!creatureDidAct) {
+				this.props.updateCurrentTurn();
+			}
+			// otherwise, no player char nearby, so move creature in random direction (including possibly not moving at all)
+			// else {
+			// 	let allCreatureMoves = [];
+			// 	let newRandX = 0;
+			// 	let newRandY = 0;
+			// 	for (let i=1; i <= creatureData.moveSpeed; i++) {
+			// 		newRandX = creatureCoords.xPos + randomTileMovementValue();
+			// 		newRandY = creatureCoords.yPos + randomTileMovementValue();
+			// 		if (this._tileIsFreeToMove({xPos: newRandX, yPos: newRandY})) {
+			// 			allCreatureMoves.push({xPos: newRandX, yPos: newRandY});
+			//
+			// 			// this.updateLog(`Moving ${creatureID} randomly to ${newRandX}, ${newRandY}`);
+			// 		}
+			// 	}
+			// 	if (allCreatureMoves.length > 0) {
+			// 		this._storeNewCreatureCoords(creatureID, allCreatureMoves);
+			// 		creatureDidMove = true;
+			// 	}
+			// }
+		}
+	}
+
+	// todo: No longer needed? Was being used in moveCharacter, but from old map paradigm using tile sides to determine valid moves
+	//
+	// getSidesBetweenAdjacentTiles(mainTileLoc, adjTileLoc) {
+	// 	let sides = [];
+	// 	const adjTile = this.state.mapLayout[adjTileLoc];
+	// 	const mainTile = this.state.mapLayout[mainTileLoc];
+	//
+	// 	if (mainTile.xPos - adjTile.xPos === -1) {
+	// 		sides.push('rightSide');
+	// 	}
+	// 	if (mainTile.xPos - adjTile.xPos === 1) {
+	// 		sides.push('leftSide');
+	// 	}
+	// 	if (mainTile.yPos - adjTile.yPos === -1) {
+	// 		sides.push('bottomSide');
+	// 	}
+	// 	if (mainTile.yPos - adjTile.yPos === 1) {
+	// 		sides.push('topSide');
+	// 	}
+	//
+	// 	return sides;
+	// }
+
+	/**
 	 * For keeping character in center of screen while moving
 	 * @param initialSetupCallback: Function (runs initial map setup functions)
+	 * @private
 	 */
-	moveMap(initialSetupCallback) {
+	_moveMap(initialSetupCallback) {
 		const playerTransform = this._calculatePlayerTransform();
 		const playerXPos = this.state.playerCoords.xPos * this.tileSize;
 		const playerYPos = this.state.playerCoords.yPos * this.tileSize;
@@ -1256,8 +1261,9 @@ class Map extends React.Component {
 	/**
 	 * Looks to see if a door is near the active player (since user just tried activating a door)
 	 * then opens/closes it (and plays the sound effect for it)
+	 * @private
 	 */
-	toggleDoor() {
+	_toggleDoor() {
 		const playerPos = this.state.playerCoords.xPos + '-' + this.state.playerCoords.yPos;
 		const playerPosTile = this.state.mapLayout[playerPos];
 		const playerPosTileSides = [playerPosTile.leftSide, playerPosTile.rightSide, playerPosTile.topSide, playerPosTile.bottomSide];
@@ -1290,13 +1296,6 @@ class Map extends React.Component {
 	 ***********************/
 
 	/**
-	 * Sets up selectors for sound effect elements
-	 */
-	populateSfxSelectors() {
-		this.sfxSelectors.catacombs['door'] = document.getElementById('sfx-stonedoor');
-	}
-
-	/**
 	 * Called by render() to set up array of sound effects elements
 	 * @returns {*[]}
 	 */
@@ -1309,16 +1308,25 @@ class Map extends React.Component {
 	}
 
 	/**
-	 * Sets up listeners for key commands
+	 * Sets up selectors for sound effect elements
+	 * @private
 	 */
-	setupKeyListeners() {
+	_populateSfxSelectors() {
+		this.sfxSelectors.catacombs['door'] = document.getElementById('sfx-stonedoor');
+	}
+
+	/**
+	 * Sets up listeners for key commands
+	 * @private
+	 */
+	_setupKeyListeners() {
 		document.addEventListener('keydown', (e) => {
 			if (e.code.startsWith('Arrow') || e.code.startsWith('Numpad')) {
 				e.preventDefault();
 				this.moveCharacter('', e);
 			} else if (e.code === 'Space') {
 				e.preventDefault();
-				this.toggleDoor();
+				this._toggleDoor();
 			}
 		});
 	}
@@ -1331,7 +1339,7 @@ class Map extends React.Component {
 	componentDidMount() {
 		if (this.initialMapLoad) {
 			this._layoutPieces();
-			this.populateSfxSelectors();
+			this._populateSfxSelectors();
 		}
 	}
 
@@ -1345,7 +1353,7 @@ class Map extends React.Component {
 			this.setState({creatureCoords: {...currentCreatureCoords}});
 		}
 		if (prevProps.activeCharacter !== this.props.activeCharacter && this.props.mapCreatures[this.props.activeCharacter]) {
-			this.moveCreature();
+			this._moveCreature();
 		}
 	}
 
