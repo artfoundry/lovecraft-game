@@ -19,10 +19,12 @@ class Creature extends React.Component {
 		this.range = props.range;
 		this.attackType = props.attackType;
 		this.moveSpeed = props.moveSpeed;
+		this.perception = props.perception;
 		this.skills = props.skills;
+		this.coords = props.coords;
 	}
 
-	attack(targetID, targetData, updateTarget, updateLog, updateTurnCallback = null) {
+	attack = (targetID, targetData, updateTarget, updateLog, updateTurnCallback = null) => {
 		let isHit, damage, hitRoll, defenseRoll;
 		let halfStr = Math.round(this.strength / 2);
 		let halfAgility = Math.round(this.agility / 2);
@@ -45,10 +47,9 @@ class Creature extends React.Component {
 		updateLog(`${this.name} attacks with ${hitRoll} to hit vs ${defenseRoll} defense`);
 		updateLog(isHit ? `${this.name} hits ${targetData.name} for ${damage} damage` : this.name + ' misses');
 		if (isHit) {
-console.log('attack ', targetID)
 			targetData.currentHP -= damage;
-			updateTarget(targetID, targetData, updateTurnCallback);
-		} else {
+			updateTarget('player', targetData, targetID, false, updateTurnCallback);
+		} else if (updateTurnCallback) {
 			updateTurnCallback();
 		}
 	}

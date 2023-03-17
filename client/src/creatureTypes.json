@@ -12,6 +12,7 @@
     "range": 3,
     "attackType": "psychic",
     "moveSpeed": 2,
+    "perception": 5,
     "skills": {}
   },
   "ghast": {
@@ -27,6 +28,7 @@
     "range": 1,
     "attackType": "melee",
     "moveSpeed": 1,
+    "perception": 3,
     "skills": {}
   },
   "ghoul": {
@@ -42,6 +44,7 @@
     "range": 1,
     "attackType": "melee",
     "moveSpeed": 2,
+    "perception": 3,
     "skills": {}
   },
   "shoggoth": {
@@ -57,6 +60,7 @@
     "range": 2,
     "attackType": "melee",
     "moveSpeed": 1,
+    "perception": 5,
     "skills": {}
   }
 }

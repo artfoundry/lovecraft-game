@@ -23,6 +23,7 @@ class Character extends React.Component {
 		this.items = props.items;
 		this.defense = this.agility + (this.items.armor ? this.items.armor.value : 0);
 		this.damageReduction = this.items.armor ? this.items.armor.value : 0;
+		this.coords = {};
 	}
 
 	attack = (weaponStats, creatureId, creatureData, updateCreature, updateLog) => {
@@ -41,7 +42,7 @@ class Character extends React.Component {
 		updateLog(`Player attacks with ${hitRoll} to hit vs ${defenseRoll} defense`);
 		if (isHit) {
 			creatureData.currentHP -= damage;
-			updateCreature(creatureData, creatureId);
+			updateCreature('creature', creatureData, creatureId);
 		}
 		updateLog(isHit ? 'Player hits for ' + damage + ' damage' : 'Player misses');
 	}

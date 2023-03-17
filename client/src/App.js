@@ -29,7 +29,7 @@ class Game extends React.Component {
 			mapCreatures: {},
 			unitsTurnOrder: [],
 			currentTurn: 0,
-			activeCharacter: '',
+			activeCharacter: this.startingPlayerCharacters[0],
 			activePlayerMovesCompleted: 0,
 			activePlayerActionsCompleted: 0,
 			currentLocation: '',
@@ -56,23 +56,25 @@ class Game extends React.Component {
 	}
 
 	/**
-	 * Updates main creature data collection to state
+	 * Updates either creature or player character data collection to state
 	 * If id is passed in, updating only one creature; otherwise updating all
+	 * @param type: String
 	 * @param updateData: Object
 	 * @param id: String
 	 * @param isInitialCreatureSetup: Boolean
 	 * @param callback: Function
 	 */
-	updateMapCreatures = (updateData, id, isInitialCreatureSetup = false, callback) => {
+	updateCharacters = (type, updateData, id, isInitialCreatureSetup = false, callback) => {
+		const collection = type === 'player' ? 'playerCharacters' : 'mapCreatures';
 		if (id) {
 			this.setState(prevState => ({
-				mapCreatures: {
-					...prevState.mapCreatures,
-					[id]: {...prevState.mapCreatures[id], ...updateData}
+				[collection]: {
+					...prevState[collection],
+					[id]: {...prevState[collection][id], ...updateData}
 				}
 			}), () => {
 				if (this.state.selectedCreature === id) {
-					if (this.state.mapCreatures[id].currentHP <= 0) {
+					if (this.state[collection][id].currentHP <= 0 && type === 'creature') {
 						this._updateUnitSelectionStatus(id, 'creature');
 					} else {
 						this._updateInfoText('creatureInfoText', id);
@@ -81,26 +83,30 @@ class Game extends React.Component {
 				if (callback) callback();
 			});
 		} else {
-			this.setState({mapCreatures: updateData}, () => {
+			this.setState({[collection]: updateData}, () => {
 				if (isInitialCreatureSetup) {
 					this._setAllUnitsTurnOrder();
 				}
+				if (callback) callback();
 			});
 		}
 	}
 
 	/**
-	 * Updates a player character's data to state
-	 * @param player: String
-	 * @param updateData: Object
-	 * @param callback: Function
+	 * Gets the positions for each LIVING character of a genre, player or creature
+	 * @param type: String (player or creature)
+	 * @param format: String (pos (string) or coords (object))
+	 * @returns Array (of Strings)
 	 */
-	updatePlayerCharacter = (player, updateData, callback) => {
-		this.setState(prevState => ({
-			playerCharacters: {...prevState.playerCharacters, [player]: {...prevState.playerCharacters[player], ...updateData}}
-		}), () => {
-			if (callback) callback();
-		});
+	getAllCharactersPos = (type, format) => {
+		const allCharactersPos = [];
+		const collection = type === 'player' ? this.state.playerCharacters : this.state.mapCreatures;
+		for (const characterData of Object.values(collection)) {
+			if (characterData.currentHP > 0) {
+				allCharactersPos.push(format === 'pos' ? `${characterData.coords.xPos}-${characterData.coords.yPos}` : characterData.coords);
+			}
+		}
+		return allCharactersPos;
 	}
 
 	/**
@@ -162,11 +168,11 @@ class Game extends React.Component {
 			// clicked unit is getting attacked
 			const selectedWeaponInfo = this.state.weaponButtonSelected;
 
-			this.state.playerCharacters[this.state.activeCharacter].attack(selectedWeaponInfo.stats, id, this.state.mapCreatures[id], this.updateMapCreatures, this.updateLog);
+			this.state.playerCharacters[this.state.activeCharacter].attack(selectedWeaponInfo.stats, id, this.state.mapCreatures[id], this.updateCharacters, this.updateLog);
 			this._animateCharacter();
 			this.toggleWeapon(selectedWeaponInfo.characterId, selectedWeaponInfo.weaponName);
 			if (this.state.mapCreatures[id].currentHP <= 0) {
-				this._updateDeadCreature(id);
+				this._removeDeadFromTurnOrder(id);
 			}
 			this._updateActivePlayerActions();
 		} else {
@@ -200,13 +206,6 @@ class Game extends React.Component {
 				// }, 500);
 			}
 		});
-	}
-
-	/**
-	 * Resets flag used for indicating if there's an update to creature coords (in Map), such as creature dying
-	 */
-	resetCreatureCoordsUpdateFlag = () => {
-		this.setState({creatureCoordsUpdate: null});
 	}
 
 	/**
@@ -448,7 +447,7 @@ class Game extends React.Component {
 	 * @param id: String
 	 * @private
 	 */
-	_updateDeadCreature(id) {
+	_removeDeadFromTurnOrder(id) {
 		let unitsTurnOrder = this.state.unitsTurnOrder;
 		let unitNotFound = true;
 		let index = 0;
@@ -460,7 +459,6 @@ class Game extends React.Component {
 			}
 			index++;
 		}
-		this.setState({creatureCoordsUpdate: id, unitsTurnOrder});
 		this.updateLog(`${id} is dead!`);
 	}
 
@@ -506,20 +504,18 @@ class Game extends React.Component {
 						pcTypes={this.state.pcTypes}
 						playerCharacters={this.state.playerCharacters}
 						activeCharacter={this.state.activeCharacter}
-						updatePlayerChar={this.updatePlayerCharacter}
+						getAllCharactersPos={this.getAllCharactersPos}
 						activePlayerMovesCompleted={this.state.activePlayerMovesCompleted}
 						playerMovesLimit={this.playerMovesLimit}
 						updateActivePlayerMoves={this.updateActivePlayerMoves}
 						mapCreatures={this.state.mapCreatures}
-						updateCreatures={this.updateMapCreatures}
+						updateCharacters={this.updateCharacters}
 						currentTurn={this.state.currentTurn}
 						updateCurrentTurn={this.updateCurrentTurn}
 						unitsTurnOrder={this.state.unitsTurnOrder}
-						creatureCoordsUpdate={this.state.creatureCoordsUpdate}
-						creatureUpdateReset={this.resetCreatureCoordsUpdateFlag}
 						currentLocation={this.state.currentLocation}
 						updateLog={this.updateLog}
-						unitClickHandler={this.handleUnitClick}
+						handleUnitClick={this.handleUnitClick}
 						weaponButtonSelected={this.state.weaponButtonSelected}
 					/>
 				}
