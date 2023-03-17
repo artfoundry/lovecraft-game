@@ -6,7 +6,7 @@
     "strength": 5,
     "agility": 5,
     "mentalAcuity": 4,
-    "startingHP": 10,
+    "startingHP": 100,
     "startingSanity": 8,
     "skills": {
 
@@ -21,7 +21,7 @@
     "strength": 3,
     "agility": 5,
     "mentalAcuity": 6,
-    "startingHP": 8,
+    "startingHP": 80,
     "startingSanity": 10,
     "skills": {
 
@@ -36,7 +36,7 @@
     "strength": 2,
     "agility": 3,
     "mentalAcuity": 7,
-    "startingHP": 6,
+    "startingHP": 60,
     "startingSanity": 10,
     "skills": {
 
