@@ -1,0 +1,19 @@
+{
+	"catacombs": {
+		"name": "catacombs",
+		"creatures": {
+			"elderThing": {
+				"count": 1,
+				"floors": 3
+			},
+			"ghoul": {
+				"count": 15,
+				"floors": 1
+			},
+			"shoggoth": {
+				"count": 1,
+				"floors": 2
+			}
+		}
+	}
+}

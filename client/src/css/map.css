@@ -1,0 +1,50 @@
+.world {
+	position: relative;
+	height: 1000px;
+	margin: auto;
+	background-color: black;
+	overflow: hidden;
+}
+
+.lighting {
+	position: relative;
+	margin: auto;
+	z-index: 5;
+	pointer-events: none;
+}
+
+.creatures {
+	position: relative;
+	margin: auto;
+	z-index: 2;
+}
+
+.objects {
+	position: relative;
+	margin: auto;
+	z-index: 1;
+	pointer-events: none;
+}
+
+.map {
+	position: relative;
+	margin: auto;
+	z-index: 0;
+}
+
+.hidden {
+	display: none;
+}
+
+.selected {
+	outline: 2px dashed red;
+	outline-offset: 2px;
+	border-radius: 15px;
+	box-sizing: border-box;
+}
+
+.in-range {
+	border: 2px solid yellow;
+	border-radius: 15px;
+	box-sizing: border-box;
+}

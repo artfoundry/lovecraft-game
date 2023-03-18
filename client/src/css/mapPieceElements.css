@@ -16,15 +16,23 @@
 }
 
 .bright-light {
-	opacity: 0.2;
+	opacity: 0.15;
+}
+
+.bright-med-light {
+	opacity: 0.3;
 }
 
 .med-light {
-	opacity: 0.4;
+	opacity: 0.45;
+}
+
+.med-low-light {
+	opacity: 0.6;
 }
 
 .low-light {
-	opacity: 0.6;
+	opacity: 0.7;
 }
 
 .ambient-light {
@@ -49,8 +57,4 @@
 
 /* OBJECTS */
 
-.player {
-	position: absolute;
-	z-index: 4;
-	content: url('https://thumbs.gfycat.com/ClearcutPowerlessHyrax-max-1mb.gif');
-}
+
