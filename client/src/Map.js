@@ -3,7 +3,7 @@ import MapData from './data/mapData.json';
 import GameLocations from './data/gameLocations.json';
 import CreatureData from './data/creatureTypes.json';
 import Creature from './Creature';
-import {Exit, LightElement, Character, Tile, Door} from './MapPieceElements';
+import {Exit, LightElement, Character, Tile, Door} from './MapElements';
 import {StoneDoor} from './Audio';
 import {unblockedPathsToNearbyTiles, convertCamelToKabobCase, randomTileMovementValue} from './Utils';
 
