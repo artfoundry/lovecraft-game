@@ -43,17 +43,19 @@ class UI extends React.Component {
 	showControlBar = () => {
 		let controlPanels = [];
 
-		for (const [id, info] of Object.entries(this.props.controlsContent)) {
+		for (const [id, playerInfo] of Object.entries(this.props.playerCharacters)) {
 			controlPanels.push(
 				<CharacterControls
 					key={id}
 					characterId={id}
-					characterName={info.name}
-					weaponsProp={info.weapons}
+					characterName={playerInfo.name}
+					weaponsProp={playerInfo.weapons}
 					toggleWeaponButton={this.props.toggleWeapon}
 					weaponButtonSelected={this.props.weaponButtonSelected}
 					endTurnCallback={this.props.updateCurrentTurn}
-					isActiveCharacter={this.props.playerCharacters[this.props.activeCharacter]}
+					isActiveCharacter={id === this.props.activeCharacter}
+					movesRemaining={this.props.playerLimits.moves - this.props.actionsCompleted.moves}
+					actionsRemaining={this.props.playerLimits.actions - this.props.actionsCompleted.actions}
 				/>
 			)
 		}
@@ -81,7 +83,7 @@ class UI extends React.Component {
 						creatureIsSelected={this.props.creatureIsSelected}
 						creatureInfo={this.props.creatureInfoText} />
 				}
-				<div className="control-bar-container ui-panel">{this.props.controlsContent && <this.showControlBar />}</div>
+				<div className="control-bar-container ui-panel">{this.props.playerCharacters && <this.showControlBar />}</div>
 			</div>
 		);
 	}

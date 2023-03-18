@@ -1,5 +1,6 @@
 import React from "react";
 import {diceRoll} from './Utils';
+import ItemTypes from "./data/itemTypes.json";
 
 class Character extends React.Component {
 	constructor(props) {
@@ -24,6 +25,8 @@ class Character extends React.Component {
 		this.defense = this.agility + (this.items.armor ? this.items.armor.value : 0);
 		this.damageReduction = this.items.armor ? this.items.armor.value : 0;
 		this.coords = {};
+		this.equippedLight = null;
+		this.lightRange = this.items.Light ? this.getLightRange() : 2;
 	}
 
 	attack = (weaponStats, creatureId, creatureData, updateCreature, updateLog) => {
@@ -45,6 +48,18 @@ class Character extends React.Component {
 			updateCreature('creature', creatureData, creatureId);
 		}
 		updateLog(isHit ? 'Player hits for ' + damage + ' damage' : 'Player misses');
+	}
+
+	getLightRange() {
+		let highestRange = 0;
+		this.items.Light.forEach(source => {
+			const range = ItemTypes.Light[source].range;
+			if (range > highestRange) {
+				highestRange = range;
+				this.equippedLight = source;
+			}
+		});
+		return highestRange;
 	}
 }
 

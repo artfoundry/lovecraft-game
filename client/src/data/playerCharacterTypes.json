@@ -12,7 +12,7 @@
 
     },
     "weapons": ["Revolver", "Baseball Bat"],
-    "items": {"Ammo": "Handgun"}
+    "items": {"Ammo": ["Handgun"], "Light": ["Electric Torch"]}
   },
   "archaeologist": {
     "name": "Mary Simpleton",
@@ -27,7 +27,7 @@
 
     },
     "weapons": ["Pickaxe"],
-    "items": {"Light": "Lantern"}
+    "items": {"Light": ["Torch"]}
   },
   "chemist": {
     "name": "Helen Abernathy",
@@ -42,6 +42,6 @@
 
     },
     "weapons": ["Acid concoction"],
-    "items": {"Medicine": "Pharmaceuticals"}
+    "items": {"Medicine": ["Pharmaceuticals"], "Light": ["Lantern"]}
   }
 }

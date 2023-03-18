@@ -1,7 +1,7 @@
 import React from 'react';
-import MapData from './mapData.json';
-import GameLocations from './gameLocations.json';
-import CreatureData from './creatureTypes.json';
+import MapData from './data/mapData.json';
+import GameLocations from './data/gameLocations.json';
+import CreatureData from './data/creatureTypes.json';
 import Creature from './Creature';
 import {Exit, LightElement, Character, Tile, Door} from './MapPieceElements';
 import {StoneDoor} from './Audio';
@@ -560,7 +560,11 @@ class Map extends React.Component {
 		let randomIndex = 0;
 		let tilePos = '';
 		const exitPos = Object.values(this.state.exitPosition).length > 0 ?`${this.state.exitPosition.xPos}-${this.state.exitPosition.yPos}` : null;
-		const allPlayerPos = this.props.getAllCharactersPos('player', 'pos');
+		let allPlayerPos = [];
+
+		this.props.getAllCharactersPos('player', 'pos').forEach(player => {
+			allPlayerPos.push(player.pos);
+		});
 
 		while (!emptyLocFound && tileList.length > 0) {
 			randomIndex = Math.floor(Math.random() * tileList.length);
@@ -665,7 +669,7 @@ class Map extends React.Component {
 				const characterPos = characterCoords.xPos + '-' + characterCoords.yPos;
 				creatureIsHidden = true;
 				for (const playerData of Object.values(this.props.playerCharacters)) {
-					lineOfSightTiles = unblockedPathsToNearbyTiles(this.state.mapLayout, `${playerData.coords.xPos}-${playerData.coords.yPos}`);
+					lineOfSightTiles = unblockedPathsToNearbyTiles(this.state.mapLayout, `${playerData.coords.xPos}-${playerData.coords.yPos}`, playerData.lightRange);
 					for (const tileData of Object.values(lineOfSightTiles)) {
 						if (tileData.floors[characterPos]) {
 							creatureIsHidden = false;
@@ -725,7 +729,11 @@ class Map extends React.Component {
 			return tilePositions[Math.floor(Math.random() * tilePositions.length)];
 		}
 		let exitPosition = pickRandomLoc();
-		const allPlayerPos = this.props.getAllCharactersPos('player', 'pos');
+		let allPlayerPos = [];
+
+		this.props.getAllCharactersPos('player', 'pos').forEach(player => {
+			allPlayerPos.push(player.pos);
+		});
 		while (allPlayerPos.includes(exitPosition)) {
 			exitPosition = pickRandomLoc();
 		}
@@ -790,25 +798,24 @@ class Map extends React.Component {
 	addLighting = () => {
 		let tiles = [];
 		const allPlayersPos = this.props.getAllCharactersPos('player', 'pos');
-		let lineOfSightTiles = {
-			oneAway: {floors: {}, walls: {}},
-			twoAway: {floors: {}, walls: {}},
-			threeAway: {floors: {}, walls: {}},
-			fourAway: {floors: {}, walls: {}},
-			fiveAway: {floors: {}, walls: {}}
-		};
-		allPlayersPos.forEach(pos => {
-			const tempTiles = unblockedPathsToNearbyTiles(this.state.mapLayout, pos);
+		let lineOfSightTiles = {};
+		let allPlayersCoords = [];
+		allPlayersPos.forEach(player => {
+			const range = this.props.playerCharacters[player.id].lightRange;
+			const tempTiles = unblockedPathsToNearbyTiles(this.state.mapLayout, player.pos, range);
 			for (const [distance, tiles] of Object.entries(tempTiles)) {
+				lineOfSightTiles[distance] = {floors: {}, walls: {}};
 				lineOfSightTiles[distance].floors = Object.assign(lineOfSightTiles[distance].floors, tiles.floors);
 				lineOfSightTiles[distance].walls = Object.assign(lineOfSightTiles[distance].walls, tiles.walls);
 			}
+			allPlayersCoords.push(player.pos);
 		});
+
 
 		for (const tilePos of Object.keys(this.state.mapLayout)) {
 			let allClasses = 'light-tile';
 
-			if (allPlayersPos.includes(tilePos)) {
+			if (allPlayersCoords.includes(tilePos)) {
 				allClasses += ' very-bright-light black-light';
 			} else if (lineOfSightTiles.oneAway.floors[tilePos] || lineOfSightTiles.oneAway.walls[tilePos]) {
 				allClasses += ' bright-light black-light';
@@ -927,10 +934,9 @@ class Map extends React.Component {
 			}
 
 			// check if player is trying to move where a creature exists
-			for (const creatureData of Object.values(this.props.mapCreatures)) {
-				const creaturePos = `${creatureData.coords.xPos}-${creatureData.coords.yPos}`;
+			for (const creaturePos of Object.values(this.props.getAllCharactersPos('creature', 'pos'))) {
 				const newPlayerPos = `${newCoords[0]}-${newCoords[1]}`;
-				if (newPlayerPos === creaturePos) {
+				if (newPlayerPos === creaturePos.pos) {
 					invalidMove = true;
 				}
 			}
@@ -1022,7 +1028,7 @@ class Map extends React.Component {
 			tileIsAvail = false;
 		} else {
 			while (tileIsAvail && i < allCharCoords.length) {
-				if (allCharCoords[i].xPos === tileCoords.xPos && allCharCoords[i].yPos === tileCoords.yPos) {
+				if (allCharCoords[i].coords.xPos === tileCoords.xPos && allCharCoords[i].coords.yPos === tileCoords.yPos) {
 					tileIsAvail = false;
 				}
 				i++;
@@ -1064,8 +1070,8 @@ class Map extends React.Component {
 		if (directionModifier === 1) {
 			let shortestDist = 10000; //dummy value
 			allPlayersCoords.forEach(pos => {
-				const newDistX = pos.xPos - creatureCoords.xPos;
-				const newDistY = pos.yPos - creatureCoords.yPos;
+				const newDistX = pos.coords.xPos - creatureCoords.xPos;
+				const newDistY = pos.coords.yPos - creatureCoords.yPos;
 				const newDistance = Math.max(Math.abs(newDistX), Math.abs(newDistY));
 				if (newDistance < shortestDist) {
 					shortestDist = newDistance;
@@ -1079,8 +1085,8 @@ class Map extends React.Component {
 			let avgYCoord = 0;
 			let numPCs = allPlayersCoords.length;
 			allPlayersCoords.forEach(pos => {
-				avgXCoord += pos.xPos;
-				avgYCoord += pos.yPos;
+				avgXCoord += pos.coords.xPos;
+				avgYCoord += pos.coords.yPos;
 			});
 			avgXCoord = avgXCoord / numPCs;
 			avgYCoord = avgYCoord / numPCs;
@@ -1149,7 +1155,7 @@ class Map extends React.Component {
 			const creaturePos = `${creatureCoords.xPos}-${creatureCoords.yPos}`;
 			let newCreatureCoordsArray = [];
 	//todo: add perception/light range as a 3rd param to only search within perceived range
-			const lineOfSightTiles = unblockedPathsToNearbyTiles(this.state.mapLayout, creaturePos);
+			const lineOfSightTiles = unblockedPathsToNearbyTiles(this.state.mapLayout, creaturePos, creatureData.perception);
 			let playerPos = '';
 			let playerDistance = -1;
 			let targetPlayerID = '';

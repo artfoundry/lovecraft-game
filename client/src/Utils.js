@@ -22,10 +22,11 @@ export function randomTileMovementValue() {
 }
 
 /**
- * Find all tiles out to 3 rings surrounding center,
+ * Find all tiles out to 'range' number of rings surrounding center,
  * then find tiles of those that have unblocked lines of sight(LOS) to the center
  * @param mapLayout {object} : map layout from state
  * @param centerTilePos {string} : position of player (ex. '1-2')
+ * @param range {number} : perception/light radius
  * @returns {
  *  {
  *      oneAway: {floors: {[tilePosString]: {xPos, yPos}}, walls: {[tilePosString]: {xPos, yPos}}},
@@ -35,16 +36,15 @@ export function randomTileMovementValue() {
  *  }
  * }
  */
-export function unblockedPathsToNearbyTiles(mapLayout, centerTilePos) {
+export function unblockedPathsToNearbyTiles(mapLayout, centerTilePos, range) {
 	const centerTile = mapLayout[centerTilePos];
-	const MAX_DISTANCE = 5;
 	const numToStr = [null, 'one', 'two', 'three', 'four', 'five'];
 	let nearbyTiles = {};
 	let lineOfSightTiles = {};
-	let minXBoundary = (centerTile.xPos - MAX_DISTANCE) < 0 ? 0 : centerTile.xPos - MAX_DISTANCE;
-	let minYBoundary = (centerTile.yPos - MAX_DISTANCE) < 0 ? 0 : centerTile.yPos - MAX_DISTANCE;
+	let minXBoundary = (centerTile.xPos - range) < 0 ? 0 : centerTile.xPos - range;
+	let minYBoundary = (centerTile.yPos - range) < 0 ? 0 : centerTile.yPos - range;
 
-	for (let i=1; i <= MAX_DISTANCE; i++) {
+	for (let i=1; i <= range; i++) {
 		const distance = `${numToStr[i]}Away`;
 		if (i > 1) {
 			nearbyTiles[distance] = {floors: {}, walls: {}};
@@ -52,9 +52,9 @@ export function unblockedPathsToNearbyTiles(mapLayout, centerTilePos) {
 		lineOfSightTiles[distance] = {floors: {}, walls: {}};
 	}
 
-	// collect all tiles that are 1-MAX_DISTANCE tiles away from center
-	for (let xCount = minXBoundary; xCount <= centerTile.xPos + MAX_DISTANCE; xCount++) {
-		for (let yCount = minYBoundary; yCount <= centerTile.yPos + MAX_DISTANCE; yCount++) {
+	// collect all tiles that are 1-range tiles away from center
+	for (let xCount = minXBoundary; xCount <= centerTile.xPos + range; xCount++) {
+		for (let yCount = minYBoundary; yCount <= centerTile.yPos + range; yCount++) {
 			const tilePos = xCount + '-' + yCount;
 			const currentTile = mapLayout[tilePos];
 			if (currentTile && tilePos !== centerTilePos) {
@@ -110,7 +110,7 @@ export function unblockedPathsToNearbyTiles(mapLayout, centerTilePos) {
 	}
 
 	// now find tiles three or more tiles from center that have line of sight
-	for (let dist=3; dist <= MAX_DISTANCE; dist++) {
+	for (let dist=3; dist <= range; dist++) {
 		const distString = `${numToStr[dist]}Away`;
 		const distMinus1String = `${numToStr[dist-1]}Away`;
 		floorsAndWalls = {...nearbyTiles[distString].floors, ...nearbyTiles[distString].walls};

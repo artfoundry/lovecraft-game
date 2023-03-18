@@ -1,0 +1,17 @@
+{
+  "Light": {
+    "Lantern": {
+      "range": 4
+    },
+    "Torch": {
+      "range": 3
+    },
+    "Electric Torch": {
+      "range": 5
+    }
+  },
+  "Medicine": {
+    "Pharmaceuticals": {}
+  },
+  "Ammo": ["Handgun"]
+}

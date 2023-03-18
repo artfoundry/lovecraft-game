@@ -21,6 +21,8 @@ function CharacterControls(props) {
 	return (
 		<div className='character-control-container'>
 			<div className='character-name'>{props.characterName}</div>
+			<div>Moves remaining: {props.movesRemaining}</div>
+			<div>Actions remaining: {props.actionsRemaining}</div>
 			<div className='weapon-buttons-container'>{weapons}</div>
 			<div className={'general-button' + buttonState} onClick={() => {
 				updateButtonState(' button-inactive');
@@ -53,12 +55,14 @@ function CharacterInfoPanel(props) {
 			<div>Skills:
 				<ul>{skillList}</ul>
 			</div>
+			<div>Defense: {props.characterInfo.defense}{props.characterInfo.items.armor ? ` from ${props.characterInfo.items.armor}` : ''}</div>
 			<div>Weapons:
 				<ul>{weaponList}</ul>
 			</div>
 			<div>Items:
 				<ul>{itemList}</ul>
 			</div>
+			<div>Equipped Light: {props.characterInfo.equippedLight}</div>
 		</div>
 	);
 }
@@ -77,6 +81,7 @@ function CreatureInfoPanel(props) {
 			<div>Damage: {props.creatureInfo.damage}</div>
 			<div>Range: {props.creatureInfo.range}</div>
 			<div>Speed: {props.creatureInfo.moveSpeed}</div>
+			<div>Perception: {props.creatureInfo.perception}</div>
 		</div>
 	);
 }

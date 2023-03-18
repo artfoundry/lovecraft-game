@@ -1,8 +1,8 @@
 import React from 'react';
 import Map from './Map';
 import Character from "./Character";
-import PlayerCharacterTypes from './playerCharacterTypes.json';
-import WeaponTypes from './weaponTypes.json';
+import PlayerCharacterTypes from './data/playerCharacterTypes.json';
+import WeaponTypes from './data/weaponTypes.json';
 import UI from './UI';
 import './css/app.css';
 import './css/map.css';
@@ -96,14 +96,15 @@ class Game extends React.Component {
 	 * Gets the positions for each LIVING character of a genre, player or creature
 	 * @param type: String (player or creature)
 	 * @param format: String (pos (string) or coords (object))
-	 * @returns Array (of Strings)
+	 * @returns Array (of Objects {id: coords})
 	 */
 	getAllCharactersPos = (type, format) => {
 		const allCharactersPos = [];
 		const collection = type === 'player' ? this.state.playerCharacters : this.state.mapCreatures;
-		for (const characterData of Object.values(collection)) {
+		for (const [id, characterData] of Object.entries(collection)) {
 			if (characterData.currentHP > 0) {
-				allCharactersPos.push(format === 'pos' ? `${characterData.coords.xPos}-${characterData.coords.yPos}` : characterData.coords);
+				let coords = format === 'pos' ? `${characterData.coords.xPos}-${characterData.coords.yPos}` : characterData.coords;
+				allCharactersPos.push({id, [format]: coords});
 			}
 		}
 		return allCharactersPos;
@@ -488,7 +489,6 @@ class Game extends React.Component {
 					logText={this.state.logText}
 					characterInfoText={this.state.characterInfoText}
 					creatureInfoText={this.state.creatureInfoText}
-					controlsContent={this.state.playerCharacters}
 					characterIsSelected={this.state.characterIsSelected}
 					creatureIsSelected={this.state.creatureIsSelected}
 					weaponButtonSelected={this.state.weaponButtonSelected}
@@ -496,6 +496,8 @@ class Game extends React.Component {
 					updateCurrentTurn={this.updateCurrentTurn}
 					activeCharacter={this.state.activeCharacter}
 					playerCharacters={this.state.playerCharacters}
+					actionsCompleted={{moves: this.state.activePlayerMovesCompleted, actions: this.state.activePlayerActionsCompleted}}
+					playerLimits={{moves: this.playerMovesLimit, actions: this.playerActionsLimit}}
 				/>
 
 				{this.state.gameSetupComplete &&
