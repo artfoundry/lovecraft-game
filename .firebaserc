@@ -1,0 +1,16 @@
+{
+  "projects": {
+    "default": "lovecraft-2b6e8"
+  },
+  "targets": {
+    "lovecraft-2b6e8": {
+      "hosting": {
+        "lovecraft-oldones": [
+          "lovecraft-2b6e8",
+          "lovecraft-oldones"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

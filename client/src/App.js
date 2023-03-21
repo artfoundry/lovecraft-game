@@ -1,4 +1,5 @@
 import React from 'react';
+import Firebase from "./firebase";
 import Map from './Map';
 import Character from "./Character";
 import PlayerCharacterTypes from './data/playerCharacterTypes.json';
@@ -13,8 +14,12 @@ import './css/playerCharacters.css';
 import {diceRoll} from "./Utils";
 
 class Game extends React.Component {
-	constructor() {
-		super();
+	constructor(props) {
+		super(props);
+
+		this.firebase = new Firebase();
+
+		this.firebase.setData('dave')
 
 		this.initialDialogText = 'Find the stairs down to enter a new dungeon! Use mouse or arrow keys to move and space bar to open/close doors.';
 		this.startingLocation = 'catacombs';
@@ -527,10 +532,4 @@ class Game extends React.Component {
 	}
 }
 
-function App() {
-	return (
-		<Game/>
-	);
-}
-
-export default App;
+export default Game;
