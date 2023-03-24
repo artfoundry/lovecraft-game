@@ -1,7 +1,7 @@
 import React from 'react';
-import Firebase from "./firebase";
+import Firebase from './Firebase';
 import Map from './Map';
-import Character from "./Character";
+import Character from './Character';
 import PlayerCharacterTypes from './data/playerCharacterTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
 import UI from './UI';
@@ -11,23 +11,23 @@ import './css/mapPieceElements.css';
 import './css/catacombs.css'
 import './css/creatures.css';
 import './css/playerCharacters.css';
-import {diceRoll} from "./Utils";
+import {diceRoll} from './Utils';
 
 class Game extends React.Component {
 	constructor(props) {
 		super(props);
 
-		this.firebase = new Firebase();
-
-		this.firebase.setData('dave')
-
-		this.initialDialogText = 'Find the stairs down to enter a new dungeon! Use mouse or arrow keys to move and space bar to open/close doors.';
+		this.initialDialogContent = 'Find the stairs down to enter a new dungeon! Use mouse or arrow keys to move and space bar to open/close doors.';
 		this.startingLocation = 'catacombs';
 		this.startingPlayerCharacters = ['privateEye'];
 		this.playerMovesLimit = 3;
 		this.playerActionsLimit = 1;
 
+		this.firebase = new Firebase();
+
 		this.state = {
+			userData: {},
+			isLoggedIn: false,
 			gameSetupComplete: false,
 			playerCharacters: {},
 			pcTypes: PlayerCharacterTypes,
@@ -50,7 +50,7 @@ class Game extends React.Component {
 			logText: [],
 			showDialog: true,
 			dialogProps: {
-				dialogText: this.initialDialogText,
+				dialogContent: this.initialDialogContent,
 				closeButtonText: 'Close',
 				actionButtonVisible: false,
 				actionButtonText: '',
@@ -58,6 +58,16 @@ class Game extends React.Component {
 				dialogClasses: ''
 			}
 		}
+	}
+
+	/**
+	 * Updates state to true once login is completed by Firebase component
+	 */
+	updateLoggedIn = (userData) => {
+		this.setState({
+			isLoggedIn: true,
+			userData
+		});
 	}
 
 	/**
@@ -161,13 +171,13 @@ class Game extends React.Component {
 		if (Object.keys(this.state.weaponButtonSelected).length > 0 && isInRange) {
 			if (this.state.activePlayerActionsCompleted === this.playerActionsLimit) {
 				const showDialog = true;
-				const dialogText = `${this.state.playerCharacters[this.state.activeCharacter].name} has no more actions this turn`;
+				const dialogContent = `${this.state.playerCharacters[this.state.activeCharacter].name} has no more actions this turn`;
 				const closeButtonText = 'Ok';
 				const actionButtonVisible = false;
 				const actionButtonText = '';
 				const actionButtonCallback = null;
 				const dialogClasses = '';
-				this.setShowDialogProps(showDialog, dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses);
+				this.setShowDialogProps(showDialog, dialogContent, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses);
 				return;
 			}
 
@@ -218,7 +228,7 @@ class Game extends React.Component {
 	 * Sets props for main dialog window. showDialog determines whether dialog is shown
 	 * and rest determine dialog content
 	 * @param showDialog: boolean
-	 * @param dialogText: string
+	 * @param dialogContent: string
 	 * @param closeButtonText: string
 	 * @param actionButtonVisible: boolean
 	 * @param actionButtonText: string
@@ -226,8 +236,8 @@ class Game extends React.Component {
 	 * @param dialogClasses: string
 	 * @param disableCloseButton: boolean
 	 */
-	setShowDialogProps = (showDialog, dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses, disableCloseButton) => {
-		this.setState({showDialog, dialogProps: {dialogText, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses, disableCloseButton}});
+	setShowDialogProps = (showDialog, dialogContent, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses, disableCloseButton) => {
+		this.setState({showDialog, dialogProps: {dialogContent, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses, disableCloseButton}});
 	}
 
 
@@ -486,26 +496,31 @@ class Game extends React.Component {
 	render() {
 		return (
 			<div className="game">
-
-				<UI
-					showDialog={this.state.showDialog}
-					setShowDialogProps={this.setShowDialogProps}
-					dialogProps={this.state.dialogProps}
-					logText={this.state.logText}
-					characterInfoText={this.state.characterInfoText}
-					creatureInfoText={this.state.creatureInfoText}
-					characterIsSelected={this.state.characterIsSelected}
-					creatureIsSelected={this.state.creatureIsSelected}
-					weaponButtonSelected={this.state.weaponButtonSelected}
-					toggleWeapon={this.toggleWeapon}
-					updateCurrentTurn={this.updateCurrentTurn}
-					activeCharacter={this.state.activeCharacter}
-					playerCharacters={this.state.playerCharacters}
-					actionsCompleted={{moves: this.state.activePlayerMovesCompleted, actions: this.state.activePlayerActionsCompleted}}
-					playerLimits={{moves: this.playerMovesLimit, actions: this.playerActionsLimit}}
+				<Firebase
+					updateLoggedIn={this.updateLoggedIn}
 				/>
 
-				{this.state.gameSetupComplete &&
+				{this.state.isLoggedIn &&
+					<UI
+						showDialog={this.state.showDialog}
+						setShowDialogProps={this.setShowDialogProps}
+						dialogProps={this.state.dialogProps}
+						logText={this.state.logText}
+						characterInfoText={this.state.characterInfoText}
+						creatureInfoText={this.state.creatureInfoText}
+						characterIsSelected={this.state.characterIsSelected}
+						creatureIsSelected={this.state.creatureIsSelected}
+						weaponButtonSelected={this.state.weaponButtonSelected}
+						toggleWeapon={this.toggleWeapon}
+						updateCurrentTurn={this.updateCurrentTurn}
+						activeCharacter={this.state.activeCharacter}
+						playerCharacters={this.state.playerCharacters}
+						actionsCompleted={{moves: this.state.activePlayerMovesCompleted, actions: this.state.activePlayerActionsCompleted}}
+						playerLimits={{moves: this.playerMovesLimit, actions: this.playerActionsLimit}}
+					/>
+				}
+
+				{this.state.isLoggedIn && this.state.gameSetupComplete &&
 					<Map
 						setShowDialogProps={this.setShowDialogProps}
 						pcTypes={this.state.pcTypes}

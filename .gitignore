@@ -5,7 +5,7 @@
 /mapLayoutTool/node_modules
 /.pnp
 .pnp.js
-.firebase
+client/.firebase
 
 # testing
 /coverage
@@ -17,7 +17,7 @@
 
 # misc
 .DS_Store
-.env
+client/.env
 .env.local
 .env.development.local
 .env.test.local
@@ -28,7 +28,7 @@ yarn-debug.log*
 yarn-error.log*
 database-debug.log
 ui-debug.log
-firebase-debug.log
+client/firebase-debug.log
 notes
 mapLayoutTool/mapData_orig_backup.json
 client_secret*

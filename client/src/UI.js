@@ -15,7 +15,7 @@ class UI extends React.Component {
 		return (
 			<DialogWindow
 				classes={this.props.dialogProps.dialogClasses}
-				dialogText={this.props.dialogProps.dialogText}
+				dialogContent={this.props.dialogProps.dialogContent}
 				closeButtonText={this.props.dialogProps.closeButtonText}
 				actionButtonVisible={this.props.dialogProps.actionButtonVisible}
 				actionButtonText={this.props.dialogProps.actionButtonText}

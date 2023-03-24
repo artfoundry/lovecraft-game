@@ -4,7 +4,7 @@
   },
   "hosting": {
     "site": "lovecraft-oldones",
-    "public": "client/build",
+    "public": "build",
     "ignore": [
       "firebase.json",
       "**/.*",
