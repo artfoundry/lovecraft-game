@@ -20,7 +20,7 @@ function CharacterControls(props) {
 	}
 	return (
 		<div className='character-control-container'>
-			<div className='character-name'>{props.characterName}</div>
+			<div className='character-name font-fancy'>{props.characterName}</div>
 			<div>Moves remaining: {props.movesRemaining}</div>
 			<div>Actions remaining: {props.actionsRemaining}</div>
 			<div className='weapon-buttons-container'>{weapons}</div>
@@ -89,7 +89,7 @@ function CreatureInfoPanel(props) {
 function DialogWindow(props) {
 	return (
 		<div className={`dialog ui-panel ${props.classes}`}>
-			<div className="dialog-message">{props.dialogText}</div>
+			<div className="dialog-message">{props.dialogContent}</div>
 			<div className="dialog-buttons">
 				{!props.disableCloseButton &&
 				<button className="dialog-button"

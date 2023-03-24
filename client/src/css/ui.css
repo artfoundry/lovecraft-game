@@ -25,6 +25,9 @@
 	pointer-events: none;
 }
 
+.font-fancy {
+	font-family: "Copperplate Gothic Light", fantasy;
+}
 
 .dialog {
 	grid-area: dialog;
@@ -43,6 +46,9 @@
 }
 
 .dialog-message {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
 }
 
 .dialog-buttons {
@@ -59,6 +65,77 @@
 	border: 2px solid black;
 	border-radius: 5px;
 	cursor: pointer;
+}
+
+.login {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	justify-content: center;
+	background-color: #332211;
+	border: none;
+	border-radius: unset;
+}
+
+.login-method {
+	margin-bottom: 30px;
+}
+
+.login-button {
+	margin: 0 0 20px 20px;
+	padding: 5px 10px;
+	background-color: burlywood;
+	cursor: pointer;
+}
+
+.login-email-message-hidden {
+	visibility: hidden;
+}
+
+.login-email-pw-container {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	grid-template-rows: 50px 200px;
+	grid-template-areas:
+	"createtab logintab"
+	"content content";
+	width: 400px;
+}
+
+.email-pw-tab {
+	border-radius: 5px 5px 0 0;
+	font-size: 16px;
+	height: 100%;
+	line-height: 40px;
+	border-top: 2px solid transparent;
+	border-left: 2px solid transparent;
+	border-right: 2px solid transparent;
+	cursor: pointer;
+}
+
+.email-pw-tab:not(.active-tab):hover {
+	background-color: burlywood;
+	color: black;
+}
+
+.create-tab {
+	grid-area: createtab;
+}
+
+.login-tab {
+	grid-area: logintab;
+}
+
+.active-tab {
+	border-top: 2px solid burlywood;
+	border-left: 2px solid burlywood;
+	border-right: 2px solid burlywood;
+}
+
+.active-tab-content {
+	grid-area: content;
+	padding-top: 20px;
+	border-top: 2px solid burlywood;
 }
 
 .log-container {
@@ -111,7 +188,6 @@
 	display: inline-block;
 	padding: 3px;
 	font-size: 16px;
-	font-family: "Copperplate Gothic Light", fantasy;
 	border-bottom: 1px solid darkslategray;
 }
 
