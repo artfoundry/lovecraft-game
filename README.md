@@ -3,6 +3,7 @@
 Working title: War of the Old Ones
 
 Current demo: https://lovecraft-oldones.web.app/
+(note: not yet mobile friendly and Google login is not currently functional)
 
 *WIP*
 
