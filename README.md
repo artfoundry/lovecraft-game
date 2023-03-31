@@ -2,6 +2,8 @@
 
 Working title: War of the Old Ones
 
+Current demo: https://lovecraft-oldones.web.app/
+
 *WIP*
 
 *CURRENT WORKING BRANCH: initiative-system*
