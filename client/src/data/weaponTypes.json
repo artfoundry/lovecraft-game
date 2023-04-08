@@ -10,5 +10,11 @@
     "ranged": false,
     "rounds": 0,
     "attackType": "manual"
+  },
+  "Pickaxe": {
+    "damage": 2,
+    "ranged": false,
+    "rounds": 0,
+    "attackType": "manual"
   }
 }

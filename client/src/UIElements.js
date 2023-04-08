@@ -1,23 +1,19 @@
-import React, {useState} from 'react';
+import React from 'react';
 
 function CharacterControls(props) {
-	const [buttonState, updateButtonState] = useState('');
-	const [waitingTurn, updateWaiting] = useState(false); // to allow time for dom to update End Turn button purely for visual feedback; may not need later
+	let buttonState = props.isActiveCharacter ? '' : ' button-inactive';
 	let weapons = [];
 	props.weaponsProp.forEach(weaponName => {
-		let buttonStateClass = '';
+		let weaponButtonState = '';
 		if (props.weaponButtonSelected.characterId === props.characterId && props.weaponButtonSelected.weaponName === weaponName) {
-			buttonStateClass = ' button-selected';
+			weaponButtonState = ' button-selected';
 		}
 		weapons.push(
-			<div className={'weapon-button' + buttonStateClass} key={weaponName} onClick={() => {
+			<div className={'weapon-button' + weaponButtonState + buttonState} key={weaponName} onClick={() => {
 				props.toggleWeaponButton(props.characterId, weaponName);
 			}}>{weaponName}</div>
 		);
 	});
-	if (props.isActiveCharacter && !waitingTurn && buttonState === ' button-inactive') {
-		updateButtonState('');
-	}
 	return (
 		<div className='character-control-container'>
 			<div className='character-name font-fancy'>{props.characterName}</div>
@@ -25,12 +21,7 @@ function CharacterControls(props) {
 			<div>Actions remaining: {props.actionsRemaining}</div>
 			<div className='weapon-buttons-container'>{weapons}</div>
 			<div className={'general-button' + buttonState} onClick={() => {
-				updateButtonState(' button-inactive');
-				updateWaiting(true);
 				props.endTurnCallback();
-				setTimeout(() => {
-					updateWaiting(false);
-				}, 1000);
 			}}>End Turn</div>
 		</div>
 	);

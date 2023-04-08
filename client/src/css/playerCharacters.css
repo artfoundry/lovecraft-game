@@ -1,8 +1,15 @@
 .player {
 	position: absolute;
-	z-index: 4;
 }
 
 .private-eye {
-	content: url('../assets/characters/players/character_128.png')
+	content: url('../assets/characters/players/private-eye.png');
+}
+
+.archaeologist {
+	content: url('../assets/characters/players/archaeologist.png');
+}
+
+.chemist {
+	/*content: url('../assets/characters/players/character_128.png');*/
 }

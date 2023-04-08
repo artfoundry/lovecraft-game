@@ -19,7 +19,7 @@ class Game extends React.Component {
 
 		this.initialDialogContent = 'Find the stairs down to enter a new dungeon! Use mouse or arrow keys to move and space bar to open/close doors.';
 		this.startingLocation = 'catacombs';
-		this.startingPlayerCharacters = ['privateEye'];
+		this.startingPlayerCharacters = ['privateEye', 'archaeologist'];
 		this.playerMovesLimit = 3;
 		this.playerActionsLimit = 1;
 
@@ -77,9 +77,10 @@ class Game extends React.Component {
 	 * @param updateData: Object
 	 * @param id: String
 	 * @param isInitialCreatureSetup: Boolean
+	 * @param isInitialCharacterSetup: Boolean
 	 * @param callback: Function
 	 */
-	updateCharacters = (type, updateData, id, isInitialCreatureSetup = false, callback) => {
+	updateCharacters = (type, updateData, id, isInitialCreatureSetup = false, isInitialCharacterSetup = false, callback) => {
 		const collection = type === 'player' ? 'playerCharacters' : 'mapCreatures';
 		if (id) {
 			this.setState(prevState => ({
@@ -99,23 +100,29 @@ class Game extends React.Component {
 			});
 		} else {
 			this.setState({[collection]: updateData}, () => {
-				if (isInitialCreatureSetup) {
-					this._setAllUnitsTurnOrder();
+				if (isInitialCharacterSetup) {
+					this._setAllUnitsTurnOrder('playerCharacters', callback);
+				} else if (isInitialCreatureSetup) {
+					this._setAllUnitsTurnOrder('mapCreatures', callback);
+				} else if (callback) {
+					callback();
 				}
-				if (callback) callback();
 			});
 		}
 	}
 
 	/**
-	 * Gets the positions for each LIVING character of a genre, player or creature
-	 * @param type: String (player or creature)
-	 * @param format: String (pos (string) or coords (object))
+	 * Gets the positions for each LIVING character of a genre, player, creature, or all
+	 * @param type: String ('player', 'creature' or 'all')
+	 * @param format: String ('pos' (string) or 'coords' (object))
 	 * @returns Array (of Objects {id: coords})
 	 */
 	getAllCharactersPos = (type, format) => {
 		const allCharactersPos = [];
-		const collection = type === 'player' ? this.state.playerCharacters : this.state.mapCreatures;
+		const collection =
+			type === 'player' ? this.state.playerCharacters :
+			type === 'creature' ? this.state.mapCreatures :
+			Object.assign({}, this.state.playerCharacters, this.state.mapCreatures); // copy all to empty object to avoid modifying originals
 		for (const [id, characterData] of Object.entries(collection)) {
 			if (characterData.currentHP > 0) {
 				let coords = format === 'pos' ? `${characterData.coords.xPos}-${characterData.coords.yPos}` : characterData.coords;
@@ -216,10 +223,7 @@ class Game extends React.Component {
 		const activePlayerMovesCompleted = this.state.activePlayerMovesCompleted + 1;
 		this.setState({activePlayerMovesCompleted}, () => {
 			if (this.state.activePlayerMovesCompleted === this.playerMovesLimit && this.state.activePlayerActionsCompleted === this.playerActionsLimit) {
-	//todo: don't think timeout is needed anymore
-				// setTimeout(() => {
 				this.updateCurrentTurn();
-				// }, 500);
 			}
 		});
 	}
@@ -335,22 +339,20 @@ class Game extends React.Component {
 	/**
 	 * Calculates initiative values for each PC and NPC in map,
 	 * then saves turn order array to state,
-	 * then calls function to set the active character (based on turn order)
+	 * @param unitType: String ('playerCharacters' or 'mapCreatures')
+	 * @param callback: function (at start, sets flag that chars are placed, then for PCs moves map to center)
 	 * @private
 	 */
-	_setAllUnitsTurnOrder() {
-		let unitsTurnOrder = [];
-		const calculateInitiatives = (unitType) => {
-			for (const [id, charData] of Object.entries(this.state[unitType])) {
-				const unitInitiative = charData.initiative + diceRoll(6);
-				this._sortInitiatives(unitsTurnOrder, id, unitInitiative, unitType);
-			}
-		};
+	_setAllUnitsTurnOrder(unitType, callback) {
+		let unitsTurnOrder = this.state.unitsTurnOrder;
 
-		calculateInitiatives('playerCharacters');
-		calculateInitiatives('mapCreatures');
+		for (const [id, charData] of Object.entries(this.state[unitType])) {
+			const unitInitiative = charData.initiative + diceRoll(6);
+			this._sortInitiatives(unitsTurnOrder, id, unitInitiative, unitType);
+		}
+
 		this.setState({unitsTurnOrder}, () => {
-			this._updateActiveCharacter();
+			this._updateActiveCharacter(callback);
 		});
 	}
 
@@ -433,11 +435,16 @@ class Game extends React.Component {
 
 	/**
 	 * Updates to state what character is active (PC or NPC)
+	 * @param callback: function (at start, sets flag that chars are placed, then for PCs moves map to center)
 	 * @private
 	 */
-	_updateActiveCharacter() {
+	_updateActiveCharacter(callback) {
 		const currentTurnUnitInfo = Object.values(this.state.unitsTurnOrder[this.state.currentTurn])[0];
-		this.setState({activeCharacter: currentTurnUnitInfo.id});
+		this.setState({activeCharacter: currentTurnUnitInfo.id}, () => {
+			if (callback) {
+				callback();
+			}
+		});
 	}
 
 	/**
@@ -449,10 +456,7 @@ class Game extends React.Component {
 		const activePlayerActionsCompleted = this.state.activePlayerActionsCompleted + 1;
 		this.setState({activePlayerActionsCompleted}, () => {
 			if (this.state.activePlayerMovesCompleted === this.playerMovesLimit && this.state.activePlayerActionsCompleted === this.playerActionsLimit) {
-	//todo: don't think timeout is needed anymore
-				// setTimeout(() => {
 				this.updateCurrentTurn();
-				// }, 500);
 			}
 		});
 	}
@@ -491,6 +495,9 @@ class Game extends React.Component {
 		if (!this.state.gameSetupComplete) {
 			this._setupGameState();
 		}
+
+		// todo: uncomment below and comment Firebase component in render() for testing, remove for prod
+		// this.setState({isLoggedIn: true});
 	}
 
 	render() {

@@ -5,7 +5,7 @@ function Character(props) {
 	const isHiddenClass = props.isHidden ? ' hidden' : '';
 	const isSelectedClass = !props.isHidden && props.isSelected ? ' selected' : '';
 	const isDeadClass = !props.isHidden && props.isDead ? ` ${props.idClassName}-dead dead` : '';
-	const isInRangeClass = !props.isHidden && props.isInRange ? ' in-range' : '';
+	const isInRangeClass = !props.isHidden && !props.isDead && props.isInRange ? ' in-range' : '';
 	return (
 		<img id={props.id}
 			 alt={props.classes}
