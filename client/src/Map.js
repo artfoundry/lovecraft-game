@@ -873,15 +873,15 @@ class Map extends React.Component {
 
 			if (allPlayersCoords.includes(tilePos)) {
 				allClasses += ' very-bright-light black-light';
-			} else if (lineOfSightTiles.oneAway.floors[tilePos] || lineOfSightTiles.oneAway.walls[tilePos]) {
+			} else if (lineOfSightTiles.oneAway && (lineOfSightTiles.oneAway.floors[tilePos] || lineOfSightTiles.oneAway.walls[tilePos])) {
 				allClasses += ' bright-light black-light';
-			} else if (lineOfSightTiles.twoAway.floors[tilePos] || lineOfSightTiles.twoAway.walls[tilePos]) {
+			} else if (lineOfSightTiles.twoAway && (lineOfSightTiles.twoAway.floors[tilePos] || lineOfSightTiles.twoAway.walls[tilePos])) {
 				allClasses += ' bright-med-light black-light';
-			} else if (lineOfSightTiles.threeAway.floors[tilePos] || lineOfSightTiles.threeAway.walls[tilePos]) {
+			} else if (lineOfSightTiles.threeAway && (lineOfSightTiles.threeAway.floors[tilePos] || lineOfSightTiles.threeAway.walls[tilePos])) {
 				allClasses += ' med-light black-light';
-			} else if (lineOfSightTiles.fourAway.floors[tilePos] || lineOfSightTiles.fourAway.walls[tilePos]) {
+			} else if (lineOfSightTiles.fourAway && (lineOfSightTiles.fourAway.floors[tilePos] || lineOfSightTiles.fourAway.walls[tilePos])) {
 				allClasses += ' med-low-light black-light';
-			} else if (lineOfSightTiles.fiveAway.floors[tilePos] || lineOfSightTiles.fiveAway.walls[tilePos]) {
+			} else if (lineOfSightTiles.fiveAway && (lineOfSightTiles.fiveAway.floors[tilePos] || lineOfSightTiles.fiveAway.walls[tilePos])) {
 				allClasses += ' low-light black-light';
 			} else if (this.state.playerVisited[tilePos]) {
 				allClasses += ' ambient-light black-light';
@@ -1200,8 +1200,6 @@ class Map extends React.Component {
 	 * @private
 	 */
 	_moveCreature() {
-		const MIN_SEARCH_DIST = 1;
-		const MAX_SEARCH_DIST = 5;
 		const creatureID = this.props.activeCharacter;
 		const creatureData = this.props.mapCreatures[creatureID];
 		let creatureDidAct = false;
@@ -1217,18 +1215,18 @@ class Map extends React.Component {
 
 			let newCreatureCoordsArray = [];
 			let playerPos = '';
-			let playerDistance = -1;
 			let targetPlayerID = '';
 			let targetPlayerPos = '';
-			let targetPlayerDistance = 10; //dummy value
-			let targetPlayerData = this.props.playerCharacters['privateEye'];
+			let targetPlayerDistance = null;
+			let targetPlayerData = {};
 
 			// find closest player for creature to focus on
 			for (const [playerID, playerData] of Object.entries(this.props.playerCharacters)) {
 				playerPos = `${playerData.coords.xPos}-${playerData.coords.yPos}`;
+				let playerDistance = 0;
 				let searchDistance = 0;
 				let tileAtSearchDistance = tilesToSearch[searchDistance];
-				while (playerDistance === -1 && searchDistance < tilesToSearch.length) {
+				while (playerDistance === 0 && searchDistance < tilesToSearch.length) {
 					if (creatureData.perception >= searchDistance + 1 && tileAtSearchDistance.floors[playerPos]) {
 						playerDistance = searchDistance + 1;
 					}
@@ -1236,15 +1234,16 @@ class Map extends React.Component {
 					tileAtSearchDistance = tilesToSearch[searchDistance];
 				}
 
-				if (playerDistance < targetPlayerDistance) {
+				if (playerDistance > 0 && (!targetPlayerDistance || playerDistance < targetPlayerDistance)) {
 					targetPlayerDistance = playerDistance;
 					targetPlayerPos = playerPos;
 					targetPlayerID = playerID;
 					targetPlayerData = playerData;
 				}
 			}
-			// if a player char is nearby...
-			if (targetPlayerDistance >= MIN_SEARCH_DIST && targetPlayerDistance <= MAX_SEARCH_DIST) {
+
+			// if a nearby PC was found
+			if (targetPlayerDistance) {
 				// if creature is low on health
 				if (creatureData.currentHP < (creatureData.startingHP * this.creatureSurvivalHpPercent)) {
 					// if player char is within attack range, then attack
@@ -1253,14 +1252,14 @@ class Map extends React.Component {
 						this.props.mapCreatures[creatureID].attack(targetPlayerID, targetPlayerData, this.props.updateCharacters, this.props.updateLog);
 					}
 					// then move away from player
-					for (let i=1; i <= creatureData.moveSpeed; i++) {
+					for (let i = 1; i <= creatureData.moveSpeed; i++) {
 						creatureCoords = this._findNewCreatureCoordsRelativeToChar(creatureCoords, -1);
 						newCreatureCoordsArray.push(creatureCoords);
 						// this.props.updateLog(`Moving ${creatureID} away from player to ${JSON.stringify(newCreatureCoordsArray)}`);
 					}
 					this._storeNewCreatureCoords(creatureID, newCreatureCoordsArray, this.props.updateCurrentTurn);
-				// or if player is out of attack range, move closer
-				} else if (targetPlayerDistance > creatureData.range && targetPlayerDistance <= creatureData.perception) {
+					// or if player is out of attack range, move closer
+				} else if (targetPlayerDistance > creatureData.range) {
 					let moves = 1;
 					while (moves <= creatureData.moveSpeed && targetPlayerDistance > creatureData.range) {
 						creatureCoords = this._findNewCreatureCoordsRelativeToChar(creatureCoords, 1);
@@ -1278,7 +1277,7 @@ class Map extends React.Component {
 							this.props.updateCurrentTurn();
 						}
 					});
-				// otherwise player is in attack range, so attack
+					// otherwise player is in attack range, so attack
 				} else {
 					this.props.updateLog(`${creatureID} attacks player at ${JSON.stringify(targetPlayerPos)}`);
 					this.props.mapCreatures[creatureID].attack(targetPlayerID, targetPlayerData, this.props.updateCharacters, this.props.updateLog, this.props.updateCurrentTurn);
@@ -1286,6 +1285,7 @@ class Map extends React.Component {
 				}
 				creatureDidAct = true;
 			}
+
 			// For creatures that don't act, still need to advance turn
 			if (!creatureDidAct) {
 				this.props.updateCurrentTurn();
