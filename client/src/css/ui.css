@@ -153,22 +153,35 @@
 .character-info-container {
 	grid-area: characterInfo;
 	padding: 10px;
+	border: 2px solid cornflowerblue;
+	border-left: 0;
+	border-radius: 0 5px 5px 0;
+	box-sizing: border-box;
 	overflow-y: auto;
+	opacity: 0.6;
 }
 
 .creature-info-container {
 	grid-area: craetureInfo;
 	padding: 10px;
+	border: 2px solid cornflowerblue;
+	border-right: 0;
+	border-radius: 5px 0 0 5px;
+	box-sizing: border-box;
 	overflow-y: auto;
+	opacity: 0.6;
 }
 
 .control-bar-container {
 	grid-area: controlBar;
 	display: flex;
 	justify-self: center;
+	width: 100%;
 	border: 2px solid cornflowerblue;
 	border-bottom: 0;
 	border-radius: 5px 5px 0 0;
+	box-sizing: border-box;
+	opacity: 0.6;
 }
 
 .character-control-container {
@@ -177,7 +190,6 @@
 	justify-content: space-evenly;
 	align-items: center;
 	flex-basis: 100%;
-	background-color: gray;
 	padding: 5px;
 	border-left: 1px solid cornflowerblue;
 	border-right: 1px solid cornflowerblue;
