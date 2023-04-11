@@ -1489,7 +1489,7 @@ class Map extends React.Component {
 	// Add below for testing: <button onClick={this.resetMap}>Reset</button>
 	render() {
 		return (
-			<div className="world" style={{width: `${Math.floor(window.outerWidth/this.tileSize) * this.tileSize}px`}}>
+			<div className="world">
 				<div className="map" style={this.state.mapPosition}>
 					{ this.state.mapLayoutDone && <this.createAllMapPieces /> }
 				</div>
