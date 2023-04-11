@@ -17,7 +17,7 @@ class Game extends React.Component {
 	constructor(props) {
 		super(props);
 
-		this.initialDialogContent = 'Find the stairs down to enter a new dungeon! Use mouse or arrow keys to move and space bar to open/close doors.';
+		this.initialDialogContent = 'Find the stairs down to enter a new dungeon! Click/tap or use arrow keys to move.';
 		this.startingLocation = 'catacombs';
 		this.startingPlayerCharacters = ['privateEye', 'archaeologist'];
 		this.playerMovesLimit = 3;
