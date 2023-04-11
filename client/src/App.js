@@ -180,11 +180,12 @@ class Game extends React.Component {
 				const showDialog = true;
 				const dialogContent = `${this.state.playerCharacters[this.state.activeCharacter].name} has no more actions this turn`;
 				const closeButtonText = 'Ok';
+				const closeButtonCallback = null;
 				const actionButtonVisible = false;
 				const actionButtonText = '';
 				const actionButtonCallback = null;
 				const dialogClasses = '';
-				this.setShowDialogProps(showDialog, dialogContent, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses);
+				this.setShowDialogProps(showDialog, dialogContent, closeButtonText, closeButtonCallback, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses);
 				return;
 			}
 
@@ -234,14 +235,15 @@ class Game extends React.Component {
 	 * @param showDialog: boolean
 	 * @param dialogContent: string
 	 * @param closeButtonText: string
+	 * @param closeButtonCallback: function
+	 * @param disableCloseButton: boolean
 	 * @param actionButtonVisible: boolean
 	 * @param actionButtonText: string
 	 * @param actionButtonCallback: function
 	 * @param dialogClasses: string
-	 * @param disableCloseButton: boolean
 	 */
-	setShowDialogProps = (showDialog, dialogContent, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses, disableCloseButton) => {
-		this.setState({showDialog, dialogProps: {dialogContent, closeButtonText, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses, disableCloseButton}});
+	setShowDialogProps = (showDialog, dialogContent, closeButtonText, closeButtonCallback, disableCloseButton, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses) => {
+		this.setState({showDialog, dialogProps: {dialogContent, closeButtonText, closeButtonCallback, disableCloseButton, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses}});
 	}
 
 

@@ -85,15 +85,20 @@ function DialogWindow(props) {
 				{!props.disableCloseButton &&
 				<button className="dialog-button"
 				        onClick={() => {
-							props.closeButtonCallback();
+					        props.closeDialogCallback();
+							if (props.closeButtonCallback) {
+								props.closeButtonCallback();
+							}
 						}}>
 					{props.closeButtonText}
 				</button> }
 				<button
 					className={`dialog-button ${props.actionButtonVisible ? '' : 'hide'}`}
 					onClick={() => {
-						props.actionButtonCallback();
-						props.closeButtonCallback();
+						props.closeDialogCallback();
+						if (props.actionButtonCallback) {
+							props.actionButtonCallback();
+						}
 					}}>
 					{props.actionButtonText}
 				</button>

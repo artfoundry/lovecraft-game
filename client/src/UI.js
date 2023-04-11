@@ -17,11 +17,12 @@ class UI extends React.Component {
 				classes={this.props.dialogProps.dialogClasses}
 				dialogContent={this.props.dialogProps.dialogContent}
 				closeButtonText={this.props.dialogProps.closeButtonText}
+				closeButtonCallback={this.props.dialogProps.closeButtonCallback}
+				disableCloseButton={this.props.dialogProps.disableCloseButton}
 				actionButtonVisible={this.props.dialogProps.actionButtonVisible}
 				actionButtonText={this.props.dialogProps.actionButtonText}
 				actionButtonCallback={this.props.dialogProps.actionButtonCallback}
-				disableCloseButton={this.props.dialogProps.disableCloseButton}
-				closeButtonCallback={this.closeDialog} />
+				closeDialogCallback={this.closeDialog} />
 		)
 	}
 
