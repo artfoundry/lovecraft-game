@@ -19,7 +19,7 @@ class Game extends React.Component {
 
 		this.initialDialogContent = 'Find the stairs down to enter a new dungeon! Click/tap or use arrow keys to move.';
 		this.startingLocation = 'catacombs';
-		this.startingPlayerCharacters = ['privateEye', 'archaeologist'];
+		this.startingPlayerCharacters = ['privateEye', 'archaeologist', 'chemist'];
 		this.playerMovesLimit = 3;
 		this.playerActionsLimit = 1;
 
@@ -31,6 +31,7 @@ class Game extends React.Component {
 			gameSetupComplete: false,
 			playerCharacters: {},
 			pcTypes: PlayerCharacterTypes,
+			playerFollowOrder: [],
 			mapCreatures: {},
 			unitsTurnOrder: [],
 			currentTurn: 0,
@@ -166,8 +167,8 @@ class Game extends React.Component {
 		this.setState({isInCombat}, () => {
 			if (!isInCombat) {
 				this._resetCounters(callback);
-			} else if (callback) {
-				callback();
+			} else {
+				this.updateCurrentTurn(true, callback);
 			}
 		});
 	}
@@ -260,11 +261,13 @@ class Game extends React.Component {
 	 * Increments and sets to state the current turn number (or resets if on last turn of unitTurnOrder),
 	 * as well as resets number of moves and actions taken by the active PC
 	 * then calls function to update what is the active character
+	 * @param startTurns: boolean (true if starting turns, ie. combat just started)
+	 * @param callback: function
 	 */
-	updateCurrentTurn = () => {
-		const currentTurn = this.state.currentTurn === this.state.unitsTurnOrder.length - 1 ? 0 : this.state.currentTurn + 1;
+	updateCurrentTurn = (startTurns = false, callback) => {
+		const currentTurn = startTurns || this.state.currentTurn === this.state.unitsTurnOrder.length - 1 ? 0 : this.state.currentTurn + 1;
 		this.setState({currentTurn, activePlayerActionsCompleted: 0, activePlayerMovesCompleted: 0}, () => {
-			this.updateActiveCharacter();
+			this.updateActiveCharacter(callback);
 		});
 	}
 
@@ -302,15 +305,18 @@ class Game extends React.Component {
 
 	/**
 	 * Updates to state what character is active (PC or NPC)
-	 * @param callback: function (at start, sets flag that chars are placed, then for PCs moves map to center)
+	 * @param callback: function (optional - at start, sets flag that chars are placed, then for PCs moves map to center)
 	 * @param id: String (optional)
 	 */
-	updateActiveCharacter = (callback, id = null) => {
+	updateActiveCharacter = (callback = null, id = null) => {
 		const currentTurnUnitInfo = Object.values(this.state.unitsTurnOrder[this.state.currentTurn])[0];
-		this.setState({activeCharacter: id || currentTurnUnitInfo.id}, () => {
-			if (callback) {
-				callback();
-			}
+		let playerFollowOrder = [...this.state.playerFollowOrder];
+		if (!this.state.isInCombat) {
+			let newLeader = playerFollowOrder.splice(playerFollowOrder.indexOf(id), 1)[0];
+			playerFollowOrder.unshift(newLeader);
+		}
+		this.setState({activeCharacter: id || currentTurnUnitInfo.id, playerFollowOrder}, () => {
+			if (callback) callback();
 		});
 	}
 
@@ -339,10 +345,12 @@ class Game extends React.Component {
 	 */
 	_setupPlayerCharacters() {
 		let playerCharacters = {};
+		let playerFollowOrder = [];
 		this.startingPlayerCharacters.forEach(character => {
 			playerCharacters[character] = new Character(PlayerCharacterTypes[character]);
+			playerFollowOrder.push(character);
 		});
-		this.setState({playerCharacters});
+		this.setState({playerCharacters, playerFollowOrder});
 	}
 
 	/**
@@ -433,7 +441,7 @@ class Game extends React.Component {
 	 */
 	_resetCounters(callback) {
 		this.setState({activePlayerMovesCompleted: 0, activePlayerActionsCompleted: 0, currentTurn: 0}, () => {
-			if (callback) callback();
+			this.updateActiveCharacter(callback, this.state.playerFollowOrder[0]);
 		});
 	}
 
@@ -625,6 +633,7 @@ class Game extends React.Component {
 						updateThreatList={this.updateThreatList}
 						threatList={this.state.threatList}
 						isInCombat={this.state.isInCombat}
+						playerFollowOrder={this.state.playerFollowOrder}
 					/>
 				}
 

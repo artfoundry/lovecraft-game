@@ -47,6 +47,7 @@ class Map extends React.Component {
 			pcTypes: this.props.pcTypes,
 			playerPlaced: false,
 			playerVisited: {},
+			followModeMoves: [],
 			mapLayout: {},
 			mapLayoutDone: false,
 			mapPosition: {},
@@ -1157,16 +1158,17 @@ class Map extends React.Component {
 	 *******************/
 
 	/**
-	 * Determines if user's key/tap/click movement command is valid, and if so, updates coords for the active PC
-	 * then calls _moveMap to keep the active PC centered on screen
+	 * Determines if user's key/tap/click movement command is valid, and if so, updates coords for the active PC,
+	 * then calls _moveMap to keep the active PC centered on screen,
+	 * then if in combat, updates the threatList, and if not, calls moveCharacter again to move followers
 	 * @param newTilePos: String
 	 */
-	moveCharacter = (newTilePos) => {
-		const activePC = this.props.playerCharacters[this.props.activeCharacter];
-		if (this.props.activePlayerMovesCompleted >= this.props.playerMovesLimit) {
+	moveCharacter = (newTilePos, pcToMove = null) => {
+		const activePcData = this.props.playerCharacters[this.props.activeCharacter];
+		if (this.props.isInCombat && this.props.activePlayerMovesCompleted >= this.props.playerMovesLimit) {
 			const showDialog = true;
 			const dialogProps = {
-				dialogContent: `${activePC.name} has no more moves this turn`,
+				dialogContent: `${activePcData.name} has no more moves this turn`,
 				closeButtonText: 'Ok',
 				closeButtonCallback: null,
 				disableCloseButton: false,
@@ -1179,9 +1181,11 @@ class Map extends React.Component {
 			return;
 		}
 		let newCoords = newTilePos.split('-');
+		let playerPositions = this.props.getAllCharactersPos('player', 'pos');
+		const activePC = this.props.isInCombat ? this.props.activeCharacter : pcToMove ? pcToMove : this.props.activeCharacter;
 
-		// if (activePC) {
-		// 	this.props.updateLog(`NEW TURN: Player ${activePC.name} moves to ${newCoords[0]}, ${newCoords[1]}`);
+		// if (activePcData) {
+		// 	this.props.updateLog(`NEW TURN: Player ${activePcData.name} moves to ${newCoords[0]}, ${newCoords[1]}`);
 		// }
 
 		// Find all visited tiles for determining lighting
@@ -1189,27 +1193,65 @@ class Map extends React.Component {
 
 		// Find any creatures in range that could be a threat
 		const creaturePositions = this.props.getAllCharactersPos('creature', 'pos');
-		let playerPositions = this.props.getAllCharactersPos('player', 'pos');
-		const activePlayerIndex = playerPositions.findIndex(element => element.id === this.props.activeCharacter);
+		const activePlayerIndex = playerPositions.findIndex(element => element.id === activePC);
 		playerPositions[activePlayerIndex].pos = newTilePos;
 		const threatLists = this._findChangesToNearbyThreats(playerPositions, creaturePositions);
 
+		const followModeMoves = [...this.state.followModeMoves];
+		// only update followModeMoves if we're moving the leader
+		// newest pos at end, oldest pos at beginning of array
+		if (!this.props.isInCombat && activePC === this.props.activeCharacter) {
+			followModeMoves.push(newTilePos);
+			if (followModeMoves.length === 6) {
+				followModeMoves.shift();
+			}
+		}
 		const coordData = {coords: {xPos: +newCoords[0], yPos: +newCoords[1]}};
-		this.props.updateCharacters('player', coordData, this.props.activeCharacter, false, false, () => {
+		this.props.updateCharacters('player', coordData, activePC, false, false, () => {
 			this.setState(prevState => ({
 				playerVisited: playerVisitedUpdatedState || {...prevState.playerVisited},
-				playerPlaced: true
+				playerPlaced: true,
+				followModeMoves
 			}), () => {
 				this._moveMap();
 				this._checkForExit();
+				const isCurrentlyInCombat = this.props.isInCombat;
 				if (threatLists.threatListToAdd.length > 0 || threatLists.threatListToRemove.length > 0) {
 					this.props.updateThreatList(threatLists.threatListToAdd, threatLists.threatListToRemove, () => {
-						if (this.props.isInCombat) {
+						// need to use preset value so if just now coming across threats, won't update player move count
+						if (isCurrentlyInCombat) {
 							this.props.updateActivePlayerMoves();
 						}
 					})
 				} else if (this.props.isInCombat) {
 					this.props.updateActivePlayerMoves();
+				} else if (!this.props.isInCombat) {
+					// if leader has moved at least 3x, there is at least 1 follower, and pc just moved was the leader,
+					// then call moveCharacter to update first follower to 3rd pos in followModeMoves array
+					if (this.state.followModeMoves.length >= 3 && this.props.playerFollowOrder.length >= 1 && !pcToMove) {
+						let newFollowerPos = this.state.followModeMoves.length === 3 ? this.state.followModeMoves[0] : this.state.followModeMoves[2];
+						// if leader is in the 3rd pos of followModMoves (like he double backed), change follower's pos to 2nd in list
+						if (newTilePos === newFollowerPos) {
+							newFollowerPos = this.state.followModeMoves.length === 3 ? this.state.followModeMoves[1] : this.state.followModeMoves[3];
+						}
+						if (newFollowerPos === playerPositions.find(player => player.id === this.props.playerFollowOrder[2]).pos) {
+							newFollowerPos = this.state.followModeMoves[1];
+						}
+						this.moveCharacter(newFollowerPos, this.props.playerFollowOrder[1]);
+
+					// if leader has moved 5x, there are 2 followers, and 1st follower was just moved,
+					// then call moveCharacter to update second follower to 1st pos in followModeMoves array
+					} else if (this.state.followModeMoves.length === 5 && this.props.playerFollowOrder.length === 3 && pcToMove === this.props.playerFollowOrder[1]) {
+						let newFollowerPos = this.state.followModeMoves[0];
+						// if 1st follower is in the 1st pos of followModMoves, change follower's pos to 2nd in list
+						if (newTilePos === newFollowerPos) {
+							newFollowerPos = this.state.followModeMoves[1];
+						}
+						if (newFollowerPos === playerPositions.find(player => player.id === this.props.playerFollowOrder[0]).pos) {
+							newFollowerPos = this.state.followModeMoves[2];
+						}
+						this.moveCharacter(newFollowerPos, this.props.playerFollowOrder[2]);
+					}
 				}
 			});
 		});
