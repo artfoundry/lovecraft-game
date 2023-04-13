@@ -46,12 +46,15 @@ class Game extends React.Component {
 			selectedCharacter: '',
 			selectedCreature: '',
 			weaponButtonSelected: {},
-			isInCombat: false,
+			isInCombat: true, // start in tactical mode any time entering a new area
+			threatList: [],
 			logText: [],
 			showDialog: true,
 			dialogProps: {
 				dialogContent: this.initialDialogContent,
 				closeButtonText: 'Close',
+				closeButtonCallback: null,
+				disableCloseButton: false,
 				actionButtonVisible: false,
 				actionButtonText: '',
 				actionButtonCallback:  null,
@@ -154,6 +157,58 @@ class Game extends React.Component {
 	}
 
 	/**
+	 * Saves to state whether game is in combat/tactical mode or not,
+	 * then if not, calls resetCounters
+	 * @param isInCombat: boolean
+	 * @param callback: function
+	 */
+	toggleCombatState = (isInCombat, callback) => {
+		this.setState({isInCombat}, () => {
+			if (!isInCombat) {
+				this._resetCounters(callback);
+			} else if (callback) {
+				callback();
+			}
+		});
+	}
+
+	/**
+	 * Adds IDs to or removes IDs from threat list and saves list to state,
+	 * then if there's a change in the list, calls toggleCombatState
+	 * This is the primary entry point for changing/determining whether game is in Follow mode or Tactical mode
+	 * @param threatIdsToAdd: Array (of strings - IDs of creatures attacking player)
+	 * @param threatIdsToRemove: Array (of strings - IDs of creatures no longer a threat)
+	 * @param callback: function
+	 */
+	updateThreatList = (threatIdsToAdd, threatIdsToRemove, callback) => {
+		const nonUpdatedListSize = this.state.threatList.length;
+		let updatedList = [...this.state.threatList];
+
+		if (threatIdsToAdd.length > 0) {
+			threatIdsToAdd.forEach(id => {
+				if (!updatedList.includes(id)) {
+					updatedList.push(id);
+				}
+			});
+		}
+		if (threatIdsToRemove.length > 0) {
+			threatIdsToRemove.forEach(id => {
+				if (updatedList.includes(id)) {
+					updatedList.splice(updatedList.indexOf(id), 1);
+				}
+			});
+		}
+		this.setState({threatList: updatedList}, () => {
+			if (nonUpdatedListSize !== updatedList.length && (nonUpdatedListSize === 0 || updatedList.length === 0)) {
+				const isInCombat = updatedList.length > 0;
+				this.toggleCombatState(isInCombat, callback);
+			} else if (callback) {
+				callback();
+			}
+		});
+	}
+
+	/**
 	 * Updates to state what PC weapon is selected in the UI
 	 * @param characterId: String
 	 * @param weaponName: String
@@ -176,29 +231,26 @@ class Game extends React.Component {
 	 */
 	handleUnitClick = (id, type, isInRange) => {
 		if (Object.keys(this.state.weaponButtonSelected).length > 0 && isInRange) {
-			if (this.state.activePlayerActionsCompleted === this.playerActionsLimit) {
-				const showDialog = true;
-				const dialogContent = `${this.state.playerCharacters[this.state.activeCharacter].name} has no more actions this turn`;
-				const closeButtonText = 'Ok';
-				const closeButtonCallback = null;
-				const actionButtonVisible = false;
-				const actionButtonText = '';
-				const actionButtonCallback = null;
-				const dialogClasses = '';
-				this.setShowDialogProps(showDialog, dialogContent, closeButtonText, closeButtonCallback, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses);
-				return;
-			}
-
 			// clicked unit is getting attacked
-			const selectedWeaponInfo = this.state.weaponButtonSelected;
-
-			this.state.playerCharacters[this.state.activeCharacter].attack(selectedWeaponInfo.stats, id, this.state.mapCreatures[id], this.updateCharacters, this.updateLog);
-			this._animateCharacter();
-			this.toggleWeapon(selectedWeaponInfo.characterId, selectedWeaponInfo.weaponName);
-			if (this.state.mapCreatures[id].currentHP <= 0) {
-				this._removeDeadFromTurnOrder(id);
+			const proceedWithAttack = () => {
+				const selectedWeaponInfo = this.state.weaponButtonSelected;
+				this._animateCharacter();
+				this.state.playerCharacters[this.state.activeCharacter].attack(selectedWeaponInfo.stats, id, this.state.mapCreatures[id], this.updateCharacters, this.updateLog);
+				this.toggleWeapon(selectedWeaponInfo.characterId, selectedWeaponInfo.weaponName);
+				if (this.state.mapCreatures[id].currentHP <= 0) {
+					this._removeDeadFromTurnOrder(id, this._updateActivePlayerActions);
+				} else {
+					this._updateActivePlayerActions();
+				}
 			}
-			this._updateActivePlayerActions();
+			if (!this.state.isInCombat) {
+				// not currently necessary to update list as must see creature to attack it, so would already be in list/in combat
+				// but if we add some way later of attacking creature not seen (like an area of effect spell), and it somehow
+				// discovers where player is, then it becomes a threat and will need to call this
+				this.updateThreatList([id], [], proceedWithAttack);
+			} else {
+				proceedWithAttack();
+			}
 		} else {
 			this._updateUnitSelectionStatus(id, type);
 		}
@@ -212,7 +264,7 @@ class Game extends React.Component {
 	updateCurrentTurn = () => {
 		const currentTurn = this.state.currentTurn === this.state.unitsTurnOrder.length - 1 ? 0 : this.state.currentTurn + 1;
 		this.setState({currentTurn, activePlayerActionsCompleted: 0, activePlayerMovesCompleted: 0}, () => {
-			this._updateActiveCharacter();
+			this.updateActiveCharacter();
 		});
 	}
 
@@ -233,17 +285,33 @@ class Game extends React.Component {
 	 * Sets props for main dialog window. showDialog determines whether dialog is shown
 	 * and rest determine dialog content
 	 * @param showDialog: boolean
-	 * @param dialogContent: string
-	 * @param closeButtonText: string
-	 * @param closeButtonCallback: function
-	 * @param disableCloseButton: boolean
-	 * @param actionButtonVisible: boolean
-	 * @param actionButtonText: string
-	 * @param actionButtonCallback: function
-	 * @param dialogClasses: string
+	 * @param dialogProps: object: {
+	 *      dialogContent: string
+	 *      closeButtonText: string
+	 *      closeButtonCallback: function
+	 *      disableCloseButton: boolean
+	 *      actionButtonVisible: boolean
+	 *      actionButtonText: string
+	 *      actionButtonCallback: function
+	 *      dialogClasses: string
+	 * }
 	 */
-	setShowDialogProps = (showDialog, dialogContent, closeButtonText, closeButtonCallback, disableCloseButton, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses) => {
-		this.setState({showDialog, dialogProps: {dialogContent, closeButtonText, closeButtonCallback, disableCloseButton, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses}});
+	setShowDialogProps = (showDialog, dialogProps) => {
+		this.setState({showDialog, dialogProps});
+	}
+
+	/**
+	 * Updates to state what character is active (PC or NPC)
+	 * @param callback: function (at start, sets flag that chars are placed, then for PCs moves map to center)
+	 * @param id: String (optional)
+	 */
+	updateActiveCharacter = (callback, id = null) => {
+		const currentTurnUnitInfo = Object.values(this.state.unitsTurnOrder[this.state.currentTurn])[0];
+		this.setState({activeCharacter: id || currentTurnUnitInfo.id}, () => {
+			if (callback) {
+				callback();
+			}
+		});
 	}
 
 
@@ -354,7 +422,18 @@ class Game extends React.Component {
 		}
 
 		this.setState({unitsTurnOrder}, () => {
-			this._updateActiveCharacter(callback);
+			this.updateActiveCharacter(callback);
+		});
+	}
+
+	/**
+	 * Resets turn counters (usually after combat has ended)
+	 * @param callback: function
+	 * @private
+	 */
+	_resetCounters(callback) {
+		this.setState({activePlayerMovesCompleted: 0, activePlayerActionsCompleted: 0, currentTurn: 0}, () => {
+			if (callback) callback();
 		});
 	}
 
@@ -436,25 +515,11 @@ class Game extends React.Component {
 	}
 
 	/**
-	 * Updates to state what character is active (PC or NPC)
-	 * @param callback: function (at start, sets flag that chars are placed, then for PCs moves map to center)
-	 * @private
-	 */
-	_updateActiveCharacter(callback) {
-		const currentTurnUnitInfo = Object.values(this.state.unitsTurnOrder[this.state.currentTurn])[0];
-		this.setState({activeCharacter: currentTurnUnitInfo.id}, () => {
-			if (callback) {
-				callback();
-			}
-		});
-	}
-
-	/**
 	 * Increments and updates to state number of actions the active PC has done,
 	 * then runs callback to update current turn if all moves and actions are done
 	 * @private
 	 */
-	_updateActivePlayerActions() {
+	_updateActivePlayerActions = () => {
 		const activePlayerActionsCompleted = this.state.activePlayerActionsCompleted + 1;
 		this.setState({activePlayerActionsCompleted}, () => {
 			if (this.state.activePlayerMovesCompleted === this.playerMovesLimit && this.state.activePlayerActionsCompleted === this.playerActionsLimit) {
@@ -467,9 +532,10 @@ class Game extends React.Component {
 	 * Updates to state the turn order with the dead unit removed and
 	 * a flag used for indicating if there's an update to creature coords (in Map), such as creature dying
 	 * @param id: String
+	 * @param callback: function
 	 * @private
 	 */
-	_removeDeadFromTurnOrder(id) {
+	_removeDeadFromTurnOrder(id, callback) {
 		let unitsTurnOrder = this.state.unitsTurnOrder;
 		let unitNotFound = true;
 		let index = 0;
@@ -482,6 +548,9 @@ class Game extends React.Component {
 			index++;
 		}
 		this.updateLog(`${id} is dead!`);
+		this.setState({unitsTurnOrder}, () => {
+			this.updateThreatList([], [id], callback);
+		});
 	}
 
 	_animateCharacter() {
@@ -526,6 +595,11 @@ class Game extends React.Component {
 						playerCharacters={this.state.playerCharacters}
 						actionsCompleted={{moves: this.state.activePlayerMovesCompleted, actions: this.state.activePlayerActionsCompleted}}
 						playerLimits={{moves: this.playerMovesLimit, actions: this.playerActionsLimit}}
+						threatList={this.state.threatList}
+						isInCombat={this.state.isInCombat}
+						toggleCombatState={this.toggleCombatState}
+						modeInfo={{isInCombat: this.state.isInCombat, turn: this.state.currentTurn + 1}}
+						updateActiveCharacter={this.updateActiveCharacter}
 					/>
 				}
 
@@ -548,6 +622,9 @@ class Game extends React.Component {
 						updateLog={this.updateLog}
 						handleUnitClick={this.handleUnitClick}
 						weaponButtonSelected={this.state.weaponButtonSelected}
+						updateThreatList={this.updateThreatList}
+						threatList={this.state.threatList}
+						isInCombat={this.state.isInCombat}
 					/>
 				}
 
