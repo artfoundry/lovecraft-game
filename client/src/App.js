@@ -235,7 +235,6 @@ class Game extends React.Component {
 			// clicked unit is getting attacked
 			const proceedWithAttack = () => {
 				const selectedWeaponInfo = this.state.weaponButtonSelected;
-				this._animateCharacter();
 				this.state.playerCharacters[this.state.activeCharacter].attack(selectedWeaponInfo.stats, id, this.state.mapCreatures[id], this.updateCharacters, this.updateLog);
 				this.toggleWeapon(selectedWeaponInfo.characterId, selectedWeaponInfo.weaponName);
 				if (this.state.mapCreatures[id].currentHP <= 0) {
@@ -561,9 +560,6 @@ class Game extends React.Component {
 		});
 	}
 
-	_animateCharacter() {
-
-	}
 
 
 	/***************************

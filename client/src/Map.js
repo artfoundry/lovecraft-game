@@ -1,4 +1,5 @@
 import React from 'react';
+import { useRef } from 'react';
 import MapData from './data/mapData.json';
 import GameLocations from './data/gameLocations.json';
 import CreatureData from './data/creatureTypes.json';
@@ -41,7 +42,8 @@ class Map extends React.Component {
 			catacombs: {}
 		};
 		this.currentMapData = GameLocations[this.props.currentLocation];
-
+		this.charRefs = {};
+		this.charMoveAnimSpeed = '0.5s';
 
 		this.state = {
 			pcTypes: this.props.pcTypes,
@@ -989,13 +991,15 @@ class Map extends React.Component {
 				characterTransform = this._calculateObjectTransform(characterCoords.xPos, characterCoords.yPos);
 			}
 
+			this.charRefs[id] = useRef(null);
 			const numberInID = id.search(/\d/);
 			const idEndIndex = numberInID > -1 ? numberInID : id.length;
 			const idConvertedToClassName = convertCamelToKabobCase(id.substring(0, idEndIndex));
 			characterList.push(
 				<Character
 					id={id}
-					key={id + Math.random()}
+					key={id}
+					charRef={this.charRefs[id]}
 					characterType={characters[id].type}
 					idClassName={idConvertedToClassName}
 					isHidden={creatureIsHidden}
@@ -1007,6 +1011,7 @@ class Map extends React.Component {
 					clickUnit={this.props.handleUnitClick}
 					styles={{
 						transform: `translate(${characterTransform})`,
+						transition: `transform ${this.charMoveAnimSpeed}`,
 						width: Math.round(this.tileSize * this.characterSizePercentage) + 'px',
 						height: Math.round(this.tileSize * this.characterSizePercentage) + 'px',
 						margin: Math.round(this.tileSize / 8) + 'px'
@@ -1158,6 +1163,23 @@ class Map extends React.Component {
 	 *******************/
 
 	/**
+	 * Animates component objects. Not currently in use (using css transitions)
+	 * @param id
+	 * @param props
+	 * @private
+	 */
+	_animateObject(id, props) {
+		const transforms = [
+			{transform: `translate(${this._calculateObjectTransform(props.firstCoords.xPos, props.firstCoords.yPos)})`},
+			{transform: `translate(${this._calculateObjectTransform(props.secondCoords.xPos, props.secondCoords.yPos)})`}
+		];
+		const transformsTiming = {
+			duration: 500
+		};
+		this.charRefs[id].current.animate(transforms, transformsTiming);
+	}
+
+	/**
 	 * Determines if user's key/tap/click movement command is valid, and if so, updates coords for the active PC,
 	 * then calls _moveMap to keep the active PC centered on screen,
 	 * then if in combat, updates the threatList, and if not, calls moveCharacter again to move followers
@@ -1183,6 +1205,7 @@ class Map extends React.Component {
 		let newCoords = newTilePos.split('-');
 		let playerPositions = this.props.getAllCharactersPos('player', 'pos');
 		const activePC = this.props.isInCombat ? this.props.activeCharacter : pcToMove ? pcToMove : this.props.activeCharacter;
+		const oldCoords = {xPos: this.props.playerCharacters[activePC].coords.xPos, yPos: this.props.playerCharacters[activePC].coords.yPos};
 
 		// if (activePcData) {
 		// 	this.props.updateLog(`NEW TURN: Player ${activePcData.name} moves to ${newCoords[0]}, ${newCoords[1]}`);
@@ -1201,9 +1224,9 @@ class Map extends React.Component {
 		// only update followModeMoves if we're moving the leader
 		// newest pos at end, oldest pos at beginning of array
 		if (!this.props.isInCombat && activePC === this.props.activeCharacter) {
-			followModeMoves.push(newTilePos);
-			if (followModeMoves.length === 6) {
-				followModeMoves.shift();
+			followModeMoves.unshift(newTilePos);
+			if (followModeMoves.length === 4) {
+				followModeMoves.pop();
 			}
 		}
 		const coordData = {coords: {xPos: +newCoords[0], yPos: +newCoords[1]}};
@@ -1226,30 +1249,17 @@ class Map extends React.Component {
 				} else if (this.props.isInCombat) {
 					this.props.updateActivePlayerMoves();
 				} else if (!this.props.isInCombat) {
-					// if leader has moved at least 3x, there is at least 1 follower, and pc just moved was the leader,
-					// then call moveCharacter to update first follower to 3rd pos in followModeMoves array
-					if (this.state.followModeMoves.length >= 3 && this.props.playerFollowOrder.length >= 1 && !pcToMove) {
-						let newFollowerPos = this.state.followModeMoves.length === 3 ? this.state.followModeMoves[0] : this.state.followModeMoves[2];
-						// if leader is in the 3rd pos of followModMoves (like he double backed), change follower's pos to 2nd in list
-						if (newTilePos === newFollowerPos) {
-							newFollowerPos = this.state.followModeMoves.length === 3 ? this.state.followModeMoves[1] : this.state.followModeMoves[3];
-						}
-						if (newFollowerPos === playerPositions.find(player => player.id === this.props.playerFollowOrder[2]).pos) {
-							newFollowerPos = this.state.followModeMoves[1];
-						}
+					// strip out the ids to make finding available pos easier
+					const listOfPlayerPos = playerPositions.map(player => player.pos);
+					let newFollowerPos = this.state.followModeMoves.find(pos => !listOfPlayerPos.includes(pos));
+					// if leader has moved at least 2x, there is at least 1 follower, and pc just moved was the leader,
+					// then call moveCharacter to update first follower next avail pos in followModeMoves array
+					if (this.state.followModeMoves.length >= 2 && this.props.playerFollowOrder.length >= 1 && !pcToMove) {
 						this.moveCharacter(newFollowerPos, this.props.playerFollowOrder[1]);
 
-					// if leader has moved 5x, there are 2 followers, and 1st follower was just moved,
-					// then call moveCharacter to update second follower to 1st pos in followModeMoves array
-					} else if (this.state.followModeMoves.length === 5 && this.props.playerFollowOrder.length === 3 && pcToMove === this.props.playerFollowOrder[1]) {
-						let newFollowerPos = this.state.followModeMoves[0];
-						// if 1st follower is in the 1st pos of followModMoves, change follower's pos to 2nd in list
-						if (newTilePos === newFollowerPos) {
-							newFollowerPos = this.state.followModeMoves[1];
-						}
-						if (newFollowerPos === playerPositions.find(player => player.id === this.props.playerFollowOrder[0]).pos) {
-							newFollowerPos = this.state.followModeMoves[2];
-						}
+					// if leader has moved 3x, there are 2 followers, and 1st follower was just moved,
+					// then call moveCharacter to update second follower to next avail pos in followModeMoves array
+					} else if (this.state.followModeMoves.length === 3 && this.props.playerFollowOrder.length === 3 && pcToMove === this.props.playerFollowOrder[1]) {
 						this.moveCharacter(newFollowerPos, this.props.playerFollowOrder[2]);
 					}
 				}

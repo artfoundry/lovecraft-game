@@ -8,6 +8,7 @@ function Character(props) {
 	const isInRangeClass = !props.isHidden && !props.isDead && props.isInRange ? ' in-range' : '';
 	return (
 		<img id={props.id}
+		     ref={props.charRef}
 			 alt={props.classes}
 		     className={props.characterType + ' ' + props.idClassName + isHiddenClass + isSelectedClass + isDeadClass + isInRangeClass}
 		     style={props.styles}
