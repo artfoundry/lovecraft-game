@@ -42,12 +42,12 @@ class Character extends React.Component {
 		}
 		defenseRoll = creatureData.defense + diceRoll(6);
 		isHit = hitRoll >= defenseRoll;
-		updateLog(`Player attacks with ${hitRoll} to hit vs ${defenseRoll} defense`);
+		updateLog(`${this.name} attacks with ${hitRoll} to hit vs ${defenseRoll} defense`);
 		if (isHit) {
 			creatureData.currentHP -= damage;
 			updateCreature('creature', creatureData, creatureId);
 		}
-		updateLog(isHit ? 'Player hits for ' + damage + ' damage' : 'Player misses');
+		updateLog(isHit ? `${this.name} hits for ${damage} damage` : this.name + ' misses');
 	}
 
 	getLightRange() {

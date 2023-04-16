@@ -16,8 +16,8 @@ function CharacterControls(props) {
 	return (
 		<div className='character-control-container'>
 			<div className='character-name font-fancy'>{props.characterName}</div>
-			<div>Moves remaining: {props.movesRemaining}</div>
-			<div>Actions remaining: {props.actionsRemaining}</div>
+			<div>Moves remaining: {props.isActiveCharacter ? props.movesRemaining : ''}</div>
+			<div>Actions remaining: {props.isActiveCharacter ? props.actionsRemaining : ''}</div>
 			<div className='weapon-buttons-container'>{weapons}</div>
 		</div>
 	);
