@@ -9,6 +9,7 @@
 .light-tile {
 	position: absolute;
 	box-sizing: border-box;
+	transition: opacity 0.5s;
 }
 
 .very-bright-light {

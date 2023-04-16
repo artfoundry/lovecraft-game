@@ -11,12 +11,21 @@
 	margin: auto;
 	z-index: 5;
 	pointer-events: none;
+	transition: transform 0.5s;
+}
+
+.player-characters {
+	position: relative;
+	margin: auto;
+	z-index: 3;
+	transition: transform 0.5s;
 }
 
 .creatures {
 	position: relative;
 	margin: auto;
 	z-index: 2;
+	transition: transform 0.5s;
 }
 
 .objects {
@@ -24,12 +33,14 @@
 	margin: auto;
 	z-index: 1;
 	pointer-events: none;
+	transition: transform 0.5s;
 }
 
 .map {
 	position: relative;
 	margin: auto;
 	z-index: 0;
+	transition: transform 0.5s;
 }
 
 .hidden {

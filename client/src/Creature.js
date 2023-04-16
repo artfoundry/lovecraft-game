@@ -48,7 +48,7 @@ class Creature extends React.Component {
 		updateLog(isHit ? `${this.name} hits ${targetData.name} for ${damage} damage` : this.name + ' misses');
 		if (isHit) {
 			targetData.currentHP -= damage;
-			updateTarget('player', targetData, targetID, false, updateTurnCallback);
+			updateTarget('player', targetData, targetID, false, false, updateTurnCallback);
 		} else if (updateTurnCallback) {
 			updateTurnCallback();
 		}

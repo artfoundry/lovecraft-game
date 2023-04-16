@@ -10,5 +10,17 @@
     "ranged": false,
     "rounds": 0,
     "attackType": "manual"
+  },
+  "Pickaxe": {
+    "damage": 2,
+    "ranged": false,
+    "rounds": 0,
+    "attackType": "manual"
+  },
+  "Acid concoction": {
+    "damage": 10,
+    "ranged": true,
+    "rounds": 1,
+    "attackType": "automatic"
   }
 }

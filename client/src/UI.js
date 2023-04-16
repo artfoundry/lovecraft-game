@@ -1,5 +1,5 @@
 import React from 'react';
-import {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, DialogWindow} from './UIElements';
+import {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ModeInfoPanel, DialogWindow} from './UIElements';
 import './css/ui.css';
 
 class UI extends React.Component {
@@ -17,11 +17,12 @@ class UI extends React.Component {
 				classes={this.props.dialogProps.dialogClasses}
 				dialogContent={this.props.dialogProps.dialogContent}
 				closeButtonText={this.props.dialogProps.closeButtonText}
+				closeButtonCallback={this.props.dialogProps.closeButtonCallback}
+				disableCloseButton={this.props.dialogProps.disableCloseButton}
 				actionButtonVisible={this.props.dialogProps.actionButtonVisible}
 				actionButtonText={this.props.dialogProps.actionButtonText}
 				actionButtonCallback={this.props.dialogProps.actionButtonCallback}
-				disableCloseButton={this.props.dialogProps.disableCloseButton}
-				closeButtonCallback={this.closeDialog} />
+				closeDialogCallback={this.closeDialog} />
 		)
 	}
 
@@ -56,6 +57,7 @@ class UI extends React.Component {
 					isActiveCharacter={id === this.props.activeCharacter}
 					movesRemaining={this.props.playerLimits.moves - this.props.actionsCompleted.moves}
 					actionsRemaining={this.props.playerLimits.actions - this.props.actionsCompleted.actions}
+					isInCombat={this.props.isInCombat}
 				/>
 			)
 		}
@@ -71,17 +73,31 @@ class UI extends React.Component {
 	render() {
 		return (
 			<div className="ui-container">
-				{this.props.showDialog && <this.showDialog />}
+				{this.props.showDialog && this.props.dialogProps && <this.showDialog />}
 				<div className="log-container ui-panel">{this.state.logText && <this.addLogLines />}</div>
+				{this.props.modeInfo &&
+					<ModeInfoPanel
+						isInCombat={this.props.modeInfo.isInCombat}
+						toggleCombat={this.props.toggleCombatState}
+						threatList={this.props.threatList}
+						setShowDialogProps={this.props.setShowDialogProps}
+						turnNumber={this.props.modeInfo.turn}
+						players={this.props.playerCharacters}
+						activeCharacter={this.props.activeCharacter}
+						updateActiveCharacter={this.props.updateActiveCharacter}
+					/>
+				}
 				{this.props.characterInfoText &&
 					<CharacterInfoPanel
 						characterIsSelected={this.props.characterIsSelected}
-						characterInfo={this.props.characterInfoText} />
+						characterInfo={this.props.characterInfoText}
+					/>
 				}
 				{this.props.creatureInfoText &&
 					<CreatureInfoPanel
 						creatureIsSelected={this.props.creatureIsSelected}
-						creatureInfo={this.props.creatureInfoText} />
+						creatureInfo={this.props.creatureInfoText}
+					/>
 				}
 				<div className="control-bar-container ui-panel">{this.props.playerCharacters && <this.showControlBar />}</div>
 			</div>

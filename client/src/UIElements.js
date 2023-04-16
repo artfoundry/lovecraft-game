@@ -1,36 +1,27 @@
-import React, {useState} from 'react';
+import React from 'react';
 
 function CharacterControls(props) {
-	const [buttonState, updateButtonState] = useState('');
-	const [waitingTurn, updateWaiting] = useState(false); // to allow time for dom to update End Turn button purely for visual feedback; may not need later
+	const turnButtonState = (props.isActiveCharacter && props.isInCombat) ? '' : ' button-inactive';
 	let weapons = [];
 	props.weaponsProp.forEach(weaponName => {
-		let buttonStateClass = '';
+		let weaponButtonState = (props.isActiveCharacter && props.actionsRemaining > 0) ? '' : ' button-inactive';
 		if (props.weaponButtonSelected.characterId === props.characterId && props.weaponButtonSelected.weaponName === weaponName) {
-			buttonStateClass = ' button-selected';
+			weaponButtonState = ' button-selected';
 		}
 		weapons.push(
-			<div className={'weapon-button' + buttonStateClass} key={weaponName} onClick={() => {
+			<div className={'weapon-button' + weaponButtonState} key={weaponName} onClick={() => {
 				props.toggleWeaponButton(props.characterId, weaponName);
 			}}>{weaponName}</div>
 		);
 	});
-	if (props.isActiveCharacter && !waitingTurn && buttonState === ' button-inactive') {
-		updateButtonState('');
-	}
 	return (
 		<div className='character-control-container'>
 			<div className='character-name font-fancy'>{props.characterName}</div>
 			<div>Moves remaining: {props.movesRemaining}</div>
 			<div>Actions remaining: {props.actionsRemaining}</div>
 			<div className='weapon-buttons-container'>{weapons}</div>
-			<div className={'general-button' + buttonState} onClick={() => {
-				updateButtonState(' button-inactive');
-				updateWaiting(true);
+			<div className={'general-button' + turnButtonState} onClick={() => {
 				props.endTurnCallback();
-				setTimeout(() => {
-					updateWaiting(false);
-				}, 1000);
 			}}>End Turn</div>
 		</div>
 	);
@@ -86,23 +77,79 @@ function CreatureInfoPanel(props) {
 	);
 }
 
+function ModeInfoPanel(props) {
+	const ListOptions = () => {
+		let list = [];
+		for (const [id, player] of Object.entries(props.players)) {
+			list.push(<option key={id} value={id}>{player.name}</option>);
+		}
+		return list;
+	};
+	const cantToggleCombatDialog = {
+		dialogContent: "You can't disable Tactical Mode with creatures still about!",
+		closeButtonText: 'Ok',
+		closeButtonCallback: null,
+		disableCloseButton: false,
+		actionButtonVisible: false,
+		actionButtonText: '',
+		actionButtonCallback:  null,
+		dialogClasses: ''
+	};
+	return (
+		<div className="mode-info-container ui-panel">
+			<div
+				className={`general-button ${props.isInCombat ? 'button-tactical-mode-on' : ''}`}
+				onClick={() => {
+					if (props.isInCombat) {
+						if (props.threatList.length > 0) {
+							props.setShowDialogProps(true, cantToggleCombatDialog);
+						} else {
+							props.toggleCombat(false);
+						}
+					} else {
+						props.toggleCombat(true);
+					}
+				}}>
+				{props.isInCombat ? 'Tactical Mode' : 'Follow Mode'}
+			</div>
+			<div>{props.isInCombat ? `Turn: ${props.turnNumber}` : ''}</div>
+			{!props.isInCombat &&
+				<label>
+					<span>Leader: </span>
+					<select name='leader' value={props.activeCharacter} onChange={e => {
+						props.updateActiveCharacter(null, e.target.value);
+					}}>
+						{props.players && <ListOptions />}
+					</select>
+				</label>
+			}
+		</div>
+	);
+}
+
 function DialogWindow(props) {
 	return (
 		<div className={`dialog ui-panel ${props.classes}`}>
-			<div className="dialog-message">{props.dialogContent}</div>
-			<div className="dialog-buttons">
+			<div className='dialog-message'>{props.dialogContent}</div>
+			<div className='dialog-buttons'>
 				{!props.disableCloseButton &&
-				<button className="dialog-button"
-				        onClick={() => {
+				<button
+					className='dialog-button'
+			        onClick={() => {
+				        props.closeDialogCallback();
+						if (props.closeButtonCallback) {
 							props.closeButtonCallback();
-						}}>
+						}
+					}}>
 					{props.closeButtonText}
 				</button> }
 				<button
 					className={`dialog-button ${props.actionButtonVisible ? '' : 'hide'}`}
 					onClick={() => {
-						props.actionButtonCallback();
-						props.closeButtonCallback();
+						props.closeDialogCallback();
+						if (props.actionButtonCallback) {
+							props.actionButtonCallback();
+						}
 					}}>
 					{props.actionButtonText}
 				</button>
@@ -111,4 +158,4 @@ function DialogWindow(props) {
 	);
 }
 
-export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, DialogWindow};
+export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ModeInfoPanel, DialogWindow};
