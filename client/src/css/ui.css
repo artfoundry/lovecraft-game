@@ -9,13 +9,13 @@
 .ui-container {
 	position: fixed;
 	display: grid;
-	grid-template-columns: 3fr 0 5fr 0 3fr;
+	grid-template-columns: 3fr 0 5fr 1fr 3fr;
 	grid-template-rows: 1.5fr 1fr 2fr 1fr 1.5fr;
 	grid-template-areas:
-	"log log log log log"
-	"characterInfo . . . craetureInfo"
-	"characterInfo . dialog . craetureInfo"
-	"characterInfo . . . craetureInfo"
+	"log log log . modeInfo"
+	"characterInfo . . . creatureInfo"
+	"characterInfo . dialog . creatureInfo"
+	"characterInfo . . . creatureInfo"
 	"controlBar controlBar controlBar controlBar controlBar";
 	width: 100%;
 	height: 100%;
@@ -150,6 +150,17 @@
 	margin: 3px;
 }
 
+.mode-info-container {
+	grid-area: modeInfo;
+	padding: 10px;
+	border: 2px solid cornflowerblue;
+	border-top: 0;
+	border-right: 0;
+	border-radius: 0 0 0 5px;
+	box-sizing: border-box;
+	opacity: 0.6;
+}
+
 .character-info-container {
 	grid-area: characterInfo;
 	padding: 10px;
@@ -162,7 +173,7 @@
 }
 
 .creature-info-container {
-	grid-area: craetureInfo;
+	grid-area: creatureInfo;
 	padding: 10px;
 	border: 2px solid cornflowerblue;
 	border-right: 0;
@@ -207,26 +218,21 @@
 	display: flex;
 }
 
+.general-button {
+	width: fit-content;
+	margin: 5px;
+	padding: 5px;
+	border: 1px solid cornflowerblue;
+	border-radius: 5px;
+	background-color: darkslateblue;
+}
+
 .weapon-button {
 	margin: 5px;
 	padding: 5px;
 	border: 1px solid cornflowerblue;
 	border-radius: 5px;
 	background-color: darkslategray;
-}
-
-.weapon-button:hover {
-	border-color: red;
-	cursor: pointer;
-}
-
-.general-button {
-	width: 100px;
-	margin: 5px;
-	padding: 5px;
-	border: 1px solid cornflowerblue;
-	border-radius: 5px;
-	background-color: darkslateblue;
 }
 
 .general-button:hover {
@@ -242,6 +248,15 @@
 
 .button-selected {
 	background-color: darkred;
+}
+
+.weapon-button:hover {
+	border-color: red;
+	cursor: pointer;
+}
+
+.button-tactical-mode-on {
+	background-color: red;
 }
 
 .hide {

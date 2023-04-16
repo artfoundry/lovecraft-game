@@ -1,11 +1,12 @@
 import React from 'react';
+import { useRef } from 'react';
 import MapData from './data/mapData.json';
 import GameLocations from './data/gameLocations.json';
 import CreatureData from './data/creatureTypes.json';
 import Creature from './Creature';
 import {Exit, LightElement, Character, Tile, Door} from './MapElements';
 import {StoneDoor} from './Audio';
-import {unblockedPathsToNearbyTiles, convertCamelToKabobCase, randomTileMovementValue} from './Utils';
+import {convertCamelToKabobCase, randomTileMovementValue} from './Utils';
 
 /**
  * Map controls entire layout of game elements (objects, tiles, and lighting) as well as movement of players and creatures
@@ -41,12 +42,14 @@ class Map extends React.Component {
 			catacombs: {}
 		};
 		this.currentMapData = GameLocations[this.props.currentLocation];
-
+		this.charRefs = {};
+		this.charMoveAnimSpeed = '0.5s';
 
 		this.state = {
 			pcTypes: this.props.pcTypes,
 			playerPlaced: false,
 			playerVisited: {},
+			followModeMoves: [],
 			mapLayout: {},
 			mapLayoutDone: false,
 			mapPosition: {},
@@ -541,7 +544,12 @@ class Map extends React.Component {
 			}
 		}
 		this.props.updateCharacters('creature', mapCreatures, null, true, false, () => {
-			this.setState({creaturesPlaced: true});
+			this.setState({creaturesPlaced: true}, () => {
+				const creaturePositions = this.props.getAllCharactersPos('creature', 'pos');
+				const playerPositions = this.props.getAllCharactersPos('player', 'pos');
+				const threatLists = this._findChangesToNearbyThreats(playerPositions, creaturePositions);
+				this.props.updateThreatList(threatLists.threatListToAdd, [], null);
+			});
 		});
 	}
 
@@ -592,7 +600,6 @@ class Map extends React.Component {
 			width: size,
 			height: size
 		};
-
 
 		return (<Tile
 			key={tilePos}
@@ -671,7 +678,7 @@ class Map extends React.Component {
 	 * @param tilePos: String
 	 * @param direction: String
 	 */
-	checkIfTileOrObject(tilePos, direction) {
+	checkIfTileOrObject = (tilePos, direction) => {
 		let newPos = tilePos;
 		let tileData = this.state.mapLayout[tilePos];
 		const activePCCoords = this.props.playerCharacters[this.props.activeCharacter].coords;
@@ -729,15 +736,17 @@ class Map extends React.Component {
 			if (tileData.type === 'door') {
 				if (tileData.doorIsOpen) {
 					const showDialog = true;
-					const dialogContent = 'Close the door or move into the doorway?';
-					const closeButtonText = 'Close door';
-					const closeButtonCallback = () => {this.toggleDoor(newPos)};
-					const disableCloseButton = false;
-					const actionButtonVisible = true;
-					const actionButtonText = 'Move';
-					const actionButtonCallback = () => {this.moveCharacter(newPos)};
-					const dialogClasses = '';
-					this.props.setShowDialogProps(showDialog, dialogContent, closeButtonText, closeButtonCallback, disableCloseButton, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses, disableCloseButton);
+					const dialogProps = {
+						dialogContent: 'Close the door or move into the doorway?',
+						closeButtonText: 'Close door',
+						closeButtonCallback: () => {this.toggleDoor(newPos)},
+						disableCloseButton: false,
+						actionButtonVisible: true,
+						actionButtonText: 'Move',
+						actionButtonCallback: () => {this.moveCharacter(newPos)},
+						dialogClasses: ''
+					};
+					this.props.setShowDialogProps(showDialog, dialogProps);
 				} else {
 					this.toggleDoor(newPos);
 				}
@@ -757,15 +766,17 @@ class Map extends React.Component {
 			activePCCoords.yPos === this.state.exitPosition.yPos)
 		{
 			const showDialog = true;
-			const dialogText = 'Do you want to descend to the next level?';
-			const closeButtonText = 'Stay here';
-			const closeButtonCallback = null;
-			const disableCloseButton = false;
-			const actionButtonVisible = true;
-			const actionButtonText = 'Descend';
-			const actionButtonCallback = this.resetMap;
-			const dialogClasses = '';
-			this.props.setShowDialogProps(showDialog, dialogText, closeButtonText, closeButtonCallback, disableCloseButton, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses);
+			const dialogProps = {
+				dialogContent: 'Do you want to descend to the next level?',
+				closeButtonText: 'Stay here',
+				closeButtonCallback: null,
+				disableCloseButton: false,
+				actionButtonVisible: true,
+				actionButtonText: 'Descend',
+				actionButtonCallback: this.resetMap,
+				dialogClasses: ''
+			};
+			this.props.setShowDialogProps(showDialog, dialogProps);
 		}
 	}
 
@@ -777,12 +788,190 @@ class Map extends React.Component {
 	 */
 	isCreatureInRange = (id, weaponData) => {
 		const creatureCoords = this.props.mapCreatures[id].coords;
-		const playerCoords = this.props.playerCharacters[this.props.activeCharacter].coords;
-		let isInRange = true;
-		if (!creatureCoords || (!weaponData.stats.ranged && (Math.abs(creatureCoords.xPos - playerCoords.xPos) > 1 || Math.abs(creatureCoords.yPos - playerCoords.yPos) > 1))) {
-			isInRange = false;
+		const activePC = this.props.playerCharacters[this.props.activeCharacter];
+		const playerCoords = activePC.coords;
+		const playerSight = activePC.lightRange;
+		const visibleTiles = this._unblockedPathsToNearbyTiles(`${playerCoords.xPos}-${playerCoords.yPos}`, playerSight);
+		let isInRangedWeaponRange = false;
+		let isInMeleeRange = false;
+
+		if (creatureCoords) {
+			if (weaponData.stats.ranged) {
+				const creaturePos = `${creatureCoords.xPos}-${creatureCoords.yPos}`;
+				let tiles = [];
+				for (const distance of Object.values(visibleTiles)) {
+					tiles = tiles.concat(Object.keys(distance.floors));
+				}
+				if (tiles.includes(creaturePos)) {
+					isInRangedWeaponRange = true;
+				}
+			} else if (Math.abs(creatureCoords.xPos - playerCoords.xPos) <= 1 && Math.abs(creatureCoords.yPos - playerCoords.yPos) <= 1) {
+				isInMeleeRange = true;
+			}
 		}
-		return isInRange;
+		return isInRangedWeaponRange || isInMeleeRange;
+	}
+
+	/**
+	 * Find all tiles out to 'range' number of rings surrounding center,
+	 * then find tiles of those that have unblocked lines of sight(LOS) to the center
+	 * @param centerTilePos {string} : position of player (ex. '1-2')
+	 * @param range {number} : perception/light radius
+	 * @returns {
+	 *  {
+	 *      oneAway: {floors: {[tilePosString]: {xPos, yPos}}, walls: {[tilePosString]: {xPos, yPos}}},
+	 *      twoAway: {floors: {[tilePosString]: {xPos, yPos}}, walls: {[tilePosString]: {xPos, yPos}}},
+	 *      threeAway: {floors: {[tilePosString]: {xPos, yPos}}, walls: {[tilePosString]: {xPos, yPos}}},
+	 *      etc
+	 *  }
+	 * }
+	 * @private
+	 */
+	_unblockedPathsToNearbyTiles(centerTilePos, range) {
+		const centerTile = this.state.mapLayout[centerTilePos];
+		const numToStr = [null, 'one', 'two', 'three', 'four', 'five'];
+		let nearbyTiles = {};
+		let lineOfSightTiles = {};
+		let minXBoundary = (centerTile.xPos - range) < 0 ? 0 : centerTile.xPos - range;
+		let minYBoundary = (centerTile.yPos - range) < 0 ? 0 : centerTile.yPos - range;
+
+		for (let i=1; i <= range; i++) {
+			const distance = `${numToStr[i]}Away`;
+			if (i > 1) {
+				nearbyTiles[distance] = {floors: {}, walls: {}};
+			}
+			lineOfSightTiles[distance] = {floors: {}, walls: {}};
+		}
+
+		// collect all tiles that are 1-range tiles away from center
+		for (let xCount = minXBoundary; xCount <= centerTile.xPos + range; xCount++) {
+			for (let yCount = minYBoundary; yCount <= centerTile.yPos + range; yCount++) {
+				const tilePos = xCount + '-' + yCount;
+				const currentTile = this.state.mapLayout[tilePos];
+				if (currentTile && tilePos !== centerTilePos) {
+					const horizDeltaFromCenter = Math.abs(centerTile.xPos - currentTile.xPos);
+					const vertDeltaFromCenter = Math.abs(centerTile.yPos - currentTile.yPos);
+					const greaterOrCommonDistance = horizDeltaFromCenter >= vertDeltaFromCenter ? horizDeltaFromCenter : vertDeltaFromCenter;
+					const distance = `${numToStr[greaterOrCommonDistance]}Away`;
+					if (currentTile.type === 'wall' || (currentTile.type === 'door' && !currentTile.doorIsOpen)) {
+						if (greaterOrCommonDistance === 1) {
+							lineOfSightTiles[distance].walls[tilePos] = currentTile;
+						} else {
+							nearbyTiles[distance].walls[tilePos] = currentTile;
+						}
+					} else {
+						if (greaterOrCommonDistance === 1) {
+							lineOfSightTiles[distance].floors[tilePos] = currentTile;
+						} else {
+							nearbyTiles[distance].floors[tilePos] = currentTile;
+						}
+					}
+				}
+			}
+		}
+
+		/**
+		 * Looks at two adjacent tiles, one farther away from character than other,
+		 * and determines if there is Line of Sight (LOS) between them
+		 * @param distance: number
+		 * @param farthestTilePos: string
+		 * @param farthestTileData: object
+		 * @param fartherTileData: object
+		 */
+		const compareTiles = (distance, farthestTilePos, farthestTileData, fartherTileData) => {
+			const distString = `${numToStr[distance]}Away`;
+			const distPlus1String = `${numToStr[distance+1]}Away`;
+			for (const closestTileData of Object.values(lineOfSightTiles[distString].floors)) {
+				const deltaXFartherTiles = Math.abs(distance === 1 ? farthestTileData.xPos - closestTileData.xPos : farthestTileData.xPos - fartherTileData.xPos);
+				const deltaYFartherTiles = Math.abs(distance === 1 ? farthestTileData.yPos - closestTileData.yPos : farthestTileData.yPos - fartherTileData.yPos);
+				const deltaXCloserTiles = Math.abs(distance === 1 ? closestTileData.xPos - centerTile.xPos : fartherTileData.xPos - closestTileData.xPos);
+				const deltaYCloserTiles = Math.abs(distance === 1 ? closestTileData.yPos - centerTile.yPos : fartherTileData.yPos - closestTileData.yPos);
+				const outerTileHasLOS =
+					(deltaXFartherTiles <= 1 && deltaXCloserTiles <= 1 && deltaYFartherTiles === 1) ||
+					(deltaYFartherTiles <= 1 && deltaYCloserTiles <= 1 && deltaXFartherTiles === 1);
+
+				// if one of the 1 away tiles that has line of sight is between the current 2 away tile and center tile...
+				if (outerTileHasLOS)
+				{
+					if (farthestTileData.type === 'wall' || (farthestTileData.type === 'door' && !farthestTileData.doorIsOpen)) {
+						lineOfSightTiles[distPlus1String].walls[farthestTilePos] = farthestTileData;
+					} else {
+						lineOfSightTiles[distPlus1String].floors[farthestTilePos] = farthestTileData;
+					}
+				}
+			}
+		};
+
+		// now find tiles two tiles from center that have line of sight
+		let floorsAndWalls = {...nearbyTiles.twoAway.floors, ...nearbyTiles.twoAway.walls};
+		for (const [twoAwayTilePos, twoAwayTileData] of Object.entries(floorsAndWalls)) {
+			compareTiles(1, twoAwayTilePos, twoAwayTileData);
+		}
+
+		// now find tiles three or more tiles from center that have line of sight
+		for (let dist=3; dist <= range; dist++) {
+			const distString = `${numToStr[dist]}Away`;
+			const distMinus1String = `${numToStr[dist-1]}Away`;
+			floorsAndWalls = {...nearbyTiles[distString].floors, ...nearbyTiles[distString].walls};
+			for (const [farthestTilePos, farthestTileData] of Object.entries(floorsAndWalls)) {
+				for (const fartherTileData of Object.values(lineOfSightTiles[distMinus1String].floors)) {
+					compareTiles(dist-1, farthestTilePos, farthestTileData, fartherTileData);
+				}
+			}
+		}
+
+		return lineOfSightTiles;
+	}
+
+	/**
+	 * Finds all visible/lit tiles within range of all PCs
+	 * @param allPlayersPos: array of objects ({id, pos: '(pos)'}
+	 * @returns object {combined floors/walls from _unblockedPathsToNearbyTiles for all PCs}
+	 * @private
+	 */
+	_getTilesSurroundingAllPCs(allPlayersPos) {
+		let lineOfSightTiles = {};
+		// get all floors/walls around each player
+		allPlayersPos.forEach(player => {
+			const range = this.props.playerCharacters[player.id].lightRange;
+			const tempTiles = this._unblockedPathsToNearbyTiles(player.pos, range);
+			for (const [distance, tiles] of Object.entries(tempTiles)) {
+				if (!lineOfSightTiles[distance]) {
+					lineOfSightTiles[distance] = {floors: {}, walls: {}};
+				}
+				lineOfSightTiles[distance].floors = Object.assign(lineOfSightTiles[distance].floors, tiles.floors);
+				lineOfSightTiles[distance].walls = Object.assign(lineOfSightTiles[distance].walls, tiles.walls);
+			}
+		});
+		return lineOfSightTiles;
+	}
+
+	/**
+	 * Looks at all visible/lit tiles around all PCs and lists all creatures that should be
+	 * added to or removed from the App's threatList
+	 * @param playerPositions: array of player pos data (from getAllCharactersPos in App)
+	 * @param creaturePositions: array of creature pos data (from getAllCharactersPos in App)
+	 * @returns {{threatListToAdd: array, threatListToRemove: array}} (both arrays contain strings (IDs))
+	 * @private
+	 */
+	_findChangesToNearbyThreats(playerPositions, creaturePositions) {
+		const tilesInView = this._getTilesSurroundingAllPCs(playerPositions);
+		let threatLists = {
+			threatListToAdd: [],
+			threatListToRemove: [...this.props.threatList]
+		};
+		for (const tiles of Object.values(tilesInView)) {
+			creaturePositions.forEach(creature => {
+				if (tiles.floors[creature.pos]) {
+					if (!this.props.threatList.includes(creature.id)) {
+						threatLists.threatListToAdd.push(creature.id);
+					} else if (threatLists.threatListToRemove.includes(creature.id)) {
+						threatLists.threatListToRemove.splice(threatLists.threatListToRemove.indexOf(creature.id), 1);
+					}
+				}
+			});
+		}
+		return threatLists;
 	}
 
 	/**
@@ -808,7 +997,7 @@ class Map extends React.Component {
 				const characterPos = characterCoords.xPos + '-' + characterCoords.yPos;
 				creatureIsHidden = true;
 				for (const playerData of Object.values(this.props.playerCharacters)) {
-					lineOfSightTiles = unblockedPathsToNearbyTiles(this.state.mapLayout, `${playerData.coords.xPos}-${playerData.coords.yPos}`, playerData.lightRange);
+					lineOfSightTiles = this._unblockedPathsToNearbyTiles(`${playerData.coords.xPos}-${playerData.coords.yPos}`, playerData.lightRange);
 					for (const tileData of Object.values(lineOfSightTiles)) {
 						if (tileData.floors[characterPos]) {
 							creatureIsHidden = false;
@@ -818,13 +1007,15 @@ class Map extends React.Component {
 				characterTransform = this._calculateObjectTransform(characterCoords.xPos, characterCoords.yPos);
 			}
 
+			this.charRefs[id] = useRef(null);
 			const numberInID = id.search(/\d/);
 			const idEndIndex = numberInID > -1 ? numberInID : id.length;
 			const idConvertedToClassName = convertCamelToKabobCase(id.substring(0, idEndIndex));
 			characterList.push(
 				<Character
 					id={id}
-					key={id + Math.random()}
+					key={id}
+					charRef={this.charRefs[id]}
 					characterType={characters[id].type}
 					idClassName={idConvertedToClassName}
 					isHidden={creatureIsHidden}
@@ -836,6 +1027,7 @@ class Map extends React.Component {
 					clickUnit={this.props.handleUnitClick}
 					styles={{
 						transform: `translate(${characterTransform})`,
+						transition: `transform ${this.charMoveAnimSpeed}`,
 						width: Math.round(this.tileSize * this.characterSizePercentage) + 'px',
 						height: Math.round(this.tileSize * this.characterSizePercentage) + 'px',
 						margin: Math.round(this.tileSize / 8) + 'px'
@@ -937,21 +1129,12 @@ class Map extends React.Component {
 	addLighting = () => {
 		let tiles = [];
 		const allPlayersPos = this.props.getAllCharactersPos('player', 'pos');
-		let lineOfSightTiles = {};
 		let allPlayersCoords = [];
 		allPlayersPos.forEach(player => {
-			const range = this.props.playerCharacters[player.id].lightRange;
-			const tempTiles = unblockedPathsToNearbyTiles(this.state.mapLayout, player.pos, range);
-			for (const [distance, tiles] of Object.entries(tempTiles)) {
-				if (!lineOfSightTiles[distance]) {
-					lineOfSightTiles[distance] = {floors: {}, walls: {}};
-				}
-				lineOfSightTiles[distance].floors = Object.assign(lineOfSightTiles[distance].floors, tiles.floors);
-				lineOfSightTiles[distance].walls = Object.assign(lineOfSightTiles[distance].walls, tiles.walls);
-			}
 			allPlayersCoords.push(player.pos);
 		});
-
+		// get all lit floors/walls around each player
+		let lineOfSightTiles = this._getTilesSurroundingAllPCs(allPlayersPos);
 
 		for (const tilePos of Object.keys(this.state.mapLayout)) {
 			let allClasses = 'light-tile';
@@ -996,43 +1179,106 @@ class Map extends React.Component {
 	 *******************/
 
 	/**
-	 * Determines if user's key/tap/click movement command is valid, and if so, updates coords for the active PC
-	 * then calls _moveMap to keep the active PC centered on screen
+	 * Animates component objects. Not currently in use (using css transitions)
+	 * @param id
+	 * @param props
+	 * @private
+	 */
+	_animateObject(id, props) {
+		const transforms = [
+			{transform: `translate(${this._calculateObjectTransform(props.firstCoords.xPos, props.firstCoords.yPos)})`},
+			{transform: `translate(${this._calculateObjectTransform(props.secondCoords.xPos, props.secondCoords.yPos)})`}
+		];
+		const transformsTiming = {
+			duration: 500
+		};
+		this.charRefs[id].current.animate(transforms, transformsTiming);
+	}
+
+	/**
+	 * Determines if user's key/tap/click movement command is valid, and if so, updates coords for the active PC,
+	 * then calls _moveMap to keep the active PC centered on screen,
+	 * then if in combat, updates the threatList, and if not, calls moveCharacter again to move followers
 	 * @param newTilePos: String
 	 */
-	moveCharacter = (newTilePos) => {
-		const activePC = this.props.playerCharacters[this.props.activeCharacter];
-		if (this.props.activePlayerMovesCompleted === this.props.playerMovesLimit) {
+	moveCharacter = (newTilePos, pcToMove = null) => {
+		const activePcData = this.props.playerCharacters[this.props.activeCharacter];
+		if (this.props.isInCombat && this.props.activePlayerMovesCompleted >= this.props.playerMovesLimit) {
 			const showDialog = true;
-			const dialogText = `${activePC.name} has no more moves this turn`;
-			const closeButtonText = 'Ok';
-			const closeButtonCallback = null;
-			const disableCloseButton = false;
-			const actionButtonVisible = false;
-			const actionButtonText = '';
-			const actionButtonCallback = null;
-			const dialogClasses = '';
-			this.props.setShowDialogProps(showDialog, dialogText, closeButtonText, closeButtonCallback, disableCloseButton, actionButtonVisible, actionButtonText, actionButtonCallback, dialogClasses);
+			const dialogProps = {
+				dialogContent: `${activePcData.name} has no more moves this turn`,
+				closeButtonText: 'Ok',
+				closeButtonCallback: null,
+				disableCloseButton: false,
+				actionButtonVisible: false,
+				actionButtonText: '',
+				actionButtonCallback: null,
+				dialogClasses: ''
+			};
+			this.props.setShowDialogProps(showDialog, dialogProps);
 			return;
 		}
 		let newCoords = newTilePos.split('-');
+		let playerPositions = this.props.getAllCharactersPos('player', 'pos');
+		const activePC = this.props.isInCombat ? this.props.activeCharacter : pcToMove ? pcToMove : this.props.activeCharacter;
+		const oldCoords = {xPos: this.props.playerCharacters[activePC].coords.xPos, yPos: this.props.playerCharacters[activePC].coords.yPos};
 
-		// if (activePC) {
-		// 	this.props.updateLog(`NEW TURN: Player ${activePC.name} moves to ${newCoords[0]}, ${newCoords[1]}`);
+		// if (activePcData) {
+		// 	this.props.updateLog(`NEW TURN: Player ${activePcData.name} moves to ${newCoords[0]}, ${newCoords[1]}`);
 		// }
 
 		// Find all visited tiles for determining lighting
 		const playerVisitedUpdatedState = {...this.state.playerVisited, ...this._findVisitedTiles(newCoords)};
 
+		// Find any creatures in range that could be a threat
+		const creaturePositions = this.props.getAllCharactersPos('creature', 'pos');
+		const activePlayerIndex = playerPositions.findIndex(element => element.id === activePC);
+		playerPositions[activePlayerIndex].pos = newTilePos;
+		const threatLists = this._findChangesToNearbyThreats(playerPositions, creaturePositions);
+
+		const followModeMoves = [...this.state.followModeMoves];
+		// only update followModeMoves if we're moving the leader
+		// newest pos at end, oldest pos at beginning of array
+		if (!this.props.isInCombat && activePC === this.props.activeCharacter) {
+			followModeMoves.unshift(newTilePos);
+			if (followModeMoves.length === 6) {
+				followModeMoves.pop();
+			}
+		}
 		const coordData = {coords: {xPos: +newCoords[0], yPos: +newCoords[1]}};
-		this.props.updateCharacters('player', coordData, this.props.activeCharacter, false, false, () => {
+		this.props.updateCharacters('player', coordData, activePC, false, false, () => {
 			this.setState(prevState => ({
 				playerVisited: playerVisitedUpdatedState || {...prevState.playerVisited},
-				playerPlaced: true
+				playerPlaced: true,
+				followModeMoves
 			}), () => {
 				this._moveMap();
 				this._checkForExit();
-				this.props.updateActivePlayerMoves();
+				const isCurrentlyInCombat = this.props.isInCombat;
+				if (threatLists.threatListToAdd.length > 0 || threatLists.threatListToRemove.length > 0) {
+					this.props.updateThreatList(threatLists.threatListToAdd, threatLists.threatListToRemove, () => {
+						// need to use preset value so if just now coming across threats, won't update player move count
+						if (isCurrentlyInCombat) {
+							this.props.updateActivePlayerMoves();
+						}
+					})
+				} else if (this.props.isInCombat) {
+					this.props.updateActivePlayerMoves();
+				} else if (!this.props.isInCombat) {
+					// strip out the ids to make finding available pos easier
+					const listOfPlayerPos = playerPositions.map(player => player.pos);
+					let newFollowerPos = this.state.followModeMoves.find(pos => !listOfPlayerPos.includes(pos));
+					// if leader has moved at least 2x, there is at least 1 follower, and pc just moved was the leader,
+					// then call moveCharacter to update first follower next avail pos in followModeMoves array
+					if (this.state.followModeMoves.length >= 2 && this.props.playerFollowOrder.length >= 2 && !pcToMove) {
+						this.moveCharacter(newFollowerPos, this.props.playerFollowOrder[1]);
+
+					// if leader has moved 3x, there are 2 followers, and 1st follower was just moved,
+					// then call moveCharacter to update second follower to next avail pos in followModeMoves array
+					} else if (this.state.followModeMoves.length >= 3 && this.props.playerFollowOrder.length === 3 && pcToMove === this.props.playerFollowOrder[1]) {
+						this.moveCharacter(newFollowerPos, this.props.playerFollowOrder[2]);
+					}
+				}
 			});
 		});
 	}
@@ -1112,7 +1358,7 @@ class Map extends React.Component {
 	 * @returns {{yPos, xPos}}
 	 * @private
 	 */
-	_findNewCreatureCoordsRelativeToChar(creatureCoords, directionModifier, targetPlayerPos) {
+	_findNewCreatureCoordsRelativeToChar(creatureCoords, directionModifier, targetPlayerPos = null) {
 		const calcModifiers = (xValue, yValue, xComparison, yComparison) => {
 			let mods = {};
 			if (xValue < xComparison) {
@@ -1215,7 +1461,7 @@ class Map extends React.Component {
 		if (creatureData.currentHP > 0) {
 			let creatureCoords = creatureData.coords;
 			const creaturePos = `${creatureCoords.xPos}-${creatureCoords.yPos}`;
-			const lineOfSightTiles = unblockedPathsToNearbyTiles(this.state.mapLayout, creaturePos, creatureData.perception);
+			const lineOfSightTiles = this._unblockedPathsToNearbyTiles(creaturePos, creatureData.perception);
 			const tilesToSearch = Object.values(lineOfSightTiles);
 			if (tilesToSearch.length === 0) {
 				return;
@@ -1252,6 +1498,13 @@ class Map extends React.Component {
 
 			// if a nearby PC was found
 			if (targetPlayerDistance) {
+				const updateThreatAndCurrentTurn = (forRemoval = false) => {
+					if (forRemoval) {
+						this.props.updateThreatList([], [creatureID], this.props.updateCurrentTurn);
+					} else {
+						this.props.updateThreatList([creatureID], [], this.props.updateCurrentTurn);
+					}
+				}
 				// if creature is low on health
 				if (creatureData.currentHP < (creatureData.startingHP * this.creatureSurvivalHpPercent)) {
 					// if player char is within attack range, then attack
@@ -1265,7 +1518,7 @@ class Map extends React.Component {
 						newCreatureCoordsArray.push(creatureCoords);
 						// this.props.updateLog(`Moving ${creatureID} away from player to ${JSON.stringify(newCreatureCoordsArray)}`);
 					}
-					this._storeNewCreatureCoords(creatureID, newCreatureCoordsArray, this.props.updateCurrentTurn);
+					this._storeNewCreatureCoords(creatureID, newCreatureCoordsArray, () => {updateThreatAndCurrentTurn(true)});
 				// or if player is out of attack range, move closer
 				} else if (targetPlayerDistance > creatureData.range) {
 					let moves = 1;
@@ -1280,7 +1533,7 @@ class Map extends React.Component {
 						// if player char is within attack range, then attack
 						if (targetPlayerDistance <= creatureData.range) {
 							this.props.updateLog(`${creatureID} attacks player at ${JSON.stringify(targetPlayerPos)}`);
-							this.props.mapCreatures[creatureID].attack(targetPlayerID, targetPlayerData, this.props.updateCharacters, this.props.updateLog, this.props.updateCurrentTurn);
+							this.props.mapCreatures[creatureID].attack(targetPlayerID, targetPlayerData, this.props.updateCharacters, this.props.updateLog, updateThreatAndCurrentTurn);
 						} else {
 							this.props.updateCurrentTurn();
 						}
@@ -1288,8 +1541,7 @@ class Map extends React.Component {
 					// otherwise player is in attack range, so attack
 				} else {
 					this.props.updateLog(`${creatureID} attacks player at ${JSON.stringify(targetPlayerPos)}`);
-					this.props.mapCreatures[creatureID].attack(targetPlayerID, targetPlayerData, this.props.updateCharacters, this.props.updateLog, this.props.updateCurrentTurn);
-
+					this.props.mapCreatures[creatureID].attack(targetPlayerID, targetPlayerData, this.props.updateCharacters, this.props.updateLog, updateThreatAndCurrentTurn);
 				}
 				creatureDidAct = true;
 			}
@@ -1377,8 +1629,7 @@ class Map extends React.Component {
 	}
 
 	/**
-	 * Looks to see if a door is near the active player (since user just tried activating a door)
-	 * then opens/closes it (and plays the sound effect for it)
+	 * Toggles door opens/closed (and plays the sound effect for it)
 	 */
 	toggleDoor = (doorTilePos) => {
 
@@ -1392,7 +1643,14 @@ class Map extends React.Component {
 					doorIsOpen: !prevState.mapLayout[doorTilePos].doorIsOpen
 				}
 			}
-		}));
+		}), () => {
+			const allPlayerPos = this.props.getAllCharactersPos('player', 'pos');
+			const creaturePositions = this.props.getAllCharactersPos('creature', 'pos');
+			const threatLists = this._findChangesToNearbyThreats(allPlayerPos, creaturePositions);
+			if (threatLists.threatListToAdd.length > 0 || threatLists.threatListToRemove.length > 0) {
+				this.props.updateThreatList(threatLists.threatListToAdd, threatLists.threatListToRemove);
+			}
+		});
 	}
 
 
