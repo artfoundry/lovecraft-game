@@ -152,6 +152,9 @@
 
 .mode-info-container {
 	grid-area: modeInfo;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
 	padding: 10px;
 	border: 2px solid cornflowerblue;
 	border-top: 0;
@@ -220,7 +223,7 @@
 
 .general-button {
 	width: fit-content;
-	margin: 5px;
+	margin: 5px 0;
 	padding: 5px;
 	border: 1px solid cornflowerblue;
 	border-radius: 5px;

@@ -1,7 +1,6 @@
 import React from 'react';
 
 function CharacterControls(props) {
-	const turnButtonState = (props.isActiveCharacter && props.isInCombat) ? '' : ' button-inactive';
 	let weapons = [];
 	props.weaponsProp.forEach(weaponName => {
 		let weaponButtonState = (props.isActiveCharacter && props.actionsRemaining > 0) ? '' : ' button-inactive';
@@ -20,9 +19,6 @@ function CharacterControls(props) {
 			<div>Moves remaining: {props.movesRemaining}</div>
 			<div>Actions remaining: {props.actionsRemaining}</div>
 			<div className='weapon-buttons-container'>{weapons}</div>
-			<div className={'general-button' + turnButtonState} onClick={() => {
-				props.endTurnCallback();
-			}}>End Turn</div>
 		</div>
 	);
 }
@@ -33,6 +29,7 @@ function CharacterInfoPanel(props) {
 	const itemList = Object.values(props.characterInfo.items).map(item => <li key={item + Math.random()}>{item}</li>);
 	return (
 		<div className={`character-info-container ui-panel ${props.characterIsSelected ? '' : 'hide'}`}>
+			<div className='general-button' onClick={() => props.updateUnitSelectionStatus(props.characterInfo.id, 'player')}>X</div>
 			<div>Name: {props.characterInfo.name}</div>
 			<div>Profession: {props.characterInfo.profession}</div>
 			<div>Level: {props.characterInfo.level}</div>
@@ -61,6 +58,7 @@ function CharacterInfoPanel(props) {
 function CreatureInfoPanel(props) {
 	return (
 		<div className={`creature-info-container ui-panel ${props.creatureIsSelected ? '' : 'hide'}`}>
+			<div className='general-button' onClick={() => props.updateUnitSelectionStatus(props.creatureInfo.id, 'creature')}>X</div>
 			<div>Name: {props.creatureInfo.name}</div>
 			<div>Level: {props.creatureInfo.level}</div>
 			<div>Health: {props.creatureInfo.currentHP} / {props.creatureInfo.startingHP}</div>
@@ -95,6 +93,9 @@ function ModeInfoPanel(props) {
 		actionButtonCallback:  null,
 		dialogClasses: ''
 	};
+	const turnButtonState = props.isInCombat ? '' : ' button-inactive';
+	const charactersTurn = props.isInCombat && (props.players[props.activeCharacter] ? props.players[props.activeCharacter].name : 'Enemies moving...');
+
 	return (
 		<div className="mode-info-container ui-panel">
 			<div
@@ -112,7 +113,6 @@ function ModeInfoPanel(props) {
 				}}>
 				{props.isInCombat ? 'Tactical Mode' : 'Follow Mode'}
 			</div>
-			<div>{props.isInCombat ? `Turn: ${props.turnNumber}` : ''}</div>
 			{!props.isInCombat &&
 				<label>
 					<span>Leader: </span>
@@ -123,6 +123,10 @@ function ModeInfoPanel(props) {
 					</select>
 				</label>
 			}
+			<div>Turn: {charactersTurn}</div>
+			<div className={'general-button' + turnButtonState} onClick={() => {
+				props.endTurnCallback();
+			}}>End Turn</div>
 		</div>
 	);
 }

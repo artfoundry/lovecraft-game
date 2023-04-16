@@ -95,7 +95,7 @@ class Game extends React.Component {
 			}), () => {
 				if (this.state.selectedCreature === id) {
 					if (this.state[collection][id].currentHP <= 0 && type === 'creature') {
-						this._updateUnitSelectionStatus(id, 'creature');
+						this.updateUnitSelectionStatus(id, 'creature');
 					} else {
 						this._updateInfoText('creatureInfoText', id);
 					}
@@ -148,7 +148,7 @@ class Game extends React.Component {
 
 	/**
 	 * Updates to state whether a PC or NPC is selected
-	 * For quick and public checking of selection status vs _updateUnitSelectionStatus which is private and contains a lot more info
+	 * For quick and public checking of selection status vs updateUnitSelectionStatus which is private and contains a lot more info
 	 * @param type: String
 	 * @param status: Boolean
 	 */
@@ -252,7 +252,7 @@ class Game extends React.Component {
 				proceedWithAttack();
 			}
 		} else {
-			this._updateUnitSelectionStatus(id, type);
+			this.updateUnitSelectionStatus(id, type);
 		}
 	}
 
@@ -452,6 +452,7 @@ class Game extends React.Component {
 	 */
 	_updateInfoText(type, id) {
 		const updatedText = type === 'characterInfoText' ? this.state.playerCharacters[id] : this.state.mapCreatures[id];
+		updatedText.id = id;
 		this.setState({[type]: updatedText});
 	}
 
@@ -459,10 +460,10 @@ class Game extends React.Component {
 	 * Updates to state the status of what PC or NPC (or both) is selected in the UI,
 	 * then calls function to update info panel text for that character
 	 * @param id: String
-	 * @param type: String
+	 * @param type: String ('player' or 'creature')
 	 * @private
 	 */
-	_updateUnitSelectionStatus(id, type) {
+	updateUnitSelectionStatus = (id, type) => {
 		let unitTypeObjectName = '';
 		let unitTypeSelected = '';
 		let unitNameForSelectionStateChg = '';
@@ -592,6 +593,7 @@ class Game extends React.Component {
 						creatureInfoText={this.state.creatureInfoText}
 						characterIsSelected={this.state.characterIsSelected}
 						creatureIsSelected={this.state.creatureIsSelected}
+						updateUnitSelectionStatus={this.updateUnitSelectionStatus}
 						weaponButtonSelected={this.state.weaponButtonSelected}
 						toggleWeapon={this.toggleWeapon}
 						updateCurrentTurn={this.updateCurrentTurn}

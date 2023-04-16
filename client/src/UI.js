@@ -53,7 +53,6 @@ class UI extends React.Component {
 					weaponsProp={playerInfo.weapons}
 					toggleWeaponButton={this.props.toggleWeapon}
 					weaponButtonSelected={this.props.weaponButtonSelected}
-					endTurnCallback={this.props.updateCurrentTurn}
 					isActiveCharacter={id === this.props.activeCharacter}
 					movesRemaining={this.props.playerLimits.moves - this.props.actionsCompleted.moves}
 					actionsRemaining={this.props.playerLimits.actions - this.props.actionsCompleted.actions}
@@ -81,21 +80,23 @@ class UI extends React.Component {
 						toggleCombat={this.props.toggleCombatState}
 						threatList={this.props.threatList}
 						setShowDialogProps={this.props.setShowDialogProps}
-						turnNumber={this.props.modeInfo.turn}
 						players={this.props.playerCharacters}
 						activeCharacter={this.props.activeCharacter}
 						updateActiveCharacter={this.props.updateActiveCharacter}
+						endTurnCallback={this.props.updateCurrentTurn}
 					/>
 				}
 				{this.props.characterInfoText &&
 					<CharacterInfoPanel
 						characterIsSelected={this.props.characterIsSelected}
+						updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
 						characterInfo={this.props.characterInfoText}
 					/>
 				}
 				{this.props.creatureInfoText &&
 					<CreatureInfoPanel
 						creatureIsSelected={this.props.creatureIsSelected}
+						updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
 						creatureInfo={this.props.creatureInfoText}
 					/>
 				}

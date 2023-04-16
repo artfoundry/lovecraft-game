@@ -1737,7 +1737,10 @@ class Map extends React.Component {
 	componentDidUpdate(prevProps, prevState, snapShot) {
 		if (prevProps.activeCharacter !== this.props.activeCharacter) {
 			if (this.props.mapCreatures[this.props.activeCharacter]) {
-				this._moveCreature();
+				// timeout to allow UI to provide visible updates to player, like creatures moving in turn and turn indicator to show 'enemies moving'
+				setTimeout(() => {
+					this._moveCreature();
+				}, 100);
 			} else if (this.props.playerCharacters[this.props.activeCharacter]) {
 				this._moveMap();
 			}
