@@ -788,12 +788,28 @@ class Map extends React.Component {
 	 */
 	isCreatureInRange = (id, weaponData) => {
 		const creatureCoords = this.props.mapCreatures[id].coords;
-		const playerCoords = this.props.playerCharacters[this.props.activeCharacter].coords;
-		let isInRange = true;
-		if (!creatureCoords || (!weaponData.stats.ranged && (Math.abs(creatureCoords.xPos - playerCoords.xPos) > 1 || Math.abs(creatureCoords.yPos - playerCoords.yPos) > 1))) {
-			isInRange = false;
+		const activePC = this.props.playerCharacters[this.props.activeCharacter];
+		const playerCoords = activePC.coords;
+		const playerSight = activePC.lightRange;
+		const visibleTiles = this._unblockedPathsToNearbyTiles(`${playerCoords.xPos}-${playerCoords.yPos}`, playerSight);
+		let isInRangedWeaponRange = false;
+		let isInMeleeRange = false;
+
+		if (creatureCoords) {
+			if (weaponData.stats.ranged) {
+				const creaturePos = `${creatureCoords.xPos}-${creatureCoords.yPos}`;
+				let tiles = [];
+				for (const distance of Object.values(visibleTiles)) {
+					tiles = tiles.concat(Object.keys(distance.floors));
+				}
+				if (tiles.includes(creaturePos)) {
+					isInRangedWeaponRange = true;
+				}
+			} else if (Math.abs(creatureCoords.xPos - playerCoords.xPos) <= 1 && Math.abs(creatureCoords.yPos - playerCoords.yPos) <= 1) {
+				isInMeleeRange = true;
+			}
 		}
-		return isInRange;
+		return isInRangedWeaponRange || isInMeleeRange;
 	}
 
 	/**
@@ -1225,7 +1241,7 @@ class Map extends React.Component {
 		// newest pos at end, oldest pos at beginning of array
 		if (!this.props.isInCombat && activePC === this.props.activeCharacter) {
 			followModeMoves.unshift(newTilePos);
-			if (followModeMoves.length === 4) {
+			if (followModeMoves.length === 6) {
 				followModeMoves.pop();
 			}
 		}
@@ -1254,12 +1270,12 @@ class Map extends React.Component {
 					let newFollowerPos = this.state.followModeMoves.find(pos => !listOfPlayerPos.includes(pos));
 					// if leader has moved at least 2x, there is at least 1 follower, and pc just moved was the leader,
 					// then call moveCharacter to update first follower next avail pos in followModeMoves array
-					if (this.state.followModeMoves.length >= 2 && this.props.playerFollowOrder.length >= 1 && !pcToMove) {
+					if (this.state.followModeMoves.length >= 2 && this.props.playerFollowOrder.length >= 2 && !pcToMove) {
 						this.moveCharacter(newFollowerPos, this.props.playerFollowOrder[1]);
 
 					// if leader has moved 3x, there are 2 followers, and 1st follower was just moved,
 					// then call moveCharacter to update second follower to next avail pos in followModeMoves array
-					} else if (this.state.followModeMoves.length === 3 && this.props.playerFollowOrder.length === 3 && pcToMove === this.props.playerFollowOrder[1]) {
+					} else if (this.state.followModeMoves.length >= 3 && this.props.playerFollowOrder.length === 3 && pcToMove === this.props.playerFollowOrder[1]) {
 						this.moveCharacter(newFollowerPos, this.props.playerFollowOrder[2]);
 					}
 				}
