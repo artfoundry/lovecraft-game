@@ -7,10 +7,12 @@ Current demo: https://lovecraft-oldones.web.app/
 
 *WIP*
 
-*CURRENT WORKING BRANCH: initiative-system*
+*CURRENT WORKING BRANCH: *
 
 ---
 #### Current status:
+
+4/15/23: Finished initiative system.  Added mode switching for follow/tactical modes (with three PCs now playable as a party).  Added movement animation.
 
 3/24/23: adding firebase login/authentication
 
