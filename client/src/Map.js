@@ -43,7 +43,6 @@ class Map extends React.Component {
 		};
 		this.currentMapData = GameLocations[this.props.currentLocation];
 		this.charRefs = {};
-		this.charMoveAnimSpeed = '0.5s';
 
 		this.state = {
 			pcTypes: this.props.pcTypes,
@@ -52,7 +51,6 @@ class Map extends React.Component {
 			followModeMoves: [],
 			mapLayout: {},
 			mapLayoutDone: false,
-			mapPosition: {},
 			exitPosition: {},
 			exitPlaced: false,
 			lighting: {}
@@ -69,7 +67,6 @@ class Map extends React.Component {
 			playerVisited: {},
 			mapLayout: {},
 			mapLayoutDone: false,
-			mapPosition: {},
 			exitPosition: {},
 			exitPlaced: false,
 			lighting: {}
@@ -1021,13 +1018,17 @@ class Map extends React.Component {
 					isHidden={creatureIsHidden}
 					isSelected={characters[id].isSelected}
 					isDead={characters[id].currentHP <= 0}
-					isInRange={(Object.keys(this.props.weaponButtonSelected).length > 0 && props.characterType === 'creature' && this.isCreatureInRange(id, this.props.weaponButtonSelected))}
+					isInRange={
+						Object.keys(this.props.weaponButtonSelected).length > 0 &&
+						props.characterType === 'creature' &&
+						this.props.playerCharacters[this.props.activeCharacter] &&
+						this.isCreatureInRange(id, this.props.weaponButtonSelected)
+					}
 					dataLoc={characterCoords}
 					dataCharType={props.characterType}
 					clickUnit={this.props.handleUnitClick}
 					styles={{
 						transform: `translate(${characterTransform})`,
-						transition: `transform ${this.charMoveAnimSpeed}`,
 						width: Math.round(this.tileSize * this.characterSizePercentage) + 'px',
 						height: Math.round(this.tileSize * this.characterSizePercentage) + 'px',
 						margin: Math.round(this.tileSize / 8) + 'px'
@@ -1236,7 +1237,7 @@ class Map extends React.Component {
 		playerPositions[activePlayerIndex].pos = newTilePos;
 		const threatLists = this._findChangesToNearbyThreats(playerPositions, creaturePositions);
 
-		const followModeMoves = [...this.state.followModeMoves];
+		const followModeMoves = !this.props.isInCombat ? [...this.state.followModeMoves] : [];
 		// only update followModeMoves if we're moving the leader
 		// newest pos at end, oldest pos at beginning of array
 		if (!this.props.isInCombat && activePC === this.props.activeCharacter) {
@@ -1609,23 +1610,20 @@ class Map extends React.Component {
 	 */
 	_moveMap(initialSetupCallback) {
 		const playerID = this.props.activeCharacter;
-		const mapCenter = this._calculateMapCenter();
 		const activePlayerCoords = this.props.getAllCharactersPos('player', 'coords').find(info => info.id === playerID);
-		const playerXCoord = activePlayerCoords.coords.xPos * this.tileSize;
-		const playerYCoord = activePlayerCoords.coords.yPos * this.tileSize;
-		const newXPos = mapCenter.xPos - playerXCoord;
-		const newYPos = mapCenter.yPos - playerYCoord;
+		const windowCenter = this._calculateMapCenter();
+		const scrollOptions = {
+			left: (activePlayerCoords.coords.xPos * this.tileSize) - windowCenter.xPos,
+			top: (activePlayerCoords.coords.yPos * this.tileSize) - windowCenter.yPos,
+			behavior: "smooth"
+		};
 
-		this.setState({
-			mapPosition: {
-				transform: `translate(${newXPos}px, ${newYPos}px)`
-			}
-		}, () => {
-			// passed in from _layoutPieces after setting mapLayout; called after placing PCs and centering map
-			if (initialSetupCallback) {
-				initialSetupCallback();
-			}
-		})
+		window.scroll(scrollOptions);
+
+		// passed in from _layoutPieces after setting mapLayout; called after placing PCs and centering map
+		if (initialSetupCallback) {
+			initialSetupCallback();
+		}
 	}
 
 	/**
@@ -1751,19 +1749,19 @@ class Map extends React.Component {
 	render() {
 		return (
 			<div className="world">
-				<div className="map" style={this.state.mapPosition}>
+				<div className="map">
 					{ this.state.mapLayoutDone && <this.createAllMapPieces /> }
 				</div>
-				<div className="objects" style={this.state.mapPosition}>
+				<div className="objects">
 					{ this.state.exitPlaced && <this.addObjects /> }
 				</div>
-				<div className="lighting" style={this.state.mapPosition}>
+				<div className="lighting">
 					{ this.state.exitPlaced && <this.addLighting /> }
 				</div>
-				<div className="creatures" style={this.state.mapPosition}>
+				<div className="creatures">
 					{ this.state.mapLayoutDone && this.state.playerPlaced && this.state.creaturesPlaced && <this.addCharacters characterType='creature' /> }
 				</div>
-				<div className="player-characters" style={this.state.mapPosition}>
+				<div className="player-characters">
 					{ this.state.mapLayoutDone && this.state.playerPlaced && <this.addCharacters characterType='player' /> }
 				</div>
 				{ <this.setupSoundEffects /> }

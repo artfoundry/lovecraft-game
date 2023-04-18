@@ -182,7 +182,7 @@ class Game extends React.Component {
 	 * @param callback: function
 	 */
 	updateThreatList = (threatIdsToAdd, threatIdsToRemove, callback) => {
-		const nonUpdatedListSize = this.state.threatList.length;
+		const previousListSize = this.state.threatList.length;
 		let updatedList = [...this.state.threatList];
 
 		if (threatIdsToAdd.length > 0) {
@@ -200,7 +200,7 @@ class Game extends React.Component {
 			});
 		}
 		this.setState({threatList: updatedList}, () => {
-			if (nonUpdatedListSize !== updatedList.length && (nonUpdatedListSize === 0 || updatedList.length === 0)) {
+			if (previousListSize !== updatedList.length && (previousListSize === 0 || updatedList.length === 0)) {
 				const isInCombat = updatedList.length > 0;
 				this.toggleCombatState(isInCombat, callback);
 			} else if (callback) {
@@ -213,15 +213,18 @@ class Game extends React.Component {
 	 * Updates to state what PC weapon is selected in the UI
 	 * @param characterId: String
 	 * @param weaponName: String
+	 * @param callback: Function
 	 */
-	toggleWeapon = (characterId, weaponName) => {
+	toggleWeapon = (characterId, weaponName, callback) => {
 		let buttonState = {};
 		// if no weapon selected or weapon selected doesn't match new weapon selected, set weapon state to new weapon
 		if (Object.keys(this.state.weaponButtonSelected).length === 0 ||
 			(this.state.weaponButtonSelected.characterId !== characterId || this.state.weaponButtonSelected.weaponName !== weaponName)) {
 			buttonState = {characterId, weaponName, stats: WeaponTypes[weaponName]};
 		}
-		this.setState({weaponButtonSelected: buttonState});
+		this.setState({weaponButtonSelected: buttonState}, () => {
+			if (callback) callback();
+		});
 	}
 
 	/**
@@ -461,7 +464,6 @@ class Game extends React.Component {
 	 * then calls function to update info panel text for that character
 	 * @param id: String
 	 * @param type: String ('player' or 'creature')
-	 * @private
 	 */
 	updateUnitSelectionStatus = (id, type) => {
 		let unitTypeObjectName = '';

@@ -1,9 +1,8 @@
 .world {
 	position: relative;
-	height: 1000px;
 	margin: auto;
 	background-color: black;
-	overflow: hidden;
+	transition: transform 0.5s;
 }
 
 .lighting {

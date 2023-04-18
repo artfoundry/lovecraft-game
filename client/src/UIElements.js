@@ -1,24 +1,45 @@
-import React from 'react';
+import React, {useRef} from 'react';
+
+let weaponRefs = {};
 
 function CharacterControls(props) {
-	let weapons = [];
-	props.weaponsProp.forEach(weaponName => {
-		let weaponButtonState = (props.isActiveCharacter && props.actionsRemaining > 0) ? '' : ' button-inactive';
-		if (props.weaponButtonSelected.characterId === props.characterId && props.weaponButtonSelected.weaponName === weaponName) {
-			weaponButtonState = ' button-selected';
-		}
-		weapons.push(
-			<div className={'weapon-button' + weaponButtonState} key={weaponName} onClick={() => {
-				props.toggleWeaponButton(props.characterId, weaponName);
-			}}>{weaponName}</div>
-		);
+	weaponRefs[props.characterId] = useRef([]);
+	let weaponButtonState = '';
+	weaponRefs[props.characterId].current = props.weaponsProp.map((weaponName, index) => {
+		return weaponRefs[props.characterId].current[index] || React.createRef();
 	});
+	const weapons = (
+		<div className='weapon-buttons-container'>
+			{props.weaponsProp.map((weaponName, index) => {
+				weaponButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0) ? ' button-inactive' :
+					(props.weaponButtonSelected.characterId === props.characterId && props.weaponButtonSelected.weaponName === weaponName) ? ' button-selected': '';
+				return (
+					<div ref={weaponRefs[props.characterId].current[index]} data-weapon={weaponName} className={'weapon-button' + weaponButtonState} key={weaponName} onClick={() => {
+						props.toggleWeaponButton(props.characterId, weaponName);
+					}}>{weaponName}</div>
+				);
+			})}
+		</div>
+	);
+
+	// for (let i=0; i < props.weaponsProp.length; i++) {
+	// 	const weaponName = props.weaponsProp[i];
+	// 	let weaponButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0) ? ' button-inactive' :
+	// 		(props.weaponButtonSelected.characterId === props.characterId && props.weaponButtonSelected.weaponName === weaponName) ? ' button-selected': '';
+	//
+	// 	weapons.push(
+	// 		<div ref={weaponRefs[weaponName]} className={'weapon-button' + weaponButtonState} key={weaponName} onClick={() => {
+	// 			props.toggleWeaponButton(props.characterId, weaponName);
+	// 		}}>{weaponName}</div>
+	// 	);
+	// }
+
 	return (
 		<div className='character-control-container'>
 			<div className='character-name font-fancy'>{props.characterName}</div>
 			<div>Moves remaining: {props.isActiveCharacter ? props.movesRemaining : ''}</div>
 			<div>Actions remaining: {props.isActiveCharacter ? props.actionsRemaining : ''}</div>
-			<div className='weapon-buttons-container'>{weapons}</div>
+			{weapons}
 		</div>
 	);
 }
@@ -125,7 +146,16 @@ function ModeInfoPanel(props) {
 			}
 			<div>Turn: {charactersTurn}</div>
 			<div className={'general-button' + turnButtonState} onClick={() => {
-				props.endTurnCallback();
+				let weaponName = '';
+				const activeButton = weaponRefs[props.activeCharacter].current.find(weapon => {
+					weaponName = weapon.current.dataset['weapon'];
+					return weapon.current.classList.contains('button-selected');
+				});
+				if (activeButton) {
+					props.toggleWeaponButton(props.activeCharacter, weaponName, props.endTurnCallback);
+				} else {
+					props.endTurnCallback();
+				}
 			}}>End Turn</div>
 		</div>
 	);

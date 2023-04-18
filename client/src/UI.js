@@ -84,6 +84,12 @@ class UI extends React.Component {
 						activeCharacter={this.props.activeCharacter}
 						updateActiveCharacter={this.props.updateActiveCharacter}
 						endTurnCallback={this.props.updateCurrentTurn}
+						toggleWeaponButton={this.props.toggleWeapon}
+						updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
+						characterIsSelected={this.props.characterIsSelected}
+						characterInfo={this.props.characterInfoText}
+						creatureIsSelected={this.props.creatureIsSelected}
+						creatureInfo={this.props.creatureInfoText}
 					/>
 				}
 				{this.props.characterInfoText &&
