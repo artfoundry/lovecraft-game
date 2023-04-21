@@ -824,9 +824,8 @@ class Map extends React.Component {
 				for (const distance of Object.values(activePcVisibleTiles)) {
 					tiles = tiles.concat(Object.keys(distance.floors));
 				}
-				if (tiles.includes(creaturePos) ||
-					(otherPcTilePos.includes(creaturePos) && this.pathFromAtoB(activePlayerCoords, creaturePos, true)))
-				{
+	//todo: add new function to check line of sight
+				if (tiles.includes(creaturePos) || (otherPcTilePos.includes(creaturePos))) {
 					isInRangedWeaponRange = true;
 				}
 			} else if (Math.abs(creatureCoords.xPos - activePlayerCoords.xPos) <= 1 && Math.abs(creatureCoords.yPos - activePlayerCoords.yPos) <= 1) {
@@ -836,11 +835,15 @@ class Map extends React.Component {
 		return isInRangedWeaponRange || isInMeleeRange;
 	}
 
-	pathFromAtoB(startTileCoords, endTileCoords, checkLineOfSight) {
+	/**
+	 *
+	 * @param startTileCoords
+	 * @param endTileCoords
+	 * @returns {boolean|*[]}
+	 */
+	pathFromAtoB(startTileCoords, endTileCoords) {
 		const tilePath = [];
-		let isLineOfSight = true;
-		const allPcPos = checkLineOfSight ? null : this.props.getAllCharactersPos('player', 'pos');
-		const allCreaturePos = checkLineOfSight ? this.props.getAllCharactersPos('player', 'pos') : null;
+		const allPcPos = this.props.getAllCharactersPos('player', 'pos');
 //todo: need allObjectPos - get regardless of checkLineOfSight
 		const allObjectPos = [];
 
@@ -868,21 +871,17 @@ class Map extends React.Component {
 			let testPos = `${coords.xPos}-${coords.yPos}`;
 			let isTestPosOk = true;
 
-			if (!checkedTiles[testPos]) {
-				checkedTiles[testPos] = {};
-			}
-
-			if (checkLineOfSight) {
-				isLineOfSight = !allCreaturePos.find(creature => creature.pos === testPos);
-			}
+			// if (checkLineOfSight) {
+			// 	isLineOfSight = !allCreaturePos.find(creature => creature.pos === testPos) &&
+			// 		this.state.mapLayout[testPos].type !== 'wall' && !allObjectPos.find(obj => obj.pos === testPos);
+			// }
 			if (this.state.mapLayout[testPos].type === 'door' && !this.state.mapLayout[testPos].doorIsOpen) {
-				isLineOfSight = false;
 				foundClosedDoor = true;
 			}
-			// isLineOfSight = !allObjectPos.find(obj => obj.pos === testPos);
+
 			const isWalkableTile = this.state.mapLayout[testPos].type === 'floor' || (this.state.mapLayout[testPos].type === 'door' && this.state.mapLayout[testPos].doorIsOpen);
 
-			if (this.state.mapLayout[testPos].type === 'wall' || (isWalkableTile && (allPcPos.find(pc => pc.pos === testPos) || !isLineOfSight || foundClosedDoor))) {
+			if (this.state.mapLayout[testPos].type === 'wall' || (isWalkableTile && (allPcPos.find(pc => pc.pos === testPos) || foundClosedDoor))) {
 				checkedTiles[testPos] = {rating: 0};
 				if (checkedTiles[currentPos]) {
 					checkedTiles[currentPos][testPos] = 0;
@@ -903,8 +902,7 @@ class Map extends React.Component {
 			return isTestPosOk;
 		}
 
-//todo: need to check isLineOfSight is working - don't think it will now
-		while (!noPathAvail && (currentX !== endTileCoords.xPos || currentY !== endTileCoords.yPos) && !foundClosedDoor && (!checkLineOfSight || (checkLineOfSight && isLineOfSight))) {
+		while (!noPathAvail && (currentX !== endTileCoords.xPos || currentY !== endTileCoords.yPos) && !foundClosedDoor) {
 			let xDelta = endTileCoords.xPos - currentX;
 			let yDelta = endTileCoords.yPos - currentY;
 			const rating = Math.abs(xDelta) + Math.abs(yDelta);
@@ -977,7 +975,7 @@ class Map extends React.Component {
 			}
 		}
 
-		return checkLineOfSight ? isLineOfSight : tilePath;
+		return tilePath;
 	}
 
 	/**
