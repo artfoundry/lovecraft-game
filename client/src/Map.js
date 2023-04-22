@@ -1728,7 +1728,7 @@ class Map extends React.Component {
 						newCreatureCoordsArray.push(creatureCoords);
 						// this.props.updateLog(`Moving ${creatureID} away from player to ${JSON.stringify(newCreatureCoordsArray)}`);
 					}
-					this._storeNewCreatureCoords(creatureID, newCreatureCoordsArray, () => {updateThreatAndCurrentTurn(true)});
+					this._storeNewCreatureCoords(creatureID, newCreatureCoordsArray, updateThreatAndCurrentTurn);
 				// or if player is out of attack range, move closer
 				} else if (targetPlayerDistance > creatureData.range) {
 					let moves = 1;
