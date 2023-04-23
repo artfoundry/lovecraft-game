@@ -274,16 +274,11 @@ class Game extends React.Component {
 	}
 
 	/**
-	 * Increments and sets to state the number of moves made by the active PC,
-	 * then runs callback to update the current turn if PC has used up all actions and moves
+	 * Increments and sets to state the number of moves made by the active PC
 	 */
 	updateActivePlayerMoves = () => {
 		const activePlayerMovesCompleted = this.state.activePlayerMovesCompleted + 1;
-		this.setState({activePlayerMovesCompleted}, () => {
-			if (this.state.activePlayerMovesCompleted === this.playerMovesLimit && this.state.activePlayerActionsCompleted === this.playerActionsLimit) {
-				this.updateCurrentTurn();
-			}
-		});
+		this.setState({activePlayerMovesCompleted});
 	}
 
 	/**
@@ -525,17 +520,12 @@ class Game extends React.Component {
 	}
 
 	/**
-	 * Increments and updates to state number of actions the active PC has done,
-	 * then runs callback to update current turn if all moves and actions are done
+	 * Increments and updates to state number of actions the active PC has done
 	 * @private
 	 */
 	_updateActivePlayerActions = () => {
 		const activePlayerActionsCompleted = this.state.activePlayerActionsCompleted + 1;
-		this.setState({activePlayerActionsCompleted}, () => {
-			if (this.state.activePlayerMovesCompleted === this.playerMovesLimit && this.state.activePlayerActionsCompleted === this.playerActionsLimit) {
-				this.updateCurrentTurn();
-			}
-		});
+		this.setState({activePlayerActionsCompleted});
 	}
 
 	/**

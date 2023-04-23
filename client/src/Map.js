@@ -36,6 +36,7 @@ class Map extends React.Component {
 			rightSide: 'leftSide'
 		};
 		this.creatureSurvivalHpPercent = 0.25;
+		this.movementDelay = 100;
 
 		this.mapLayoutTemp = {};
 		this.sfxSelectors = {
@@ -710,16 +711,6 @@ class Map extends React.Component {
 					break;
 			}
 			tileData = this.state.mapLayout[newPos]
-		// move by click/tap
-		} else {
-			const newCoords = newPos.split('-');
-			const playerXMovementAmount = Math.abs(+newCoords[0] - activePCCoords.xPos);
-			const playerYMovementAmount = Math.abs(+newCoords[1] - activePCCoords.yPos);
-
-			// Invalid move if movement is more than 1 square or clicked on own tile
-			if (playerXMovementAmount > 1 || playerYMovementAmount > 1 || (playerXMovementAmount === 0 && playerYMovementAmount === 0)) {
-				validAction = false;
-			}
 		}
 
 		// check if player is trying to move where a character exists
@@ -730,25 +721,61 @@ class Map extends React.Component {
 
 		// check if tile is door or floor
 		if (validAction) {
-			if (tileData.type === 'door') {
-				if (tileData.doorIsOpen) {
-					const showDialog = true;
-					const dialogProps = {
-						dialogContent: 'Close the door or move into the doorway?',
-						closeButtonText: 'Close door',
-						closeButtonCallback: () => {this.toggleDoor(newPos)},
-						disableCloseButton: false,
-						actionButtonVisible: true,
-						actionButtonText: 'Move',
-						actionButtonCallback: () => {this.moveCharacter(newPos)},
-						dialogClasses: ''
-					};
-					this.props.setShowDialogProps(showDialog, dialogProps);
-				} else {
-					this.toggleDoor(newPos);
+			const newCoords = newPos.split('-');
+			const playerXMovementAmount = Math.abs(+newCoords[0] - activePCCoords.xPos);
+			const playerYMovementAmount = Math.abs(+newCoords[1] - activePCCoords.yPos);
+			if (playerXMovementAmount <= 1 && playerYMovementAmount <= 1) {
+				if (tileData.type === 'floor') {
+					this.moveCharacter([newPos]);
+				} else if (tileData.type === 'door') {
+					if (tileData.doorIsOpen) {
+						const showDialog = true;
+						const dialogProps = {
+							dialogContent: 'Close the door or move into the doorway?',
+							closeButtonText: 'Close door',
+							closeButtonCallback: () => {this.toggleDoor(newPos)},
+							disableCloseButton: false,
+							actionButtonVisible: true,
+							actionButtonText: 'Move',
+							actionButtonCallback: () => {this.moveCharacter([newPos])},
+							dialogClasses: ''
+						};
+						this.props.setShowDialogProps(showDialog, dialogProps);
+					} else {
+						this.toggleDoor(newPos);
+					}
 				}
-			} else if (tileData.type === 'floor') {
-				this.moveCharacter(newPos);
+			} else if (tileData.type !== 'wall') {
+				const allPlayersPos = this.props.getAllCharactersPos('player', 'pos');
+				const litTiles = this._getTilesSurroundingAllPCs(allPlayersPos);
+				let newPosIsLitTile = false;
+				for (const tiles of Object.values(litTiles)) {
+					// need to check for door separately because _getTilesSurroundingAllPCs considers closed doors as walls for sake of lighting
+					if (tiles.floors[newPos] || this.state.mapLayout[newPos].type === 'door') {
+						newPosIsLitTile = true;
+					}
+				}
+				if (this.state.playerVisited[newPos] || newPosIsLitTile) {
+					const temp = newPos.split('-');
+					const coords = {xPos: +temp[0], yPos: +temp[1]};
+					const path = this.pathFromAtoB(this.props.playerCharacters[this.props.activeCharacter].coords, coords);
+					if (path.length > 1) {
+						this.moveCharacter(path);
+					} else {
+						const showDialog = true;
+						const dialogProps = {
+							dialogContent: 'The path is blocked.',
+							closeButtonText: 'Ok',
+							closeButtonCallback: null,
+							disableCloseButton: false,
+							actionButtonVisible: false,
+							actionButtonText: '',
+							actionButtonCallback: null,
+							dialogClasses: ''
+						};
+						this.props.setShowDialogProps(showDialog, dialogProps);
+					}
+				}
 			}
 		}
 	}
@@ -786,27 +813,197 @@ class Map extends React.Component {
 	isCreatureInRange = (id, weaponData) => {
 		const creatureCoords = this.props.mapCreatures[id].coords;
 		const activePC = this.props.playerCharacters[this.props.activeCharacter];
-		const playerCoords = activePC.coords;
-		const playerSight = activePC.lightRange;
-		const visibleTiles = this._unblockedPathsToNearbyTiles(`${playerCoords.xPos}-${playerCoords.yPos}`, playerSight);
+		const activePlayerCoords = activePC.coords;
+		const activePlayerSight = activePC.lightRange;
+		const activePcVisibleTiles = this._unblockedPathsToNearbyTiles(`${activePlayerCoords.xPos}-${activePlayerCoords.yPos}`, activePlayerSight);
+		const allPcCoords = this.props.getAllCharactersPos('player', 'coords');
+		let otherPcVisibleTiles = [];
 		let isInRangedWeaponRange = false;
 		let isInMeleeRange = false;
+
+		allPcCoords.forEach(pc => {
+			if (pc.id !== this.props.activeCharacter) {
+				let temp = this._unblockedPathsToNearbyTiles(`${pc.coords.xPos}-${pc.coords.yPos}`, this.props.playerCharacters[pc.id].lightRange);
+				for (const tileType of Object.values(temp)) {
+					otherPcVisibleTiles = otherPcVisibleTiles.concat(tileType.floors);
+				}
+			}
+		});
 
 		if (creatureCoords) {
 			if (weaponData.stats.ranged) {
 				const creaturePos = `${creatureCoords.xPos}-${creatureCoords.yPos}`;
+				const otherPcTilePos = Object.keys(otherPcVisibleTiles);
 				let tiles = [];
-				for (const distance of Object.values(visibleTiles)) {
+				for (const distance of Object.values(activePcVisibleTiles)) {
 					tiles = tiles.concat(Object.keys(distance.floors));
 				}
-				if (tiles.includes(creaturePos)) {
+	//todo: add new function to check line of sight
+				if (tiles.includes(creaturePos) || (otherPcTilePos.includes(creaturePos))) {
 					isInRangedWeaponRange = true;
 				}
-			} else if (Math.abs(creatureCoords.xPos - playerCoords.xPos) <= 1 && Math.abs(creatureCoords.yPos - playerCoords.yPos) <= 1) {
+			} else if (Math.abs(creatureCoords.xPos - activePlayerCoords.xPos) <= 1 && Math.abs(creatureCoords.yPos - activePlayerCoords.yPos) <= 1) {
 				isInMeleeRange = true;
 			}
 		}
 		return isInRangedWeaponRange || isInMeleeRange;
+	}
+
+	/**
+	 *
+	 * @param startTileCoords
+	 * @param endTileCoords
+	 * @returns {boolean|*[]}
+	 */
+	pathFromAtoB(startTileCoords, endTileCoords) {
+		const allPcPos = this.props.getAllCharactersPos('player', 'pos');
+//todo: need allObjectPos
+		const allObjectPos = [];
+
+		let tilePath = [];
+		let startingPos = '';
+		let currentX = startTileCoords.xPos;
+		let currentY = startTileCoords.yPos;
+		const startXDelta = Math.abs(endTileCoords.xPos - startTileCoords.xPos);
+		const startYDelta = Math.abs(endTileCoords.yPos - startTileCoords.yPos);
+		const startRating = startXDelta + startYDelta;
+		let foundClosedDoor = false;
+		let checkedTiles = {[startingPos]: {rating: startRating}};
+		const modifierPairs = [
+			{x: -1, y: -1},
+			{x: 0, y: -1},
+			{x: 1, y: -1},
+			{x: 1, y: 0},
+			{x: 1, y: 1},
+			{x: 0, y: 1},
+			{x: -1, y: 1},
+			{x: -1, y: 0}
+		];
+		let noPathAvail = false;
+
+		const checkForCleanPath = (currentPos, coords, rating) => {
+			let testPos = `${coords.xPos}-${coords.yPos}`;
+			let isTestPosOk = true;
+
+			// if (checkLineOfSight) {
+			// 	isLineOfSight = !allCreaturePos.find(creature => creature.pos === testPos) &&
+			// 		this.state.mapLayout[testPos].type !== 'wall' && !allObjectPos.find(obj => obj.pos === testPos);
+			// }
+			if (this.state.mapLayout[testPos].type === 'door' && !this.state.mapLayout[testPos].doorIsOpen) {
+				foundClosedDoor = true;
+			}
+
+			const isWalkableTile = this.state.mapLayout[testPos].type === 'floor' || (this.state.mapLayout[testPos].type === 'door' && this.state.mapLayout[testPos].doorIsOpen);
+
+			if (this.state.mapLayout[testPos].type === 'wall' || foundClosedDoor || (isWalkableTile && (allPcPos.find(pc => pc.pos === testPos)))) {
+				checkedTiles[testPos] = {rating: 0};
+				if (checkedTiles[currentPos]) {
+					checkedTiles[currentPos][testPos] = 0;
+				} else {
+					checkedTiles[currentPos] = {[testPos]: 0};
+				}
+				isTestPosOk = false;
+			} else {
+				if (checkedTiles[currentPos]) {
+					checkedTiles[currentPos][testPos] = rating;
+				} else {
+					checkedTiles[currentPos] = {[testPos]: rating};
+				}
+				checkedTiles[testPos] = {rating};
+				currentX = coords.xPos;
+				currentY = coords.yPos;
+			}
+			return isTestPosOk;
+		}
+
+		while (!noPathAvail && (currentX !== endTileCoords.xPos || currentY !== endTileCoords.yPos) && !foundClosedDoor) {
+			let xDelta = endTileCoords.xPos - currentX;
+			let yDelta = endTileCoords.yPos - currentY;
+			const rating = Math.abs(xDelta) + Math.abs(yDelta);
+			const initialXmod = xDelta < 0 ? -1 : xDelta > 0 ? 1 : 0;
+			const initialYmod = yDelta < 0 ? -1 : yDelta > 0 ? 1 : 0;
+			const modifiersIndex = modifierPairs.findIndex(pair => pair.x === initialXmod && pair.y === initialYmod);
+			const secondaryMods = {
+				2: modifiersIndex === 0 ? 7 : modifiersIndex - 1,
+				3: modifiersIndex === 7 ? 0 : modifiersIndex + 1,
+				4: modifiersIndex === 0 ? 6 : modifiersIndex === 1 ? 7 : modifiersIndex - 2,
+				5: modifiersIndex === 7 ? 1 : modifiersIndex === 6 ? 0 : modifiersIndex + 2,
+				6: modifiersIndex === 0 ? 5 : modifiersIndex === 1 ? 6 : modifiersIndex === 2 ? 7 : modifiersIndex - 3,
+				7: modifiersIndex === 7 ? 2 : modifiersIndex === 6 ? 1 : modifiersIndex === 5 ? 0 : modifiersIndex + 3,
+				8: modifiersIndex === 7 ? 3 : modifiersIndex === 6 ? 2 : modifiersIndex === 5 ? 1 : modifiersIndex === 4 ? 0 : modifiersIndex + 4
+			};
+			const coordsToCheck = [
+				{xPos: currentX + initialXmod, yPos: currentY + initialYmod},
+				{xPos: currentX + modifierPairs[secondaryMods[2]].x, yPos: currentY + modifierPairs[secondaryMods[2]].y},
+				{xPos: currentX + modifierPairs[secondaryMods[3]].x, yPos: currentY + modifierPairs[secondaryMods[3]].y},
+				{xPos: currentX + modifierPairs[secondaryMods[4]].x, yPos: currentY + modifierPairs[secondaryMods[4]].y},
+				{xPos: currentX + modifierPairs[secondaryMods[5]].x, yPos: currentY + modifierPairs[secondaryMods[5]].y},
+				{xPos: currentX + modifierPairs[secondaryMods[6]].x, yPos: currentY + modifierPairs[secondaryMods[6]].y},
+				{xPos: currentX + modifierPairs[secondaryMods[7]].x, yPos: currentY + modifierPairs[secondaryMods[7]].y},
+				{xPos: currentX + modifierPairs[secondaryMods[8]].x, yPos: currentY + modifierPairs[secondaryMods[8]].y}
+			];
+			let tileIndex = 0;
+			let newPos = null;
+			while (tileIndex < 8 && !newPos && !foundClosedDoor) {
+				startingPos = `${currentX}-${currentY}`;
+				newPos = `${coordsToCheck[tileIndex].xPos}-${coordsToCheck[tileIndex].yPos}`;
+				// should never revisit checked tile (except through backtracking 12 lines below)
+				if (checkedTiles[newPos] || !checkForCleanPath(startingPos, coordsToCheck[tileIndex], rating)) {
+					newPos = null;
+					tileIndex++;
+				}
+			}
+			if (newPos) {
+				startingPos = newPos;
+				tilePath.push(newPos);
+			} else if (tilePath.length === 0) {
+				noPathAvail = true;
+			} else if (!foundClosedDoor) {
+				// if current startingPos is a dead end, then we didn't find a lower rated pos and need to back up
+				tilePath.pop();
+				if (tilePath.length > 0) {
+					const lastTileIndex = tilePath.length-1;
+					let lowestRating = rating;
+					let lowestRatedPos = null;
+					// mark the dead end tile
+					checkedTiles[tilePath[lastTileIndex]][startingPos] = 0;
+					checkedTiles[startingPos] = {rating: 0};
+					let pathCopy = [...tilePath];
+					// starting from end of path, check each tile for the lowest rated connection that isn't 0
+					for (let i = lastTileIndex; i >= 0; i--) {
+						for (const [pos, rating] of Object.entries(checkedTiles[tilePath[i]])) {
+							// the tiledata includes a rating and up to 8 connected positions, so we need to weed out the one key that's a rating
+							if (pos !== 'rating' && rating < lowestRating && rating !== 0) {
+								lowestRating = rating;
+								lowestRatedPos = pos;
+							}
+						}
+						if (lowestRatedPos) {
+							const newCoords = lowestRatedPos.split('-');
+							currentX = +newCoords[0];
+							currentY = +newCoords[1];
+							i = -1;
+						} else {
+							// all tile's connections are 0
+							pathCopy.pop();
+							if (i > 0) {
+								checkedTiles[tilePath[i-1]][tilePath[i]] = 0;
+							} else {
+								checkedTiles[`${startTileCoords.xPos}-${startTileCoords.yPos}`][tilePath[i]] = 0;
+							}
+							checkedTiles[tilePath[i]] = {rating: 0};
+						}
+					}
+					tilePath = [...pathCopy];
+				}
+				if (tilePath.length === 0) {
+					currentX = startTileCoords.xPos;
+					currentY = startTileCoords.yPos;
+				}
+			}
+		}
+
+		return tilePath;
 	}
 
 	/**
@@ -831,6 +1028,37 @@ class Map extends React.Component {
 		let lineOfSightTiles = {};
 		let minXBoundary = (centerTile.xPos - range) < 0 ? 0 : centerTile.xPos - range;
 		let minYBoundary = (centerTile.yPos - range) < 0 ? 0 : centerTile.yPos - range;
+		/**
+		 * Looks at two adjacent tiles, one farther away from character than other,
+		 * and determines if there is Line of Sight (LOS) between them
+		 * @param distance: number
+		 * @param farthestTilePos: string
+		 * @param farthestTileData: object
+		 * @param fartherTileData: object
+		 */
+		const compareTiles = (distance, farthestTilePos, farthestTileData, fartherTileData) => {
+			const distString = `${numToStr[distance]}Away`;
+			const distPlus1String = `${numToStr[distance+1]}Away`;
+			for (const closestTileData of Object.values(lineOfSightTiles[distString].floors)) {
+				const deltaXFartherTiles = Math.abs(distance === 1 ? farthestTileData.xPos - closestTileData.xPos : farthestTileData.xPos - fartherTileData.xPos);
+				const deltaYFartherTiles = Math.abs(distance === 1 ? farthestTileData.yPos - closestTileData.yPos : farthestTileData.yPos - fartherTileData.yPos);
+				const deltaXCloserTiles = Math.abs(distance === 1 ? closestTileData.xPos - centerTile.xPos : fartherTileData.xPos - closestTileData.xPos);
+				const deltaYCloserTiles = Math.abs(distance === 1 ? closestTileData.yPos - centerTile.yPos : fartherTileData.yPos - closestTileData.yPos);
+				const outerTileHasLOS =
+					(deltaXFartherTiles <= 1 && deltaXCloserTiles <= 1 && deltaYFartherTiles === 1) ||
+					(deltaYFartherTiles <= 1 && deltaYCloserTiles <= 1 && deltaXFartherTiles === 1);
+
+				// if one of the 1 away tiles that has line of sight is between the current 2 away tile and center tile...
+				if (outerTileHasLOS)
+				{
+					if (farthestTileData.type === 'wall' || (farthestTileData.type === 'door' && !farthestTileData.doorIsOpen)) {
+						lineOfSightTiles[distPlus1String].walls[farthestTilePos] = farthestTileData;
+					} else {
+						lineOfSightTiles[distPlus1String].floors[farthestTilePos] = farthestTileData;
+					}
+				}
+			}
+		};
 
 		for (let i=1; i <= range; i++) {
 			const distance = `${numToStr[i]}Away`;
@@ -866,38 +1094,6 @@ class Map extends React.Component {
 				}
 			}
 		}
-
-		/**
-		 * Looks at two adjacent tiles, one farther away from character than other,
-		 * and determines if there is Line of Sight (LOS) between them
-		 * @param distance: number
-		 * @param farthestTilePos: string
-		 * @param farthestTileData: object
-		 * @param fartherTileData: object
-		 */
-		const compareTiles = (distance, farthestTilePos, farthestTileData, fartherTileData) => {
-			const distString = `${numToStr[distance]}Away`;
-			const distPlus1String = `${numToStr[distance+1]}Away`;
-			for (const closestTileData of Object.values(lineOfSightTiles[distString].floors)) {
-				const deltaXFartherTiles = Math.abs(distance === 1 ? farthestTileData.xPos - closestTileData.xPos : farthestTileData.xPos - fartherTileData.xPos);
-				const deltaYFartherTiles = Math.abs(distance === 1 ? farthestTileData.yPos - closestTileData.yPos : farthestTileData.yPos - fartherTileData.yPos);
-				const deltaXCloserTiles = Math.abs(distance === 1 ? closestTileData.xPos - centerTile.xPos : fartherTileData.xPos - closestTileData.xPos);
-				const deltaYCloserTiles = Math.abs(distance === 1 ? closestTileData.yPos - centerTile.yPos : fartherTileData.yPos - closestTileData.yPos);
-				const outerTileHasLOS =
-					(deltaXFartherTiles <= 1 && deltaXCloserTiles <= 1 && deltaYFartherTiles === 1) ||
-					(deltaYFartherTiles <= 1 && deltaYCloserTiles <= 1 && deltaXFartherTiles === 1);
-
-				// if one of the 1 away tiles that has line of sight is between the current 2 away tile and center tile...
-				if (outerTileHasLOS)
-				{
-					if (farthestTileData.type === 'wall' || (farthestTileData.type === 'door' && !farthestTileData.doorIsOpen)) {
-						lineOfSightTiles[distPlus1String].walls[farthestTilePos] = farthestTileData;
-					} else {
-						lineOfSightTiles[distPlus1String].floors[farthestTilePos] = farthestTileData;
-					}
-				}
-			}
-		};
 
 		// now find tiles two tiles from center that have line of sight
 		let floorsAndWalls = {...nearbyTiles.twoAway.floors, ...nearbyTiles.twoAway.walls};
@@ -1200,9 +1396,15 @@ class Map extends React.Component {
 	 * Determines if user's key/tap/click movement command is valid, and if so, updates coords for the active PC,
 	 * then calls _moveMap to keep the active PC centered on screen,
 	 * then if in combat, updates the threatList, and if not, calls moveCharacter again to move followers
-	 * @param newTilePos: String
+	 * @param tilePath: Array (of pos (String) - optional - only passed in follow mode)
+	 * @param newTile: String (optional - for either one move during combat or when moving followers)
+	 * @param pcToMove: String (optional - ID of follower to move)
 	 */
-	moveCharacter = (newTilePos, pcToMove = null) => {
+	moveCharacter = (tilePath, newTile = null, pcToMove = null) => {
+		const newTilePos = newTile || tilePath[0];
+		if (!pcToMove) {
+			tilePath.shift();
+		}
 		const activePcData = this.props.playerCharacters[this.props.activeCharacter];
 		if (this.props.isInCombat && this.props.activePlayerMovesCompleted >= this.props.playerMovesLimit) {
 			const showDialog = true;
@@ -1222,11 +1424,6 @@ class Map extends React.Component {
 		let newCoords = newTilePos.split('-');
 		let playerPositions = this.props.getAllCharactersPos('player', 'pos');
 		const activePC = this.props.isInCombat ? this.props.activeCharacter : pcToMove ? pcToMove : this.props.activeCharacter;
-		const oldCoords = {xPos: this.props.playerCharacters[activePC].coords.xPos, yPos: this.props.playerCharacters[activePC].coords.yPos};
-
-		// if (activePcData) {
-		// 	this.props.updateLog(`NEW TURN: Player ${activePcData.name} moves to ${newCoords[0]}, ${newCoords[1]}`);
-		// }
 
 		// Find all visited tiles for determining lighting
 		const playerVisitedUpdatedState = {...this.state.playerVisited, ...this._findVisitedTiles(newCoords)};
@@ -1254,7 +1451,9 @@ class Map extends React.Component {
 				followModeMoves
 			}), () => {
 				this._moveMap();
-				this._checkForExit();
+				if (tilePath.length === 0) {
+					this._checkForExit();
+				}
 				const isCurrentlyInCombat = this.props.isInCombat;
 				if (threatLists.threatListToAdd.length > 0 || threatLists.threatListToRemove.length > 0) {
 					this.props.updateThreatList(threatLists.threatListToAdd, threatLists.threatListToRemove, () => {
@@ -1272,12 +1471,22 @@ class Map extends React.Component {
 					// if leader has moved at least 2x, there is at least 1 follower, and pc just moved was the leader,
 					// then call moveCharacter to update first follower next avail pos in followModeMoves array
 					if (this.state.followModeMoves.length >= 2 && this.props.playerFollowOrder.length >= 2 && !pcToMove) {
-						this.moveCharacter(newFollowerPos, this.props.playerFollowOrder[1]);
+						setTimeout(() => {
+							this.moveCharacter(tilePath, newFollowerPos, this.props.playerFollowOrder[1]);
+						}, this.movementDelay);
 
 					// if leader has moved 3x, there are 2 followers, and 1st follower was just moved,
 					// then call moveCharacter to update second follower to next avail pos in followModeMoves array
 					} else if (this.state.followModeMoves.length >= 3 && this.props.playerFollowOrder.length === 3 && pcToMove === this.props.playerFollowOrder[1]) {
-						this.moveCharacter(newFollowerPos, this.props.playerFollowOrder[2]);
+						setTimeout(() => {
+							this.moveCharacter(tilePath, newFollowerPos, this.props.playerFollowOrder[2]);
+						}, this.movementDelay);
+					// otherwise, moving to next tile in path
+					} else if (tilePath.length > 0) {
+						// to force characters to move one space at a time
+						setTimeout(() => {
+							this.moveCharacter(tilePath);
+						}, this.movementDelay);
 					}
 				}
 			});
@@ -1287,9 +1496,9 @@ class Map extends React.Component {
 	/**
 	 * For dungeons only:
 	 * If PC hasn't visited the current tile,
-	 * gets a collection any of the 8 tiles surrounding current one that are walls in order to light them,
+	 * gets a collection of the 8 tiles surrounding current one that are walls in order to light them,
 	 * since only visited tiles are lit
-	 * @param newCoords: Object
+	 * @param newCoords: Array
 	 * @returns Object (containing tile coords)
 	 * @private
 	 */
@@ -1519,7 +1728,7 @@ class Map extends React.Component {
 						newCreatureCoordsArray.push(creatureCoords);
 						// this.props.updateLog(`Moving ${creatureID} away from player to ${JSON.stringify(newCreatureCoordsArray)}`);
 					}
-					this._storeNewCreatureCoords(creatureID, newCreatureCoordsArray, () => {updateThreatAndCurrentTurn(true)});
+					this._storeNewCreatureCoords(creatureID, newCreatureCoordsArray, updateThreatAndCurrentTurn);
 				// or if player is out of attack range, move closer
 				} else if (targetPlayerDistance > creatureData.range) {
 					let moves = 1;
@@ -1610,11 +1819,11 @@ class Map extends React.Component {
 	 */
 	_moveMap(initialSetupCallback) {
 		const playerID = this.props.activeCharacter;
-		const activePlayerCoords = this.props.getAllCharactersPos('player', 'coords').find(info => info.id === playerID);
+		const activePlayerCoords = this.props.playerCharacters[playerID].coords;
 		const windowCenter = this._calculateMapCenter();
 		const scrollOptions = {
-			left: (activePlayerCoords.coords.xPos * this.tileSize) - windowCenter.xPos,
-			top: (activePlayerCoords.coords.yPos * this.tileSize) - windowCenter.yPos,
+			left: (activePlayerCoords.xPos * this.tileSize) - windowCenter.xPos,
+			top: (activePlayerCoords.yPos * this.tileSize) - windowCenter.yPos,
 			behavior: "smooth"
 		};
 
@@ -1738,7 +1947,7 @@ class Map extends React.Component {
 				// timeout to allow UI to provide visible updates to player, like creatures moving in turn and turn indicator to show 'enemies moving'
 				setTimeout(() => {
 					this._moveCreature();
-				}, 100);
+				}, this.movementDelay);
 			} else if (this.props.playerCharacters[this.props.activeCharacter]) {
 				this._moveMap();
 			}
