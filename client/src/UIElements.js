@@ -22,18 +22,6 @@ function CharacterControls(props) {
 		</div>
 	);
 
-	// for (let i=0; i < props.weaponsProp.length; i++) {
-	// 	const weaponName = props.weaponsProp[i];
-	// 	let weaponButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0) ? ' button-inactive' :
-	// 		(props.weaponButtonSelected.characterId === props.characterId && props.weaponButtonSelected.weaponName === weaponName) ? ' button-selected': '';
-	//
-	// 	weapons.push(
-	// 		<div ref={weaponRefs[weaponName]} className={'weapon-button' + weaponButtonState} key={weaponName} onClick={() => {
-	// 			props.toggleWeaponButton(props.characterId, weaponName);
-	// 		}}>{weaponName}</div>
-	// 	);
-	// }
-
 	return (
 		<div className='character-control-container'>
 			<div className='character-name font-fancy'>{props.characterName}</div>
@@ -118,7 +106,7 @@ function ModeInfoPanel(props) {
 	const charactersTurn = props.isInCombat && (props.players[props.activeCharacter] ? props.players[props.activeCharacter].name : 'Enemies moving...');
 
 	return (
-		<div className="mode-info-container ui-panel">
+		<div>
 			<div
 				className={`general-button ${props.isInCombat ? 'button-tactical-mode-on' : ''}`}
 				onClick={() => {

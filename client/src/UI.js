@@ -6,8 +6,17 @@ class UI extends React.Component {
 	constructor(props) {
 		super(props);
 
+		this.uiRefs = {
+			controlBar: React.createRef(),
+			log: React.createRef(),
+			mode: React.createRef()
+		};
+
 		this.state = {
-			logText: this.props.logText
+			logText: this.props.logText,
+			controlBarMinimized: false,
+			logMinimized: false,
+			modeMinimized: false
 		};
 	}
 
@@ -39,6 +48,18 @@ class UI extends React.Component {
 		});
 
 		return lines;
+	}
+
+	minimizePanel = (refName) => {
+		const panelStateName = refName + 'Minimized';
+		if (this.state[panelStateName]) {
+			this.uiRefs[refName].current.style = 'transform: translateY(0)';
+		} else if (refName === 'controlBar') {
+			this.uiRefs[refName].current.style = 'transform: translateY(150px)';
+		} else if (refName === 'mode' || refName === 'log') {
+			this.uiRefs[refName].current.style = 'transform: translateY(-150px)';
+		}
+		this.setState(prevState => ({[panelStateName]: !prevState[panelStateName]}));
 	}
 
 	showControlBar = () => {
@@ -73,25 +94,38 @@ class UI extends React.Component {
 		return (
 			<div className="ui-container">
 				{this.props.showDialog && this.props.dialogProps && <this.showDialog />}
-				<div className="log-container ui-panel">{this.state.logText && <this.addLogLines />}</div>
-				{this.props.modeInfo &&
-					<ModeInfoPanel
-						isInCombat={this.props.modeInfo.isInCombat}
-						toggleCombat={this.props.toggleCombatState}
-						threatList={this.props.threatList}
-						setShowDialogProps={this.props.setShowDialogProps}
-						players={this.props.playerCharacters}
-						activeCharacter={this.props.activeCharacter}
-						updateActiveCharacter={this.props.updateActiveCharacter}
-						endTurnCallback={this.props.updateCurrentTurn}
-						toggleWeaponButton={this.props.toggleWeapon}
-						updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
-						characterIsSelected={this.props.characterIsSelected}
-						characterInfo={this.props.characterInfoText}
-						creatureIsSelected={this.props.creatureIsSelected}
-						creatureInfo={this.props.creatureInfoText}
-					/>
-				}
+
+				<div ref={this.uiRefs.log} className="log-container ui-panel">
+					{this.state.logText && <this.addLogLines />}
+					<div className="minimize-button general-button" onClick={() => {
+						this.minimizePanel('log');
+					}}>_</div>
+				</div>
+
+				<div ref={this.uiRefs.mode} className="mode-info-container ui-panel">
+					{this.props.modeInfo &&
+						<ModeInfoPanel
+							isInCombat={this.props.modeInfo.isInCombat}
+							toggleCombat={this.props.toggleCombatState}
+							threatList={this.props.threatList}
+							setShowDialogProps={this.props.setShowDialogProps}
+							players={this.props.playerCharacters}
+							activeCharacter={this.props.activeCharacter}
+							updateActiveCharacter={this.props.updateActiveCharacter}
+							endTurnCallback={this.props.updateCurrentTurn}
+							toggleWeaponButton={this.props.toggleWeapon}
+							updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
+							characterIsSelected={this.props.characterIsSelected}
+							characterInfo={this.props.characterInfoText}
+							creatureIsSelected={this.props.creatureIsSelected}
+							creatureInfo={this.props.creatureInfoText}
+						/>
+					}
+					<div className="minimize-button general-button" onClick={() => {
+						this.minimizePanel('mode');
+					}}>_</div>
+				</div>
+
 				{this.props.characterInfoText &&
 					<CharacterInfoPanel
 						characterIsSelected={this.props.characterIsSelected}
@@ -99,6 +133,7 @@ class UI extends React.Component {
 						characterInfo={this.props.characterInfoText}
 					/>
 				}
+
 				{this.props.creatureInfoText &&
 					<CreatureInfoPanel
 						creatureIsSelected={this.props.creatureIsSelected}
@@ -106,7 +141,13 @@ class UI extends React.Component {
 						creatureInfo={this.props.creatureInfoText}
 					/>
 				}
-				<div className="control-bar-container ui-panel">{this.props.playerCharacters && <this.showControlBar />}</div>
+
+				<div ref={this.uiRefs.controlBar} className="control-bar-container ui-panel">
+					<div className="minimize-button general-button" onClick={() => {
+						this.minimizePanel('controlBar');
+					}}>_</div>
+					{this.props.playerCharacters && <this.showControlBar />}
+				</div>
 			</div>
 		);
 	}

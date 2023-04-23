@@ -58,6 +58,9 @@ class Map extends React.Component {
 		};
 	}
 
+	/**
+	 * Resets state and other vars related to map - used for moving from one level to another
+	 */
 	resetMap = () => {
 		this.initialMapLoad = true;
 		this.mapLayoutTemp = {};
@@ -850,10 +853,13 @@ class Map extends React.Component {
 	}
 
 	/**
-	 *
-	 * @param startTileCoords
-	 * @param endTileCoords
-	 * @returns {boolean|*[]}
+	 * Searches tiles between start and end to find a clear path (no PCs, no creatures, no objects, no walls, no closed doors)
+	 * Does this by looking at all 8 connections around a tile, prioritized by most direct route to least direct
+	 * Tiles are rated by distance (x+y) to the end or 0 if it's blocked
+	 * Tile positions and their ratings are temp stored in order to reference/return to them should a path become blocked.
+	 * @param startTileCoords: Object (of x and y values)
+	 * @param endTileCoords: Object (of x and y values)
+	 * @returns Array (of strings (positions))
 	 */
 	pathFromAtoB(startTileCoords, endTileCoords) {
 		const allPcPos = this.props.getAllCharactersPos('player', 'pos');
