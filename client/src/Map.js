@@ -818,7 +818,8 @@ class Map extends React.Component {
 		const activePC = this.props.playerCharacters[this.props.activeCharacter];
 		const activePlayerCoords = activePC.coords;
 		const activePlayerSight = activePC.lightRange;
-		const activePcVisibleTiles = this._unblockedPathsToNearbyTiles(`${activePlayerCoords.xPos}-${activePlayerCoords.yPos}`, activePlayerSight);
+		const activePlayerPos = `${activePlayerCoords.xPos}-${activePlayerCoords.yPos}`;
+		const activePcVisibleTiles = this._unblockedPathsToNearbyTiles(activePlayerPos, activePlayerSight);
 		const allPcCoords = this.props.getAllCharactersPos('player', 'coords');
 		let otherPcVisibleTiles = [];
 		let isInRangedWeaponRange = false;
@@ -836,13 +837,12 @@ class Map extends React.Component {
 		if (creatureCoords) {
 			if (weaponData.stats.ranged) {
 				const creaturePos = `${creatureCoords.xPos}-${creatureCoords.yPos}`;
-				const otherPcTilePos = Object.keys(otherPcVisibleTiles);
+				const otherVisibleTilePos = otherPcVisibleTiles.flatMap(tiles => Object.keys(tiles));
 				let tiles = [];
 				for (const distance of Object.values(activePcVisibleTiles)) {
 					tiles = tiles.concat(Object.keys(distance.floors));
 				}
-	//todo: add new function to check line of sight
-				if (tiles.includes(creaturePos) || (otherPcTilePos.includes(creaturePos))) {
+				if ((tiles.includes(creaturePos) || (otherVisibleTilePos.includes(creaturePos))) && this.isInLineOfSight(activePlayerPos, creaturePos)) {
 					isInRangedWeaponRange = true;
 				}
 			} else if (Math.abs(creatureCoords.xPos - activePlayerCoords.xPos) <= 1 && Math.abs(creatureCoords.yPos - activePlayerCoords.yPos) <= 1) {
@@ -891,17 +891,11 @@ class Map extends React.Component {
 			let testPos = `${coords.xPos}-${coords.yPos}`;
 			let isTestPosOk = true;
 
-			// if (checkLineOfSight) {
-			// 	isLineOfSight = !allCreaturePos.find(creature => creature.pos === testPos) &&
-			// 		this.state.mapLayout[testPos].type !== 'wall' && !allObjectPos.find(obj => obj.pos === testPos);
-			// }
 			if (this.state.mapLayout[testPos].type === 'door' && !this.state.mapLayout[testPos].doorIsOpen) {
 				foundClosedDoor = true;
 			}
 
-			const isWalkableTile = this.state.mapLayout[testPos].type === 'floor' || (this.state.mapLayout[testPos].type === 'door' && this.state.mapLayout[testPos].doorIsOpen);
-
-			if (this.state.mapLayout[testPos].type === 'wall' || foundClosedDoor || (isWalkableTile && (allPcPos.find(pc => pc.pos === testPos)))) {
+			if (this.state.mapLayout[testPos].type === 'wall' || foundClosedDoor || allPcPos.find(pc => pc.pos === testPos)) {
 				checkedTiles[testPos] = {rating: 0};
 				if (checkedTiles[currentPos]) {
 					checkedTiles[currentPos][testPos] = 0;
@@ -1013,6 +1007,122 @@ class Map extends React.Component {
 	}
 
 	/**
+	 * Checks most linear path from start to end for wall, closed door, or creature to see if path is blocked
+	 * Used for ranged attacks
+	 * (doesn't check for PCs, as assumed that a PC in the way would duck or shooting PC would shoot around)
+	 * @param startPos: string
+	 * @param endPos: string
+	 * @returns {boolean}
+	 */
+	isInLineOfSight(startPos, endPos) {
+		let isLineOfSight = true;
+		const endTileCoords = endPos.split('-');
+		let currentCoords = startPos.split('-');
+		currentCoords[0] = +currentCoords[0];
+		currentCoords[1] = +currentCoords[1];
+		endTileCoords[0] = +endTileCoords[0];
+		endTileCoords[1] = +endTileCoords[1];
+		const xDelta = endTileCoords[0] - currentCoords[0];
+		const yDelta = endTileCoords[1] - currentCoords[1];
+		const absXDelta = Math.abs(xDelta);
+		const absYDelta = Math.abs(yDelta);
+		let xModifier = 0;
+		let yModifier = 0;
+		// 'delay' is essentially the difference between x distance and y distance at smallest ratio,
+		// indicating number of tiles going the longer direction before going the shorter one
+		let delay = 1;
+		let smallerValue = 0;
+		let largerValue = 0;
+		let counter = 0;
+
+		// Set the modifiers that will update which tile to check next
+		// if abs deltas are equal (path is perfectly diagonal), the path of checking each tile could go two ways (move x first, then y, or move y first, then x)
+		if (absXDelta === absYDelta) {
+			// it's arbitrary whether x is 0 first or y is, so just setting y to 0 first, then checking if that tile is blocked and swapping if so
+			xModifier = xDelta < 0 ? -1 : 1;
+			yModifier = 0;
+			if (this._isCurrentTileBlocked(`${currentCoords[0] + xModifier}-${currentCoords[1]}`, true)) {
+				yModifier = yDelta < 0 ? -1 : 1;
+				xModifier = 0;
+			}
+		// if deltas are not equal, only one option for the path (longer direction first, then shorter direction)
+		} else {
+			xModifier = absXDelta < absYDelta ? 0 : xDelta < 0 ? -(xDelta/xDelta) : xDelta/xDelta;
+			yModifier = xModifier !== 0 ? 0 : yDelta < 0 ? -(yDelta/yDelta) : yDelta/yDelta;
+		}
+		// now set "delay"
+		if (absXDelta !== absYDelta && xDelta !== 0 && yDelta !== 0) {
+			smallerValue = absXDelta < absYDelta ? absXDelta : absYDelta;
+			largerValue = smallerValue === absXDelta ? absYDelta : absXDelta;
+			if (smallerValue === 1 && largerValue > 2) {
+				smallerValue = 2; // for 1 row/col apart, just need to split other direction in half (rounded up)
+				delay = Math.ceil(largerValue / smallerValue);
+			} else {
+				delay = Math.floor(largerValue / smallerValue);
+			}
+		}
+		const updateCoords = () => {
+			let initialXmod = xModifier;
+			let initialYmod = yModifier;
+
+			if (counter < delay) {
+				counter++;
+			} else if (xDelta !== 0 && yDelta !== 0) {
+				if (xModifier === 0) {
+					xModifier = xDelta < 0 ? -(xDelta/xDelta) : xDelta/xDelta;
+					yModifier = 0;
+				} else {
+					yModifier = yDelta < 0 ? -(yDelta/yDelta) : yDelta/yDelta;
+					xModifier = 0;
+				}
+				counter = 0;
+			}
+
+			currentCoords[0] += xModifier;
+			currentCoords[1] += yModifier;
+
+			xModifier = initialXmod;
+			yModifier = initialYmod;
+		};
+
+		updateCoords();
+		let firstDiagonalPathOptionBlocked = false;
+		while (isLineOfSight && (currentCoords[0] !== endTileCoords[0] || currentCoords[1] !== endTileCoords[1])) {
+			const currentPos = `${currentCoords[0]}-${currentCoords[1]}`;
+			if (this._isCurrentTileBlocked(currentPos, true) && (
+				(absXDelta !== absYDelta) || (absXDelta === absYDelta && firstDiagonalPathOptionBlocked)))
+			{
+				isLineOfSight = false;
+			} else {
+				if (absXDelta === absYDelta && this._isCurrentTileBlocked(currentPos, true) && !firstDiagonalPathOptionBlocked) {
+					firstDiagonalPathOptionBlocked = true;
+					const temp = xModifier;
+					xModifier = yModifier;
+					yModifier = temp;
+				}
+				updateCoords();
+			}
+		}
+		return isLineOfSight;
+	}
+
+	/**
+	 * Checks if position is blocked (the tile is a wall, a closed door, or has a creature on it (if check param is true))
+	 * @param currentPos: string
+	 * @param checkForCreature: boolean
+	 * @returns {boolean}
+	 */
+	_isCurrentTileBlocked(currentPos, checkForCreature) {
+		let allCreaturePos = [];
+		if (checkForCreature) {
+			allCreaturePos = this.props.getAllCharactersPos('creature', 'pos');
+		}
+
+		return (this.state.mapLayout[currentPos].type === 'door' && !this.state.mapLayout[currentPos].doorIsOpen) ||
+			this.state.mapLayout[currentPos].type === 'wall' || (checkForCreature && allCreaturePos.find(creature => creature.pos === currentPos));
+	}
+
+	/**
 	 * Find all tiles out to 'range' number of rings surrounding center,
 	 * then find tiles of those that have unblocked lines of sight(LOS) to the center
 	 * @param centerTilePos {string} : position of player (ex. '1-2')
@@ -1084,7 +1194,7 @@ class Map extends React.Component {
 					const vertDeltaFromCenter = Math.abs(centerTile.yPos - currentTile.yPos);
 					const greaterOrCommonDistance = horizDeltaFromCenter >= vertDeltaFromCenter ? horizDeltaFromCenter : vertDeltaFromCenter;
 					const distance = `${numToStr[greaterOrCommonDistance]}Away`;
-					if (currentTile.type === 'wall' || (currentTile.type === 'door' && !currentTile.doorIsOpen)) {
+					if (this._isCurrentTileBlocked(tilePos, false)) {
 						if (greaterOrCommonDistance === 1) {
 							lineOfSightTiles[distance].walls[tilePos] = currentTile;
 						} else {

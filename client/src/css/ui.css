@@ -143,7 +143,7 @@
 	grid-area: log;
 	display: flex;
 	flex-direction: column;
-	justify-content: end;
+	justify-content: space-between;
 	padding: 10px;
 	border: 2px solid cornflowerblue;
 	border-top: 0;
@@ -151,6 +151,13 @@
 	border-radius: 0 0 5px 0;
 	opacity: 0.6;
 	font-size: 20px;
+}
+
+.log-lines {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	max-height: 140px;
 	overflow-y: scroll;
 }
 

@@ -43,7 +43,7 @@ class UI extends React.Component {
 		let lines = [];
 		let i = 0;
 		this.state.logText.forEach(line => {
-			lines.unshift(<div key={i} className="log-line">{line}</div>);
+			lines.push(<div key={i} className="log-line">{line}</div>);
 			i++;
 		});
 
@@ -96,7 +96,9 @@ class UI extends React.Component {
 				{this.props.showDialog && this.props.dialogProps && <this.showDialog />}
 
 				<div ref={this.uiRefs.log} className="log-container ui-panel">
-					{this.state.logText && <this.addLogLines />}
+					{this.state.logText &&
+						<div className="log-lines"><this.addLogLines /></div>
+					}
 					<div className="minimize-button general-button" onClick={() => {
 						this.minimizePanel('log');
 					}}>_</div>
