@@ -43,6 +43,8 @@ class Map extends React.Component {
 			catacombs: {}
 		};
 		this.currentMapData = GameLocations[this.props.currentLocation];
+		// total number of map pieces in MapData: 17;
+		this.numMapPieceTwoDoorHalls = 6;
 		this.charRefs = {};
 
 		this.state = {
@@ -140,7 +142,10 @@ class Map extends React.Component {
 	_chooseNewRandomPiece(attemptedPieces) {
 		const pieceNamesList = Object.keys(MapData);
 		const filteredPieceNameList = pieceNamesList.filter(name => attemptedPieces.indexOf(name) < 0);
-		const randomIndex = Math.floor(Math.random() * filteredPieceNameList.length);
+		const percentMapFilled = Object.keys(this.mapLayoutTemp).length / this.mapTileLimit;
+		// while map is only 30% filled so far, ~66% chance of only using rooms/halls with more than 2 doors - this is to try to prevent small maps
+		const randomWeighting = percentMapFilled < 0.3 ? (Math.floor(Math.random() * 1.5) * -this.numMapPieceTwoDoorHalls) : 0;
+		const randomIndex = Math.floor(Math.random() * (filteredPieceNameList.length + randomWeighting));
 		const newPiece = MapData[filteredPieceNameList[randomIndex]];
 		return {newPiece, pieceName: filteredPieceNameList[randomIndex]};
 	}
@@ -794,17 +799,31 @@ class Map extends React.Component {
 		if (activePCCoords.xPos === this.state.exitPosition.xPos &&
 			activePCCoords.yPos === this.state.exitPosition.yPos)
 		{
+			let dialogProps = {};
+			if (this.props.isInCombat) {
+				dialogProps = {
+					dialogContent: "You can't descend to the next level while in combat.",
+					closeButtonText: 'Ok',
+					closeButtonCallback: null,
+					disableCloseButton: false,
+					actionButtonVisible: false,
+					actionButtonText: '',
+					actionButtonCallback: null,
+					dialogClasses: ''
+				};
+			} else {
+				dialogProps = {
+					dialogContent: 'Do you want to descend to the next level?',
+					closeButtonText: 'Stay here',
+					closeButtonCallback: null,
+					disableCloseButton: false,
+					actionButtonVisible: true,
+					actionButtonText: 'Descend',
+					actionButtonCallback: this.resetMap,
+					dialogClasses: ''
+				};
+			}
 			const showDialog = true;
-			const dialogProps = {
-				dialogContent: 'Do you want to descend to the next level?',
-				closeButtonText: 'Stay here',
-				closeButtonCallback: null,
-				disableCloseButton: false,
-				actionButtonVisible: true,
-				actionButtonText: 'Descend',
-				actionButtonCallback: this.resetMap,
-				dialogClasses: ''
-			};
 			this.props.setShowDialogProps(showDialog, dialogProps);
 		}
 	}
