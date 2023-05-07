@@ -12,6 +12,8 @@ Current demo: https://lovecraft-oldones.web.app/
 ---
 #### Current status:
 
+5/7/23: Added line of sight pathing for accurate ranged attacks and tracking party members. Improvements to UI for mobile. Map piece randomization weighting during layout.
+
 4/15/23: Finished initiative system.  Added mode switching for follow/tactical modes (with three PCs now playable as a party).  Added movement animation.
 
 3/24/23: adding firebase login/authentication
