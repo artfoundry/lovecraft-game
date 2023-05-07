@@ -18,7 +18,7 @@
 .DS_Store
 /assets_unused/
 notes
-/mapLayoutTool/mapData_orig_backup.json
+/mapLayoutTool/mapData_*_backup.json
 client_secret*
 .idea
 

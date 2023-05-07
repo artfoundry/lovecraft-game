@@ -49,6 +49,7 @@ class Game extends React.Component {
 			weaponButtonSelected: {},
 			isInCombat: true, // start in tactical mode any time entering a new area
 			threatList: [],
+			partyIsNearby: true,
 			logText: [],
 			showDialog: true,
 			dialogProps: {
@@ -62,6 +63,35 @@ class Game extends React.Component {
 				dialogClasses: ''
 			}
 		}
+	}
+
+	/**
+	 *
+	 * @param callback
+	 */
+	resetDataForNewLevel = (callback) => {
+		this.setState({
+			mapCreatures: {},
+			unitsTurnOrder: [],
+			currentTurn: 0,
+			activeCharacter: this.startingPlayerCharacters[0],
+			activePlayerMovesCompleted: 0,
+			activePlayerActionsCompleted: 0,
+			characterIsSelected: false,
+			characterInfoText: '',
+			creatureIsSelected: false,
+			creatureInfoText: '',
+			creatureCoordsUpdate: null,
+			selectedCharacter: '',
+			selectedCreature: '',
+			weaponButtonSelected: {},
+			isInCombat: true, // start in tactical mode any time entering a new area
+			threatList: [],
+			partyIsNearby: true,
+			logText: []
+		}, () => {
+			if (callback) callback();
+		})
 	}
 
 	/**
@@ -174,14 +204,40 @@ class Game extends React.Component {
 	}
 
 	/**
+	 * Uses checkLineOfSightToParty (from Map) to see if all party members are within sight of each other
+	 * @param checkLineOfSightToParty: function
+	 * @param callback: function
+	 */
+	updateIfPartyIsNearby = (checkLineOfSightToParty, callback) => {
+		if (checkLineOfSightToParty && Object.keys(this.state.playerCharacters).length > 1) {
+			let partyIsNearby = true;
+			const allPcPositions = this.getAllCharactersPos('player', 'pos');
+			const mainPcPos = allPcPositions[0].pos;
+			const secPcPos = allPcPositions[1].pos;
+			const thirdPcPos = allPcPositions[2].pos;
+			if (!checkLineOfSightToParty(mainPcPos, secPcPos) || (thirdPcPos &&
+				(!checkLineOfSightToParty(mainPcPos, thirdPcPos) || !checkLineOfSightToParty(secPcPos, thirdPcPos)) ) )
+			{
+				partyIsNearby = false;
+			}
+			this.setState({partyIsNearby}, () => {
+				if (callback) callback();
+			});
+		} else if (callback) {
+			callback();
+		}
+	}
+
+	/**
 	 * Adds IDs to or removes IDs from threat list and saves list to state,
 	 * then if there's a change in the list, calls toggleCombatState
 	 * This is the primary entry point for changing/determining whether game is in Follow mode or Tactical mode
 	 * @param threatIdsToAdd: Array (of strings - IDs of creatures attacking player)
 	 * @param threatIdsToRemove: Array (of strings - IDs of creatures no longer a threat)
 	 * @param callback: function
+	 * @param checkLineOfSightToParty: function
 	 */
-	updateThreatList = (threatIdsToAdd, threatIdsToRemove, callback) => {
+	updateThreatList = (threatIdsToAdd, threatIdsToRemove, callback, checkLineOfSightToParty) => {
 		const previousListSize = this.state.threatList.length;
 		let updatedList = [...this.state.threatList];
 
@@ -199,12 +255,21 @@ class Game extends React.Component {
 				}
 			});
 		}
+
 		this.setState({threatList: updatedList}, () => {
+			const isInCombat = updatedList.length > 0;
+			const updatePartyProximityCallback = () => {
+				if (!this.state.isInCombat) {
+					this.updateIfPartyIsNearby(checkLineOfSightToParty, callback);
+				} else if (callback) {
+					callback();
+				}
+			}
+			// if combat state is changing...
 			if (previousListSize !== updatedList.length && (previousListSize === 0 || updatedList.length === 0)) {
-				const isInCombat = updatedList.length > 0;
-				this.toggleCombatState(isInCombat, callback);
-			} else if (callback) {
-				callback();
+				this.toggleCombatState(isInCombat, updatePartyProximityCallback);
+			} else {
+				updatePartyProximityCallback();
 			}
 		});
 	}
@@ -596,6 +661,7 @@ class Game extends React.Component {
 						threatList={this.state.threatList}
 						isInCombat={this.state.isInCombat}
 						toggleCombatState={this.toggleCombatState}
+						isPartyNearby={this.state.partyIsNearby}
 						modeInfo={{isInCombat: this.state.isInCombat, turn: this.state.currentTurn + 1}}
 						updateActiveCharacter={this.updateActiveCharacter}
 					/>
@@ -623,7 +689,10 @@ class Game extends React.Component {
 						updateThreatList={this.updateThreatList}
 						threatList={this.state.threatList}
 						isInCombat={this.state.isInCombat}
+						isPartyNearby={this.state.partyIsNearby}
+						updateIfPartyIsNearby={this.updateIfPartyIsNearby}
 						playerFollowOrder={this.state.playerFollowOrder}
+						resetDataForNewLevel={this.resetDataForNewLevel}
 					/>
 				}
 

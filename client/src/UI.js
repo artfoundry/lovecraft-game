@@ -50,6 +50,11 @@ class UI extends React.Component {
 		return lines;
 	}
 
+	scrollLog = () => {
+		const logLinesContainer = this.uiRefs.log.current.children[0];
+		logLinesContainer.scroll({top: logLinesContainer.scrollHeight, behavior: 'smooth'});
+	}
+
 	minimizePanel = (refName) => {
 		const panelStateName = refName + 'Minimized';
 		if (this.state[panelStateName]) {
@@ -86,7 +91,7 @@ class UI extends React.Component {
 
 	componentDidUpdate(prevProps, prevState, snapShot) {
 		if (prevProps.logText !== this.props.logText) {
-			this.setState({logText: [...this.props.logText]});
+			this.setState({logText: [...this.props.logText]}, this.scrollLog);
 		}
 	}
 
@@ -97,7 +102,9 @@ class UI extends React.Component {
 
 				<div ref={this.uiRefs.log} className="log-container ui-panel">
 					{this.state.logText &&
-						<div className="log-lines"><this.addLogLines /></div>
+						<div className="log-lines">
+							<this.addLogLines />
+						</div>
 					}
 					<div className="minimize-button general-button" onClick={() => {
 						this.minimizePanel('log');
@@ -110,6 +117,7 @@ class UI extends React.Component {
 							isInCombat={this.props.modeInfo.isInCombat}
 							toggleCombat={this.props.toggleCombatState}
 							threatList={this.props.threatList}
+							isPartyNearby={this.props.isPartyNearby}
 							setShowDialogProps={this.props.setShowDialogProps}
 							players={this.props.playerCharacters}
 							activeCharacter={this.props.activeCharacter}

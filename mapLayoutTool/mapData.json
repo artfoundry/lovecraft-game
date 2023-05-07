@@ -4309,818 +4309,6 @@
       "neighbors": {}
     }
   },
-  "hall1x2": {
-    "0-0": {
-      "piece": "hall1x2",
-      "xPos": 0,
-      "yPos": 0,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "top-wall",
-      "altClasses": {
-        "0-1": "top-left-wall"
-      },
-      "neighbors": {}
-    },
-    "1-0": {
-      "piece": "hall1x2",
-      "xPos": 1,
-      "yPos": 0,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "top-wall",
-      "altClasses": {
-        "1-1": "top-right-wall"
-      },
-      "neighbors": {}
-    },
-    "0-1": {
-      "piece": "hall1x2",
-      "xPos": 0,
-      "yPos": 1,
-      "type": "floor",
-      "topSide": "wall",
-      "rightSide": "",
-      "bottomSide": "wall",
-      "leftSide": "opening",
-      "classes": "floor",
-      "altClasses": {
-        "0-1": "left-wall"
-      },
-      "neighbors": {
-        "toChangeClass": [
-          "0-0",
-          "0-1",
-          "0-2"
-        ],
-        "toChangeSideType": [
-          "1-1"
-        ]
-      }
-    },
-    "1-1": {
-      "piece": "hall1x2",
-      "xPos": 1,
-      "yPos": 1,
-      "type": "floor",
-      "topSide": "wall",
-      "rightSide": "opening",
-      "bottomSide": "wall",
-      "leftSide": "",
-      "classes": "floor",
-      "altClasses": {
-        "1-1": "right-wall"
-      },
-      "neighbors": {
-        "toChangeClass": [
-          "1-0",
-          "1-1",
-          "1-2"
-        ],
-        "toChangeSideType": [
-          "0-1"
-        ]
-      }
-    },
-    "0-2": {
-      "piece": "hall1x2",
-      "xPos": 0,
-      "yPos": 2,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "bottom-wall",
-      "altClasses": {
-        "0-1": "bottom-left-wall"
-      },
-      "neighbors": {}
-    },
-    "1-2": {
-      "piece": "hall1x2",
-      "xPos": 1,
-      "yPos": 2,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "bottom-wall",
-      "altClasses": {
-        "1-1": "bottom-right-wall"
-      },
-      "neighbors": {}
-    }
-  },
-  "hall2x1": {
-    "0-0": {
-      "piece": "hall2x1",
-      "xPos": 0,
-      "yPos": 0,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "left-wall",
-      "altClasses": {
-        "1-0": "top-left-wall"
-      },
-      "neighbors": {}
-    },
-    "1-0": {
-      "piece": "hall2x1",
-      "xPos": 1,
-      "yPos": 0,
-      "type": "floor",
-      "topSide": "opening",
-      "rightSide": "wall",
-      "bottomSide": "",
-      "leftSide": "wall",
-      "classes": "floor",
-      "altClasses": {
-        "1-0": "top-wall"
-      },
-      "neighbors": {
-        "toChangeClass": [
-          "0-0",
-          "1-0",
-          "2-0"
-        ],
-        "toChangeSideType": [
-          "1-1"
-        ]
-      }
-    },
-    "2-0": {
-      "piece": "hall2x1",
-      "xPos": 2,
-      "yPos": 0,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "right-wall",
-      "altClasses": {
-        "1-0": "top-right-wall"
-      },
-      "neighbors": {}
-    },
-    "0-1": {
-      "piece": "hall2x1",
-      "xPos": 0,
-      "yPos": 1,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "left-wall",
-      "altClasses": {
-        "1-1": "bottom-left-wall"
-      },
-      "neighbors": {}
-    },
-    "1-1": {
-      "piece": "hall2x1",
-      "xPos": 1,
-      "yPos": 1,
-      "type": "floor",
-      "topSide": "",
-      "rightSide": "wall",
-      "bottomSide": "opening",
-      "leftSide": "wall",
-      "classes": "floor",
-      "altClasses": {
-        "1-1": "bottom-wall"
-      },
-      "neighbors": {
-        "toChangeClass": [
-          "0-1",
-          "1-1",
-          "2-1"
-        ],
-        "toChangeSideType": [
-          "1-0"
-        ]
-      }
-    },
-    "2-1": {
-      "piece": "hall2x1",
-      "xPos": 2,
-      "yPos": 1,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "right-wall",
-      "altClasses": {
-        "1-1": "bottom-right-wall"
-      },
-      "neighbors": {}
-    }
-  },
-  "hallUR": {
-    "0-0": {
-      "piece": "hallUR",
-      "xPos": 0,
-      "yPos": 0,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "top-left-wall",
-      "altClasses": {},
-      "neighbors": {}
-    },
-    "1-0": {
-      "piece": "hallUR",
-      "xPos": 1,
-      "yPos": 0,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "top-wall",
-      "altClasses": {},
-      "neighbors": {}
-    },
-    "2-0": {
-      "piece": "hallUR",
-      "xPos": 2,
-      "yPos": 0,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "top-wall",
-      "altClasses": {
-        "2-1": "top-right-wall"
-      },
-      "neighbors": {}
-    },
-    "0-1": {
-      "piece": "hallUR",
-      "xPos": 0,
-      "yPos": 1,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "left-wall",
-      "altClasses": {},
-      "neighbors": {}
-    },
-    "1-1": {
-      "piece": "hallUR",
-      "xPos": 1,
-      "yPos": 1,
-      "type": "floor",
-      "topSide": "wall",
-      "rightSide": "",
-      "bottomSide": "",
-      "leftSide": "wall",
-      "classes": "floor",
-      "altClasses": {},
-      "neighbors": {}
-    },
-    "2-1": {
-      "piece": "hallUR",
-      "xPos": 2,
-      "yPos": 1,
-      "type": "floor",
-      "topSide": "wall",
-      "rightSide": "opening",
-      "bottomSide": "wall",
-      "leftSide": "",
-      "classes": "floor",
-      "altClasses": {
-        "2-1": "right-wall"
-      },
-      "neighbors": {
-        "toChangeClass": [
-          "2-0",
-          "2-1",
-          "2-2"
-        ],
-        "toChangeSideType": [
-          "1-1"
-        ]
-      }
-    },
-    "0-2": {
-      "piece": "hallUR",
-      "xPos": 0,
-      "yPos": 2,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "left-wall",
-      "altClasses": {
-        "1-2": "bottom-left-wall"
-      },
-      "neighbors": {}
-    },
-    "1-2": {
-      "piece": "hallUR",
-      "xPos": 1,
-      "yPos": 2,
-      "type": "floor",
-      "topSide": "",
-      "rightSide": "wall",
-      "bottomSide": "opening",
-      "leftSide": "wall",
-      "classes": "floor",
-      "altClasses": {
-        "1-2": "bottom-wall"
-      },
-      "neighbors": {
-        "toChangeClass": [
-          "0-2",
-          "1-2",
-          "2-2"
-        ],
-        "toChangeSideType": [
-          "1-1"
-        ]
-      }
-    },
-    "2-2": {
-      "piece": "hallUR",
-      "xPos": 2,
-      "yPos": 2,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "bottom-right-inverse-wall",
-      "altClasses": {
-        "2-1": "right-wall",
-        "1-2": "bottom-wall"
-      },
-      "neighbors": {}
-    }
-  },
-  "hallUL": {
-    "0-0": {
-      "piece": "hallUL",
-      "xPos": 0,
-      "yPos": 0,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "top-wall",
-      "altClasses": {
-        "0-1": "top-left-wall"
-      },
-      "neighbors": {}
-    },
-    "1-0": {
-      "piece": "hallUL",
-      "xPos": 1,
-      "yPos": 0,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "top-wall",
-      "altClasses": {},
-      "neighbors": {}
-    },
-    "2-0": {
-      "piece": "hallUL",
-      "xPos": 2,
-      "yPos": 0,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "top-right-wall",
-      "altClasses": {},
-      "neighbors": {}
-    },
-    "0-1": {
-      "piece": "hallUL",
-      "xPos": 0,
-      "yPos": 1,
-      "type": "floor",
-      "topSide": "wall",
-      "rightSide": "",
-      "bottomSide": "wall",
-      "leftSide": "opening",
-      "classes": "floor",
-      "altClasses": {
-        "0-1": "left-wall"
-      },
-      "neighbors": {
-        "toChangeClass": [
-          "0-0",
-          "0-1",
-          "0-2"
-        ],
-        "toChangeSideType": [
-          "1-1"
-        ]
-      }
-    },
-    "1-1": {
-      "piece": "hallUL",
-      "xPos": 1,
-      "yPos": 1,
-      "type": "floor",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "",
-      "leftSide": "",
-      "classes": "floor",
-      "altClasses": {},
-      "neighbors": {}
-    },
-    "2-1": {
-      "piece": "hallUL",
-      "xPos": 2,
-      "yPos": 1,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "right-wall",
-      "altClasses": {},
-      "neighbors": {}
-    },
-    "0-2": {
-      "piece": "hallUL",
-      "xPos": 0,
-      "yPos": 2,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "bottom-left-inverse-wall",
-      "altClasses": {
-        "0-1": "left-wall",
-        "1-2": "bottom-wall"
-      },
-      "neighbors": {}
-    },
-    "1-2": {
-      "piece": "hallUL",
-      "xPos": 1,
-      "yPos": 2,
-      "type": "floor",
-      "topSide": "",
-      "rightSide": "wall",
-      "bottomSide": "opening",
-      "leftSide": "wall",
-      "classes": "floor",
-      "altClasses": {
-        "1-2": "bottom-wall"
-      },
-      "neighbors": {
-        "toChangeClass": [
-          "0-2",
-          "1-2",
-          "2-2"
-        ],
-        "toChangeSideType": [
-          "1-1"
-        ]
-      }
-    },
-    "2-2": {
-      "piece": "hallUL",
-      "xPos": 2,
-      "yPos": 2,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "right-wall",
-      "altClasses": {
-        "1-2": "bottom-right-wall"
-      },
-      "neighbors": {}
-    }
-  },
-  "hallDR": {
-    "0-0": {
-      "piece": "hallDR",
-      "xPos": 0,
-      "yPos": 0,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "left-wall",
-      "altClasses": {
-        "1-0": "top-left-wall"
-      },
-      "neighbors": {}
-    },
-    "1-0": {
-      "piece": "hallDR",
-      "xPos": 1,
-      "yPos": 0,
-      "type": "floor",
-      "topSide": "opening",
-      "rightSide": "wall",
-      "bottomSide": "",
-      "leftSide": "wall",
-      "classes": "floor",
-      "altClasses": {
-        "1-0": "top-wall"
-      },
-      "neighbors": {
-        "toChangeClass": [
-          "0-0",
-          "1-0",
-          "2-0"
-        ],
-        "toChangeSideType": [
-          "1-1"
-        ]
-      }
-    },
-    "2-0": {
-      "piece": "hallDR",
-      "xPos": 2,
-      "yPos": 0,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "top-right-inverse-wall",
-      "altClasses": {
-        "1-0": "top-wall",
-        "2-1": "right-wall"
-      },
-      "neighbors": {}
-    },
-    "0-1": {
-      "piece": "hallDR",
-      "xPos": 0,
-      "yPos": 1,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "left-wall",
-      "altClasses": {},
-      "neighbors": {}
-    },
-    "1-1": {
-      "piece": "hallDR",
-      "xPos": 1,
-      "yPos": 1,
-      "type": "floor",
-      "topSide": "",
-      "rightSide": "",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "floor",
-      "altClasses": {},
-      "neighbors": {}
-    },
-    "2-1": {
-      "piece": "hallDR",
-      "xPos": 2,
-      "yPos": 1,
-      "type": "floor",
-      "topSide": "wall",
-      "rightSide": "opening",
-      "bottomSide": "wall",
-      "leftSide": "",
-      "classes": "floor",
-      "altClasses": {
-        "2-1": "right-wall"
-      },
-      "neighbors": {
-        "toChangeClass": [
-          "2-0",
-          "2-1",
-          "2-2"
-        ],
-        "toChangeSideType": [
-          "1-1"
-        ]
-      }
-    },
-    "0-2": {
-      "piece": "hallDR",
-      "xPos": 0,
-      "yPos": 2,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "bottom-left-wall",
-      "altClasses": {},
-      "neighbors": {}
-    },
-    "1-2": {
-      "piece": "hallDR",
-      "xPos": 1,
-      "yPos": 2,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "bottom-wall",
-      "altClasses": {},
-      "neighbors": {}
-    },
-    "2-2": {
-      "piece": "hallDR",
-      "xPos": 2,
-      "yPos": 2,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "bottom-wall",
-      "altClasses": {
-        "2-1": "bottom-right-wall"
-      },
-      "neighbors": {}
-    }
-  },
-  "hallDL": {
-    "0-0": {
-      "piece": "hallDL",
-      "xPos": 0,
-      "yPos": 0,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "top-left-inverse-wall",
-      "altClasses": {
-        "1-0": "top-wall",
-        "0-1": "left-wall"
-      },
-      "neighbors": {}
-    },
-    "1-0": {
-      "piece": "hallDL",
-      "xPos": 1,
-      "yPos": 0,
-      "type": "floor",
-      "topSide": "opening",
-      "rightSide": "wall",
-      "bottomSide": "",
-      "leftSide": "wall",
-      "classes": "floor",
-      "altClasses": {
-        "1-0": "top-wall"
-      },
-      "neighbors": {
-        "toChangeClass": [
-          "0-0",
-          "1-0",
-          "2-0"
-        ],
-        "toChangeSideType": [
-          "1-1"
-        ]
-      }
-    },
-    "2-0": {
-      "piece": "hallDL",
-      "xPos": 2,
-      "yPos": 0,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "right-wall",
-      "altClasses": {
-        "1-0": "top-right-wall"
-      },
-      "neighbors": {}
-    },
-    "0-1": {
-      "piece": "hallDL",
-      "xPos": 0,
-      "yPos": 1,
-      "type": "floor",
-      "topSide": "wall",
-      "rightSide": "",
-      "bottomSide": "wall",
-      "leftSide": "opening",
-      "classes": "floor",
-      "altClasses": {
-        "0-1": "left-wall"
-      },
-      "neighbors": {
-        "toChangeClass": [
-          "0-0",
-          "0-1",
-          "0-2"
-        ],
-        "toChangeSideType": [
-          "1-1"
-        ]
-      }
-    },
-    "1-1": {
-      "piece": "hallDL",
-      "xPos": 1,
-      "yPos": 1,
-      "type": "floor",
-      "topSide": "",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "",
-      "classes": "floor",
-      "altClasses": {},
-      "neighbors": {}
-    },
-    "2-1": {
-      "piece": "hallDL",
-      "xPos": 2,
-      "yPos": 1,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "right-wall",
-      "altClasses": {},
-      "neighbors": {}
-    },
-    "0-2": {
-      "piece": "hallDL",
-      "xPos": 0,
-      "yPos": 2,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "bottom-wall",
-      "altClasses": {
-        "0-1": "bottom-left-wall"
-      },
-      "neighbors": {}
-    },
-    "1-2": {
-      "piece": "hallDL",
-      "xPos": 1,
-      "yPos": 2,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "bottom-wall",
-      "altClasses": {},
-      "neighbors": {}
-    },
-    "2-2": {
-      "piece": "hallDL",
-      "xPos": 2,
-      "yPos": 2,
-      "type": "wall",
-      "topSide": "wall",
-      "rightSide": "wall",
-      "bottomSide": "wall",
-      "leftSide": "wall",
-      "classes": "bottom-right-wall",
-      "altClasses": {},
-      "neighbors": {}
-    }
-  },
   "fourWayIntersection": {
     "0-0": {
       "piece": "fourWayIntersection",
@@ -5953,6 +5141,818 @@
       "altClasses": {
         "1-2": "bottom-right-wall"
       },
+      "neighbors": {}
+    }
+  },
+  "hall1x2": {
+    "0-0": {
+      "piece": "hall1x2",
+      "xPos": 0,
+      "yPos": 0,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "top-wall",
+      "altClasses": {
+        "0-1": "top-left-wall"
+      },
+      "neighbors": {}
+    },
+    "1-0": {
+      "piece": "hall1x2",
+      "xPos": 1,
+      "yPos": 0,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "top-wall",
+      "altClasses": {
+        "1-1": "top-right-wall"
+      },
+      "neighbors": {}
+    },
+    "0-1": {
+      "piece": "hall1x2",
+      "xPos": 0,
+      "yPos": 1,
+      "type": "floor",
+      "topSide": "wall",
+      "rightSide": "",
+      "bottomSide": "wall",
+      "leftSide": "opening",
+      "classes": "floor",
+      "altClasses": {
+        "0-1": "left-wall"
+      },
+      "neighbors": {
+        "toChangeClass": [
+          "0-0",
+          "0-1",
+          "0-2"
+        ],
+        "toChangeSideType": [
+          "1-1"
+        ]
+      }
+    },
+    "1-1": {
+      "piece": "hall1x2",
+      "xPos": 1,
+      "yPos": 1,
+      "type": "floor",
+      "topSide": "wall",
+      "rightSide": "opening",
+      "bottomSide": "wall",
+      "leftSide": "",
+      "classes": "floor",
+      "altClasses": {
+        "1-1": "right-wall"
+      },
+      "neighbors": {
+        "toChangeClass": [
+          "1-0",
+          "1-1",
+          "1-2"
+        ],
+        "toChangeSideType": [
+          "0-1"
+        ]
+      }
+    },
+    "0-2": {
+      "piece": "hall1x2",
+      "xPos": 0,
+      "yPos": 2,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "bottom-wall",
+      "altClasses": {
+        "0-1": "bottom-left-wall"
+      },
+      "neighbors": {}
+    },
+    "1-2": {
+      "piece": "hall1x2",
+      "xPos": 1,
+      "yPos": 2,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "bottom-wall",
+      "altClasses": {
+        "1-1": "bottom-right-wall"
+      },
+      "neighbors": {}
+    }
+  },
+  "hall2x1": {
+    "0-0": {
+      "piece": "hall2x1",
+      "xPos": 0,
+      "yPos": 0,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "left-wall",
+      "altClasses": {
+        "1-0": "top-left-wall"
+      },
+      "neighbors": {}
+    },
+    "1-0": {
+      "piece": "hall2x1",
+      "xPos": 1,
+      "yPos": 0,
+      "type": "floor",
+      "topSide": "opening",
+      "rightSide": "wall",
+      "bottomSide": "",
+      "leftSide": "wall",
+      "classes": "floor",
+      "altClasses": {
+        "1-0": "top-wall"
+      },
+      "neighbors": {
+        "toChangeClass": [
+          "0-0",
+          "1-0",
+          "2-0"
+        ],
+        "toChangeSideType": [
+          "1-1"
+        ]
+      }
+    },
+    "2-0": {
+      "piece": "hall2x1",
+      "xPos": 2,
+      "yPos": 0,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "right-wall",
+      "altClasses": {
+        "1-0": "top-right-wall"
+      },
+      "neighbors": {}
+    },
+    "0-1": {
+      "piece": "hall2x1",
+      "xPos": 0,
+      "yPos": 1,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "left-wall",
+      "altClasses": {
+        "1-1": "bottom-left-wall"
+      },
+      "neighbors": {}
+    },
+    "1-1": {
+      "piece": "hall2x1",
+      "xPos": 1,
+      "yPos": 1,
+      "type": "floor",
+      "topSide": "",
+      "rightSide": "wall",
+      "bottomSide": "opening",
+      "leftSide": "wall",
+      "classes": "floor",
+      "altClasses": {
+        "1-1": "bottom-wall"
+      },
+      "neighbors": {
+        "toChangeClass": [
+          "0-1",
+          "1-1",
+          "2-1"
+        ],
+        "toChangeSideType": [
+          "1-0"
+        ]
+      }
+    },
+    "2-1": {
+      "piece": "hall2x1",
+      "xPos": 2,
+      "yPos": 1,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "right-wall",
+      "altClasses": {
+        "1-1": "bottom-right-wall"
+      },
+      "neighbors": {}
+    }
+  },
+  "hallUR": {
+    "0-0": {
+      "piece": "hallUR",
+      "xPos": 0,
+      "yPos": 0,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "top-left-wall",
+      "altClasses": {},
+      "neighbors": {}
+    },
+    "1-0": {
+      "piece": "hallUR",
+      "xPos": 1,
+      "yPos": 0,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "top-wall",
+      "altClasses": {},
+      "neighbors": {}
+    },
+    "2-0": {
+      "piece": "hallUR",
+      "xPos": 2,
+      "yPos": 0,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "top-wall",
+      "altClasses": {
+        "2-1": "top-right-wall"
+      },
+      "neighbors": {}
+    },
+    "0-1": {
+      "piece": "hallUR",
+      "xPos": 0,
+      "yPos": 1,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "left-wall",
+      "altClasses": {},
+      "neighbors": {}
+    },
+    "1-1": {
+      "piece": "hallUR",
+      "xPos": 1,
+      "yPos": 1,
+      "type": "floor",
+      "topSide": "wall",
+      "rightSide": "",
+      "bottomSide": "",
+      "leftSide": "wall",
+      "classes": "floor",
+      "altClasses": {},
+      "neighbors": {}
+    },
+    "2-1": {
+      "piece": "hallUR",
+      "xPos": 2,
+      "yPos": 1,
+      "type": "floor",
+      "topSide": "wall",
+      "rightSide": "opening",
+      "bottomSide": "wall",
+      "leftSide": "",
+      "classes": "floor",
+      "altClasses": {
+        "2-1": "right-wall"
+      },
+      "neighbors": {
+        "toChangeClass": [
+          "2-0",
+          "2-1",
+          "2-2"
+        ],
+        "toChangeSideType": [
+          "1-1"
+        ]
+      }
+    },
+    "0-2": {
+      "piece": "hallUR",
+      "xPos": 0,
+      "yPos": 2,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "left-wall",
+      "altClasses": {
+        "1-2": "bottom-left-wall"
+      },
+      "neighbors": {}
+    },
+    "1-2": {
+      "piece": "hallUR",
+      "xPos": 1,
+      "yPos": 2,
+      "type": "floor",
+      "topSide": "",
+      "rightSide": "wall",
+      "bottomSide": "opening",
+      "leftSide": "wall",
+      "classes": "floor",
+      "altClasses": {
+        "1-2": "bottom-wall"
+      },
+      "neighbors": {
+        "toChangeClass": [
+          "0-2",
+          "1-2",
+          "2-2"
+        ],
+        "toChangeSideType": [
+          "1-1"
+        ]
+      }
+    },
+    "2-2": {
+      "piece": "hallUR",
+      "xPos": 2,
+      "yPos": 2,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "bottom-right-inverse-wall",
+      "altClasses": {
+        "2-1": "right-wall",
+        "1-2": "bottom-wall"
+      },
+      "neighbors": {}
+    }
+  },
+  "hallUL": {
+    "0-0": {
+      "piece": "hallUL",
+      "xPos": 0,
+      "yPos": 0,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "top-wall",
+      "altClasses": {
+        "0-1": "top-left-wall"
+      },
+      "neighbors": {}
+    },
+    "1-0": {
+      "piece": "hallUL",
+      "xPos": 1,
+      "yPos": 0,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "top-wall",
+      "altClasses": {},
+      "neighbors": {}
+    },
+    "2-0": {
+      "piece": "hallUL",
+      "xPos": 2,
+      "yPos": 0,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "top-right-wall",
+      "altClasses": {},
+      "neighbors": {}
+    },
+    "0-1": {
+      "piece": "hallUL",
+      "xPos": 0,
+      "yPos": 1,
+      "type": "floor",
+      "topSide": "wall",
+      "rightSide": "",
+      "bottomSide": "wall",
+      "leftSide": "opening",
+      "classes": "floor",
+      "altClasses": {
+        "0-1": "left-wall"
+      },
+      "neighbors": {
+        "toChangeClass": [
+          "0-0",
+          "0-1",
+          "0-2"
+        ],
+        "toChangeSideType": [
+          "1-1"
+        ]
+      }
+    },
+    "1-1": {
+      "piece": "hallUL",
+      "xPos": 1,
+      "yPos": 1,
+      "type": "floor",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "",
+      "leftSide": "",
+      "classes": "floor",
+      "altClasses": {},
+      "neighbors": {}
+    },
+    "2-1": {
+      "piece": "hallUL",
+      "xPos": 2,
+      "yPos": 1,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "right-wall",
+      "altClasses": {},
+      "neighbors": {}
+    },
+    "0-2": {
+      "piece": "hallUL",
+      "xPos": 0,
+      "yPos": 2,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "bottom-left-inverse-wall",
+      "altClasses": {
+        "0-1": "left-wall",
+        "1-2": "bottom-wall"
+      },
+      "neighbors": {}
+    },
+    "1-2": {
+      "piece": "hallUL",
+      "xPos": 1,
+      "yPos": 2,
+      "type": "floor",
+      "topSide": "",
+      "rightSide": "wall",
+      "bottomSide": "opening",
+      "leftSide": "wall",
+      "classes": "floor",
+      "altClasses": {
+        "1-2": "bottom-wall"
+      },
+      "neighbors": {
+        "toChangeClass": [
+          "0-2",
+          "1-2",
+          "2-2"
+        ],
+        "toChangeSideType": [
+          "1-1"
+        ]
+      }
+    },
+    "2-2": {
+      "piece": "hallUL",
+      "xPos": 2,
+      "yPos": 2,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "right-wall",
+      "altClasses": {
+        "1-2": "bottom-right-wall"
+      },
+      "neighbors": {}
+    }
+  },
+  "hallDR": {
+    "0-0": {
+      "piece": "hallDR",
+      "xPos": 0,
+      "yPos": 0,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "left-wall",
+      "altClasses": {
+        "1-0": "top-left-wall"
+      },
+      "neighbors": {}
+    },
+    "1-0": {
+      "piece": "hallDR",
+      "xPos": 1,
+      "yPos": 0,
+      "type": "floor",
+      "topSide": "opening",
+      "rightSide": "wall",
+      "bottomSide": "",
+      "leftSide": "wall",
+      "classes": "floor",
+      "altClasses": {
+        "1-0": "top-wall"
+      },
+      "neighbors": {
+        "toChangeClass": [
+          "0-0",
+          "1-0",
+          "2-0"
+        ],
+        "toChangeSideType": [
+          "1-1"
+        ]
+      }
+    },
+    "2-0": {
+      "piece": "hallDR",
+      "xPos": 2,
+      "yPos": 0,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "top-right-inverse-wall",
+      "altClasses": {
+        "1-0": "top-wall",
+        "2-1": "right-wall"
+      },
+      "neighbors": {}
+    },
+    "0-1": {
+      "piece": "hallDR",
+      "xPos": 0,
+      "yPos": 1,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "left-wall",
+      "altClasses": {},
+      "neighbors": {}
+    },
+    "1-1": {
+      "piece": "hallDR",
+      "xPos": 1,
+      "yPos": 1,
+      "type": "floor",
+      "topSide": "",
+      "rightSide": "",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "floor",
+      "altClasses": {},
+      "neighbors": {}
+    },
+    "2-1": {
+      "piece": "hallDR",
+      "xPos": 2,
+      "yPos": 1,
+      "type": "floor",
+      "topSide": "wall",
+      "rightSide": "opening",
+      "bottomSide": "wall",
+      "leftSide": "",
+      "classes": "floor",
+      "altClasses": {
+        "2-1": "right-wall"
+      },
+      "neighbors": {
+        "toChangeClass": [
+          "2-0",
+          "2-1",
+          "2-2"
+        ],
+        "toChangeSideType": [
+          "1-1"
+        ]
+      }
+    },
+    "0-2": {
+      "piece": "hallDR",
+      "xPos": 0,
+      "yPos": 2,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "bottom-left-wall",
+      "altClasses": {},
+      "neighbors": {}
+    },
+    "1-2": {
+      "piece": "hallDR",
+      "xPos": 1,
+      "yPos": 2,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "bottom-wall",
+      "altClasses": {},
+      "neighbors": {}
+    },
+    "2-2": {
+      "piece": "hallDR",
+      "xPos": 2,
+      "yPos": 2,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "bottom-wall",
+      "altClasses": {
+        "2-1": "bottom-right-wall"
+      },
+      "neighbors": {}
+    }
+  },
+  "hallDL": {
+    "0-0": {
+      "piece": "hallDL",
+      "xPos": 0,
+      "yPos": 0,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "top-left-inverse-wall",
+      "altClasses": {
+        "1-0": "top-wall",
+        "0-1": "left-wall"
+      },
+      "neighbors": {}
+    },
+    "1-0": {
+      "piece": "hallDL",
+      "xPos": 1,
+      "yPos": 0,
+      "type": "floor",
+      "topSide": "opening",
+      "rightSide": "wall",
+      "bottomSide": "",
+      "leftSide": "wall",
+      "classes": "floor",
+      "altClasses": {
+        "1-0": "top-wall"
+      },
+      "neighbors": {
+        "toChangeClass": [
+          "0-0",
+          "1-0",
+          "2-0"
+        ],
+        "toChangeSideType": [
+          "1-1"
+        ]
+      }
+    },
+    "2-0": {
+      "piece": "hallDL",
+      "xPos": 2,
+      "yPos": 0,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "right-wall",
+      "altClasses": {
+        "1-0": "top-right-wall"
+      },
+      "neighbors": {}
+    },
+    "0-1": {
+      "piece": "hallDL",
+      "xPos": 0,
+      "yPos": 1,
+      "type": "floor",
+      "topSide": "wall",
+      "rightSide": "",
+      "bottomSide": "wall",
+      "leftSide": "opening",
+      "classes": "floor",
+      "altClasses": {
+        "0-1": "left-wall"
+      },
+      "neighbors": {
+        "toChangeClass": [
+          "0-0",
+          "0-1",
+          "0-2"
+        ],
+        "toChangeSideType": [
+          "1-1"
+        ]
+      }
+    },
+    "1-1": {
+      "piece": "hallDL",
+      "xPos": 1,
+      "yPos": 1,
+      "type": "floor",
+      "topSide": "",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "",
+      "classes": "floor",
+      "altClasses": {},
+      "neighbors": {}
+    },
+    "2-1": {
+      "piece": "hallDL",
+      "xPos": 2,
+      "yPos": 1,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "right-wall",
+      "altClasses": {},
+      "neighbors": {}
+    },
+    "0-2": {
+      "piece": "hallDL",
+      "xPos": 0,
+      "yPos": 2,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "bottom-wall",
+      "altClasses": {
+        "0-1": "bottom-left-wall"
+      },
+      "neighbors": {}
+    },
+    "1-2": {
+      "piece": "hallDL",
+      "xPos": 1,
+      "yPos": 2,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "bottom-wall",
+      "altClasses": {},
+      "neighbors": {}
+    },
+    "2-2": {
+      "piece": "hallDL",
+      "xPos": 2,
+      "yPos": 2,
+      "type": "wall",
+      "topSide": "wall",
+      "rightSide": "wall",
+      "bottomSide": "wall",
+      "leftSide": "wall",
+      "classes": "bottom-right-wall",
+      "altClasses": {},
       "neighbors": {}
     }
   }
