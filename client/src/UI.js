@@ -76,7 +76,8 @@ class UI extends React.Component {
 					key={id}
 					characterId={id}
 					characterName={playerInfo.name}
-					weaponsProp={playerInfo.weapons}
+					weapons={playerInfo.weapons}
+					ammo={playerInfo.ammo}
 					toggleWeaponButton={this.props.toggleWeapon}
 					weaponButtonSelected={this.props.weaponButtonSelected}
 					isActiveCharacter={id === this.props.activeCharacter}

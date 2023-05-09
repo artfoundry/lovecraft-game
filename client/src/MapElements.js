@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
 import {randomTileVariant} from './Utils';
+import './css/mapPieceElements.css';
 
 function Character(props) {
 	const isHiddenClass = props.isHidden ? ' hidden' : '';
@@ -48,6 +49,23 @@ function Door(props) {
 	return <div className={props.classProp} style={props.styleProp} />;
 }
 
+function Item(props) {
+	return (
+		<img
+			alt={props.name}
+			className={`object ${props.name}`}
+			style={props.styles}
+			onClick={() => {
+				if (props.isActivePlayerNearObject(props.objectInfo.coords)) {
+					props.addItemToPlayerInventory(props.objectInfo, props.objectId);
+				} else {
+					props.setShowDialogProps(true, props.dialogProps);
+				}
+			}}
+		/>
+	)
+}
+
 function LightElement(props) {
 	return (
 		<div className={props.classes}
@@ -56,4 +74,4 @@ function LightElement(props) {
 	);
 }
 
-export {Character, Exit, Tile, Door, LightElement};
+export {Character, Exit, Tile, Door, Item, LightElement};

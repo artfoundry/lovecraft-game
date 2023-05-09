@@ -3,21 +3,20 @@
     "damage": 5,
     "ranged": true,
     "rounds": 6,
-    "attackType": "automatic"
+    "attackType": "automatic",
+    "gunType": "handgun"
   },
   "Baseball Bat": {
     "damage": 2,
     "ranged": false,
-    "rounds": 0,
     "attackType": "manual"
   },
   "Pickaxe": {
     "damage": 2,
     "ranged": false,
-    "rounds": 0,
     "attackType": "manual"
   },
-  "Acid concoction": {
+  "Acid Concoction": {
     "damage": 10,
     "ranged": true,
     "rounds": 1,

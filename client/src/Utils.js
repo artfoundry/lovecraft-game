@@ -2,6 +2,12 @@ export function convertCamelToKabobCase(str) {
 	return str.replace(/([A-Z])/g, match => ('-' + match.toLowerCase()));
 }
 
+export function convertObjIdToClassId(id) {
+	const numberInID = id.search(/\d/);
+	const idEndIndex = numberInID > -1 ? numberInID : id.length;
+	return convertCamelToKabobCase(id.substring(0, idEndIndex));
+}
+
 export function diceRoll(range) {
 	return Math.ceil(Math.random() * range);
 }

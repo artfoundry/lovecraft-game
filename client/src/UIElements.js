@@ -5,18 +5,34 @@ let weaponRefs = {};
 function CharacterControls(props) {
 	weaponRefs[props.characterId] = useRef([]);
 	let weaponButtonState = '';
-	weaponRefs[props.characterId].current = props.weaponsProp.map((weaponName, index) => {
+	const weaponsList = [];
+	for (const [weaponType, weaponsInfo] of Object.entries(props.weapons)) {
+		if (weaponType === 'ranged') {
+			for (const [weaponName, weaponInfo] of Object.entries(weaponsInfo)) {
+				if (weaponInfo.gunType) {
+					weaponsList.push({weaponName, isGun: true, ammo: props.ammo[weaponInfo.gunType]});
+				} else {
+					weaponsList.push({weaponName, ammo: weaponInfo});
+				}
+			}
+		} else {
+			for (const weaponName of Object.keys(weaponsInfo)) {
+				weaponsList.push({weaponName, ammo: -1});
+			}
+		}
+	}
+	weaponRefs[props.characterId].current = weaponsList.map((weapon, index) => {
 		return weaponRefs[props.characterId].current[index] || React.createRef();
 	});
 	const weapons = (
 		<div className='weapon-buttons-container'>
-			{props.weaponsProp.map((weaponName, index) => {
+			{weaponsList.map((weapon, index) => {
 				weaponButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0) ? ' button-inactive' :
-					(props.weaponButtonSelected.characterId === props.characterId && props.weaponButtonSelected.weaponName === weaponName) ? ' button-selected': '';
+					(props.weaponButtonSelected.characterId === props.characterId && props.weaponButtonSelected.weaponName === weapon.weaponName) ? ' button-selected': '';
 				return (
-					<div ref={weaponRefs[props.characterId].current[index]} data-weapon={weaponName} className={'weapon-button' + weaponButtonState} key={weaponName} onClick={() => {
-						props.toggleWeaponButton(props.characterId, weaponName);
-					}}>{weaponName}</div>
+					<div ref={weaponRefs[props.characterId].current[index]} data-weapon={weapon.weaponName} className={'weapon-button' + weaponButtonState} key={weapon.weaponName} onClick={() => {
+						props.toggleWeaponButton(props.characterId, weapon.weaponName);
+					}}>{weapon.weaponName}{weapon.ammo >= 0 ? ': ' + weapon.ammo : ''}{weapon.isGun ? ' round(s)': ''}</div>
 				);
 			})}
 		</div>
@@ -33,9 +49,37 @@ function CharacterControls(props) {
 }
 
 function CharacterInfoPanel(props) {
+	const parseItems = (items, listType) => {
+		let list = []
+		for (const [itemType, itemsInfo] of Object.entries(items)) {
+			if (listType === 'ammo') {
+				list.push(<li key={itemType + Math.random()}>{itemType}: {itemsInfo} rounds</li>)
+			} else {
+				for (const [itemName, itemInfo] of Object.entries(itemsInfo)) {
+					// guns
+					if (listType === 'weapon' && itemInfo.gunType) {
+						list.push(<li key={itemName + Math.random()}>{itemName}</li>);
+					// stackable items/non-gun weapons
+					} else if (typeof itemInfo === 'number') {
+						list.push(<li key={itemName + Math.random()}>{itemName}: {itemInfo}</li>);
+					// lights
+					} else if (itemType === 'Light') {
+						for (const lightInfo of Object.values(itemInfo)) {
+							list.push(<li key={itemName + Math.random()}>{itemName} (Time left: {lightInfo.time})</li>);
+						}
+					// other unique items/non-gun weapons
+					} else {
+						list.push(<li key={itemName + Math.random()}>{itemName}</li>);
+					}
+				}
+			}
+		}
+		return list;
+	};
 	const skillList = Object.values(props.characterInfo.skills).map(item => <li key={item + Math.random()}>{item}</li>);
-	const weaponList = Object.values(props.characterInfo.weapons).map(item => <li key={item + Math.random()}>{item}</li>);
-	const itemList = Object.values(props.characterInfo.items).map(item => <li key={item + Math.random()}>{item}</li>);
+	const weaponList = parseItems(props.characterInfo.weapons, 'weapon');
+	const ammoList = parseItems(props.characterInfo.ammo, 'ammo');
+	const itemList = parseItems(props.characterInfo.items, 'item');
 	return (
 		<div className={`character-info-container ui-panel ${props.characterIsSelected ? '' : 'hide'}`}>
 			<div className='general-button' onClick={() => props.updateUnitSelectionStatus(props.characterInfo.id, 'player')}>X</div>
@@ -55,6 +99,10 @@ function CharacterInfoPanel(props) {
 			<div>Defense: {props.characterInfo.defense}{props.characterInfo.items.armor ? ` from ${props.characterInfo.items.armor}` : ''}</div>
 			<div>Weapons:
 				<ul>{weaponList}</ul>
+			</div>
+			<div>
+				Ammunition:
+				<ul>{ammoList}</ul>
 			</div>
 			<div>Items:
 				<ul>{itemList}</ul>

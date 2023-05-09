@@ -9,10 +9,23 @@
     "startingHP": 100,
     "startingSanity": 8,
     "skills": {
-
     },
-    "weapons": ["Revolver", "Baseball Bat"],
-    "items": {"Ammo": ["Handgun"], "Light": ["Electric Torch"]}
+    "weapons": {
+      "ranged": {
+        "Revolver": {"gunType": "handgun"}
+      },
+      "melee": {
+        "Baseball Bat": {}
+      }
+    },
+    "ammo": {"handgun": 6, "rifle": 0, "machinegun": 0},
+    "items": {
+      "Light": {
+        "Electric Torch": {
+          "electricTorch000": {"time": 500}
+        }
+      }
+    }
   },
   "archaeologist": {
     "name": "Mary Simpleton",
@@ -24,10 +37,21 @@
     "startingHP": 80,
     "startingSanity": 10,
     "skills": {
-
     },
-    "weapons": ["Pickaxe"],
-    "items": {"Light": ["Torch"]}
+    "weapons": {
+      "ranged": {},
+      "melee": {
+        "Pickaxe": {}
+      }
+    },
+    "ammo": {"handgun": 0, "rifle": 0, "machinegun": 0},
+    "items": {
+      "Light": {
+        "Torch": {
+          "torch000": {"time": 100}
+        }
+      }
+    }
   },
   "chemist": {
     "name": "Helen Abernathy",
@@ -39,9 +63,19 @@
     "startingHP": 60,
     "startingSanity": 10,
     "skills": {
-
     },
-    "weapons": ["Acid concoction"],
-    "items": {"Medicine": ["Pharmaceuticals"], "Light": ["Lantern"]}
+    "weapons": {
+      "ranged": {"Acid Concoction": 2},
+      "melee": {}
+    },
+    "ammo": {"handgun": 0, "rifle": 0, "machinegun": 0},
+    "items": {
+      "Medicine": {"Pharmaceuticals": 1},
+      "Light": {
+        "Lantern": {
+          "lantern000": {"time": 300}
+        }
+      }
+    }
   }
 }

@@ -21,21 +21,29 @@ class Character extends React.Component {
 		this.currentSanity = props.startingSanity;
 		this.skills = props.skills;
 		this.weapons = props.weapons;
+		this.ammo = props.ammo;
 		this.items = props.items;
-		this.defense = this.agility + (this.items.armor ? this.items.armor.value : 0);
-		this.damageReduction = this.items.armor ? this.items.armor.value : 0;
+		this.defense = this.agility + (this.items.Armor ? this.items.Armor.value : 0);
+		this.damageReduction = this.items.Armor ? this.items.Armor.value : 0;
 		this.coords = {};
 		this.equippedLight = null;
-		this.lightRange = this.items.Light ? this.getLightRange() : 2;
+		this.lightRange = this.items.Light ? this.getLightRange() : 1;
+		this.lightTime = this.equippedLight ? this.items.Light[this.equippedLight].time : 0;
 	}
 
-	attack = (weaponStats, creatureId, creatureData, updateCreature, updateLog) => {
+	attack = (weaponName, weaponStats, creatureId, creatureData, updateCreature, updateLog) => {
 		let isHit, damage, hitRoll, defenseRoll;
 		let rangedStrHitModifier = weaponStats.attackType === 'manual' ? Math.round(this.strength / 2) : 0;
 
 		if (weaponStats.ranged) {
 			hitRoll = this.agility + rangedStrHitModifier + diceRoll(20);
 			damage = rangedStrHitModifier + weaponStats.damage + diceRoll(6);
+			const gunType = this.weapons.ranged[weaponName].gunType;
+			if (gunType) {
+				this.ammo[gunType]--;
+			} else {
+				this.weapons.ranged[weaponName]--;
+			}
 		} else {
 			hitRoll = this.strength + Math.round(this.agility / 2) + diceRoll(20);
 			damage = this.strength + weaponStats.damage + diceRoll(6);
@@ -52,13 +60,13 @@ class Character extends React.Component {
 
 	getLightRange() {
 		let highestRange = 0;
-		this.items.Light.forEach(source => {
-			const range = ItemTypes.Light[source].range;
+		for (const type of Object.keys(this.items.Light)) {
+			const range = ItemTypes.Light[type].range;
 			if (range > highestRange) {
 				highestRange = range;
-				this.equippedLight = source;
+				this.equippedLight = type;
 			}
-		});
+		}
 		return highestRange;
 	}
 }

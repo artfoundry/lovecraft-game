@@ -6,11 +6,6 @@ import PlayerCharacterTypes from './data/playerCharacterTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
 import UI from './UI';
 import './css/app.css';
-import './css/map.css';
-import './css/mapPieceElements.css';
-import './css/catacombs.css'
-import './css/creatures.css';
-import './css/playerCharacters.css';
 import {diceRoll} from './Utils';
 
 class Game extends React.Component {
@@ -25,6 +20,15 @@ class Game extends React.Component {
 
 		this.firebase = new Firebase();
 
+		/**
+		 * Creature data structure : {
+		 *      CreatureData[name],
+		 *      GameLocations[location].creatures[name],
+		 * 		currentHP: CreatureData[name].startingHP,
+		 * 		tileCoords: {xPos, yPos}
+		 * }
+		 **/
+
 		this.state = {
 			userData: {},
 			isLoggedIn: false,
@@ -33,12 +37,14 @@ class Game extends React.Component {
 			pcTypes: PlayerCharacterTypes,
 			playerFollowOrder: [],
 			mapCreatures: {},
+			mapObjects: {},
 			unitsTurnOrder: [],
 			currentTurn: 0,
 			activeCharacter: this.startingPlayerCharacters[0],
 			activePlayerMovesCompleted: 0,
 			activePlayerActionsCompleted: 0,
 			currentLocation: '',
+			currentLevel: 1,
 			characterIsSelected: false,
 			characterInfoText: '',
 			creatureIsSelected: false,
@@ -66,12 +72,13 @@ class Game extends React.Component {
 	}
 
 	/**
-	 *
-	 * @param callback
+	 * Resets level related data in state back to defaults when changing levels
+	 * @param callback: function
 	 */
 	resetDataForNewLevel = (callback) => {
 		this.setState({
 			mapCreatures: {},
+			mapObjects: {},
 			unitsTurnOrder: [],
 			currentTurn: 0,
 			activeCharacter: this.startingPlayerCharacters[0],
@@ -108,7 +115,7 @@ class Game extends React.Component {
 	 * Updates either creature or player character data collection to state
 	 * If id is passed in, updating only one creature; otherwise updating all
 	 * @param type: String
-	 * @param updateData: Object
+	 * @param updateData: Object (can be any number of data objects unless updating all characters of a type, then must be all data)
 	 * @param id: String
 	 * @param isInitialCreatureSetup: Boolean
 	 * @param isInitialCharacterSetup: Boolean
@@ -143,6 +150,14 @@ class Game extends React.Component {
 				}
 			});
 		}
+	}
+
+	updateMapObjects = (objects, callback) => {
+		this.setState(prevState => ({
+			mapObjects: {...prevState.mapObjects, ...objects}
+		}), () => {
+			if (callback) callback();
+		});
 	}
 
 	/**
@@ -276,6 +291,7 @@ class Game extends React.Component {
 
 	/**
 	 * Updates to state what PC weapon is selected in the UI
+	 * Data stored in weaponButtonSelected: {characterId, weaponName, stats: WeaponTypes[weaponName]}
 	 * @param characterId: String
 	 * @param weaponName: String
 	 * @param callback: Function
@@ -303,7 +319,7 @@ class Game extends React.Component {
 			// clicked unit is getting attacked
 			const proceedWithAttack = () => {
 				const selectedWeaponInfo = this.state.weaponButtonSelected;
-				this.state.playerCharacters[this.state.activeCharacter].attack(selectedWeaponInfo.stats, id, this.state.mapCreatures[id], this.updateCharacters, this.updateLog);
+				this.state.playerCharacters[this.state.activeCharacter].attack(selectedWeaponInfo.weaponName, selectedWeaponInfo.stats, id, this.state.mapCreatures[id], this.updateCharacters, this.updateLog);
 				this.toggleWeapon(selectedWeaponInfo.characterId, selectedWeaponInfo.weaponName);
 				if (this.state.mapCreatures[id].currentHP <= 0) {
 					this._removeDeadFromTurnOrder(id, this._updateActivePlayerActions);
@@ -670,6 +686,7 @@ class Game extends React.Component {
 				{this.state.isLoggedIn && this.state.gameSetupComplete &&
 					<Map
 						setShowDialogProps={this.setShowDialogProps}
+
 						pcTypes={this.state.pcTypes}
 						playerCharacters={this.state.playerCharacters}
 						activeCharacter={this.state.activeCharacter}
@@ -679,20 +696,28 @@ class Game extends React.Component {
 						updateActivePlayerMoves={this.updateActivePlayerMoves}
 						mapCreatures={this.state.mapCreatures}
 						updateCharacters={this.updateCharacters}
+
+						updateMapObjects={this.updateMapObjects}
+						mapObjects={this.state.mapObjects}
+
 						currentTurn={this.state.currentTurn}
 						updateCurrentTurn={this.updateCurrentTurn}
 						unitsTurnOrder={this.state.unitsTurnOrder}
+
 						currentLocation={this.state.currentLocation}
+						currentLevel={this.state.currentLevel}
+						resetDataForNewLevel={this.resetDataForNewLevel}
+
 						updateLog={this.updateLog}
 						handleUnitClick={this.handleUnitClick}
 						weaponButtonSelected={this.state.weaponButtonSelected}
+
 						updateThreatList={this.updateThreatList}
 						threatList={this.state.threatList}
 						isInCombat={this.state.isInCombat}
 						isPartyNearby={this.state.partyIsNearby}
 						updateIfPartyIsNearby={this.updateIfPartyIsNearby}
 						playerFollowOrder={this.state.playerFollowOrder}
-						resetDataForNewLevel={this.resetDataForNewLevel}
 					/>
 				}
 
