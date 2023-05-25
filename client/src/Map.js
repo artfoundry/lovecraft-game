@@ -5,6 +5,7 @@ import GameLocations from './data/gameLocations.json';
 import CreatureData from './data/creatureTypes.json';
 import Creature from './Creature';
 import ItemTypes from './data/itemTypes.json';
+import WeaponTypes from './data/weaponTypes.json';
 import {Exit, LightElement, Character, Tile, Item, Door} from './MapElements';
 import {StoneDoor} from './Audio';
 import {convertObjIdToClassId, randomTileMovementValue} from './Utils';
@@ -589,11 +590,11 @@ class Map extends React.Component {
 			for (const [itemName, countInfo] of Object.entries(itemTypesInfo)) {
 				for (let i=0; i < countInfo.countPerLevel[this.props.currentLevel]; i++) {
 					const tileType = itemName === 'Torch' ? 'wall' : 'floor';
-					const coords = this._getInitialRandomCoords(itemCoords, tileType);
-					const itemRandomAmount = Math.floor(Math.random() * 10) + 2;
 					const lowerCaseName = itemName.slice(0, 1).toLowerCase() + itemName.slice(1, itemName.length).replaceAll(' ', '');
-					const ammoName = itemName.slice(0, itemName.indexOf(' Ammo')).toLowerCase();
 					const itemID = lowerCaseName + i;
+					const ammoName = itemType === 'Ammo' ? itemName.slice(0, itemName.indexOf(' Ammo')).toLowerCase() : '';
+					const itemRandomAmount = itemType === 'Ammo' ? Math.floor(Math.random() * 10) + 2 : null;
+					const coords = this._getInitialRandomCoords(itemCoords, tileType); // this.props.playerCharacters['privateEye'].coords (to easily test objects)
 					const range = itemType === 'Light' ? ItemTypes.Light[itemName].range : null;
 					mapItems[itemID] = {
 						itemType,
@@ -858,18 +859,59 @@ class Map extends React.Component {
 	 */
 	addLighting = () => {
 		let tiles = [];
-		const allPlayersPos = this.props.getAllCharactersPos('player', 'pos');
-		let allPlayersCoords = [];
-		allPlayersPos.forEach(player => {
-			allPlayersCoords.push(player.pos);
+		let allLightPosData = this.props.getAllCharactersPos('player', 'pos');
+		let allLightPos = [];
+		let mapLights = [];
+		let mapLightsSeen = [];
+		const numberPCs = allLightPosData.length;
+
+		for (const [id, objInfo] of Object.entries(this.props.mapObjects)) {
+			if (objInfo.itemType === 'Light') {
+				mapLights.push({id, pos: `${objInfo.coords.xPos}-${objInfo.coords.yPos}`, range: objInfo.range});
+			}
+		}
+		mapLights.forEach(light => {
+			let tileIsSeen = false;
+			let playerIndex = 0;
+			while (!tileIsSeen && playerIndex < numberPCs) {
+				const playerPos = allLightPosData[playerIndex].pos;
+				if (this.isInLineOfSight(playerPos, light.pos)) {
+					allLightPosData.push(light);
+					tileIsSeen = true;
+				} else {
+					playerIndex++;
+				}
+			}
 		});
+		allLightPosData.forEach(player => {
+			allLightPos.push(player.pos);
+		});
+
 		// get all lit floors/walls around each player
-		let lineOfSightTiles = this._getTilesSurroundingAllPCs(allPlayersPos);
+		let lineOfSightTiles = this._getLitSurroundingTiles(allLightPosData);
+		// const mapLightsLitTiles = this._getLitSurroundingTiles(mapLightsSeen);
+		// for (const [distance, floorsAndWalls] of Object.entries(mapLightsLitTiles)) {
+		// 	for (const [tileType, positions] of Object.entries(floorsAndWalls)) {
+		// 		let tileIsSeen = false;
+		// 		let playerIndex = 0;
+		// 		while (!tileIsSeen && playerIndex < allLightPosData.length) {
+		// 			const playerPos = allLightPosData[playerIndex].pos;
+		// 			for (const [litTilePos, tileData] of Object.entries(positions)) {
+		// 				if (this.isInLineOfSight(playerPos, litTilePos)) {
+		// 					lineOfSightTiles[distance][tileType][litTilePos] = tileData;
+		// 					tileIsSeen = true;
+		// 				} else {
+		// 					playerIndex++;
+		// 				}
+		// 			}
+		// 		}
+		// 	}
+		// }
 
 		for (const tilePos of Object.keys(this.state.mapLayout)) {
 			let allClasses = 'light-tile';
 
-			if (allPlayersCoords.includes(tilePos)) {
+			if (allLightPos.includes(tilePos)) {
 				allClasses += ' very-bright-light black-light';
 			} else if (lineOfSightTiles.oneAway && (lineOfSightTiles.oneAway.floors[tilePos] || lineOfSightTiles.oneAway.walls[tilePos])) {
 				allClasses += ' bright-light black-light';
@@ -1056,10 +1098,10 @@ class Map extends React.Component {
 				}
 			} else if (tileData.type !== 'wall') {
 				const allPlayersPos = this.props.getAllCharactersPos('player', 'pos');
-				const litTiles = this._getTilesSurroundingAllPCs(allPlayersPos);
+				const litTiles = this._getLitSurroundingTiles(allPlayersPos);
 				let newPosIsLitTile = false;
 				for (const tiles of Object.values(litTiles)) {
-					// need to check for door separately because _getTilesSurroundingAllPCs considers closed doors as walls for sake of lighting
+					// need to check for door separately because _getLitSurroundingTiles considers closed doors as walls for sake of lighting
 					if (tiles.floors[newPos] || this.state.mapLayout[newPos].type === 'door') {
 						newPosIsLitTile = true;
 					}
@@ -1526,17 +1568,17 @@ class Map extends React.Component {
 	}
 
 	/**
-	 * Finds all visible/lit tiles within range of all PCs
-	 * @param allPlayersPos: array of objects ({id, pos: '(pos)'}
+	 * Finds all visible/lit tiles within range of all PCs and/or other map lights
+	 * @param allLightPos: array of objects ({id, pos: '(pos)', (optional: range - used for map lights)}
 	 * @returns object {combined floors/walls from _unblockedPathsToNearbyTiles for all PCs}
 	 * @private
 	 */
-	_getTilesSurroundingAllPCs(allPlayersPos) {
+	_getLitSurroundingTiles(allLightPos) {
 		let lineOfSightTiles = {};
 		// get all floors/walls around each player
-		allPlayersPos.forEach(player => {
-			const range = this.props.playerCharacters[player.id].lightRange;
-			const tempTiles = this._unblockedPathsToNearbyTiles(player.pos, range);
+		allLightPos.forEach(object => {
+			const range = object.range ? object.range : this.props.playerCharacters[object.id].lightRange;
+			const tempTiles = this._unblockedPathsToNearbyTiles(object.pos, range);
 			for (const [distance, tiles] of Object.entries(tempTiles)) {
 				if (!lineOfSightTiles[distance]) {
 					lineOfSightTiles[distance] = {floors: {}, walls: {}};
@@ -1557,7 +1599,7 @@ class Map extends React.Component {
 	 * @private
 	 */
 	_findChangesToNearbyThreats(playerPositions, creaturePositions) {
-		const tilesInView = this._getTilesSurroundingAllPCs(playerPositions);
+		const tilesInView = this._getLitSurroundingTiles(playerPositions);
 		let threatLists = {
 			threatListToAdd: [],
 			threatListToRemove: [...this.props.threatList]
@@ -1615,6 +1657,7 @@ class Map extends React.Component {
 		const generalItemType = itemInfo.itemType === 'Weapon' ? 'weapons' : itemInfo.itemType === 'Ammo' ? 'ammo' : 'items';
 		let inventoryList = {...player[generalItemType]};
 		let invItem = null;
+		const itemIdNoNumber = id.slice(0, id.search(/[0-9]/));
 		let lastItemId = 0;
 		let newInvItemId = 0;
 
@@ -1626,9 +1669,9 @@ class Map extends React.Component {
 		// or item is anything else, whether in inv or not
 		} else {
 			invItem = Object.values(inventoryList).findLast(invItemInfo => invItemInfo.name === itemName);
-			lastItemId = invItem ? +id.slice(id.search(/d/)) : 0;
-			newInvItemId = itemName + (invItem ? ++lastItemId : 0);
-			inventoryList[newInvItemId] = {...itemInfo};
+			lastItemId = invItem ? +id.slice(id.search(/[0-9]/)) : 0;
+			newInvItemId = itemIdNoNumber + (invItem ? ++lastItemId : 0);
+			inventoryList[newInvItemId] = {name: itemName};
 			if (itemInfo.stackable) {
 				if (player.ammo.stackable) {
 					player.ammo.stackable[itemName] = 1;
@@ -1636,14 +1679,21 @@ class Map extends React.Component {
 					player.ammo.stackable = {[itemName]: 1};
 				}
 			}
+			if (generalItemType === 'items') {
+				inventoryList[newInvItemId].itemType = itemInfo.itemType;
+			}
 			if (itemInfo.itemType === 'Light') {
 				inventoryList[newInvItemId].time =
 					itemName === 'Torch' ? this.lightTimes.torch :
 					itemName === 'Lantern' ? this.lightTimes.lantern : this.lightTimes.electricTorch;
-
-			}
-			if (itemInfo.itemType === 'Light' || itemInfo.itemType === 'Weapon') {
 				inventoryList[newInvItemId].equipped = false;
+			}
+			if (itemInfo.itemType === 'Weapon') {
+				inventoryList[newInvItemId].equipped = false;
+				inventoryList[newInvItemId].ranged = WeaponTypes[itemName].ranged;
+				if (WeaponTypes[itemName].gunType) {
+					inventoryList[newInvItemId].gunType = WeaponTypes[itemName].gunType;
+				}
 			}
 		}
 		const updatedData = {[generalItemType]: inventoryList};
