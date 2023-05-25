@@ -16,6 +16,15 @@
 			}
 		},
 		"items": {
+			"Weapon": {
+				"S And W Revolver": {
+					"countPerLevel": {
+						"1": 1,
+						"2": 0,
+						"3": 1
+					}
+				}
+			},
 			"Ammo": {
 				"Handgun Ammo": {
 					"countPerLevel": {

@@ -11,12 +11,8 @@
     }
   },
   "Medicine": {
-    "Pharmaceuticals": {
-      "stackable": true
-    },
-    "First Aid Kit": {
-      "stackable": true
-    }
+    "Pharmaceuticals": {},
+    "First Aid Kit": {}
   },
-  "Ammo": ["handgun"]
+  "Ammo": ["handgun", "shotgun", "machineGun"]
 }

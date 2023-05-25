@@ -6,6 +6,10 @@ class Character extends React.Component {
 	constructor(props) {
 		super(props);
 
+		this.itemTypes = ItemTypes;
+
+		// For instantiation only - updated data is stored in App.state.playerCharacters
+		this.id = props.id;
 		this.name = props.name;
 		this.type = props.type;
 		this.profession = props.profession;
@@ -21,29 +25,41 @@ class Character extends React.Component {
 		this.currentSanity = props.startingSanity;
 		this.skills = props.skills;
 		this.weapons = props.weapons;
+		this.equippedWeapons = {ranged: props.equippedWeapons.ranged, melee: props.equippedWeapons.melee};
 		this.ammo = props.ammo;
 		this.items = props.items;
 		this.defense = this.agility + (this.items.Armor ? this.items.Armor.value : 0);
 		this.damageReduction = this.items.Armor ? this.items.Armor.value : 0;
 		this.coords = {};
-		this.equippedLight = null;
-		this.lightRange = this.items.Light ? this.getLightRange() : 1;
-		this.lightTime = this.equippedLight ? this.items.Light[this.equippedLight].time : 0;
+		this.equippedLight = props.equippedLight.id;
+		this.lightRange = this.equippedLight ? this.itemTypes.Light[props.equippedLight.name].range : 1;
+		this.lightTime = this.equippedLight ? this.items[this.equippedLight].time : 0;
 	}
 
-	attack = (weaponName, weaponStats, creatureId, creatureData, updateCreature, updateLog) => {
+	/**
+	 * Carry out an attack on a creature
+	 * @param props : object (
+	 *  weaponId: string,
+	 *  weaponStats: object,
+	 *  creatureData: object,
+	 *  pcData: object,
+	 *  updateCharacter: function (from App),
+	 *  updateLog: function (from App),
+	 *  callback: function (from App - calls toggleWeapon, _removeDeadFromTurnOrder if creature dies, then _updateActivePlayerActions)
+	 * )
+	 */
+	attack = (props) => {
+		const {weaponId, weaponStats, creatureData, pcData, updateCharacter, updateLog, callback} = props;
 		let isHit, damage, hitRoll, defenseRoll;
-		let rangedStrHitModifier = weaponStats.attackType === 'manual' ? Math.round(this.strength / 2) : 0;
+		let rangedStrHitModifier = weaponStats.usesStr ? Math.round(this.strength / 2) : 0;
+		let updatedPcData = {...pcData};
+		let updatedCreatureData = {...creatureData};
 
 		if (weaponStats.ranged) {
 			hitRoll = this.agility + rangedStrHitModifier + diceRoll(20);
 			damage = rangedStrHitModifier + weaponStats.damage + diceRoll(6);
-			const gunType = this.weapons.ranged[weaponName].gunType;
-			if (gunType) {
-				this.ammo[gunType]--;
-			} else {
-				this.weapons.ranged[weaponName]--;
-			}
+			const gunType = this.weapons[weaponId].gunType;
+			gunType ? updatedPcData.ammo[gunType]-- : updatedPcData.ammo.stackable[this.weapons[weaponId].name]--;
 		} else {
 			hitRoll = this.strength + Math.round(this.agility / 2) + diceRoll(20);
 			damage = this.strength + weaponStats.damage + diceRoll(6);
@@ -51,24 +67,17 @@ class Character extends React.Component {
 		defenseRoll = creatureData.defense + diceRoll(6);
 		isHit = hitRoll >= defenseRoll;
 		updateLog(`${this.name} attacks with ${hitRoll} to hit vs ${defenseRoll} defense`);
-		if (isHit) {
-			creatureData.currentHP -= damage;
-			updateCreature('creature', creatureData, creatureId);
-		}
+		updateCharacter('player', updatedPcData, pcData.id, false, false, () => {
+			if (isHit) {
+				updatedCreatureData.currentHP -= damage;
+				updateCharacter('creature', updatedCreatureData, creatureData.id, false, false, callback);
+			} else if (callback) {
+				callback();
+			}
+		});
 		updateLog(isHit ? `${this.name} hits for ${damage} damage` : this.name + ' misses');
 	}
 
-	getLightRange() {
-		let highestRange = 0;
-		for (const type of Object.keys(this.items.Light)) {
-			const range = ItemTypes.Light[type].range;
-			if (range > highestRange) {
-				highestRange = range;
-				this.equippedLight = type;
-			}
-		}
-		return highestRange;
-	}
 }
 
 export default Character;

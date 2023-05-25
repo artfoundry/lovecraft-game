@@ -1,5 +1,6 @@
 {
   "privateEye": {
+    "id": "privateEye",
     "name": "Joseph Hide",
     "type": "player",
     "profession": "Private Investigator",
@@ -11,23 +12,18 @@
     "skills": {
     },
     "weapons": {
-      "ranged": {
-        "Revolver": {"gunType": "handgun"}
-      },
-      "melee": {
-        "Baseball Bat": {}
-      }
+      "coltRevolver0": {"name": "Colt Revolver", "gunType": "handgun", "equipped": true, "ranged": true},
+      "baseballBat0": {"name": "Baseball Bat", "equipped": true}
     },
-    "ammo": {"handgun": 6, "rifle": 0, "machinegun": 0},
+    "equippedWeapons": {"ranged": "coltRevolver0", "melee": "baseballBat0"},
+    "ammo": {"handgun": 6},
     "items": {
-      "Light": {
-        "Electric Torch": {
-          "electricTorch000": {"time": 500}
-        }
-      }
-    }
+      "electricTorch0": {"name": "Electric Torch", "itemType": "Light", "time": 500, "equipped": true}
+    },
+    "equippedLight": {"id": "electricTorch0", "name": "Electric Torch"}
   },
   "archaeologist": {
+    "id": "archaeologist",
     "name": "Mary Simpleton",
     "type": "player",
     "profession": "Archaeologist",
@@ -39,21 +35,17 @@
     "skills": {
     },
     "weapons": {
-      "ranged": {},
-      "melee": {
-        "Pickaxe": {}
-      }
+      "pickaxe0": {"name": "Pickaxe", "equipped": true}
     },
-    "ammo": {"handgun": 0, "rifle": 0, "machinegun": 0},
+    "equippedWeapons": {"ranged": "", "melee": "pickaxe0"},
+    "ammo": {},
     "items": {
-      "Light": {
-        "Torch": {
-          "torch000": {"time": 100}
-        }
-      }
-    }
+      "torch0": {"name": "Torch", "itemType": "Light", "time": 100, "equipped": true}
+    },
+    "equippedLight": {"id": "torch0", "name": "Torch"}
   },
   "chemist": {
+    "id": "chemist",
     "name": "Helen Abernathy",
     "type": "player",
     "profession": "Chemist",
@@ -65,17 +57,14 @@
     "skills": {
     },
     "weapons": {
-      "ranged": {"Acid Concoction": 2},
-      "melee": {}
+      "acidConcoction0": {"name": "Acid Concoction", "equipped": true, "ranged": true}
     },
-    "ammo": {"handgun": 0, "rifle": 0, "machinegun": 0},
+    "equippedWeapons": {"ranged": "acidConcoction0", "melee": ""},
+    "ammo": {"stackable": {"Acid Concoction": 2}},
     "items": {
-      "Medicine": {"Pharmaceuticals": 1},
-      "Light": {
-        "Lantern": {
-          "lantern000": {"time": 300}
-        }
-      }
-    }
+      "pharmaceuticals0": {"name": "Pharmaceuticals", "itemType": "Medicine", "amount": 1},
+      "lantern0": {"name": "Lantern", "itemType": "Light", "time": 300, "equipped": true}
+    },
+    "equippedLight": {"id": "lantern0", "name": "Lantern"}
   }
 }

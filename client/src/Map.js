@@ -553,10 +553,11 @@ class Map extends React.Component {
 	//todo: change this logic and data in gameLocations.json to use same level/count format as objects
 			for (let i=0; i < stats.count; i++) {
 				const coords = this._getInitialRandomCoords(creatureCoords);
-				const creatureID = name + i;
-				mapCreatures[creatureID] = new Creature(CreatureData[name]);
-				mapCreatures[creatureID].coords = coords;
-				creatureCoords[creatureID] = coords;
+				const creatureId = name + i;
+				CreatureData[name].creatureId = creatureId;
+				mapCreatures[creatureId] = new Creature(CreatureData[name]);
+				mapCreatures[creatureId].coords = coords;
+				creatureCoords[creatureId] = coords;
 			}
 		}
 		this.props.updateCharacters('creature', mapCreatures, null, true, false, () => {
@@ -584,8 +585,8 @@ class Map extends React.Component {
 	_setInitialObjectData() {
 		let mapItems = {};
 		let itemCoords = {};
-		for (const [itemType, itemInfo] of Object.entries(this.currentMapData.items)) {
-			for (const [itemName, countInfo] of Object.entries(itemInfo)) {
+		for (const [itemType, itemTypesInfo] of Object.entries(this.currentMapData.items)) {
+			for (const [itemName, countInfo] of Object.entries(itemTypesInfo)) {
 				for (let i=0; i < countInfo.countPerLevel[this.props.currentLevel]; i++) {
 					const tileType = itemName === 'Torch' ? 'wall' : 'floor';
 					const coords = this._getInitialRandomCoords(itemCoords, tileType);
@@ -593,11 +594,13 @@ class Map extends React.Component {
 					const lowerCaseName = itemName.slice(0, 1).toLowerCase() + itemName.slice(1, itemName.length).replaceAll(' ', '');
 					const ammoName = itemName.slice(0, itemName.indexOf(' Ammo')).toLowerCase();
 					const itemID = lowerCaseName + i;
+					const range = itemType === 'Light' ? ItemTypes.Light[itemName].range : null;
 					mapItems[itemID] = {
 						itemType,
-						itemName: itemType === 'Ammo' ? ammoName : itemName,
+						name: itemType === 'Ammo' ? ammoName : itemName,
 						amount: itemType === 'Ammo' ? itemRandomAmount : null,
-						coords
+						coords,
+						range
 					};
 					itemCoords[itemID] = coords;
 				}
@@ -797,43 +800,6 @@ class Map extends React.Component {
 			/>))
 		}
 		return items;
-	}
-
-	addItemToPlayerInventory = (itemInfo, id) => {
-		let pcItems = this.props.playerCharacters[this.props.activeCharacter].items;
-		let pcAmmo = this.props.playerCharacters[this.props.activeCharacter].ammo;
-		if (itemInfo.itemType === 'Ammo') {
-			pcAmmo[itemInfo.itemName] += itemInfo.amount;
-		// if item is already in inventory
-		} else if (pcItems[itemInfo.itemType] && pcItems[itemInfo.itemType][itemInfo.itemName]) {
-			const count = pcItems[itemInfo.itemType][itemInfo.itemName];
-			if (ItemTypes[itemInfo.itemType][itemInfo.itemName].stackable) {
-				pcItems[itemInfo.itemType][itemInfo.itemName] = count++;
-			} else {
-				pcItems[itemInfo.itemType][itemInfo.itemName][id] = {};
-			}
-		// or if item type is in inventory, but not the item
-		} else if (pcItems[itemInfo.itemType]) {
-			pcItems[itemInfo.itemType][itemInfo.itemName] = ItemTypes[itemInfo.itemType][itemInfo.itemName].stackable ? 1 : {[id]: {}};
-		// item type isn't in inventory
-		} else {
-			pcItems[itemInfo.itemType] = {[itemInfo.itemName]: ItemTypes[itemInfo.itemType][itemInfo.itemName].stackable ? 1 : {[id]: {}}};
-		}
-		if (itemInfo.itemType === 'Light') {
-			pcItems[itemInfo.itemType][itemInfo.itemName][id].time =
-				itemInfo.itemName === 'Torch' ? this.lightTimes.torch :
-				itemInfo.itemName === 'Lantern' ? this.lightTimes.lantern : this.lightTimes.electricTorch;
-		}
-		const updatedData = {...pcItems, ...pcAmmo};
-		this.props.updateCharacters('player', updatedData, this.props.activeCharacter, false, false, () => {
-			this.removeItemFromMap(id);
-		});
-	}
-
-	removeItemFromMap = (id) => {
-		const updatedObjects = this.props.mapObjects;
-		delete updatedObjects[id];
-		this.props.updateMapObjects(updatedObjects);
 	}
 
 	/**
@@ -1643,6 +1609,55 @@ class Map extends React.Component {
 		return Math.abs(playerCoords.xPos - objCoords.xPos) <= 1 && Math.abs(playerCoords.yPos - objCoords.yPos) <= 1;
 	}
 
+	addItemToPlayerInventory = (itemInfo, id) => {
+		const itemName = itemInfo.name;
+		const player = this.props.playerCharacters[this.props.activeCharacter];
+		const generalItemType = itemInfo.itemType === 'Weapon' ? 'weapons' : itemInfo.itemType === 'Ammo' ? 'ammo' : 'items';
+		let inventoryList = {...player[generalItemType]};
+		let invItem = null;
+		let lastItemId = 0;
+		let newInvItemId = 0;
+
+		if (itemInfo.itemType === 'Ammo') {
+			inventoryList[itemName] = inventoryList[itemName] ? inventoryList[itemName] + itemInfo.amount : itemInfo.amount;
+		// if item is weapon, is already in inventory, and is stackable
+		} else if (generalItemType === 'weapons' && player.ammo.stackable && player.ammo.stackable[itemName]) {
+			player.ammo.stackable[itemName]++;
+		// or item is anything else, whether in inv or not
+		} else {
+			invItem = Object.values(inventoryList).findLast(invItemInfo => invItemInfo.name === itemName);
+			lastItemId = invItem ? +id.slice(id.search(/d/)) : 0;
+			newInvItemId = itemName + (invItem ? ++lastItemId : 0);
+			inventoryList[newInvItemId] = {...itemInfo};
+			if (itemInfo.stackable) {
+				if (player.ammo.stackable) {
+					player.ammo.stackable[itemName] = 1;
+				} else {
+					player.ammo.stackable = {[itemName]: 1};
+				}
+			}
+			if (itemInfo.itemType === 'Light') {
+				inventoryList[newInvItemId].time =
+					itemName === 'Torch' ? this.lightTimes.torch :
+					itemName === 'Lantern' ? this.lightTimes.lantern : this.lightTimes.electricTorch;
+
+			}
+			if (itemInfo.itemType === 'Light' || itemInfo.itemType === 'Weapon') {
+				inventoryList[newInvItemId].equipped = false;
+			}
+		}
+		const updatedData = {[generalItemType]: inventoryList};
+		this.props.updateCharacters('player', updatedData, this.props.activeCharacter, false, false, () => {
+			this.removeItemFromMap(id);
+		});
+	}
+
+	removeItemFromMap = (id) => {
+		const updatedObjects = this.props.mapObjects;
+		delete updatedObjects[id];
+		this.props.updateMapObjects(updatedObjects);
+	}
+
 	/**
 	 * Determines if user's key/tap/click movement command is valid, and if so, updates coords for the active PC,
 	 * then calls _moveMap to keep the active PC centered on screen,
@@ -1994,7 +2009,7 @@ class Map extends React.Component {
 					// if player char is within attack range, then attack
 					if (targetPlayerDistance <= creatureData.range) {
 						this.props.updateLog(`${creatureID} attacks player at ${JSON.stringify(targetPlayerPos)}`);
-						this.props.mapCreatures[creatureID].attack(targetPlayerID, targetPlayerData, this.props.updateCharacters, this.props.updateLog);
+						this.props.mapCreatures[creatureID].attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog);
 					}
 					// then move away from player
 					for (let i = 1; i <= creatureData.moveSpeed; i++) {
@@ -2017,7 +2032,7 @@ class Map extends React.Component {
 						// if player char is within attack range, then attack
 						if (targetPlayerDistance <= creatureData.range) {
 							this.props.updateLog(`${creatureID} attacks player at ${JSON.stringify(targetPlayerPos)}`);
-							this.props.mapCreatures[creatureID].attack(targetPlayerID, targetPlayerData, this.props.updateCharacters, this.props.updateLog, updateThreatAndCurrentTurn);
+							this.props.mapCreatures[creatureID].attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog, updateThreatAndCurrentTurn);
 						} else {
 							this.props.updateCurrentTurn();
 						}
@@ -2025,7 +2040,7 @@ class Map extends React.Component {
 					// otherwise player is in attack range, so attack
 				} else {
 					this.props.updateLog(`${creatureID} attacks player at ${JSON.stringify(targetPlayerPos)}`);
-					this.props.mapCreatures[creatureID].attack(targetPlayerID, targetPlayerData, this.props.updateCharacters, this.props.updateLog, updateThreatAndCurrentTurn);
+					this.props.mapCreatures[creatureID].attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog, updateThreatAndCurrentTurn);
 				}
 				creatureDidAct = true;
 			}
@@ -2225,6 +2240,7 @@ class Map extends React.Component {
 					this._moveCreature();
 				}, this.movementDelay);
 			} else if (this.props.playerCharacters[this.props.activeCharacter]) {
+				this.setState({followModeMoves: []});
 				this._moveMap();
 			}
 		}

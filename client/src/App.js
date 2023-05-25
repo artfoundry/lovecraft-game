@@ -46,9 +46,7 @@ class Game extends React.Component {
 			currentLocation: '',
 			currentLevel: 1,
 			characterIsSelected: false,
-			characterInfoText: '',
 			creatureIsSelected: false,
-			creatureInfoText: '',
 			creatureCoordsUpdate: null,
 			selectedCharacter: '',
 			selectedCreature: '',
@@ -85,9 +83,7 @@ class Game extends React.Component {
 			activePlayerMovesCompleted: 0,
 			activePlayerActionsCompleted: 0,
 			characterIsSelected: false,
-			characterInfoText: '',
 			creatureIsSelected: false,
-			creatureInfoText: '',
 			creatureCoordsUpdate: null,
 			selectedCharacter: '',
 			selectedCreature: '',
@@ -133,8 +129,6 @@ class Game extends React.Component {
 				if (this.state.selectedCreature === id) {
 					if (this.state[collection][id].currentHP <= 0 && type === 'creature') {
 						this.updateUnitSelectionStatus(id, 'creature');
-					} else {
-						this._updateInfoText('creatureInfoText', id);
 					}
 				}
 				if (callback) callback();
@@ -293,15 +287,16 @@ class Game extends React.Component {
 	 * Updates to state what PC weapon is selected in the UI
 	 * Data stored in weaponButtonSelected: {characterId, weaponName, stats: WeaponTypes[weaponName]}
 	 * @param characterId: String
+	 * @param weaponId: String
 	 * @param weaponName: String
 	 * @param callback: Function
 	 */
-	toggleWeapon = (characterId, weaponName, callback) => {
+	toggleWeapon = (characterId, weaponId, weaponName, callback) => {
 		let buttonState = {};
 		// if no weapon selected or weapon selected doesn't match new weapon selected, set weapon state to new weapon
 		if (Object.keys(this.state.weaponButtonSelected).length === 0 ||
-			(this.state.weaponButtonSelected.characterId !== characterId || this.state.weaponButtonSelected.weaponName !== weaponName)) {
-			buttonState = {characterId, weaponName, stats: WeaponTypes[weaponName]};
+			(this.state.weaponButtonSelected.characterId !== characterId || this.state.weaponButtonSelected.weaponId !== weaponId)) {
+			buttonState = {characterId, weaponId, weaponName, stats: WeaponTypes[weaponName]};
 		}
 		this.setState({weaponButtonSelected: buttonState}, () => {
 			if (callback) callback();
@@ -319,13 +314,23 @@ class Game extends React.Component {
 			// clicked unit is getting attacked
 			const proceedWithAttack = () => {
 				const selectedWeaponInfo = this.state.weaponButtonSelected;
-				this.state.playerCharacters[this.state.activeCharacter].attack(selectedWeaponInfo.weaponName, selectedWeaponInfo.stats, id, this.state.mapCreatures[id], this.updateCharacters, this.updateLog);
-				this.toggleWeapon(selectedWeaponInfo.characterId, selectedWeaponInfo.weaponName);
-				if (this.state.mapCreatures[id].currentHP <= 0) {
-					this._removeDeadFromTurnOrder(id, this._updateActivePlayerActions);
-				} else {
-					this._updateActivePlayerActions();
-				}
+				const attackProps = {
+					weaponId: selectedWeaponInfo.weaponId,
+					weaponStats: selectedWeaponInfo.stats,
+					creatureData: this.state.mapCreatures[id],
+					pcData: this.state.playerCharacters[this.state.activeCharacter],
+					updateCharacter: this.updateCharacters,
+					updateLog: this.updateLog,
+					callback: () => {
+						this.toggleWeapon(selectedWeaponInfo.characterId, selectedWeaponInfo.weaponId, selectedWeaponInfo.weaponName);
+						if (this.state.mapCreatures[id].currentHP <= 0) {
+							this._removeDeadFromTurnOrder(id, this._updateActivePlayerActions);
+						} else {
+							this._updateActivePlayerActions();
+						}
+					}
+				};
+				this.state.playerCharacters[this.state.activeCharacter].attack(attackProps);
 			}
 			if (!this.state.isInCombat) {
 				// not currently necessary to update list as must see creature to attack it, so would already be in list/in combat
@@ -424,9 +429,9 @@ class Game extends React.Component {
 	_setupPlayerCharacters() {
 		let playerCharacters = {};
 		let playerFollowOrder = [];
-		this.startingPlayerCharacters.forEach(character => {
-			playerCharacters[character] = new Character(PlayerCharacterTypes[character]);
-			playerFollowOrder.push(character);
+		this.startingPlayerCharacters.forEach(characterId => {
+			playerCharacters[characterId] = new Character(PlayerCharacterTypes[characterId]);
+			playerFollowOrder.push(characterId);
 		});
 		this.setState({playerCharacters, playerFollowOrder});
 	}
@@ -524,20 +529,7 @@ class Game extends React.Component {
 	}
 
 	/**
-	 * Updates character info panels contents to state
-	 * @param type: String
-	 * @param id: String
-	 * @private
-	 */
-	_updateInfoText(type, id) {
-		const updatedText = type === 'characterInfoText' ? this.state.playerCharacters[id] : this.state.mapCreatures[id];
-		updatedText.id = id;
-		this.setState({[type]: updatedText});
-	}
-
-	/**
-	 * Updates to state the status of what PC or NPC (or both) is selected in the UI,
-	 * then calls function to update info panel text for that character
+	 * Updates to state the status of what PC or NPC (or both) is selected in the UI
 	 * @param id: String
 	 * @param type: String ('player' or 'creature')
 	 */
@@ -546,7 +538,6 @@ class Game extends React.Component {
 		let unitTypeSelected = '';
 		let unitNameForSelectionStateChg = '';
 		let unitToDeselect = '';
-		let infoTextToUpdate = '';
 
 		if (type === 'player') {
 			unitTypeObjectName = 'playerCharacters';
@@ -563,9 +554,6 @@ class Game extends React.Component {
 		} else {
 			// no unit previously selected or different unit previously selected
 			unitNameForSelectionStateChg = id;
-
-			infoTextToUpdate = type === 'player' ? 'characterInfoText' : 'creatureInfoText';
-
 			if (this.state[unitTypeSelected] !== '') {
 				unitToDeselect = this.state[unitTypeSelected];
 			}
@@ -594,9 +582,6 @@ class Game extends React.Component {
 				}));
 			}
 			this.toggleCharIsSelected(type, this.state[unitTypeObjectName][id].isSelected);
-			if (this.state[unitTypeObjectName][id].isSelected) {
-				this._updateInfoText(infoTextToUpdate, id);
-			}
 		});
 	}
 
@@ -646,15 +631,15 @@ class Game extends React.Component {
 		}
 
 		// todo: uncomment below and comment Firebase component in render() for testing, remove for prod
-		// this.setState({isLoggedIn: true});
+		this.setState({isLoggedIn: true});
 	}
 
 	render() {
 		return (
 			<div className="game">
-				<Firebase
-					updateLoggedIn={this.updateLoggedIn}
-				/>
+				{/*<Firebase*/}
+				{/*	updateLoggedIn={this.updateLoggedIn}*/}
+				{/*/>*/}
 
 				{this.state.isLoggedIn &&
 					<UI
@@ -662,8 +647,8 @@ class Game extends React.Component {
 						setShowDialogProps={this.setShowDialogProps}
 						dialogProps={this.state.dialogProps}
 						logText={this.state.logText}
-						characterInfoText={this.state.characterInfoText}
-						creatureInfoText={this.state.creatureInfoText}
+						characterInfoText={this.state.playerCharacters[this.state.selectedCharacter]}
+						creatureInfoText={this.state.mapCreatures[this.state.selectedCreature]}
 						characterIsSelected={this.state.characterIsSelected}
 						creatureIsSelected={this.state.creatureIsSelected}
 						updateUnitSelectionStatus={this.updateUnitSelectionStatus}

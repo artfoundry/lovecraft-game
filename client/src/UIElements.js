@@ -6,18 +6,17 @@ function CharacterControls(props) {
 	weaponRefs[props.characterId] = useRef([]);
 	let weaponButtonState = '';
 	const weaponsList = [];
-	for (const [weaponType, weaponsInfo] of Object.entries(props.weapons)) {
-		if (weaponType === 'ranged') {
-			for (const [weaponName, weaponInfo] of Object.entries(weaponsInfo)) {
+	for (const [weaponId, weaponInfo] of Object.entries(props.weapons)) {
+		if (weaponInfo.equipped) {
+			if (weaponInfo.ranged) {
 				if (weaponInfo.gunType) {
-					weaponsList.push({weaponName, isGun: true, ammo: props.ammo[weaponInfo.gunType]});
-				} else {
-					weaponsList.push({weaponName, ammo: weaponInfo});
+					weaponsList.push({weaponId, weaponName: weaponInfo.name, isGun: true, ammo: props.ammo[weaponInfo.gunType]});
+				// check to make sure this weapon isn't already in the controls and has some ammo
+				} else if (!weaponsList.find(listItem => listItem.weaponName === weaponInfo.name) && props.ammo.stackable[weaponInfo.name] > 0) {
+					weaponsList.push({weaponId, weaponName: weaponInfo.name, ammo: props.ammo.stackable[weaponInfo.name]});
 				}
-			}
-		} else {
-			for (const weaponName of Object.keys(weaponsInfo)) {
-				weaponsList.push({weaponName, ammo: -1});
+			} else {
+				weaponsList.push({weaponId, weaponName: weaponInfo.name, ammo: -1});
 			}
 		}
 	}
@@ -27,11 +26,11 @@ function CharacterControls(props) {
 	const weapons = (
 		<div className='weapon-buttons-container'>
 			{weaponsList.map((weapon, index) => {
-				weaponButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0) ? ' button-inactive' :
-					(props.weaponButtonSelected.characterId === props.characterId && props.weaponButtonSelected.weaponName === weapon.weaponName) ? ' button-selected': '';
+				weaponButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || (weapon.ammo === 0)) ? ' button-inactive' :
+					(props.weaponButtonSelected.characterId === props.characterId && props.weaponButtonSelected.weaponId === weapon.weaponId) ? ' button-selected': '';
 				return (
-					<div ref={weaponRefs[props.characterId].current[index]} data-weapon={weapon.weaponName} className={'weapon-button' + weaponButtonState} key={weapon.weaponName} onClick={() => {
-						props.toggleWeaponButton(props.characterId, weapon.weaponName);
+					<div ref={weaponRefs[props.characterId].current[index]} className={'weapon-button' + weaponButtonState} key={weapon.weaponId} onClick={() => {
+						props.toggleWeaponButton(props.characterId, weapon.weaponId, weapon.weaponName);
 					}}>{weapon.weaponName}{weapon.ammo >= 0 ? ': ' + weapon.ammo : ''}{weapon.isGun ? ' round(s)': ''}</div>
 				);
 			})}
@@ -49,36 +48,44 @@ function CharacterControls(props) {
 }
 
 function CharacterInfoPanel(props) {
-	const parseItems = (items, listType) => {
-		let list = []
-		for (const [itemType, itemsInfo] of Object.entries(items)) {
-			if (listType === 'ammo') {
-				list.push(<li key={itemType + Math.random()}>{itemType}: {itemsInfo} rounds</li>)
-			} else {
-				for (const [itemName, itemInfo] of Object.entries(itemsInfo)) {
+	const parseItems = (items, listType, stackableWeapons = null) => {
+		let list = [];
+		let stackablesAdded = []; // prevents listing multiple copies of same stackable weapon
+
+		if (listType === 'ammo') {
+			for (const [type, amount] of Object.entries(items)) {
+				list.push(<li key={type + Math.random()}>{type}: {amount} rounds</li>)
+			}
+		} else {
+			for (const [itemId, itemInfo] of Object.entries(items)) {
+				if (listType === 'weapon') {
 					// guns
-					if (listType === 'weapon' && itemInfo.gunType) {
-						list.push(<li key={itemName + Math.random()}>{itemName}</li>);
-					// stackable items/non-gun weapons
-					} else if (typeof itemInfo === 'number') {
-						list.push(<li key={itemName + Math.random()}>{itemName}: {itemInfo}</li>);
-					// lights
-					} else if (itemType === 'Light') {
-						for (const lightInfo of Object.values(itemInfo)) {
-							list.push(<li key={itemName + Math.random()}>{itemName} (Time left: {lightInfo.time})</li>);
-						}
-					// other unique items/non-gun weapons
-					} else {
-						list.push(<li key={itemName + Math.random()}>{itemName}</li>);
+					if (itemInfo.gunType) {
+						list.push(<li key={itemId}>{itemInfo.name}</li>);
+					// stackable non-gun weapons
+					} else if (stackableWeapons && stackableWeapons[itemInfo.name] > 0 && !stackablesAdded[itemInfo.name]) {
+						list.push(<li key={itemId}>{itemInfo.name}: {stackableWeapons[itemInfo.name]}</li>);
+						stackablesAdded.push(itemInfo.name);
+					// non-stackable non-gun weapons (usually melee weapons)
+					} else if (!stackableWeapons) {
+						list.push(<li key={itemId}>{itemInfo.name}</li>);
 					}
+				// lights
+				} else if (itemInfo.itemType === 'Light') {
+					list.push(<li key={itemId}>{itemInfo.name} (Time left: {itemInfo.time})</li>);
+				// other unique items/non-gun weapons
+				} else {
+					list.push(<li key={itemId}>{itemInfo.name}</li>);
 				}
 			}
 		}
 		return list;
 	};
 	const skillList = Object.values(props.characterInfo.skills).map(item => <li key={item + Math.random()}>{item}</li>);
-	const weaponList = parseItems(props.characterInfo.weapons, 'weapon');
-	const ammoList = parseItems(props.characterInfo.ammo, 'ammo');
+	const weaponList = parseItems(props.characterInfo.weapons, 'weapon', props.characterInfo.ammo.stackable);
+	const gunAmmo = {...props.characterInfo.ammo};
+	delete gunAmmo.stackable;
+	const ammoList = parseItems(gunAmmo, 'ammo');
 	const itemList = parseItems(props.characterInfo.items, 'item');
 	return (
 		<div className={`character-info-container ui-panel ${props.characterIsSelected ? '' : 'hide'}`}>
@@ -107,7 +114,7 @@ function CharacterInfoPanel(props) {
 			<div>Items:
 				<ul>{itemList}</ul>
 			</div>
-			<div>Equipped Light: {props.characterInfo.equippedLight}</div>
+			<div>Equipped Light: {props.characterInfo.items[props.characterInfo.equippedLight].name}</div>
 		</div>
 	);
 }
