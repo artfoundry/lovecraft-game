@@ -8,6 +8,10 @@ export function convertObjIdToClassId(id) {
 	return convertCamelToKabobCase(id.substring(0, idEndIndex));
 }
 
+export function convertPosToCoords(pos) {
+	return pos.split('-').map(val => parseInt(val));
+}
+
 export function diceRoll(range) {
 	return Math.ceil(Math.random() * range);
 }
@@ -25,4 +29,25 @@ export function randomTileVariant() {
 // returns 0, 1, or -1;
 export function randomTileMovementValue() {
 	return Math.round(Math.random()) * (Math.round(Math.random()) === 0 ? 1 : -1);
+}
+
+/**
+ * Rounds numbers toward 0 (since Math.floor rounds neg numbers away from 0)
+ * @param value: decimal number
+ * @returns {number}
+ */
+export function roundTowardZero(value) {
+	const sign = value < 0 ? -1 : 1;
+	return Math.floor(Math.abs(value)) * sign;
+}
+
+// just for testing purposes
+export function placeTileDotForTesting(coords) {
+	let dot = document.createElement('div');
+	dot.style.backgroundColor = 'yellow';
+	dot.style.width = '10px';
+	dot.style.height = '10px';
+	dot.style.position = 'absolute';
+	dot.style.transform = `translate(${coords.xPos*this.tileSize}px, ${coords.yPos*this.tileSize}px)`;
+	document.querySelector('body').appendChild(dot);
 }

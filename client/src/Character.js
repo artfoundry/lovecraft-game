@@ -31,8 +31,8 @@ class Character extends React.Component {
 		this.defense = this.agility + (this.items.Armor ? this.items.Armor.value : 0);
 		this.damageReduction = this.items.Armor ? this.items.Armor.value : 0;
 		this.coords = {};
-		this.equippedLight = props.equippedLight.id;
-		this.lightRange = this.equippedLight ? this.itemTypes.Light[props.equippedLight.name].range : 1;
+		this.equippedLight = props.equippedLight.id || null;
+		this.lightRange = this.equippedLight ? this.itemTypes.Light[props.equippedLight.name].range : 0;
 		this.lightTime = this.equippedLight ? this.items[this.equippedLight].time : 0;
 	}
 

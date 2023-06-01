@@ -114,7 +114,7 @@ function CharacterInfoPanel(props) {
 			<div>Items:
 				<ul>{itemList}</ul>
 			</div>
-			<div>Equipped Light: {props.characterInfo.items[props.characterInfo.equippedLight].name}</div>
+			<div>Equipped Light: {props.characterInfo.equippedLight ? props.characterInfo.items[props.characterInfo.equippedLight].name : 'none'}</div>
 		</div>
 	);
 }

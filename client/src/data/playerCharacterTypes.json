@@ -63,8 +63,8 @@
     "ammo": {"stackable": {"Acid Concoction": 2}},
     "items": {
       "pharmaceuticals0": {"name": "Pharmaceuticals", "itemType": "Medicine", "amount": 1},
-      "lantern0": {"name": "Lantern", "itemType": "Light", "time": 300, "equipped": true}
+      "lantern0": {"name": "Lantern", "itemType": "Light", "time": 300, "equipped": false}
     },
-    "equippedLight": {"id": "lantern0", "name": "Lantern"}
+    "equippedLight": {}
   }
 }

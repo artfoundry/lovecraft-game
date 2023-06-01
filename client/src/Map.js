@@ -8,7 +8,7 @@ import ItemTypes from './data/itemTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
 import {Exit, LightElement, Character, Tile, Item, Door} from './MapElements';
 import {StoneDoor} from './Audio';
-import {convertObjIdToClassId, randomTileMovementValue} from './Utils';
+import {convertObjIdToClassId, randomTileMovementValue, convertPosToCoords, roundTowardZero} from './Utils';
 import './css/map.css';
 import './css/catacombs.css';
 import './css/dungeon.css';
@@ -42,6 +42,11 @@ class Map extends React.Component {
 			lantern: 300,
 			electricTorch: 500
 		};
+		this.lightRanges = {
+			torch: ItemTypes.Light['Torch'].range,
+			lantern: ItemTypes.Light['Lantern'].range,
+			electricTorch: ItemTypes.Light['Electric Torch'].range
+		}
 
 		this.mapLayoutTemp = {};
 		this.sfxSelectors = {
@@ -855,74 +860,94 @@ class Map extends React.Component {
 
 	/**
 	 * Called by render() to add LightElement tile components to map representing tile lighting
+	 * as lit by map lights and PC lights
 	 * @returns Array (of LightElement components)
 	 */
 	addLighting = () => {
 		let tiles = [];
-		let allLightPosData = this.props.getAllCharactersPos('player', 'pos');
-		let allLightPos = [];
+		let allLightPos = this.props.getAllCharactersPos('player', 'pos');
 		let mapLights = [];
-		let mapLightsSeen = [];
-		const numberPCs = allLightPosData.length;
-
-		for (const [id, objInfo] of Object.entries(this.props.mapObjects)) {
-			if (objInfo.itemType === 'Light') {
-				mapLights.push({id, pos: `${objInfo.coords.xPos}-${objInfo.coords.yPos}`, range: objInfo.range});
-			}
-		}
-		mapLights.forEach(light => {
+		const numberPCs = allLightPos.length;
+		const lightStrengthByTile = {};
+		const playerSeesLitTile = (pos) => {
 			let tileIsSeen = false;
 			let playerIndex = 0;
 			while (!tileIsSeen && playerIndex < numberPCs) {
-				const playerPos = allLightPosData[playerIndex].pos;
-				if (this.isInLineOfSight(playerPos, light.pos)) {
-					allLightPosData.push(light);
+				const playerPos = allLightPos[playerIndex].pos;
+				if (this.isInLineOfSight(playerPos, pos, false)) {
 					tileIsSeen = true;
-				} else {
-					playerIndex++;
 				}
+				playerIndex++;
+			}
+			return tileIsSeen;
+		}
+		const capLightStrength = (pos) => {
+			if (lightStrengthByTile[pos] > 9) {
+				lightStrengthByTile[pos] = 9;
+			}
+		}
+
+		for (const [id, objInfo] of Object.entries(this.props.mapObjects)) {
+			if (objInfo.itemType === 'Light') {
+				const light = {id, pos: `${objInfo.coords.xPos}-${objInfo.coords.yPos}`, range: objInfo.range};
+				mapLights.push(light);
+				allLightPos.push(light);
+			}
+		}
+
+		// add range info for player lights
+		allLightPos.forEach((light, index, lightsArray) => {
+			const playerLight = this.props.playerCharacters[light.id];
+			if (playerLight) {
+				lightsArray[index].range = playerLight.lightRange;
 			}
 		});
-		allLightPosData.forEach(player => {
-			allLightPos.push(player.pos);
-		});
 
-		// get all lit floors/walls around each player
-		let lineOfSightTiles = this._getLitSurroundingTiles(allLightPosData);
-		// const mapLightsLitTiles = this._getLitSurroundingTiles(mapLightsSeen);
-		// for (const [distance, floorsAndWalls] of Object.entries(mapLightsLitTiles)) {
-		// 	for (const [tileType, positions] of Object.entries(floorsAndWalls)) {
-		// 		let tileIsSeen = false;
-		// 		let playerIndex = 0;
-		// 		while (!tileIsSeen && playerIndex < allLightPosData.length) {
-		// 			const playerPos = allLightPosData[playerIndex].pos;
-		// 			for (const [litTilePos, tileData] of Object.entries(positions)) {
-		// 				if (this.isInLineOfSight(playerPos, litTilePos)) {
-		// 					lineOfSightTiles[distance][tileType][litTilePos] = tileData;
-		// 					tileIsSeen = true;
-		// 				} else {
-		// 					playerIndex++;
-		// 				}
-		// 			}
-		// 		}
-		// 	}
-		// }
+		// get all lit floors/walls around each player and map light that are in LOS of a player
+		// lineOfSightTiles are tiles in LOS from their own source
+		let lineOfSightTiles = this._getLitSurroundingTiles(allLightPos);
+		// now need to check which map light lit tiles are viewable by PCs
+		const mapLightsLitTiles = this._getLitSurroundingTiles(mapLights);
+		for (const [distance, floorsAndWalls] of Object.entries(mapLightsLitTiles)) {
+			for (const [tileType, positions] of Object.entries(floorsAndWalls)) {
+				for (const litTilePos of Object.keys(positions)) {
+					if (!playerSeesLitTile(litTilePos)) {
+						delete lineOfSightTiles[distance][tileType][litTilePos];
+					}
+				}
+			}
+		}
+
+		// Calculate light strengths for each lit tile (except source tiles) based on all light sources
+		const distValues = {oneAway: 1, twoAway: 2, threeAway: 3, fourAway: 4, fiveAway: 5};
+		for (const [distance, tiles] of Object.entries(lineOfSightTiles)) {
+			for (const positions of Object.values(tiles)) {
+				for (const [pos, ranges] of Object.entries(positions)) {
+					// add together each (light source range + 1 (as the source of the light will be +1 compared to the range tiles) - distance from source)
+					lightStrengthByTile[pos] = (lightStrengthByTile[pos] || 0) + ranges.reduce((accumulator, value) => accumulator + value + 1, 0) - (distValues[distance] * ranges.length);
+					capLightStrength(pos);
+				}
+			}
+		}
+
+		// now add source tile strengths
+		allLightPos.forEach(source => {
+			let mapLightIsSeen = false;
+			if (mapLights.some(mapLight => mapLight.id === source.id)) {
+				mapLightIsSeen = playerSeesLitTile(source.pos);
+			}
+			if (this.props.playerCharacters[source.id] || mapLightIsSeen) {
+				lightStrengthByTile[source.pos] = (lightStrengthByTile[source.pos] || 0) + source.range + (source.range > 0 ? 1 : 0);
+				capLightStrength(source.pos);
+			}
+		});
 
 		for (const tilePos of Object.keys(this.state.mapLayout)) {
 			let allClasses = 'light-tile';
+			const tileLightStr = lightStrengthByTile[tilePos];
 
-			if (allLightPos.includes(tilePos)) {
-				allClasses += ' very-bright-light black-light';
-			} else if (lineOfSightTiles.oneAway && (lineOfSightTiles.oneAway.floors[tilePos] || lineOfSightTiles.oneAway.walls[tilePos])) {
-				allClasses += ' bright-light black-light';
-			} else if (lineOfSightTiles.twoAway && (lineOfSightTiles.twoAway.floors[tilePos] || lineOfSightTiles.twoAway.walls[tilePos])) {
-				allClasses += ' bright-med-light black-light';
-			} else if (lineOfSightTiles.threeAway && (lineOfSightTiles.threeAway.floors[tilePos] || lineOfSightTiles.threeAway.walls[tilePos])) {
-				allClasses += ' med-light black-light';
-			} else if (lineOfSightTiles.fourAway && (lineOfSightTiles.fourAway.floors[tilePos] || lineOfSightTiles.fourAway.walls[tilePos])) {
-				allClasses += ' med-low-light black-light';
-			} else if (lineOfSightTiles.fiveAway && (lineOfSightTiles.fiveAway.floors[tilePos] || lineOfSightTiles.fiveAway.walls[tilePos])) {
-				allClasses += ' low-light black-light';
+			if (tileLightStr <= 9 && tileLightStr >= 1) {
+				allClasses += ` light-strength-${tileLightStr} black-light`;
 			} else if (this.state.playerVisited[tilePos]) {
 				allClasses += ' ambient-light black-light';
 			} else {
@@ -1374,71 +1399,94 @@ class Map extends React.Component {
 	 * (doesn't check for PCs, as assumed that a PC in the way would duck or shooting PC would shoot around)
 	 * @param startPos: string
 	 * @param endPos: string
+	 * @param checkForCreatures: boolean (whether or not to check for creature blocking path - false for lighting checks)
 	 * @returns {boolean}
 	 */
-	isInLineOfSight = (startPos, endPos) => {
-		let isLineOfSight = true;
-		const endTileCoords = endPos.split('-');
-		const startingCoords = startPos.split('-');
-		let currentCoords = startingCoords;
-		currentCoords[0] = +currentCoords[0];
-		currentCoords[1] = +currentCoords[1];
-		endTileCoords[0] = +endTileCoords[0];
-		endTileCoords[1] = +endTileCoords[1];
-		const xDelta = endTileCoords[0] - currentCoords[0];
-		const yDelta = endTileCoords[1] - currentCoords[1];
-		let absXDelta = Math.abs(xDelta);
-		let absYDelta = Math.abs(yDelta);
-		let xModifier = 0;
-		let yModifier = 0;
-		let smallerValue = 0;
-		let largerValue = 0;
-		let counter = 0;
-		let angle = 0;
-		let shorterDistance = 0;
-
-		// Set the modifiers that will update which tile to check next
-		if (absXDelta === absYDelta) {
-			xModifier = xDelta < 0 ? -1 : 1;
-			yModifier = yDelta < 0 ? -1 : 1;
-		// if deltas are not equal, move longer direction first, then shorter direction
-		} else if (xDelta === 0 || yDelta === 0) {
-			xModifier = absXDelta < absYDelta ? 0 : xDelta < 0 ? -(xDelta/xDelta) : xDelta/xDelta;
-			yModifier = xModifier !== 0 ? 0 : yDelta < 0 ? -(yDelta/yDelta) : yDelta/yDelta;
-		} else {
-			smallerValue = absXDelta < absYDelta ? absXDelta : absYDelta;
-			largerValue = smallerValue === absXDelta ? absYDelta : absXDelta;
-			angle = Math.atan(smallerValue / largerValue);
+	isInLineOfSight = (startPos, endPos, checkForCreatures = true) => {
+		const endingCoords = convertPosToCoords(endPos);
+		const startingCoords = convertPosToCoords(startPos);
+		// All corner coords and deltas are in pixel values, not tile values
+		const startTileCorners = {
+			topLeft: {xPos: startingCoords[0] * this.tileSize, yPos: startingCoords[1] * this.tileSize},
+			topRight: {xPos: (startingCoords[0] * this.tileSize) + this.tileSize - 1, yPos: startingCoords[1] * this.tileSize},
+			bottomLeft: {xPos: startingCoords[0] * this.tileSize, yPos: (startingCoords[1] * this.tileSize) + this.tileSize - 1},
+			bottomRight: {xPos: (startingCoords[0] * this.tileSize) + this.tileSize - 1, yPos: (startingCoords[1] * this.tileSize) + this.tileSize - 1}
 		}
-
-		const updateCoords = () => {
-			counter++;
-			if (absXDelta !== absYDelta) {
-				// Find the length of the shorter distance (side of the triangle) based on the new length of the longer distance (controlled by counter)
-				shorterDistance = Math.floor((Math.tan(angle) * counter) + 0.5); // plus .5 to adjust for the hypotenuse being drawn from middle of tile
-				if (absXDelta < absYDelta) {
-					xModifier = xDelta < 0 ? -shorterDistance : shorterDistance;
-				} else {
-					xModifier = xDelta < 0 ? -(xDelta/xDelta) * counter : (xDelta/xDelta) * counter;
-				}
-				if (absYDelta < absXDelta) {
-					yModifier = yDelta < 0 ? -shorterDistance : shorterDistance;
-				} else {
-					yModifier = yDelta < 0 ? -(yDelta/yDelta) * counter : (yDelta/yDelta) * counter;
-				}
-			} else {
-				xModifier *= counter;
-				yModifier *= counter;
-			}
-			currentCoords = [startingCoords[0] + xModifier, startingCoords[1] + yModifier];
+		const endTileCorners = {
+			topLeft: {xPos: endingCoords[0] * this.tileSize, yPos: endingCoords[1] * this.tileSize},
+			topRight: {xPos: (endingCoords[0] * this.tileSize) + this.tileSize - 1, yPos: endingCoords[1] * this.tileSize},
+			bottomLeft: {xPos: endingCoords[0] * this.tileSize, yPos: (endingCoords[1] * this.tileSize) + this.tileSize - 1},
+			bottomRight: {xPos: (endingCoords[0] * this.tileSize) + this.tileSize - 1, yPos: (endingCoords[1] * this.tileSize) + this.tileSize - 1}
+		}
+		const xDeltas = {
+			topLeft: endTileCorners.topLeft.xPos - startTileCorners.topLeft.xPos,
+			topRight: endTileCorners.topRight.xPos - startTileCorners.topRight.xPos,
+			bottomLeft: endTileCorners.bottomLeft.xPos - startTileCorners.bottomLeft.xPos,
+			bottomRight: endTileCorners.bottomRight.xPos - startTileCorners.bottomRight.xPos
+		};
+		const yDeltas = {
+			topLeft: endTileCorners.topLeft.yPos - startTileCorners.topLeft.yPos,
+			topRight: endTileCorners.topRight.yPos - startTileCorners.topRight.yPos,
+			bottomLeft: endTileCorners.bottomLeft.yPos - startTileCorners.bottomLeft.yPos,
+			bottomRight: endTileCorners.bottomRight.yPos - startTileCorners.bottomRight.yPos
+		};
+		let absXDeltas = {
+			topLeft: Math.abs(xDeltas.topLeft),
+			topRight: Math.abs(xDeltas.topRight),
+			bottomLeft: Math.abs(xDeltas.bottomLeft),
+			bottomRight: Math.abs(xDeltas.bottomRight)
+		};
+		let absYDeltas = {
+			topLeft: Math.abs(yDeltas.topLeft),
+			topRight: Math.abs(yDeltas.topRight),
+			bottomLeft: Math.abs(yDeltas.bottomLeft),
+			bottomRight: Math.abs(yDeltas.bottomRight)
 		};
 
-		updateCoords();
-		while (isLineOfSight && (currentCoords[0] !== endTileCoords[0] || currentCoords[1] !== endTileCoords[1])) {
-			const currentPos = `${currentCoords[0]}-${currentCoords[1]}`;
-			this._isCurrentTileBlocked(currentPos, true) ? isLineOfSight = false : updateCoords();
+
+		let longerAxis = xDeltas.topLeft;
+		let longerAxisStartingPos = 'xPos';
+		let shorterAxisStartingPos = 'yPos';
+		let longerDeltas = xDeltas;
+		let shorterDeltas = yDeltas;
+		if (absXDeltas.topLeft < absYDeltas.topLeft) {
+			longerAxis = yDeltas.topLeft;
+			longerAxisStartingPos = 'yPos';
+			shorterAxisStartingPos = 'xPos';
+			longerDeltas = yDeltas;
+			shorterDeltas = xDeltas;
 		}
-		return isLineOfSight;
+		const numChecks = (Math.abs(longerAxis) / this.tileSize);
+		let numOfClearPaths = 4;
+		let checkNum = 1;
+		let clearPaths = {
+			topLeft: true,
+			topRight: true,
+			bottomLeft: true,
+			bottomRight: true
+		}
+		// numChecks - 1 only here because don't need to check the end tile, but still need full value for computing shorterAxisCheckLength
+		while (numOfClearPaths >= 1 && checkNum <= numChecks - 1) {
+			for (const [corner, distance] of Object.entries(longerDeltas)) {
+				if (clearPaths[corner]) {
+					const longerAxisCheckLength = distance < 0 ? -this.tileSize : this.tileSize;
+					const shorterAxisCheckLength = shorterDeltas[corner] / numChecks;
+					const longerAxisNewPos = roundTowardZero((startTileCorners[corner][longerAxisStartingPos] + (longerAxisCheckLength * checkNum)) / this.tileSize);
+					// need to Math.floor shorter, as pos could be between tile coords (and round would shift coord to next tile)
+					const shorterAxisNewPos = roundTowardZero((startTileCorners[corner][shorterAxisStartingPos] + (shorterAxisCheckLength * checkNum)) / this.tileSize);
+					const xPos = longerAxisStartingPos === 'xPos' ? longerAxisNewPos : shorterAxisNewPos;
+					const yPos = xPos === longerAxisNewPos ? shorterAxisNewPos : longerAxisNewPos;
+					const currentPos = `${xPos}-${yPos}`;
+
+					if (this._isCurrentTileBlocked(currentPos, checkForCreatures)) {
+						numOfClearPaths--;
+						clearPaths[corner] = false;
+					}
+				}
+			}
+			checkNum++;
+		}
+		return numOfClearPaths >= 1;
 	}
 
 	/**
@@ -1453,118 +1501,84 @@ class Map extends React.Component {
 			allCreaturePos = this.props.getAllCharactersPos('creature', 'pos');
 		}
 
-		return (this.state.mapLayout[currentPos].type === 'door' && !this.state.mapLayout[currentPos].doorIsOpen) ||
+		return (!this.state.mapLayout[currentPos] || (this.state.mapLayout[currentPos].type === 'door' && !this.state.mapLayout[currentPos].doorIsOpen)) ||
 			this.state.mapLayout[currentPos].type === 'wall' || (checkForCreature && allCreaturePos.some(creature => creature.pos === currentPos));
 	}
 
 	/**
-	 * Find all tiles out to 'range' number of rings surrounding center,
-	 * then find tiles of those that have unblocked lines of sight(LOS) to the center
+	 * Find tiles out to 'range' that have unblocked lines of sight(LOS) to the center
 	 * @param centerTilePos {string} : position of player (ex. '1-2')
 	 * @param range {number} : perception/light radius
+	 * @param checkForCreatures {boolean} : whether to check for creatures blocking paths
 	 * @returns {
 	 *  {
-	 *      oneAway: {floors: {[tilePosString]: {xPos, yPos}}, walls: {[tilePosString]: {xPos, yPos}}},
-	 *      twoAway: {floors: {[tilePosString]: {xPos, yPos}}, walls: {[tilePosString]: {xPos, yPos}}},
-	 *      threeAway: {floors: {[tilePosString]: {xPos, yPos}}, walls: {[tilePosString]: {xPos, yPos}}},
+	 *      oneAway: {floors: {[tilePosString]: [range]}, walls: {[tilePosString]: [range]}},
+	 *      twoAway: {floors: {[tilePosString]: [range]}, walls: {[tilePosString]: [range]}},
+	 *      threeAway: {floors: {[tilePosString]: [range]}, walls: {[tilePosString]: [range]}},
 	 *      etc
 	 *  }
 	 * }
 	 * @private
 	 */
-	_unblockedPathsToNearbyTiles(centerTilePos, range) {
-		const centerTile = this.state.mapLayout[centerTilePos];
+	_unblockedPathsToNearbyTiles(centerTilePos, range, checkForCreatures = false) {
 		const numToStr = [null, 'one', 'two', 'three', 'four', 'five'];
-		let nearbyTiles = {};
 		let lineOfSightTiles = {};
-		let minXBoundary = (centerTile.xPos - range) < 0 ? 0 : centerTile.xPos - range;
-		let minYBoundary = (centerTile.yPos - range) < 0 ? 0 : centerTile.yPos - range;
-		/**
-		 * Looks at two adjacent tiles, one farther away from character than other,
-		 * and determines if there is Line of Sight (LOS) between them
-		 * @param distance: number
-		 * @param farthestTilePos: string
-		 * @param farthestTileData: object
-		 * @param fartherTileData: object
-		 */
-		const compareTiles = (distance, farthestTilePos, farthestTileData, fartherTileData) => {
-			const distString = `${numToStr[distance]}Away`;
-			const distPlus1String = `${numToStr[distance+1]}Away`;
-			for (const closestTileData of Object.values(lineOfSightTiles[distString].floors)) {
-				const deltaXFartherTiles = Math.abs(distance === 1 ? farthestTileData.xPos - closestTileData.xPos : farthestTileData.xPos - fartherTileData.xPos);
-				const deltaYFartherTiles = Math.abs(distance === 1 ? farthestTileData.yPos - closestTileData.yPos : farthestTileData.yPos - fartherTileData.yPos);
-				const deltaXCloserTiles = Math.abs(distance === 1 ? closestTileData.xPos - centerTile.xPos : fartherTileData.xPos - closestTileData.xPos);
-				const deltaYCloserTiles = Math.abs(distance === 1 ? closestTileData.yPos - centerTile.yPos : fartherTileData.yPos - closestTileData.yPos);
-				const outerTileHasLOS =
-					(deltaXFartherTiles <= 1 && deltaXCloserTiles <= 1 && deltaYFartherTiles === 1) ||
-					(deltaYFartherTiles <= 1 && deltaYCloserTiles <= 1 && deltaXFartherTiles === 1);
-
-				// if one of the 1 away tiles that has line of sight is between the current 2 away tile and center tile...
-				if (outerTileHasLOS)
-				{
-					if (farthestTileData.type === 'wall' || (farthestTileData.type === 'door' && !farthestTileData.doorIsOpen)) {
-						lineOfSightTiles[distPlus1String].walls[farthestTilePos] = farthestTileData;
-					} else {
-						lineOfSightTiles[distPlus1String].floors[farthestTilePos] = farthestTileData;
-					}
-				}
-			}
-		};
+		let surroundingTiles = [];
 
 		for (let i=1; i <= range; i++) {
 			const distance = `${numToStr[i]}Away`;
-			if (i > 1) {
-				nearbyTiles[distance] = {floors: {}, walls: {}};
-			}
 			lineOfSightTiles[distance] = {floors: {}, walls: {}};
 		}
-
-		// collect all tiles that are 1-range tiles away from center
-		for (let xCount = minXBoundary; xCount <= centerTile.xPos + range; xCount++) {
-			for (let yCount = minYBoundary; yCount <= centerTile.yPos + range; yCount++) {
-				const tilePos = xCount + '-' + yCount;
-				const currentTile = this.state.mapLayout[tilePos];
-				if (currentTile && tilePos !== centerTilePos) {
-					const horizDeltaFromCenter = Math.abs(centerTile.xPos - currentTile.xPos);
-					const vertDeltaFromCenter = Math.abs(centerTile.yPos - currentTile.yPos);
-					const greaterOrCommonDistance = horizDeltaFromCenter >= vertDeltaFromCenter ? horizDeltaFromCenter : vertDeltaFromCenter;
-					const distance = `${numToStr[greaterOrCommonDistance]}Away`;
-					if (this._isCurrentTileBlocked(tilePos, false)) {
-						if (greaterOrCommonDistance === 1) {
-							lineOfSightTiles[distance].walls[tilePos] = currentTile;
-						} else {
-							nearbyTiles[distance].walls[tilePos] = currentTile;
-						}
+		surroundingTiles = this._getAllSurroundingTilesToRange(centerTilePos, range);
+		for (const [distance, positions] of Object.entries(surroundingTiles)) {
+			positions.forEach(tilePos => {
+				if (this.isInLineOfSight(centerTilePos, tilePos, checkForCreatures)) {
+					const tileData = this.state.mapLayout[tilePos];
+					if (tileData.type === 'floor' || (tileData.type === 'door' && tileData.doorIsOpen)) {
+						lineOfSightTiles[distance].floors[tilePos] = [range];
 					} else {
-						if (greaterOrCommonDistance === 1) {
-							lineOfSightTiles[distance].floors[tilePos] = currentTile;
-						} else {
-							nearbyTiles[distance].floors[tilePos] = currentTile;
+						lineOfSightTiles[distance].walls[tilePos] = [range];
+					}
+				}
+			});
+		}
+
+		return lineOfSightTiles;
+	}
+
+	/**
+	 * Find all tiles out to 'range' number of rings surrounding center
+	 * @param centerPos: string
+	 * @param range: number
+	 * @returns {
+	 *  {
+	 *      oneAway: {[tilePosStrings]},
+	 *      twoAway: {[tilePosStrings]},
+	 *      threeAway: {[tilePosStrings]},
+	 *      etc
+	 *  }
+	 * }
+	 * @private
+	 */
+	_getAllSurroundingTilesToRange(centerPos, range) {
+		const numToStr = [null, 'oneAway', 'twoAway', 'threeAway', 'fourAway', 'fiveAway'];
+		let surroundingTiles = {};
+		const centerCoords = centerPos.split('-');
+		for (let i=1; i <= range; i++) {
+			const distance = numToStr[i];
+			surroundingTiles[distance] = [];
+			for (let x=-i; x <= i; x++) {
+				for (let y=-i; y <= i; y++) {
+					if (Math.abs(x) === i || Math.abs(y) === i) {
+						const tilePos = `${+centerCoords[0] + x}-${+centerCoords[1] + y}`;
+						if (tilePos !== centerPos && this.state.mapLayout[tilePos]) {
+							surroundingTiles[distance].push(tilePos);
 						}
 					}
 				}
 			}
 		}
-
-		// now find tiles two tiles from center that have line of sight
-		let floorsAndWalls = {...nearbyTiles.twoAway.floors, ...nearbyTiles.twoAway.walls};
-		for (const [twoAwayTilePos, twoAwayTileData] of Object.entries(floorsAndWalls)) {
-			compareTiles(1, twoAwayTilePos, twoAwayTileData);
-		}
-
-		// now find tiles three or more tiles from center that have line of sight
-		for (let dist=3; dist <= range; dist++) {
-			const distString = `${numToStr[dist]}Away`;
-			const distMinus1String = `${numToStr[dist-1]}Away`;
-			floorsAndWalls = {...nearbyTiles[distString].floors, ...nearbyTiles[distString].walls};
-			for (const [farthestTilePos, farthestTileData] of Object.entries(floorsAndWalls)) {
-				for (const fartherTileData of Object.values(lineOfSightTiles[distMinus1String].floors)) {
-					compareTiles(dist-1, farthestTilePos, farthestTileData, fartherTileData);
-				}
-			}
-		}
-
-		return lineOfSightTiles;
+		return surroundingTiles;
 	}
 
 	/**
@@ -1577,14 +1591,23 @@ class Map extends React.Component {
 		let lineOfSightTiles = {};
 		// get all floors/walls around each player
 		allLightPos.forEach(object => {
-			const range = object.range ? object.range : this.props.playerCharacters[object.id].lightRange;
-			const tempTiles = this._unblockedPathsToNearbyTiles(object.pos, range);
+			const sourceRange = object.range ? object.range : this.props.playerCharacters[object.id].lightRange;
+			const tempTiles = this._unblockedPathsToNearbyTiles(object.pos, sourceRange);
 			for (const [distance, tiles] of Object.entries(tempTiles)) {
 				if (!lineOfSightTiles[distance]) {
-					lineOfSightTiles[distance] = {floors: {}, walls: {}};
+					lineOfSightTiles[distance] = {floors: tiles.floors, walls: tiles.walls};
+				} else {
+					for (const [tileType, positions] of Object.entries(tiles)) {
+						for (const [pos, range] of Object.entries(positions)) {
+							const tilePos = lineOfSightTiles[distance][tileType][pos];
+							if (!tilePos) {
+								lineOfSightTiles[distance][tileType][pos] = [...range];
+							} else {
+								lineOfSightTiles[distance][tileType][pos] = tilePos.concat(range);
+							}
+						}
+					}
 				}
-				lineOfSightTiles[distance].floors = Object.assign(lineOfSightTiles[distance].floors, tiles.floors);
-				lineOfSightTiles[distance].walls = Object.assign(lineOfSightTiles[distance].walls, tiles.walls);
 			}
 		});
 		return lineOfSightTiles;
@@ -2010,7 +2033,7 @@ class Map extends React.Component {
 		if (creatureData.currentHP > 0) {
 			let creatureCoords = creatureData.coords;
 			const creaturePos = `${creatureCoords.xPos}-${creatureCoords.yPos}`;
-			const lineOfSightTiles = this._unblockedPathsToNearbyTiles(creaturePos, creatureData.perception);
+			const lineOfSightTiles = this._unblockedPathsToNearbyTiles(creaturePos, creatureData.perception, true);
 			const tilesToSearch = Object.values(lineOfSightTiles);
 			if (tilesToSearch.length === 0) {
 				return;
@@ -2286,9 +2309,9 @@ class Map extends React.Component {
 		if (prevProps.activeCharacter !== this.props.activeCharacter) {
 			if (this.props.mapCreatures[this.props.activeCharacter]) {
 				// timeout to allow UI to provide visible updates to player, like creatures moving in turn and turn indicator to show 'enemies moving'
-				setTimeout(() => {
+				// setTimeout(() => {
 					this._moveCreature();
-				}, this.movementDelay);
+				// }, this.movementDelay);
 			} else if (this.props.playerCharacters[this.props.activeCharacter]) {
 				this.setState({followModeMoves: []});
 				this._moveMap();
