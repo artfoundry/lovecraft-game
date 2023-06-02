@@ -71,10 +71,10 @@ function CharacterInfoPanel(props) {
 						list.push(<li key={itemId}>{itemInfo.name}</li>);
 					}
 				// lights
-				} else if (itemInfo.itemType === 'Light') {
+				} else if (itemInfo.itemType === 'Light' && itemId !== props.characterInfo.equippedLight) {
 					list.push(<li key={itemId}>{itemInfo.name} (Time left: {itemInfo.time})</li>);
 				// other unique items/non-gun weapons
-				} else {
+				} else if (itemInfo.itemType !== 'Light') {
 					list.push(<li key={itemId}>{itemInfo.name}</li>);
 				}
 			}
@@ -87,6 +87,7 @@ function CharacterInfoPanel(props) {
 	delete gunAmmo.stackable;
 	const ammoList = parseItems(gunAmmo, 'ammo');
 	const itemList = parseItems(props.characterInfo.items, 'item');
+	const equippedLight = props.characterInfo.items[props.characterInfo.equippedLight];
 	return (
 		<div className={`character-info-container ui-panel ${props.characterIsSelected ? '' : 'hide'}`}>
 			<div className='general-button' onClick={() => props.updateUnitSelectionStatus(props.characterInfo.id, 'player')}>X</div>
@@ -114,7 +115,7 @@ function CharacterInfoPanel(props) {
 			<div>Items:
 				<ul>{itemList}</ul>
 			</div>
-			<div>Equipped Light: {props.characterInfo.equippedLight ? props.characterInfo.items[props.characterInfo.equippedLight].name : 'none'}</div>
+			<div>Equipped Light: {props.characterInfo.equippedLight ? `${equippedLight.name} (Time left: ${equippedLight.time})`: 'none'}</div>
 		</div>
 	);
 }

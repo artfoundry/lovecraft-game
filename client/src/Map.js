@@ -38,15 +38,15 @@ class Map extends React.Component {
 		this.creatureSurvivalHpPercent = 0.25;
 		this.movementDelay = 100;
 		this.lightTimes = {
-			torch: 100,
-			lantern: 300,
-			electricTorch: 500
+			'Torch': 100,
+			'Lantern': 300,
+			'Electric Torch': 500
 		};
 		this.lightRanges = {
-			torch: ItemTypes.Light['Torch'].range,
-			lantern: ItemTypes.Light['Lantern'].range,
-			electricTorch: ItemTypes.Light['Electric Torch'].range
-		}
+			'Torch': ItemTypes.Light['Torch'].range,
+			'Lantern': ItemTypes.Light['Lantern'].range,
+			'Electric Torch': ItemTypes.Light['Electric Torch'].range
+		};
 
 		this.mapLayoutTemp = {};
 		this.sfxSelectors = {
@@ -865,15 +865,16 @@ class Map extends React.Component {
 	 */
 	addLighting = () => {
 		let tiles = [];
-		let allLightPos = this.props.getAllCharactersPos('player', 'pos');
+		const playerPositions = this.props.getAllCharactersPos('player', 'pos');
+		let allLightPos = [...playerPositions];
 		let mapLights = [];
-		const numberPCs = allLightPos.length;
+		const numberPCs = playerPositions.length;
 		const lightStrengthByTile = {};
 		const playerSeesLitTile = (pos) => {
 			let tileIsSeen = false;
 			let playerIndex = 0;
 			while (!tileIsSeen && playerIndex < numberPCs) {
-				const playerPos = allLightPos[playerIndex].pos;
+				const playerPos = playerPositions[playerIndex].pos;
 				if (this.isInLineOfSight(playerPos, pos, false)) {
 					tileIsSeen = true;
 				}
@@ -895,13 +896,27 @@ class Map extends React.Component {
 			}
 		}
 
-		// add range info for player lights
+		// add range info for player lights or remove from array if light expired
+		let idsToRemove = [];
 		allLightPos.forEach((light, index, lightsArray) => {
-			const playerLight = this.props.playerCharacters[light.id];
-			if (playerLight) {
-				lightsArray[index].range = playerLight.lightRange;
+			// check if light belongs to player (instead of map)
+			const player = this.props.playerCharacters[light.id];
+			if (player) {
+				if (player.lightTime === 0) {
+					idsToRemove.push(light.id);
+				} else {
+					lightsArray[index].range = player.lightRange;
+				}
 			}
 		});
+		if (idsToRemove.length > 0) {
+			idsToRemove.forEach(id => {
+				let matchingId = allLightPos.findIndex(light => id === light.id);
+				if (matchingId) {
+					allLightPos.splice(matchingId, 1);
+				}
+			});
+		}
 
 		// get all lit floors/walls around each player and map light that are in LOS of a player
 		// lineOfSightTiles are tiles in LOS from their own source
@@ -1706,9 +1721,7 @@ class Map extends React.Component {
 				inventoryList[newInvItemId].itemType = itemInfo.itemType;
 			}
 			if (itemInfo.itemType === 'Light') {
-				inventoryList[newInvItemId].time =
-					itemName === 'Torch' ? this.lightTimes.torch :
-					itemName === 'Lantern' ? this.lightTimes.lantern : this.lightTimes.electricTorch;
+				inventoryList[newInvItemId].time = this.lightTimes[itemName];
 				inventoryList[newInvItemId].equipped = false;
 			}
 			if (itemInfo.itemType === 'Weapon') {
@@ -1783,8 +1796,23 @@ class Map extends React.Component {
 				followModeMoves.pop();
 			}
 		}
-		const coordData = {coords: {xPos: +newCoords[0], yPos: +newCoords[1]}};
-		this.props.updateCharacters('player', coordData, activePC, false, false, () => {
+
+		let updateData = {coords: {xPos: +newCoords[0], yPos: +newCoords[1]}};
+		const activePlayerData = this.props.playerCharacters[activePC];
+		if (activePlayerData.equippedLight) {
+			updateData.items = activePlayerData.items;
+			const equippedLight = updateData.items[activePlayerData.equippedLight];
+			if (activePlayerData.lightTime > 0) {
+				equippedLight.time = activePlayerData.lightTime - 1;
+				updateData.lightTime = activePlayerData.lightTime - 1;
+				if (activePlayerData.lightTime <= (this.lightTimes[equippedLight.name] * 0.1)) {
+					updateData.lightRange = this.lightRanges[equippedLight.name] - 2;
+				} else if (activePlayerData.lightTime <= (this.lightTimes[equippedLight.name] * 0.2)) {
+					updateData.lightRange = this.lightRanges[equippedLight.name] - 1;
+				}
+			}
+		}
+		this.props.updateCharacters('player', updateData, activePC, false, false, () => {
 			this.setState(prevState => ({
 				playerVisited: playerVisitedUpdatedState || {...prevState.playerVisited},
 				playerPlaced: true,
