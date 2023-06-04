@@ -9,7 +9,8 @@ export function convertObjIdToClassId(id) {
 }
 
 export function convertPosToCoords(pos) {
-	return pos.split('-').map(val => parseInt(val));
+	const coordArr = pos.split('-').map(val => parseInt(val));
+	return {xPos: coordArr[0], yPos: coordArr[1]};
 }
 
 export function diceRoll(range) {

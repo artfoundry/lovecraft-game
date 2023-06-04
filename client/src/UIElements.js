@@ -168,33 +168,33 @@ function ModeInfoPanel(props) {
 		actionButtonCallback:  null,
 		dialogClasses: ''
 	}
-	const turnButtonState = props.isInCombat || !props.isPartyNearby ? '' : ' button-inactive';
+	const turnButtonState = props.inTacticalMode || !props.isPartyNearby ? '' : ' button-inactive';
 	const activePlayerObject = props.players[props.activeCharacter];
-	const charactersTurn = activePlayerObject && (props.isInCombat || !props.isPartyNearby) ? activePlayerObject.name :
-		props.isInCombat && props.threatList.length > 0 ? 'Enemies moving...' : 'Something creeps deep in the darkness...';
+	const charactersTurn = activePlayerObject && (props.inTacticalMode || !props.isPartyNearby) ? activePlayerObject.name :
+		props.inTacticalMode && props.threatList.length > 0 ? 'Enemies moving...' : 'Something creeps deep in the darkness...';
 
 	return (
 		<div>
 			<div
-				className={`general-button ${props.isInCombat || !props.isPartyNearby ? 'button-tactical-mode-on' : ''}`}
+				className={`general-button ${props.inTacticalMode || !props.isPartyNearby ? 'button-tactical-mode-on' : ''}`}
 				onClick={() => {
-					if (props.isInCombat) {
+					if (props.inTacticalMode) {
 						if (props.threatList.length > 0) {
 							props.setShowDialogProps(true, enemiesNearbyDialog);
 						} else if (!props.isPartyNearby) {
 							props.setShowDialogProps(true, partyNotNearbyDialog);
 						} else {
-							props.toggleCombat(false);
+							props.toggleTacticalMode(false);
 						}
 					} else if (!props.isPartyNearby) {
 						props.setShowDialogProps(true, partyNotNearbyDialog);
 					} else {
-						props.toggleCombat(true);
+						props.toggleTacticalMode(true);
 					}
 				}}>
-				{props.isInCombat || !props.isPartyNearby ? 'Tactical Mode' : 'Follow Mode'}
+				{props.inTacticalMode || !props.isPartyNearby ? 'Tactical Mode' : 'Follow Mode'}
 			</div>
-			{!props.isInCombat && props.isPartyNearby &&
+			{!props.inTacticalMode && props.isPartyNearby &&
 				<label>
 					<span>Leader: </span>
 					<select name='leader' value={props.activeCharacter} onChange={e => {
@@ -204,7 +204,7 @@ function ModeInfoPanel(props) {
 					</select>
 				</label>
 			}
-			{(props.isInCombat || !props.isPartyNearby) &&
+			{(props.inTacticalMode || !props.isPartyNearby) &&
 				<div>
 					<div>Turn: {charactersTurn}</div>
 					<div className={'general-button' + turnButtonState} onClick={() => {

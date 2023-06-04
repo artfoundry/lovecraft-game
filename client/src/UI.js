@@ -83,7 +83,7 @@ class UI extends React.Component {
 					isActiveCharacter={id === this.props.activeCharacter}
 					movesRemaining={this.props.playerLimits.moves - this.props.actionsCompleted.moves}
 					actionsRemaining={this.props.playerLimits.actions - this.props.actionsCompleted.actions}
-					isInCombat={this.props.isInCombat}
+					inTacticalMode={this.props.inTacticalMode}
 				/>
 			)
 		}
@@ -115,8 +115,8 @@ class UI extends React.Component {
 				<div ref={this.uiRefs.mode} className="mode-info-container ui-panel">
 					{this.props.modeInfo &&
 						<ModeInfoPanel
-							isInCombat={this.props.modeInfo.isInCombat}
-							toggleCombat={this.props.toggleCombatState}
+							inTacticalMode={this.props.modeInfo.inTacticalMode}
+							toggleTacticalMode={this.props.toggleTacticalMode}
 							threatList={this.props.threatList}
 							isPartyNearby={this.props.isPartyNearby}
 							setShowDialogProps={this.props.setShowDialogProps}

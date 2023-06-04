@@ -15,7 +15,7 @@ function Character(props) {
 		     style={props.styles}
 		     data-location={`${props.dataLoc.xPos}-${props.dataLoc.yPos}`}
 			 onClick={() => {
-				 props.clickUnit(props.id, props.dataCharType, props.isInRange);
+				 props.clickUnit(props.id, props.dataCharType, props.isInRange, props.isLineOfSight);
 			 }} />
 	)
 }

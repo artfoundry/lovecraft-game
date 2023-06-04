@@ -736,6 +736,7 @@ class Map extends React.Component {
 						this.props.playerCharacters[this.props.activeCharacter] &&
 						this.isCreatureInRange(id, this.props.weaponButtonSelected)
 					}
+					isLineOfSight={this.isInLineOfSight}
 					dataLoc={characterCoords}
 					dataCharType={props.characterType}
 					clickUnit={this.props.handleUnitClick}
@@ -1071,7 +1072,6 @@ class Map extends React.Component {
 		let newPos = tilePos;
 		let tileData = this.state.mapLayout[tilePos];
 		const activePCCoords = this.props.playerCharacters[this.props.activeCharacter].coords;
-		let validAction = true;
 
 		// movement by keyboard
 		if (direction) {
@@ -1104,17 +1104,15 @@ class Map extends React.Component {
 			tileData = this.state.mapLayout[newPos]
 		}
 
+		const newCoords = convertPosToCoords(newPos);
+		const path = this.pathFromAtoB(this.props.playerCharacters[this.props.activeCharacter].coords, newCoords);
 		// check if player is trying to move where a character exists
-		if (validAction) {
-			const newCoords = newPos.split('-');
-			validAction = this._tileIsFreeToMove({xPos: +newCoords[0], yPos: +newCoords[1]}, 'player');
-		}
+		const validAction = this._tileIsFreeToMove(newCoords, 'player');
 
 		// check if tile is door or floor
 		if (validAction) {
-			const newCoords = newPos.split('-');
-			const playerXMovementAmount = Math.abs(+newCoords[0] - activePCCoords.xPos);
-			const playerYMovementAmount = Math.abs(+newCoords[1] - activePCCoords.yPos);
+			const playerXMovementAmount = Math.abs(newCoords.xPos - activePCCoords.xPos);
+			const playerYMovementAmount = Math.abs(newCoords.yPos - activePCCoords.yPos);
 			if (playerXMovementAmount <= 1 && playerYMovementAmount <= 1) {
 				if (tileData.type === 'floor') {
 					this.moveCharacter([newPos]);
@@ -1146,10 +1144,8 @@ class Map extends React.Component {
 						newPosIsLitTile = true;
 					}
 				}
+				// Can only click on a previously visited tile or a lit new tile
 				if (this.state.playerVisited[newPos] || newPosIsLitTile) {
-					const temp = newPos.split('-');
-					const coords = {xPos: +temp[0], yPos: +temp[1]};
-					const path = this.pathFromAtoB(this.props.playerCharacters[this.props.activeCharacter].coords, coords);
 					if (path.length >= 1) {
 						this.moveCharacter(path);
 					} else {
@@ -1181,7 +1177,7 @@ class Map extends React.Component {
 			activePCCoords.yPos === this.state.exitPosition.yPos)
 		{
 			let dialogProps = {};
-			if (this.props.isInCombat) {
+			if (this.props.inTacticalMode) {
 				dialogProps = {
 					dialogContent: "You can't descend to the next level while in combat.",
 					closeButtonText: 'Ok',
@@ -1265,6 +1261,7 @@ class Map extends React.Component {
 	 */
 	pathFromAtoB(startTileCoords, endTileCoords) {
 		const allPcPos = this.props.getAllCharactersPos('player', 'pos');
+		const allCreaturePos = this.props.getAllCharactersPos('creature', 'pos');
 //todo: need allObjectPos
 		const allObjectPos = [];
 
@@ -1297,7 +1294,9 @@ class Map extends React.Component {
 				foundClosedDoor = true;
 			}
 
-			if (this.state.mapLayout[testPos].type === 'wall' || foundClosedDoor || allPcPos.find(pc => pc.pos === testPos)) {
+			if (this.state.mapLayout[testPos].type === 'wall' || foundClosedDoor ||
+				allPcPos.find(pc => pc.pos === testPos) || allCreaturePos.find(creature => creature.pos === testPos))
+			{
 				checkedTiles[testPos] = {rating: 0};
 				if (checkedTiles[currentPos]) {
 					checkedTiles[currentPos][testPos] = 0;
@@ -1422,16 +1421,16 @@ class Map extends React.Component {
 		const startingCoords = convertPosToCoords(startPos);
 		// All corner coords and deltas are in pixel values, not tile values
 		const startTileCorners = {
-			topLeft: {xPos: startingCoords[0] * this.tileSize, yPos: startingCoords[1] * this.tileSize},
-			topRight: {xPos: (startingCoords[0] * this.tileSize) + this.tileSize - 1, yPos: startingCoords[1] * this.tileSize},
-			bottomLeft: {xPos: startingCoords[0] * this.tileSize, yPos: (startingCoords[1] * this.tileSize) + this.tileSize - 1},
-			bottomRight: {xPos: (startingCoords[0] * this.tileSize) + this.tileSize - 1, yPos: (startingCoords[1] * this.tileSize) + this.tileSize - 1}
+			topLeft: {xPos: startingCoords.xPos * this.tileSize, yPos: startingCoords.yPos * this.tileSize},
+			topRight: {xPos: (startingCoords.xPos * this.tileSize) + this.tileSize - 1, yPos: startingCoords.yPos * this.tileSize},
+			bottomLeft: {xPos: startingCoords.xPos * this.tileSize, yPos: (startingCoords.yPos * this.tileSize) + this.tileSize - 1},
+			bottomRight: {xPos: (startingCoords.xPos * this.tileSize) + this.tileSize - 1, yPos: (startingCoords.yPos * this.tileSize) + this.tileSize - 1}
 		}
 		const endTileCorners = {
-			topLeft: {xPos: endingCoords[0] * this.tileSize, yPos: endingCoords[1] * this.tileSize},
-			topRight: {xPos: (endingCoords[0] * this.tileSize) + this.tileSize - 1, yPos: endingCoords[1] * this.tileSize},
-			bottomLeft: {xPos: endingCoords[0] * this.tileSize, yPos: (endingCoords[1] * this.tileSize) + this.tileSize - 1},
-			bottomRight: {xPos: (endingCoords[0] * this.tileSize) + this.tileSize - 1, yPos: (endingCoords[1] * this.tileSize) + this.tileSize - 1}
+			topLeft: {xPos: endingCoords.xPos * this.tileSize, yPos: endingCoords.yPos * this.tileSize},
+			topRight: {xPos: (endingCoords.xPos * this.tileSize) + this.tileSize - 1, yPos: endingCoords.yPos * this.tileSize},
+			bottomLeft: {xPos: endingCoords.xPos * this.tileSize, yPos: (endingCoords.yPos * this.tileSize) + this.tileSize - 1},
+			bottomRight: {xPos: (endingCoords.xPos * this.tileSize) + this.tileSize - 1, yPos: (endingCoords.yPos * this.tileSize) + this.tileSize - 1}
 		}
 		const xDeltas = {
 			topLeft: endTileCorners.topLeft.xPos - startTileCorners.topLeft.xPos,
@@ -1758,7 +1757,7 @@ class Map extends React.Component {
 			tilePath.shift();
 		}
 		const activePcData = this.props.playerCharacters[this.props.activeCharacter];
-		if (this.props.isInCombat && this.props.activePlayerMovesCompleted >= this.props.playerMovesLimit) {
+		if (this.props.inTacticalMode && this.props.activePlayerMovesCompleted >= this.props.playerMovesLimit) {
 			const showDialog = true;
 			const dialogProps = {
 				dialogContent: `${activePcData.name} has no more moves this turn`,
@@ -1775,17 +1774,11 @@ class Map extends React.Component {
 		}
 		let newCoords = newTilePos.split('-');
 		let playerPositions = this.props.getAllCharactersPos('player', 'pos');
-		const activePC = this.props.isInCombat || !pcToMove ? this.props.activeCharacter : pcToMove;
-		let inFollowMode = !this.props.isInCombat && this.props.isPartyNearby;
+		const activePC = this.props.inTacticalMode || !pcToMove ? this.props.activeCharacter : pcToMove;
+		let inFollowMode = !this.props.inTacticalMode && this.props.isPartyNearby;
 
 		// Find all visited tiles for determining lighting
 		const playerVisitedUpdatedState = {...this.state.playerVisited, ...this._findVisitedTiles(newCoords)};
-
-		// Find any creatures in range that could be a threat
-		const creaturePositions = this.props.getAllCharactersPos('creature', 'pos');
-		const activePlayerIndex = playerPositions.findIndex(element => element.id === activePC);
-		playerPositions[activePlayerIndex].pos = newTilePos;
-		const threatLists = this._findChangesToNearbyThreats(playerPositions, creaturePositions);
 
 		const followModeMoves = inFollowMode ? [...this.state.followModeMoves] : [];
 		// only update followModeMoves if we're moving the leader
@@ -1825,57 +1818,53 @@ class Map extends React.Component {
 					this._checkForExit();
 				}
 
-				const processTasksAfterMovement = () => {
-					const isCurrentlyInCombat = this.props.isInCombat;
-					if (threatLists.threatListToAdd.length > 0 || threatLists.threatListToRemove.length > 0) {
-						this.props.updateThreatList(threatLists.threatListToAdd, threatLists.threatListToRemove, () => {
-							// need to use preset value so if just now coming across threats, won't update player move count
-							if (isCurrentlyInCombat) {
-								this.props.updateActivePlayerMoves();
-							}
-						}, this.isInLineOfSight)
-					} else if (this.props.isInCombat) {
-						this.props.updateActivePlayerMoves();
-					} else if (inFollowMode) {
-						// strip out the ids to make finding available pos easier
-						const listOfPlayerPos = playerPositions.map(player => player.pos);
-						let newFollowerPos = this.state.followModeMoves.find(pos => !listOfPlayerPos.includes(pos));
-						// if leader has moved at least 2x, there is at least 1 follower, and pc just moved was the leader,
-						// then call moveCharacter to update first follower next avail pos in followModeMoves array
-						if (this.state.followModeMoves.length >= 2 && this.props.playerFollowOrder.length >= 2 && !pcToMove) {
-							// to force characters to move one space at a time
-							setTimeout(() => {
-								this.moveCharacter(tilePath, newFollowerPos, this.props.playerFollowOrder[1]);
-							}, this.movementDelay);
-
-						// if leader has moved 3x, there are 2 followers, and 1st follower was just moved,
-						// then call moveCharacter to update second follower to next avail pos in followModeMoves array
-						} else if (this.state.followModeMoves.length >= 3 && this.props.playerFollowOrder.length === 3 && pcToMove === this.props.playerFollowOrder[1]) {
-							// to force characters to move one space at a time
-							setTimeout(() => {
-								this.moveCharacter(tilePath, newFollowerPos, this.props.playerFollowOrder[2]);
-							}, this.movementDelay);
-						// otherwise, moving to next tile in path
-						} else if (tilePath.length > 0) {
-							// to force characters to move one space at a time
-							setTimeout(() => {
-								this.moveCharacter(tilePath);
-							}, this.movementDelay);
+				// Find any creatures in range that could be a threat
+				const creaturePositions = this.props.getAllCharactersPos('creature', 'pos');
+				const activePlayerIndex = playerPositions.findIndex(element => element.id === activePC);
+				playerPositions[activePlayerIndex].pos = newTilePos;
+				const threatLists = this._findChangesToNearbyThreats(playerPositions, creaturePositions);
+				if (threatLists.threatListToAdd.length > 0 || threatLists.threatListToRemove.length > 0) {
+					this.props.updateThreatList(threatLists.threatListToAdd, threatLists.threatListToRemove, () => {
+						// need to use preset value so if just now coming across threats, won't update player move count
+						if (!inFollowMode) {
+							this.props.updateActivePlayerMoves();
 						}
-					} else if (!inFollowMode && tilePath.length > 0) {
+					}, this.isInLineOfSight)
+				}
+
+				// If either in combat or not in combat but party not nearby
+				if (!inFollowMode) {
+					this.props.updateActivePlayerMoves();
+					// not in combat, so party not nearby
+					if (this.props.threatList.length === 0) {
+						this.props.updateIfPartyIsNearby(this.isInLineOfSight);
+					}
+				} else {
+					// strip out the ids to make finding available pos easier
+					const listOfPlayerPos = playerPositions.map(player => player.pos);
+					let newFollowerPos = this.state.followModeMoves.find(pos => !listOfPlayerPos.includes(pos));
+					// if leader has moved at least 2x, there is at least 1 follower, and pc just moved was the leader,
+					// then call moveCharacter to update first follower next avail pos in followModeMoves array
+					if (this.state.followModeMoves.length >= 2 && this.props.playerFollowOrder.length >= 2 && !pcToMove) {
+						// to force characters to move one space at a time
+						setTimeout(() => {
+							this.moveCharacter(tilePath, newFollowerPos, this.props.playerFollowOrder[1]);
+						}, this.movementDelay);
+
+					// if leader has moved 3x, there are 2 followers, and 1st follower was just moved,
+					// then call moveCharacter to update second follower to next avail pos in followModeMoves array
+					} else if (this.state.followModeMoves.length >= 3 && this.props.playerFollowOrder.length === 3 && pcToMove === this.props.playerFollowOrder[1]) {
+						// to force characters to move one space at a time
+						setTimeout(() => {
+							this.moveCharacter(tilePath, newFollowerPos, this.props.playerFollowOrder[2]);
+						}, this.movementDelay);
+					// otherwise, moving to next tile in path
+					} else if (tilePath.length > 0) {
+						// to force characters to move one space at a time
 						setTimeout(() => {
 							this.moveCharacter(tilePath);
 						}, this.movementDelay);
 					}
-				}
-
-				if (!this.props.isInCombat && !this.props.isPartyNearby) {
-					this.props.updateIfPartyIsNearby(this.isInLineOfSight, () => {
-						inFollowMode = !this.props.isInCombat && this.props.isPartyNearby;
-						processTasksAfterMovement();
-					});
-				} else {
-					processTasksAfterMovement();
 				}
 			});
 		});
@@ -2246,7 +2235,7 @@ class Map extends React.Component {
 			const threatLists = this._findChangesToNearbyThreats(allPlayerPos, creaturePositions);
 			if (threatLists.threatListToAdd.length > 0 || threatLists.threatListToRemove.length > 0) {
 				this.props.updateThreatList(threatLists.threatListToAdd, threatLists.threatListToRemove, null, this.isInLineOfSight);
-			} else if (!this.props.isInCombat) {
+			} else if (!this.props.inTacticalMode) {
 				this.props.updateIfPartyIsNearby(this.isInLineOfSight);
 			}
 		});
