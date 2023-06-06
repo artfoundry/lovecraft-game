@@ -11,6 +11,7 @@
 	z-index: 20;
 	background-color: black;
 	transition: opacity 0.5s;
+	pointer-events: none;
 }
 
 /* LIGHTING */
