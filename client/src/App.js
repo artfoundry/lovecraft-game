@@ -516,7 +516,11 @@ class Game extends React.Component {
 		}
 
 		this.setState({unitsTurnOrder}, () => {
-			this.updateActiveCharacter(callback);
+			if (unitType === 'mapCreatures') {
+				this.updateActiveCharacter(callback);
+			} else {
+				callback();
+			}
 		});
 	}
 
@@ -690,7 +694,6 @@ class Game extends React.Component {
 
 						currentTurn={this.state.currentTurn}
 						updateCurrentTurn={this.updateCurrentTurn}
-						unitsTurnOrder={this.state.unitsTurnOrder}
 
 						currentLocation={this.state.currentLocation}
 						currentLevel={this.state.currentLevel}

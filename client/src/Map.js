@@ -6,7 +6,7 @@ import CreatureData from './data/creatureTypes.json';
 import Creature from './Creature';
 import ItemTypes from './data/itemTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
-import {Exit, LightElement, Character, Tile, Item, Door} from './MapElements';
+import {Exit, LightElement, Character, Tile, Item, Door, MapCover} from './MapElements';
 import {StoneDoor} from './Audio';
 import {convertObjIdToClassId, randomTileMovementValue, convertPosToCoords, roundTowardZero} from './Utils';
 import './css/map.css';
@@ -27,8 +27,9 @@ class Map extends React.Component {
 		this.pageFirstLoaded = true;
 		this.initialMapLoad = true;
 		this.tileSize = 64;
-		this.characterSizePercentage = 0.7;
 		this.mapTileLimit = 500;
+		this.firstMapPieceCoords = {xPos: 10, yPos: 10}; //arbitrary but shifted from 0,0 to allow space for pieces on all sides
+		this.characterSizePercentage = 0.7;
 		this.OPPOSITE_SIDE = {
 			topSide: 'bottomSide',
 			bottomSide: 'topSide',
@@ -68,7 +69,8 @@ class Map extends React.Component {
 			mapLayoutDone: false,
 			exitPosition: {},
 			exitPlaced: false,
-			lighting: {}
+			lighting: {},
+			mapMoved: false
 		};
 	}
 
@@ -89,7 +91,8 @@ class Map extends React.Component {
 			mapLayoutDone: false,
 			exitPosition: {},
 			exitPlaced: false,
-			lighting: {}
+			lighting: {},
+			mapMoved: false
 		}, () => {
 			this.props.resetDataForNewLevel(this.layoutPieces);
 		});
@@ -234,14 +237,13 @@ class Map extends React.Component {
 
 		// just for placing first piece
 		if (Object.keys(this.mapLayoutTemp).length === 0) {
-			const firstPiecePosition = {xPos: 5, yPos: 5}; //arbitrary but shifted from 0,0 to allow space for pieces on all sides
 			positionFound = true;
 			for (const tileData of Object.values(piece)) {
-				const adjustedXPos = firstPiecePosition.xPos + tileData.xPos;
-				const adjustedYPos = firstPiecePosition.yPos + tileData.yPos;
+				const adjustedXPos = this.firstMapPieceCoords.xPos + tileData.xPos;
+				const adjustedYPos = this.firstMapPieceCoords.yPos + tileData.yPos;
 				const adjustedPos = adjustedXPos + '-' + adjustedYPos;
-				const updatedAltClasses = this._updateAltClassCoordinates(tileData, firstPiecePosition.xPos, firstPiecePosition.yPos);
-				const updatedNeighbors = this._updateNeighborCoordinates(tileData, firstPiecePosition.xPos, firstPiecePosition.yPos);
+				const updatedAltClasses = this._updateAltClassCoordinates(tileData, this.firstMapPieceCoords.xPos, this.firstMapPieceCoords.yPos);
+				const updatedNeighbors = this._updateNeighborCoordinates(tileData, this.firstMapPieceCoords.xPos, this.firstMapPieceCoords.yPos);
 				updatedPiece[adjustedPos] = {
 					...tileData,
 					xPos: adjustedXPos,
@@ -983,6 +985,7 @@ class Map extends React.Component {
 				tileName={this.state.mapLayout[tilePos].xPos + '-' + this.state.mapLayout[tilePos].yPos}
 				classes={allClasses} />);
 		}
+
 		return tiles;
 	}
 
@@ -2193,7 +2196,6 @@ class Map extends React.Component {
 
 	/**
 	 * For keeping active character in center of screen while moving
-	 * @param initialSetupCallback: Function (sets exit then creatures then key listeners)
 	 * @private
 	 */
 	_moveMap(initialSetupCallback) {
@@ -2208,9 +2210,10 @@ class Map extends React.Component {
 
 		window.scroll(scrollOptions);
 
-		// passed in from layoutPieces after setting mapLayout; called after placing PCs and centering map
 		if (initialSetupCallback) {
-			initialSetupCallback();
+			setTimeout(() => {
+				this.setState({mapMoved: true}, initialSetupCallback);
+			}, 1000);
 		}
 	}
 
@@ -2330,10 +2333,20 @@ class Map extends React.Component {
 					this._moveCreature();
 				// }, this.movementDelay);
 			} else if (this.props.playerCharacters[this.props.activeCharacter]) {
-				this.setState({followModeMoves: []});
 				this._moveMap();
 			}
 		}
+	}
+
+	shouldComponentUpdate(nextProps, nextState, nextContext) {
+		if (nextState.mapLayoutDone !== this.state.mapLayoutDone ||
+			nextState.creaturesPlaced !== this.state.creaturesPlaced ||
+			nextState.objectsPlaced !== this.state.objectsPlaced ||
+			nextState.exitPlaced !== this.state.exitPlaced)
+		{
+			return false;
+		}
+		return true;
 	}
 
 	// Add below for testing: <button onClick={this.resetMap}>Reset</button>
@@ -2347,7 +2360,7 @@ class Map extends React.Component {
 					{ this.state.exitPlaced && this.state.objectsPlaced && <this.addObjects /> }
 				</div>
 				<div className="lighting">
-					{ this.state.exitPlaced && <this.addLighting /> }
+					{ this.state.exitPlaced && this.state.objectsPlaced && <this.addLighting />}
 				</div>
 				<div className="creatures">
 					{ this.state.mapLayoutDone && this.state.playerPlaced && this.state.creaturesPlaced && <this.addCharacters characterType='creature' /> }
@@ -2356,6 +2369,7 @@ class Map extends React.Component {
 					{ this.state.mapLayoutDone && this.state.playerPlaced && <this.addCharacters characterType='player' /> }
 				</div>
 				{ <this.setupSoundEffects /> }
+				<MapCover styleProp={{opacity: this.state.mapMoved ? '0' : '1.0'}} />
 			</div>
 		);
 	}

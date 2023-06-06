@@ -74,4 +74,10 @@ function LightElement(props) {
 	);
 }
 
-export {Character, Exit, Tile, Door, Item, LightElement};
+function MapCover(props) {
+	return (
+		<div className='map-cover' style={props.styleProp}></div>
+	)
+}
+
+export {Character, Exit, Tile, Door, Item, LightElement, MapCover};
