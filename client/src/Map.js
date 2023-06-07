@@ -24,10 +24,10 @@ class Map extends React.Component {
 	constructor(props) {
 		super(props);
 
-		this.pageFirstLoaded = true;
-		this.initialMapLoad = true;
+		// Constants
 		this.tileSize = 64;
 		this.mapTileLimit = 500;
+		this.uiPadding = 128; // extra space above/below map so top/bottom of map aren't under UI
 		this.firstMapPieceCoords = {xPos: 10, yPos: 10}; //arbitrary but shifted from 0,0 to allow space for pieces on all sides
 		this.characterSizePercentage = 0.7;
 		this.OPPOSITE_SIDE = {
@@ -49,6 +49,8 @@ class Map extends React.Component {
 			'Electric Torch': ItemTypes.Light['Electric Torch'].range
 		};
 
+		this.pageFirstLoaded = true;
+		this.initialMapLoad = true;
 		this.mapLayoutTemp = {};
 		this.sfxSelectors = {
 			catacombs: {}
@@ -70,7 +72,8 @@ class Map extends React.Component {
 			exitPosition: {},
 			exitPlaced: false,
 			lighting: {},
-			mapMoved: false
+			mapMoved: false,
+			worldHeight: 0
 		};
 	}
 
@@ -92,7 +95,8 @@ class Map extends React.Component {
 			exitPosition: {},
 			exitPlaced: false,
 			lighting: {},
-			mapMoved: false
+			mapMoved: false,
+			worldHeight: 0
 		}, () => {
 			this.props.resetDataForNewLevel(this.layoutPieces);
 		});
@@ -282,6 +286,7 @@ class Map extends React.Component {
 		let mapOpeningsCounter = 0;
 		let pieceOpeningsCounter = 0;
 		const numOfTilesInPiece = Object.keys(piece).length;
+		let worldHeight = 0;
 
 		// look through each opening in the map
 		while (mapTilesAvailableForPiece < numOfTilesInPiece && mapOpeningsCounter < mapOpenings.length) {
@@ -343,6 +348,7 @@ class Map extends React.Component {
 							}
 						}
 						tilePosIndex++;
+						worldHeight = newYPos > this.state.worldHeight ? newYPos : this.state.worldHeight;
 					}
 				}
 				pieceOpeningsCounter++;
@@ -354,6 +360,7 @@ class Map extends React.Component {
 		if (mapTilesAvailableForPiece === numOfTilesInPiece) {
 			positionFound = true;
 			updatedPiece = {...pieceAdjustedTilePositions};
+			this.setState({worldHeight});
 		}
 
 		pieceOpening = adjustedPieceOpening;
@@ -1041,16 +1048,6 @@ class Map extends React.Component {
 			}
 		}
 		return tilePos;
-	}
-
-	/**
-	 * Calculates the middle of the game window in pixels for placing main character
-	 * @returns {{yPos: number, xPos: number}}
-	 * @private
-	 */
-	_calculateMapCenter() {
-		return {xPos: Math.floor(window.outerWidth/(this.tileSize * 2)) * this.tileSize,
-			yPos: Math.floor(window.innerHeight/(this.tileSize * 2)) * this.tileSize};
 	}
 
 	/**
@@ -2201,10 +2198,10 @@ class Map extends React.Component {
 	_moveMap(initialSetupCallback) {
 		const playerID = this.props.activeCharacter;
 		const activePlayerCoords = this.props.playerCharacters[playerID].coords;
-		const windowCenter = this._calculateMapCenter();
+		const windowCenter = {xPos: Math.round(window.innerWidth/2), yPos: Math.round(window.innerHeight/2)};
 		const scrollOptions = {
 			left: (activePlayerCoords.xPos * this.tileSize) - windowCenter.xPos,
-			top: (activePlayerCoords.yPos * this.tileSize) - windowCenter.yPos,
+			top: (activePlayerCoords.yPos * this.tileSize) - windowCenter.yPos + this.uiPadding,
 			behavior: "smooth"
 		};
 
@@ -2352,7 +2349,7 @@ class Map extends React.Component {
 	// Add below for testing: <button onClick={this.resetMap}>Reset</button>
 	render() {
 		return (
-			<div className="world">
+			<div className="world" style={{height: `${(this.state.worldHeight * this.tileSize)}px`, padding: `${this.uiPadding}px`}}>
 				<div className="map">
 					{ this.state.mapLayoutDone && <this.createAllMapPieces /> }
 				</div>

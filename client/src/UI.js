@@ -6,10 +6,12 @@ class UI extends React.Component {
 	constructor(props) {
 		super(props);
 
+		this.uiPanelHeight = 90;
+
 		this.uiRefs = {
 			controlBar: React.createRef(),
-			log: React.createRef(),
-			mode: React.createRef()
+			turnInfo: React.createRef(),
+			log: React.createRef()
 		};
 
 		this.state = {
@@ -60,9 +62,9 @@ class UI extends React.Component {
 		if (this.state[panelStateName]) {
 			this.uiRefs[refName].current.style = 'transform: translateY(0)';
 		} else if (refName === 'controlBar') {
-			this.uiRefs[refName].current.style = 'transform: translateY(150px)';
-		} else if (refName === 'mode' || refName === 'log') {
-			this.uiRefs[refName].current.style = 'transform: translateY(-150px)';
+			this.uiRefs[refName].current.style = `transform: translateY(${this.uiPanelHeight}px)`;
+		} else if (refName === 'turnInfo') {
+			this.uiRefs[refName].current.style = `transform: translateY(-${this.uiPanelHeight}px)`;
 		}
 		this.setState(prevState => ({[panelStateName]: !prevState[panelStateName]}));
 	}
@@ -101,39 +103,38 @@ class UI extends React.Component {
 			<div className="ui-container">
 				{this.props.showDialog && this.props.dialogProps && <this.showDialog />}
 
-				<div ref={this.uiRefs.log} className="log-container ui-panel">
-					{this.state.logText &&
-						<div className="log-lines">
-							<this.addLogLines />
-						</div>
-					}
-					<div className="minimize-button general-button" onClick={() => {
-						this.minimizePanel('log');
-					}}>_</div>
-				</div>
+				<div ref={this.uiRefs.turnInfo} className="turn-info-container ui-panel">
+					<div ref={this.uiRefs.log} className="log-container">
+						{this.state.logText &&
+							<div className="log-lines">
+								<this.addLogLines />
+							</div>
+						}
+					</div>
 
-				<div ref={this.uiRefs.mode} className="mode-info-container ui-panel">
-					{this.props.modeInfo &&
-						<ModeInfoPanel
-							inTacticalMode={this.props.modeInfo.inTacticalMode}
-							toggleTacticalMode={this.props.toggleTacticalMode}
-							threatList={this.props.threatList}
-							isPartyNearby={this.props.isPartyNearby}
-							setShowDialogProps={this.props.setShowDialogProps}
-							players={this.props.playerCharacters}
-							activeCharacter={this.props.activeCharacter}
-							updateActiveCharacter={this.props.updateActiveCharacter}
-							endTurnCallback={this.props.updateCurrentTurn}
-							toggleWeaponButton={this.props.toggleWeapon}
-							updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
-							characterIsSelected={this.props.characterIsSelected}
-							characterInfo={this.props.characterInfoText}
-							creatureIsSelected={this.props.creatureIsSelected}
-							creatureInfo={this.props.creatureInfoText}
-						/>
-					}
+					<div className="mode-info-container">
+						{this.props.modeInfo &&
+							<ModeInfoPanel
+								inTacticalMode={this.props.modeInfo.inTacticalMode}
+								toggleTacticalMode={this.props.toggleTacticalMode}
+								threatList={this.props.threatList}
+								isPartyNearby={this.props.isPartyNearby}
+								setShowDialogProps={this.props.setShowDialogProps}
+								players={this.props.playerCharacters}
+								activeCharacter={this.props.activeCharacter}
+								updateActiveCharacter={this.props.updateActiveCharacter}
+								endTurnCallback={this.props.updateCurrentTurn}
+								toggleWeaponButton={this.props.toggleWeapon}
+								updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
+								characterIsSelected={this.props.characterIsSelected}
+								characterInfo={this.props.characterInfoText}
+								creatureIsSelected={this.props.creatureIsSelected}
+								creatureInfo={this.props.creatureInfoText}
+							/>
+						}
+					</div>
 					<div className="minimize-button general-button" onClick={() => {
-						this.minimizePanel('mode');
+						this.minimizePanel('turnInfo');
 					}}>_</div>
 				</div>
 
