@@ -14,5 +14,10 @@
     "Pharmaceuticals": {},
     "First Aid Kit": {}
   },
-  "Ammo": ["handgun", "shotgun", "machineGun"]
+  "Ammo": ["handgun", "shotgun", "machineGun"],
+  "Armor": {
+    "Leather Jacket": {
+      "defense": 3
+    }
+  }
 }

@@ -12,15 +12,28 @@
     "skills": {
     },
     "weapons": {
-      "coltRevolver0": {"name": "Colt Revolver", "gunType": "handgun", "equipped": true, "ranged": true},
-      "baseballBat0": {"name": "Baseball Bat", "equipped": true}
+      "coltRevolver0": {
+        "name": "Colt Revolver",
+        "damage": 5,
+        "ranged": true,
+        "rounds": 6,
+        "usesStr": false,
+        "gunType": "handgun",
+        "twoHanded": false
+      }
     },
-    "equippedWeapons": {"ranged": "coltRevolver0", "melee": "baseballBat0"},
+    "equippedItems": {"right": "coltRevolver0", "left": "electricTorch0", "body": ""},
     "ammo": {"handgun": 6},
     "items": {
-      "electricTorch0": {"name": "Electric Torch", "itemType": "Light", "time": 500, "equipped": true}
+      "electricTorch0": {
+        "name": "Electric Torch",
+        "itemType": "Light",
+        "time": 500,
+        "equipped": true,
+        "range": 5
+      }
     },
-    "equippedLight": {"id": "electricTorch0", "name": "Electric Torch"}
+    "equippedLight": "electricTorch0"
   },
   "archaeologist": {
     "id": "archaeologist",
@@ -35,14 +48,26 @@
     "skills": {
     },
     "weapons": {
-      "pickaxe0": {"name": "Pickaxe", "equipped": true}
+      "pickaxe0": {
+        "name": "Pickaxe",
+        "damage": 2,
+        "ranged": false,
+        "usesStr": true,
+        "twoHanded": true
+      }
     },
-    "equippedWeapons": {"ranged": "", "melee": "pickaxe0"},
+    "equippedItems": {"right": "pickaxe0", "left": "", "body": ""},
     "ammo": {},
     "items": {
-      "torch0": {"name": "Torch", "itemType": "Light", "time": 100, "equipped": true}
+      "torch0": {
+        "name": "Torch",
+        "itemType": "Light",
+        "time": 100,
+        "equipped": false,
+        "range": 3
+      }
     },
-    "equippedLight": {"id": "torch0", "name": "Torch"}
+    "equippedLight": ""
   },
   "chemist": {
     "id": "chemist",
@@ -57,14 +82,32 @@
     "skills": {
     },
     "weapons": {
-      "acidConcoction0": {"name": "Acid Concoction", "equipped": true, "ranged": true}
+      "acidConcoction0": {
+        "name": "Acid Concoction",
+        "damage": 10,
+        "ranged": true,
+        "rounds": 1,
+        "usesStr": false,
+        "stackable": true,
+        "twoHanded": false
+      }
     },
-    "equippedWeapons": {"ranged": "acidConcoction0", "melee": ""},
+    "equippedItems": {"right": "acidConcoction0", "left": "lantern0", "body": ""},
     "ammo": {"stackable": {"Acid Concoction": 2}},
     "items": {
-      "pharmaceuticals0": {"name": "Pharmaceuticals", "itemType": "Medicine", "amount": 1},
-      "lantern0": {"name": "Lantern", "itemType": "Light", "time": 300, "equipped": false}
+      "pharmaceuticals0": {
+        "name": "Pharmaceuticals",
+        "itemType": "Medicine",
+        "amount": 1
+      },
+      "lantern0": {
+        "name": "Lantern",
+        "itemType": "Light",
+        "time": 300,
+        "equipped": false,
+        "range": 4
+      }
     },
-    "equippedLight": {}
+    "equippedLight": "lantern0"
   }
 }

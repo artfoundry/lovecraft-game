@@ -6,7 +6,8 @@ class UI extends React.Component {
 	constructor(props) {
 		super(props);
 
-		this.uiPanelHeight = 90;
+		this.uiPanelHeight = 95;
+		this.inventoryLength = 12;
 
 		this.uiRefs = {
 			controlBar: React.createRef(),
@@ -18,7 +19,8 @@ class UI extends React.Component {
 			logText: this.props.logText,
 			controlBarMinimized: false,
 			logMinimized: false,
-			modeMinimized: false
+			modeMinimized: false,
+			entireInventory: {}
 		};
 	}
 
@@ -45,7 +47,7 @@ class UI extends React.Component {
 		let lines = [];
 		let i = 0;
 		this.state.logText.forEach(line => {
-			lines.push(<div key={i} className="log-line">{line}</div>);
+			lines.push(<div key={i} className='log-line'>{line}</div>);
 			i++;
 		});
 
@@ -76,6 +78,7 @@ class UI extends React.Component {
 			controlPanels.push(
 				<CharacterControls
 					key={id}
+					playerCharacters={this.props.playerCharacters}
 					characterId={id}
 					characterName={playerInfo.name}
 					weapons={playerInfo.weapons}
@@ -86,33 +89,126 @@ class UI extends React.Component {
 					movesRemaining={this.props.playerLimits.moves - this.props.actionsCompleted.moves}
 					actionsRemaining={this.props.playerLimits.actions - this.props.actionsCompleted.actions}
 					inTacticalMode={this.props.inTacticalMode}
+					updateCharacters={this.props.updateCharacters}
+					entireInventory={this.state.entireInventory}
+					updateInventory={this.updateInventory}
 				/>
 			)
 		}
 		return controlPanels;
 	}
 
+	switchEquipment = (id) => {
+		const updateData = {...this.props.playerCharacters[id]};
+		const loadout2 = updateData.equippedItems.loadout2;
+		const leftHandHasLight = updateData.items[loadout2.left] && updateData.items[loadout2.left].itemType === 'Light';
+		const rightHandHasLight = updateData.items[loadout2.right] && updateData.items[loadout2.right].itemType === 'Light';
+		let tempAllItemsList = [...this.state.entireInventory[id]];
+
+		if (updateData.equippedLight || leftHandHasLight || rightHandHasLight) {
+			updateData.equippedLight = leftHandHasLight ? loadout2.left : rightHandHasLight ? loadout2.right : null;
+			updateData.lightRange = updateData.equippedLight ? updateData.items[updateData.equippedLight].range : 0;
+		}
+		updateData.equippedItems.loadout2 = {...updateData.equippedItems.loadout1};
+		updateData.equippedItems.loadout1 = {...loadout2};
+
+		for (const itemId of Object.values(updateData.equippedItems.loadout1)) {
+			const itemBox = tempAllItemsList.indexOf(itemId);
+			tempAllItemsList.splice(itemBox, 1, null);
+		}
+		this.updateInventory(id, tempAllItemsList, () => {
+			const updatedData = {
+				equippedItems: updateData.equippedItems,
+				equippedLight: updateData.equippedLight,
+				lightRange: updateData.lightRange
+			};
+			this.props.updateCharacters('player', updatedData, id, false, false);
+		})
+	}
+
+	updateInventory = (id, updatedList, callback) => {
+		this.setState(prevState => ({
+			entireInventory: {...prevState.entireInventory, [id]: updatedList}
+		}), () => {
+			if (callback) callback();
+		});
+	}
+
+	_parseInvItems(){
+		const stackableWeapons = this.props.selectedCharacterInfo.ammo.stackable;
+		const allItems = Object.assign({...this.props.selectedCharacterInfo.weapons}, {...this.props.selectedCharacterInfo.items});
+		const equippedItems = this.props.selectedCharacterInfo.equippedItems;
+		let stackablesAdded = []; // prevents listing multiple copies of same stackable weapon
+		const charId = this.props.selectedCharacterInfo.id;
+		let invItemsList = [...this.state.entireInventory[charId]];
+
+		for (const [itemId, itemInfo] of Object.entries(allItems)) {
+			if (itemId !== equippedItems.loadout1.right && itemId !== equippedItems.loadout1.left &&
+				!stackablesAdded[itemInfo.name] && invItemsList.indexOf(itemId) === -1)
+			{
+				const emptyBox = invItemsList.indexOf(null);
+				invItemsList.splice(emptyBox, 1, itemId);
+
+				if (stackableWeapons && stackableWeapons[itemInfo.name]) {
+					stackablesAdded.push(itemInfo.name);
+				}
+			}
+		}
+
+		let updatedInventory = [];
+		for (let i=0; i < this.inventoryLength; i++) {
+			updatedInventory.push(invItemsList[i] || null);
+		}
+		this.setState(prevState => ({
+			entireInventory: {...prevState.entireInventory, [charId]: updatedInventory}
+		}));
+	}
+
+	_calculateAmmo() {
+		let list = [];
+		let gunAmmo = {...this.props.selectedCharacterInfo.ammo};
+		delete gunAmmo.stackable;
+
+		for (const [type, amount] of Object.entries(gunAmmo)) {
+			list.push(<li key={type + Math.random()}>{type}: {amount} rounds</li>)
+		}
+		return list;
+	}
+
+	componentDidMount() {
+		if (Object.keys(this.state.entireInventory).length === 0) {
+			let entireInventory = {};
+			for (const id of Object.keys(this.props.playerCharacters)) {
+				entireInventory[id] = [];
+			}
+			this.setState({entireInventory});
+		}
+	}
+
 	componentDidUpdate(prevProps, prevState, snapShot) {
 		if (prevProps.logText !== this.props.logText) {
 			this.setState({logText: [...this.props.logText]}, this.scrollLog);
+		}
+		if (this.props.selectedCharacterInfo && prevProps.selectedCharacterInfo !== this.props.selectedCharacterInfo) {
+			this._parseInvItems();
 		}
 	}
 
 	render() {
 		return (
-			<div className="ui-container">
+			<div className='ui-container'>
 				{this.props.showDialog && this.props.dialogProps && <this.showDialog />}
 
-				<div ref={this.uiRefs.turnInfo} className="turn-info-container ui-panel">
-					<div ref={this.uiRefs.log} className="log-container">
+				<div ref={this.uiRefs.turnInfo} className='turn-info-container ui-panel'>
+					<div ref={this.uiRefs.log} className='log-container'>
 						{this.state.logText &&
-							<div className="log-lines">
+							<div className='log-lines'>
 								<this.addLogLines />
 							</div>
 						}
 					</div>
 
-					<div className="mode-info-container">
+					<div className='mode-info-container'>
 						{this.props.modeInfo &&
 							<ModeInfoPanel
 								inTacticalMode={this.props.modeInfo.inTacticalMode}
@@ -127,35 +223,40 @@ class UI extends React.Component {
 								toggleWeaponButton={this.props.toggleWeapon}
 								updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
 								characterIsSelected={this.props.characterIsSelected}
-								characterInfo={this.props.characterInfoText}
+								characterInfo={this.props.selectedCharacterInfo}
 								creatureIsSelected={this.props.creatureIsSelected}
-								creatureInfo={this.props.creatureInfoText}
+								creatureInfo={this.props.selectedCreatureInfo}
 							/>
 						}
 					</div>
-					<div className="minimize-button general-button" onClick={() => {
+					<div className='minimize-button general-button' onClick={() => {
 						this.minimizePanel('turnInfo');
 					}}>_</div>
 				</div>
 
-				{this.props.characterInfoText &&
+				{this.props.selectedCharacterInfo && this.state.entireInventory &&
 					<CharacterInfoPanel
 						characterIsSelected={this.props.characterIsSelected}
 						updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
-						characterInfo={this.props.characterInfoText}
+						characterInfo={this.props.selectedCharacterInfo}
+						switchEquipment={this.switchEquipment}
+						updateCharacters={this.props.updateCharacters}
+						entireInventory={this.state.entireInventory}
+						updateInventory={this.updateInventory}
+						ammoList={this._calculateAmmo()}
 					/>
 				}
 
-				{this.props.creatureInfoText &&
+				{this.props.selectedCreatureInfo &&
 					<CreatureInfoPanel
 						creatureIsSelected={this.props.creatureIsSelected}
 						updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
-						creatureInfo={this.props.creatureInfoText}
+						creatureInfo={this.props.selectedCreatureInfo}
 					/>
 				}
 
-				<div ref={this.uiRefs.controlBar} className="control-bar-container ui-panel">
-					<div className="minimize-button general-button" onClick={() => {
+				<div ref={this.uiRefs.controlBar} className='control-bar-container ui-panel'>
+					<div className='minimize-button general-button' onClick={() => {
 						this.minimizePanel('controlBar');
 					}}>_</div>
 					{this.props.playerCharacters && <this.showControlBar />}

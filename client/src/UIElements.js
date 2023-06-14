@@ -1,13 +1,47 @@
 import React, {useRef} from 'react';
+import {convertObjIdToClassId} from './Utils';
 
 let weaponRefs = {};
+let draggedItem = null;
+let draggedItemSourceLoc = null;
 
 function CharacterControls(props) {
 	weaponRefs[props.characterId] = useRef([]);
 	let weaponButtonState = '';
 	const weaponsList = [];
+	const currentPCdata = props.playerCharacters[props.characterId];
+	const handleItemOverDropZone = (e) => {
+		e.preventDefault();
+		e.dataTransfer.dropEffect = 'move';
+	}
+	const dropItemToPC = (e) => {
+		e.preventDefault();
+		draggedItem.data.itemType ? currentPCdata.items[draggedItem.id] = draggedItem.data : currentPCdata.weapons[draggedItem.id] = draggedItem.data;
+		props.updateCharacters('player', currentPCdata, props.characterId, false, false, () => {
+			const sourcePCdata = {...props.playerCharacters[draggedItem.sourcePC]};
+			const sourceBoxIndex = draggedItemSourceLoc.match(/\d+/)[0];
+			let tempAllItemsList = [...props.entireInventory[props.characterId]];
+			// remove dragged item
+			tempAllItemsList.splice(sourceBoxIndex, 1, null);
+
+			draggedItem.data.itemType ? delete sourcePCdata.items[draggedItem.id] : delete sourcePCdata.weapons[draggedItem.id];
+			if (sourcePCdata.equippedItems.loadout1.left === draggedItem.id) {
+				sourcePCdata.equippedItems.loadout1.left = '';
+			} else if (sourcePCdata.equippedItems.loadout1.right === draggedItem.id) {
+				sourcePCdata.equippedItems.loadout1.right = '';
+			} else if (sourcePCdata.equippedLight === draggedItem.id) {
+				sourcePCdata.equippedLight = null;
+				sourcePCdata.lightRange = 0;
+			}
+
+			props.updateCharacters('player', sourcePCdata, draggedItem.sourcePC, false, false, () => {
+				props.updateInventory(props.characterId, tempAllItemsList);
+			});
+		});
+	}
+
 	for (const [weaponId, weaponInfo] of Object.entries(props.weapons)) {
-		if (weaponInfo.equipped) {
+		if (currentPCdata.equippedItems.loadout1.left === weaponId || currentPCdata.equippedItems.loadout1.right === weaponId) {
 			if (weaponInfo.ranged) {
 				if (weaponInfo.gunType) {
 					weaponsList.push({weaponId, weaponName: weaponInfo.name, isGun: true, ammo: props.ammo[weaponInfo.gunType]});
@@ -26,96 +60,220 @@ function CharacterControls(props) {
 	const weapons = (
 		<div className='weapon-buttons-container'>
 			{weaponsList.map((weapon, index) => {
-				weaponButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || (weapon.ammo === 0)) ? ' button-inactive' :
-					(props.weaponButtonSelected.characterId === props.characterId && props.weaponButtonSelected.weaponId === weapon.weaponId) ? ' button-selected': '';
+				weaponButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || (weapon.ammo === 0)) ? 'button-inactive' :
+					(props.weaponButtonSelected.characterId === props.characterId && props.weaponButtonSelected.weaponId === weapon.weaponId) ? 'button-selected': '';
 				return (
-					<div ref={weaponRefs[props.characterId].current[index]} className={'weapon-button' + weaponButtonState} key={weapon.weaponId} onClick={() => {
+					<div ref={weaponRefs[props.characterId].current[index]} className={`weapon-button ${convertObjIdToClassId(weapon.weaponId)}-inv ${weaponButtonState}`} key={weapon.weaponId} onClick={() => {
 						props.toggleWeaponButton(props.characterId, weapon.weaponId, weapon.weaponName);
-					}}>{weapon.weaponName}{weapon.ammo >= 0 ? ': ' + weapon.ammo : ''}{weapon.isGun ? ' round(s)': ''}</div>
+					}}>{weapon.ammo >= 0 ? weapon.ammo : ''}{weapon.isGun ? ' round(s)': ''}</div>
 				);
 			})}
 		</div>
 	);
 
 	return (
-		<div className='character-control-container'>
-			<div className='character-name font-fancy'>{props.characterName}</div>
-			<div>Moves remaining: {props.isActiveCharacter ? props.movesRemaining : ''}</div>
-			<div>Actions remaining: {props.isActiveCharacter ? props.actionsRemaining : ''}</div>
+		<div
+			className='character-control-container'
+			onDragOver={(e) => {handleItemOverDropZone(e)}}
+			onDrop={(e) => {dropItemToPC(e)}}
+		>
+			<div>
+				<div className='character-name font-fancy'>{props.characterName}</div>
+				<div>Moves remaining: {props.isActiveCharacter ? props.movesRemaining : ''}</div>
+				<div>Actions remaining: {props.isActiveCharacter ? props.actionsRemaining : ''}</div>
+			</div>
 			{weapons}
 		</div>
 	);
 }
 
 function CharacterInfoPanel(props) {
-	const parseItems = (items, listType, stackableWeapons = null) => {
-		let list = [];
-		let stackablesAdded = []; // prevents listing multiple copies of same stackable weapon
-
-		if (listType === 'ammo') {
-			for (const [type, amount] of Object.entries(items)) {
-				list.push(<li key={type + Math.random()}>{type}: {amount} rounds</li>)
-			}
-		} else {
-			for (const [itemId, itemInfo] of Object.entries(items)) {
-				if (listType === 'weapon') {
-					// guns
-					if (itemInfo.gunType) {
-						list.push(<li key={itemId}>{itemInfo.name}</li>);
-					// stackable non-gun weapons
-					} else if (stackableWeapons && stackableWeapons[itemInfo.name] > 0 && !stackablesAdded[itemInfo.name]) {
-						list.push(<li key={itemId}>{itemInfo.name}: {stackableWeapons[itemInfo.name]}</li>);
-						stackablesAdded.push(itemInfo.name);
-					// non-stackable non-gun weapons (usually melee weapons)
-					} else if (!stackableWeapons) {
-						list.push(<li key={itemId}>{itemInfo.name}</li>);
-					}
-				// lights
-				} else if (itemInfo.itemType === 'Light' && itemId !== props.characterInfo.equippedLight) {
-					list.push(<li key={itemId}>{itemInfo.name} (Time left: {itemInfo.time})</li>);
-				// other unique items/non-gun weapons
-				} else if (itemInfo.itemType !== 'Light') {
-					list.push(<li key={itemId}>{itemInfo.name}</li>);
-				}
-			}
-		}
-		return list;
-	};
 	const skillList = Object.values(props.characterInfo.skills).map(item => <li key={item + Math.random()}>{item}</li>);
-	const weaponList = parseItems(props.characterInfo.weapons, 'weapon', props.characterInfo.ammo.stackable);
-	const gunAmmo = {...props.characterInfo.ammo};
-	delete gunAmmo.stackable;
-	const ammoList = parseItems(gunAmmo, 'ammo');
-	const itemList = parseItems(props.characterInfo.items, 'item');
 	const equippedLight = props.characterInfo.items[props.characterInfo.equippedLight];
+	const equippedItems = props.characterInfo.equippedItems;
+	const updateData = {...props.characterInfo};
+	const dragItem = (e) => {
+		const itemId = e.target.id.includes('-2handed') ? e.target.id.slice(0, e.target.id.indexOf('-2handed')) : e.target.id;
+		draggedItem = {id: itemId, data: updateData.items[itemId] || updateData.weapons[itemId], sourcePC: updateData.id};
+		draggedItemSourceLoc = e.target.parentElement.id;
+		// e.dataTransfer.clearData();
+		// e.dataTransfer.setData('image/png:base64', itemId);
+	}
+	const handleItemOverDropZone = (e) => {
+		e.preventDefault();
+		e.dataTransfer.dropEffect = 'move';
+	}
+	const dropItemToEquipped = (e) => {
+		e.preventDefault();
+		if (draggedItem.data.itemType && draggedItem.data.itemType !== 'Light') {
+			return;
+		}
+		const targetClasses = e.target.className;
+		const parentClasses = e.target.parentElement.className;
+		// don't know which hand dragged to and don't know if that hand already has an item equipped (if it doesn't, target class would include the "box" class)
+		const hand = targetClasses.includes('char-info-paper-doll-box') ? (targetClasses.includes('right') ? 'right' : 'left') : (parentClasses.includes('right') ? 'right' : 'left');
+		const oppositeHand = hand === 'right' ? 'left' : 'right';
+		let tempAllItemsList = [...props.entireInventory[props.characterInfo.id]];
+		const sourceBoxIndex = +draggedItemSourceLoc.match(/\d+/)[0];
+
+		// if dragged item is a light
+		if (draggedItem.data.itemType === 'Light') {
+			updateData.equippedLight = draggedItem.id;
+			updateData.lightRange = draggedItem.data.range;
+		// or if an equipped light is being unequipped (and not by a light)
+		} else if (updateData.equippedItems.loadout1[hand] === updateData.equippedLight ||
+			(draggedItem.data.twoHanded && updateData.equippedItems.loadout1[oppositeHand] === updateData.equippedLight)) {
+			updateData.equippedLight = null;
+			updateData.lightRange = 0;
+		}
+		// if dragged item is two-handed
+		if (draggedItem.data.twoHanded) {
+			updateData.equippedItems.loadout1[oppositeHand] = draggedItem.id;
+		// or if we're replacing a two-handed item with a one-handed item
+		} else if (e.target.id.includes('2handed')) {
+			updateData.equippedItems.loadout1[oppositeHand] = '';
+		}
+		updateData.equippedItems.loadout1[hand] = draggedItem.id;
+		tempAllItemsList.splice(sourceBoxIndex, 1, null);
+		props.updateInventory(props.characterInfo.id, tempAllItemsList, () => {
+			props.updateCharacters('player', updateData, props.characterInfo.id, false, false);
+		});
+	};
+	const dropItemToInv = (e) => {
+		e.preventDefault();
+		let draggingEquippedItem = false;
+		if (equippedItems.loadout1.left === draggedItem.id) {
+			updateData.equippedItems.loadout1.left = '';
+			draggingEquippedItem = true;
+		}
+		if (equippedItems.loadout1.right === draggedItem.id) {
+			updateData.equippedItems.loadout1.right = '';
+			draggingEquippedItem = true;
+		}
+		if (draggedItem.data.itemType && draggedItem.data.itemType === 'Light' && updateData.equippedLight === draggedItem.id) {
+			updateData.equippedLight = null;
+			updateData.lightRange = 0;
+			draggingEquippedItem = true;
+		}
+		if (draggingEquippedItem) {
+			props.updateCharacters('player', updateData, props.characterInfo.id, false, false);
+		} else {
+			let tempAllItemsList = [...props.entireInventory[props.characterInfo.id]];
+			const targetIsBox = e.target.id.includes('invBox');
+			const targetId = +e.target.id.match(/\d+/)[0];
+			const parentId = !targetIsBox ? +e.target.parentElement.id.match(/\d+/)[0] : null;
+			const destBoxIndex = targetIsBox ? targetId : parentId;
+			const destBoxContents = tempAllItemsList[destBoxIndex];
+			const sourceBoxIndex = +draggedItemSourceLoc.match(/\d+/)[0];
+
+			// replace contents of destination spot with dragged item
+			tempAllItemsList.splice(destBoxIndex, 1, draggedItem.id);
+			// replace contents of source spot with replaced destination item
+			tempAllItemsList.splice(sourceBoxIndex, 1, destBoxContents);
+			props.updateInventory(props.characterInfo.id, tempAllItemsList);
+		}
+	}
+	const itemsIntoElements = (
+		<div className='char-info-inv-items'>
+			{props.entireInventory[props.characterInfo.id].map((itemId, index) => {
+				return (
+					<div
+						id={'invBox' + index}
+						key={'invBox' + index}
+						className='char-info-inv-item-box'
+						onDragOver={(e) => {handleItemOverDropZone(e)}}
+						onDrop={(e) => {dropItemToInv(e)}}
+					>
+						{itemId &&
+							<div
+								id={itemId}
+								className={`${convertObjIdToClassId(itemId)}-inv`}
+								draggable={true}
+								onDragStart={(e) => {dragItem(e, itemId)}}
+							></div>
+						}
+					</div>
+				);
+			})}
+		</div>
+	);
+
 	return (
 		<div className={`character-info-container ui-panel ${props.characterIsSelected ? '' : 'hide'}`}>
-			<div className='general-button' onClick={() => props.updateUnitSelectionStatus(props.characterInfo.id, 'player')}>X</div>
-			<div>Name: {props.characterInfo.name}</div>
-			<div>Profession: {props.characterInfo.profession}</div>
-			<div>Level: {props.characterInfo.level}</div>
-			<div>XP: {props.characterInfo.xp}</div>
-			<div>Strength: {props.characterInfo.strength}</div>
-			<div>Agility: {props.characterInfo.agility}</div>
-			<div>Mental Acuity: {props.characterInfo.mentalAcuity}</div>
-			<div>Initiative: {props.characterInfo.initiative}</div>
-			<div>Health: {props.characterInfo.currentHP} / {props.characterInfo.startingHP}</div>
-			<div>Sanity: {props.characterInfo.currentSanity} / {props.characterInfo.startingSanity}</div>
-			<div>Skills:
-				<ul>{skillList}</ul>
+			<div className='char-info-header'>
+				<div>
+					<div>Name: {props.characterInfo.name}</div>
+					<div>Profession: {props.characterInfo.profession}</div>
+				</div>
+				<div>
+					<div>Health: {props.characterInfo.currentHP} / {props.characterInfo.startingHP}</div>
+					<div>Sanity: {props.characterInfo.currentSanity} / {props.characterInfo.startingSanity}</div>
+				</div>
+				<div className='general-button' onClick={() => props.updateUnitSelectionStatus(props.characterInfo.id, 'player')}>X</div>
 			</div>
-			<div>Defense: {props.characterInfo.defense}{props.characterInfo.items.armor ? ` from ${props.characterInfo.items.armor}` : ''}</div>
-			<div>Weapons:
-				<ul>{weaponList}</ul>
+
+			<div className='char-info-inv-container'>
+				<div className='char-info-doll-container'>
+					<div className='char-info-paper-doll'></div>
+					<div className='char-info-doll-boxes'>
+						<div
+							className='char-info-paper-doll-body char-info-paper-doll-box'
+							onDragOver={(e) => {handleItemOverDropZone(e)}}
+							onDrop={(e) => {dropItemToEquipped(e)}}
+						>{equippedItems.armor ? '' : 'Body'}</div>
+
+						<div
+							className='char-info-paper-doll-right-arm char-info-paper-doll-box'
+							onDragOver={(e) => {handleItemOverDropZone(e)}}
+							onDrop={(e) => {dropItemToEquipped(e)}}
+						>
+							<div
+								id={equippedItems.loadout1.right === equippedItems.loadout1.left ? equippedItems.loadout1.right + '-2handed' : equippedItems.loadout1.right}
+								className={`${convertObjIdToClassId(equippedItems.loadout1.right)}-inv`}
+								draggable={true}
+								onDragStart={(e) => {dragItem(e, equippedItems.loadout1.right)}}
+							>{equippedItems.loadout1.right ? '' : 'Right Hand'}</div>
+						</div>
+
+						<div
+							className='char-info-paper-doll-left-arm char-info-paper-doll-box'
+							onDragOver={(e) => {handleItemOverDropZone(e)}}
+							onDrop={(e) => {dropItemToEquipped(e)}}
+						>
+							<div
+								id={equippedItems.loadout1.left === equippedItems.loadout1.right ? equippedItems.loadout1.left + '-2handed' : equippedItems.loadout1.left}
+								className={`${convertObjIdToClassId(equippedItems.loadout1.left)}-inv`}
+								draggable={true}
+								onDragStart={(e) => {dragItem(e, equippedItems.loadout1.left)}}
+							>{equippedItems.loadout1.left ? '' : 'Left Hand'}</div>
+						</div>
+					</div>
+					<div className='char-info-equip-toggle-button general-button' onClick={() => props.switchEquipment(props.characterInfo.id)}>Switch equipment</div>
+				</div>
+
+				<div className='char-info-stats-container'>
+					<div>Level: {props.characterInfo.level}</div>
+					<div>XP: {props.characterInfo.xp}</div>
+					<div>Strength: {props.characterInfo.strength}</div>
+					<div>Agility: {props.characterInfo.agility}</div>
+					<div>Mental Acuity: {props.characterInfo.mentalAcuity}</div>
+					<div>Initiative: {props.characterInfo.initiative}</div>
+					<div>Defense: {props.characterInfo.defense}{props.characterInfo.items.armor ? ` from ${props.characterInfo.items.armor}` : ''}</div>
+					<div>Skills:
+						<ul>{skillList}</ul>
+					</div>
+				</div>
 			</div>
+
 			<div>
-				Ammunition:
-				<ul>{ammoList}</ul>
+				<div>Equipped Light: {props.characterInfo.equippedLight ? `${equippedLight.name} (Time left: ${equippedLight.time})`: 'none'}</div>
+				<div>
+					Ammunition:
+					<ul>{props.ammoList}</ul>
+				</div>
 			</div>
-			<div>Items:
-				<ul>{itemList}</ul>
-			</div>
-			<div>Equipped Light: {props.characterInfo.equippedLight ? `${equippedLight.name} (Time left: ${equippedLight.time})`: 'none'}</div>
+
+			{itemsIntoElements}
 		</div>
 	);
 }
@@ -252,6 +410,14 @@ function DialogWindow(props) {
 					{props.actionButtonText}
 				</button>
 			</div>
+		</div>
+	);
+}
+
+function HelpPopUp(props) {
+	return (
+		<div className='help-popup ui-panel'>
+
 		</div>
 	);
 }

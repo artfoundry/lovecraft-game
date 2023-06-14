@@ -110,7 +110,7 @@ class Game extends React.Component {
 	/**
 	 * Updates either creature or player character data collection to state
 	 * If id is passed in, updating only one creature; otherwise updating all
-	 * @param type: String
+	 * @param type: String ('player' or 'creature')
 	 * @param updateData: Object (can be any number of data objects unless updating all characters of a type, then must be all data)
 	 * @param id: String
 	 * @param isInitialCreatureSetup: Boolean
@@ -653,14 +653,19 @@ class Game extends React.Component {
 						showDialog={this.state.showDialog}
 						setShowDialogProps={this.setShowDialogProps}
 						dialogProps={this.state.dialogProps}
+
 						logText={this.state.logText}
-						characterInfoText={this.state.playerCharacters[this.state.selectedCharacter]}
-						creatureInfoText={this.state.mapCreatures[this.state.selectedCreature]}
+
+						selectedCharacterInfo={this.state.playerCharacters[this.state.selectedCharacter]}
+						selectedCreatureInfo={this.state.mapCreatures[this.state.selectedCreature]}
 						characterIsSelected={this.state.characterIsSelected}
 						creatureIsSelected={this.state.creatureIsSelected}
 						updateUnitSelectionStatus={this.updateUnitSelectionStatus}
+						updateCharacters={this.updateCharacters}
+
 						weaponButtonSelected={this.state.weaponButtonSelected}
 						toggleWeapon={this.toggleWeapon}
+
 						updateCurrentTurn={this.updateCurrentTurn}
 						activeCharacter={this.state.activeCharacter}
 						playerCharacters={this.state.playerCharacters}

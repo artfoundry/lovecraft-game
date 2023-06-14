@@ -80,36 +80,56 @@
 	background-color: yellow;
 }
 
-/* OBJECTS */
+/* MAP OBJECTS */
 
 .object {
 	position: absolute;
 }
 
 .torch-top-wall {
-	content: url('../assets/objects/torch.png');
+	content: url('../assets/objects/torch_sml.png');
 }
 
 .torch-left-wall {
 	left: 25px;
-	content: url('../assets/objects/torch.png');
+	content: url('../assets/objects/torch_sml.png');
 }
 
 .torch-right-wall {
 	left: -25px;
-	content: url('../assets/objects/torch.png');
+	content: url('../assets/objects/torch_sml.png');
+}
+
+.electric-torch {
+	content:  url('../assets/objects/flashlight_sml.png');
 }
 
 .lantern {
-	content: url('../assets/objects/lantern.png');
+	content: url('../assets/objects/lantern_sml.png');
 }
 
 .ammo {
-	content: url('../assets/objects/ammo.png');
+	content: url('../assets/objects/ammo_sml.png');
 }
 
 .first-aid-kit {
-	content: url('../assets/objects/firstaidkit.png');
+	content: url('../assets/objects/firstaidkit_sml.png');
+}
+
+.pharmaceuticals {
+	content: url('../assets/objects/pharmaceuticals_sml.png');
+}
+
+.acid-concoction {
+	content: url('../assets/objects/acid_sml.png');
+}
+
+.pickaxe {
+	content: url('../assets/objects/pickaxe_sml.png');
+}
+
+.colt-revolver {
+	content: url('../assets/objects/coltRevolver_sml.png');
 }
 
 .s-and-w-revolver {

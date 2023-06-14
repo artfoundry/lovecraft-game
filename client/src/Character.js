@@ -1,6 +1,7 @@
-import React from "react";
+import React from 'react';
 import {diceRoll} from './Utils';
-import ItemTypes from "./data/itemTypes.json";
+import ItemTypes from './data/itemTypes.json';
+import WeaponTypes from './data/weaponTypes.json';
 
 class Character extends React.Component {
 	constructor(props) {
@@ -25,15 +26,23 @@ class Character extends React.Component {
 		this.currentSanity = props.startingSanity;
 		this.skills = props.skills;
 		this.weapons = props.weapons;
-		this.equippedWeapons = {ranged: props.equippedWeapons.ranged, melee: props.equippedWeapons.melee};
+		this.equippedItems = {
+			loadout1: {right: props.equippedItems.right, left: this.weaponIsTwoHanded(props.equippedItems.right) ? props.equippedItems.right : props.equippedItems.left},
+			loadout2: {right: '', left: ''},
+			armor: props.equippedItems.armor || ''
+		};
 		this.ammo = props.ammo;
 		this.items = props.items;
-		this.defense = this.agility + (this.items.Armor ? this.items.Armor.value : 0);
-		this.damageReduction = this.items.Armor ? this.items.Armor.value : 0;
+		this.defense = this.agility + (this.items.armor ? this.items.armor.defense : 0);
+		this.damageReduction = this.items.armor ? this.items.armor.defense : 0;
 		this.coords = {};
-		this.equippedLight = props.equippedLight.id || null;
-		this.lightRange = this.equippedLight ? this.itemTypes.Light[props.equippedLight.name].range : 0;
-		this.lightTime = this.equippedLight ? this.items[this.equippedLight].time : 0;
+		this.equippedLight = props.equippedLight || null;
+		this.lightRange = this.equippedLight ? this.items[this.equippedLight].range : 0;
+		this.lightTime = this.equippedLight ? this.items[this.equippedLight].time : null;
+	}
+
+	weaponIsTwoHanded = (weapon) => {
+		return this.weapons[weapon] && WeaponTypes[this.weapons[weapon].name].twoHanded;
 	}
 
 	/**

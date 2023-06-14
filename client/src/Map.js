@@ -1693,10 +1693,6 @@ class Map extends React.Component {
 		const player = this.props.playerCharacters[this.props.activeCharacter];
 		const generalItemType = itemInfo.itemType === 'Weapon' ? 'weapons' : itemInfo.itemType === 'Ammo' ? 'ammo' : 'items';
 		let inventoryList = {...player[generalItemType]};
-		let invItem = null;
-		const itemIdNoNumber = id.slice(0, id.search(/[0-9]/));
-		let lastItemId = 0;
-		let newInvItemId = 0;
 
 		if (itemInfo.itemType === 'Ammo') {
 			inventoryList[itemName] = inventoryList[itemName] ? inventoryList[itemName] + itemInfo.amount : itemInfo.amount;
@@ -1705,10 +1701,7 @@ class Map extends React.Component {
 			player.ammo.stackable[itemName]++;
 		// or item is anything else, whether in inv or not
 		} else {
-			invItem = Object.values(inventoryList).findLast(invItemInfo => invItemInfo.name === itemName);
-			lastItemId = invItem ? +id.slice(id.search(/[0-9]/)) : 0;
-			newInvItemId = itemIdNoNumber + (invItem ? ++lastItemId : 0);
-			inventoryList[newInvItemId] = {name: itemName};
+			inventoryList[id] = {name: itemName};
 			if (itemInfo.stackable) {
 				if (player.ammo.stackable) {
 					player.ammo.stackable[itemName] = 1;
@@ -1717,17 +1710,17 @@ class Map extends React.Component {
 				}
 			}
 			if (generalItemType === 'items') {
-				inventoryList[newInvItemId].itemType = itemInfo.itemType;
+				inventoryList[id].itemType = itemInfo.itemType;
 			}
 			if (itemInfo.itemType === 'Light') {
-				inventoryList[newInvItemId].time = this.lightTimes[itemName];
-				inventoryList[newInvItemId].equipped = false;
+				inventoryList[id].time = this.lightTimes[itemName];
+				inventoryList[id].equipped = false;
 			}
 			if (itemInfo.itemType === 'Weapon') {
-				inventoryList[newInvItemId].equipped = false;
-				inventoryList[newInvItemId].ranged = WeaponTypes[itemName].ranged;
+				inventoryList[id].equipped = false;
+				inventoryList[id].ranged = WeaponTypes[itemName].ranged;
 				if (WeaponTypes[itemName].gunType) {
-					inventoryList[newInvItemId].gunType = WeaponTypes[itemName].gunType;
+					inventoryList[id].gunType = WeaponTypes[itemName].gunType;
 				}
 			}
 		}
@@ -1794,7 +1787,7 @@ class Map extends React.Component {
 		const activePlayerData = this.props.playerCharacters[activePC];
 		if (activePlayerData.equippedLight) {
 			updateData.items = activePlayerData.items;
-			const equippedLight = updateData.items[activePlayerData.equippedLight];
+			let equippedLight = updateData.items[activePlayerData.equippedLight];
 			if (activePlayerData.lightTime > 0) {
 				equippedLight.time = activePlayerData.lightTime - 1;
 				updateData.lightTime = activePlayerData.lightTime - 1;
