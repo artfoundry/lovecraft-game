@@ -12,7 +12,7 @@ class Game extends React.Component {
 	constructor(props) {
 		super(props);
 
-		this.initialDialogContent = 'Find the stairs down to enter a new dungeon! Click/tap or use arrow keys to move.';
+		this.initialDialogContent = '';
 		this.startingLocation = 'catacombs';
 		this.startingPlayerCharacters = ['privateEye', 'archaeologist', 'chemist'];
 		this.playerMovesLimit = 3;
@@ -55,7 +55,7 @@ class Game extends React.Component {
 			threatList: [],
 			partyIsNearby: true,
 			logText: [],
-			showDialog: true,
+			showDialog: false,
 			dialogProps: {
 				dialogContent: this.initialDialogContent,
 				closeButtonText: 'Close',

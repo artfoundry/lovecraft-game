@@ -278,6 +278,7 @@
 	display: flex;
 	flex-direction: row;
 	flex-wrap: wrap;
+	margin-top: 20px;
 }
 
 .char-info-inv-item-box {
@@ -469,6 +470,57 @@
 	width: 64px;
 	height: 64px;
 	background-image: url('../assets/objects/SandWrevolver_lrg.png');
+	background-position: center;
+	background-repeat: no-repeat;
+}
+
+
+/* ACTION BUTTON ICONS */
+
+.first-aid-kit-act {
+	width: 32px;
+	height: 32px;
+	background-image: url('../assets/ui/firstaidkit_32.png');
+	background-position: center;
+	background-repeat: no-repeat;
+}
+
+.pharmaceuticals-act {
+	width: 32px;
+	height: 32px;
+	background-image: url('../assets/ui/pharmaceuticals_32.png');
+	background-position: center;
+	background-repeat: no-repeat;
+}
+
+.acid-concoction-act {
+	width: 32px;
+	height: 32px;
+	background-image: url('../assets/ui/acid_32.png');
+	background-position: center;
+	background-repeat: no-repeat;
+}
+
+.pickaxe-act {
+	width: 32px;
+	height: 32px;
+	background-image: url('../assets/ui/pickaxe_32.png');
+	background-position: center;
+	background-repeat: no-repeat;
+}
+
+.colt-revolver-act {
+	width: 32px;
+	height: 32px;
+	background-image: url('../assets/ui/coltRevolver_32.png');
+	background-position: center;
+	background-repeat: no-repeat;
+}
+
+.s-and-w-revolver-act {
+	width: 32px;
+	height: 32px;
+	background-image: url('../assets/ui/SandWrevolver_32.png');
 	background-position: center;
 	background-repeat: no-repeat;
 }

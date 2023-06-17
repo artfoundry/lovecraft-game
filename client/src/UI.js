@@ -81,7 +81,8 @@ class UI extends React.Component {
 					playerCharacters={this.props.playerCharacters}
 					characterId={id}
 					characterName={playerInfo.name}
-					weapons={playerInfo.weapons}
+					equippedItems={playerInfo.equippedItems}
+					invItems={playerInfo.items}
 					ammo={playerInfo.ammo}
 					toggleWeaponButton={this.props.toggleWeapon}
 					weaponButtonSelected={this.props.weaponButtonSelected}
@@ -170,7 +171,7 @@ class UI extends React.Component {
 		delete gunAmmo.stackable;
 
 		for (const [type, amount] of Object.entries(gunAmmo)) {
-			list.push(<li key={type + Math.random()}>{type}: {amount} rounds</li>)
+			list.push(<span key={type + Math.random()}>{type}: {amount} rounds</span>)
 		}
 		return list;
 	}
@@ -229,9 +230,9 @@ class UI extends React.Component {
 							/>
 						}
 					</div>
-					<div className='minimize-button general-button' onClick={() => {
-						this.minimizePanel('turnInfo');
-					}}>_</div>
+					{/*<div className='minimize-button general-button' onClick={() => {*/}
+					{/*	this.minimizePanel('turnInfo');*/}
+					{/*}}>_</div>*/}
 				</div>
 
 				{this.props.selectedCharacterInfo && this.state.entireInventory &&
@@ -256,9 +257,9 @@ class UI extends React.Component {
 				}
 
 				<div ref={this.uiRefs.controlBar} className='control-bar-container ui-panel'>
-					<div className='minimize-button general-button' onClick={() => {
-						this.minimizePanel('controlBar');
-					}}>_</div>
+					{/*<div className='minimize-button general-button' onClick={() => {*/}
+					{/*	this.minimizePanel('controlBar');*/}
+					{/*}}>_</div>*/}
 					{this.props.playerCharacters && <this.showControlBar />}
 				</div>
 			</div>

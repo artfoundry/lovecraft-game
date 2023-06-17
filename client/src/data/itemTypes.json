@@ -11,8 +11,14 @@
     }
   },
   "Medicine": {
-    "Pharmaceuticals": {},
-    "First Aid Kit": {}
+    "Pharmaceuticals": {
+      "healingAmount": 5,
+      "healingType": "sanity"
+    },
+    "First Aid Kit": {
+      "healingAmount": 20,
+      "healingType": "health"
+    }
   },
   "Ammo": ["handgun", "shotgun", "machineGun"],
   "Armor": {

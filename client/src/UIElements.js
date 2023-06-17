@@ -1,15 +1,21 @@
 import React, {useRef} from 'react';
 import {convertObjIdToClassId} from './Utils';
 
-let weaponRefs = {};
+let actionRefs = {};
 let draggedItem = null;
 let draggedItemSourceLoc = null;
 
 function CharacterControls(props) {
-	weaponRefs[props.characterId] = useRef([]);
-	let weaponButtonState = '';
-	const weaponsList = [];
+	actionRefs[props.characterId] = useRef([]);
+	let actionButtonState = '';
 	const currentPCdata = props.playerCharacters[props.characterId];
+	const equippedItems = props.equippedItems.loadout1;
+	const invItems = props.invItems;
+	const actionableItems = {
+		weapons: [],
+		medicine: []
+	};
+
 	const handleItemOverDropZone = (e) => {
 		e.preventDefault();
 		e.dataTransfer.dropEffect = 'move';
@@ -40,32 +46,60 @@ function CharacterControls(props) {
 		});
 	}
 
-	for (const [weaponId, weaponInfo] of Object.entries(props.weapons)) {
-		if (currentPCdata.equippedItems.loadout1.left === weaponId || currentPCdata.equippedItems.loadout1.right === weaponId) {
+	for (const itemId of Object.values(equippedItems)) {
+		const existingWeaponIndex = actionableItems.weapons.findIndex(weapon => weapon.weaponId === itemId);
+		if (currentPCdata.weapons[itemId] && existingWeaponIndex === -1) {
+			const weaponInfo = currentPCdata.weapons[itemId];
 			if (weaponInfo.ranged) {
 				if (weaponInfo.gunType) {
-					weaponsList.push({weaponId, weaponName: weaponInfo.name, isGun: true, ammo: props.ammo[weaponInfo.gunType]});
-				// check to make sure this weapon isn't already in the controls and has some ammo
-				} else if (!weaponsList.find(listItem => listItem.weaponName === weaponInfo.name) && props.ammo.stackable[weaponInfo.name] > 0) {
-					weaponsList.push({weaponId, weaponName: weaponInfo.name, ammo: props.ammo.stackable[weaponInfo.name]});
+					actionableItems.weapons.push({weaponId: itemId, weaponName: weaponInfo.name, isGun: true, ammo: props.ammo[weaponInfo.gunType]});
+					// check to make sure this weapon isn't already in the controls and has some ammo
+				} else if (!actionableItems.weapons.find(listItem => listItem.weaponName === weaponInfo.name) && props.ammo.stackable[weaponInfo.name] > 0) {
+					actionableItems.weapons.push({weaponId: itemId, weaponName: weaponInfo.name, ammo: props.ammo.stackable[weaponInfo.name]});
 				}
 			} else {
-				weaponsList.push({weaponId, weaponName: weaponInfo.name, ammo: -1});
+				actionableItems.weapons.push({weaponId: itemId, weaponName: weaponInfo.name, ammo: -1});
 			}
 		}
 	}
-	weaponRefs[props.characterId].current = weaponsList.map((weapon, index) => {
-		return weaponRefs[props.characterId].current[index] || React.createRef();
+
+	for (const [itemId, itemInfo] of Object.entries(invItems)) {
+		if (itemInfo.itemType === 'Medicine') {
+			const itemIndex = actionableItems.medicine.findIndex(item => item.name === itemInfo.name);
+			if (itemIndex >= 0) {
+				actionableItems.medicine[itemIndex].amount += 1;
+			} else {
+				actionableItems.medicine.push({[itemId]: {name: itemInfo.name, amount: 1}});
+			}
+		}
+	}
+
+	actionRefs[props.characterId].current = actionableItems.weapons.concat(actionableItems.medicine).map((item, index) => {
+		return actionRefs[props.characterId].current[index] || React.createRef();
 	});
-	const weapons = (
+	const weaponButtons = (
 		<div className='weapon-buttons-container'>
-			{weaponsList.map((weapon, index) => {
-				weaponButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || (weapon.ammo === 0)) ? 'button-inactive' :
+			{actionableItems.weapons.map((weapon, index) => {
+				actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || (weapon.ammo === 0)) ? 'button-inactive' :
 					(props.weaponButtonSelected.characterId === props.characterId && props.weaponButtonSelected.weaponId === weapon.weaponId) ? 'button-selected': '';
 				return (
-					<div ref={weaponRefs[props.characterId].current[index]} className={`weapon-button ${convertObjIdToClassId(weapon.weaponId)}-inv ${weaponButtonState}`} key={weapon.weaponId} onClick={() => {
+					<div ref={actionRefs[props.characterId].current[index]} className={`weapon-button ${convertObjIdToClassId(weapon.weaponId)}-act ${actionButtonState}`} key={weapon.weaponId} onClick={() => {
 						props.toggleWeaponButton(props.characterId, weapon.weaponId, weapon.weaponName);
-					}}>{weapon.ammo >= 0 ? weapon.ammo : ''}{weapon.isGun ? ' round(s)': ''}</div>
+					}}>{weapon.ammo >= 0 ? weapon.ammo : ''}</div>
+				);
+			})}
+		</div>
+	);
+	const medicineButtons = (
+		<div className='item-buttons-container'>
+			{actionableItems.medicine.map((item, index) => {
+				const itemId = Object.keys(item)[0];
+				actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0) ? 'button-inactive' :
+					(props.weaponButtonSelected.characterId === props.characterId && props.weaponButtonSelected.weaponId === item.name) ? 'button-selected': '';
+				return (
+					<div ref={actionRefs[props.characterId].current[index]} className={`weapon-button ${convertObjIdToClassId(itemId)}-act ${actionButtonState}`} key={itemId} onClick={() => {
+						props.toggleWeaponButton(props.characterId, itemId, item.name);
+					}}>{item.amount}</div>
 				);
 			})}
 		</div>
@@ -82,7 +116,8 @@ function CharacterControls(props) {
 				<div>Moves remaining: {props.isActiveCharacter ? props.movesRemaining : ''}</div>
 				<div>Actions remaining: {props.isActiveCharacter ? props.actionsRemaining : ''}</div>
 			</div>
-			{weapons}
+			{weaponButtons}
+			{medicineButtons}
 		</div>
 	);
 }
@@ -268,8 +303,7 @@ function CharacterInfoPanel(props) {
 			<div>
 				<div>Equipped Light: {props.characterInfo.equippedLight ? `${equippedLight.name} (Time left: ${equippedLight.time})`: 'none'}</div>
 				<div>
-					Ammunition:
-					<ul>{props.ammoList}</ul>
+					Ammunition: {props.ammoList}
 				</div>
 			</div>
 
@@ -367,7 +401,7 @@ function ModeInfoPanel(props) {
 					<div>Turn: {charactersTurn}</div>
 					<div className={'general-button' + turnButtonState} onClick={() => {
 						let weaponName = '';
-						const activeButton = weaponRefs[props.activeCharacter].current.find(weapon => {
+						const activeButton = actionRefs[props.activeCharacter].current.find(weapon => {
 							weaponName = weapon.current.dataset['weapon'];
 							return weapon.current.classList.contains('button-selected');
 						});
