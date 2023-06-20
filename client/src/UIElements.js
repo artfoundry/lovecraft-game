@@ -1,12 +1,10 @@
-import React, {useRef} from 'react';
+import React from 'react';
 import {convertObjIdToClassId} from './Utils';
 
-let actionRefs = {};
 let draggedItem = null;
 let draggedItemSourceLoc = null;
 
 function CharacterControls(props) {
-	actionRefs[props.characterId] = useRef([]);
 	let actionButtonState = '';
 	const currentPCdata = props.playerCharacters[props.characterId];
 	const equippedItems = props.equippedItems.loadout1;
@@ -22,28 +20,70 @@ function CharacterControls(props) {
 	}
 	const dropItemToPC = (e) => {
 		e.preventDefault();
-		draggedItem.data.itemType ? currentPCdata.items[draggedItem.id] = draggedItem.data : currentPCdata.weapons[draggedItem.id] = draggedItem.data;
-		props.updateCharacters('player', currentPCdata, props.characterId, false, false, () => {
-			const sourcePCdata = {...props.playerCharacters[draggedItem.sourcePC]};
-			const sourceBoxIndex = draggedItemSourceLoc.match(/\d+/)[0];
-			let tempAllItemsList = [...props.entireInventory[props.characterId]];
-			// remove dragged item
-			tempAllItemsList.splice(sourceBoxIndex, 1, null);
+		const allPCdata = {...props.playerCharacters};
+		const sourcePCdata = {...allPCdata[draggedItem.sourcePC]};
+		const currentPCdata = {...allPCdata[props.characterId]};
+		let allPlayersInv = {...props.entireInventory};
+		const currentPCinvSize = Object.keys(currentPCdata.items).length;
+		let dialogProps = null;
 
+		if (Math.abs(currentPCdata.coords.xPos - sourcePCdata.coords.xPos) > 1 || Math.abs(currentPCdata.coords.yPos - sourcePCdata.coords.yPos) > 1) {
+			dialogProps = {
+				dialogContent: 'That character is too far away. To trade, characters need to be next to each other.',
+				closeButtonText: 'Ok',
+				closeButtonCallback: null,
+				disableCloseButton: false,
+				actionButtonVisible: false,
+				actionButtonText: '',
+				actionButtonCallback: null,
+				dialogClasses: ''
+			};
+		} else if (currentPCinvSize < currentPCdata.maxItems) {
+			const sourceBoxIndex = draggedItemSourceLoc.match(/\d+/);
+			const firstOpenInvSlot = allPlayersInv[props.characterId].indexOf(null);
+
+			// add dragged item to current pc inv
+			allPlayersInv[props.characterId].splice(firstOpenInvSlot, 1, draggedItem.id);
+			currentPCdata.items[draggedItem.id] = draggedItem.data;
+
+			// remove dragged item from source pc inv
+			// if no source box index, then it was dragged from being equipped
+			if (sourceBoxIndex) {
+				allPlayersInv[draggedItem.sourcePC].splice(+sourceBoxIndex[0], 1, null);
+			}
 			draggedItem.data.itemType ? delete sourcePCdata.items[draggedItem.id] : delete sourcePCdata.weapons[draggedItem.id];
 			if (sourcePCdata.equippedItems.loadout1.left === draggedItem.id) {
 				sourcePCdata.equippedItems.loadout1.left = '';
 			} else if (sourcePCdata.equippedItems.loadout1.right === draggedItem.id) {
 				sourcePCdata.equippedItems.loadout1.right = '';
-			} else if (sourcePCdata.equippedLight === draggedItem.id) {
+			}
+			if (sourcePCdata.equippedLight === draggedItem.id) {
 				sourcePCdata.equippedLight = null;
 				sourcePCdata.lightRange = 0;
 			}
 
-			props.updateCharacters('player', sourcePCdata, draggedItem.sourcePC, false, false, () => {
-				props.updateInventory(props.characterId, tempAllItemsList);
+			allPCdata[props.characterId] = currentPCdata;
+			allPCdata[draggedItem.sourcePC] = sourcePCdata;
+			props.updateCharacters('player', allPCdata, null, false, false, () => {
+				props.updateInventory(props.characterId, allPlayersInv[props.characterId], () => {
+					props.updateInventory(draggedItem.sourcePC, allPlayersInv[draggedItem.sourcePC]);
+				});
 			});
-		});
+		} else {
+			dialogProps = {
+				dialogContent: 'That inventory is full. Free up some space first.',
+				closeButtonText: 'Ok',
+				closeButtonCallback: null,
+				disableCloseButton: false,
+				actionButtonVisible: false,
+				actionButtonText: '',
+				actionButtonCallback: null,
+				dialogClasses: ''
+			};
+		}
+		if (dialogProps) {
+			props.setShowDialogProps(true, dialogProps);
+		}
 	}
 
 	for (const itemId of Object.values(equippedItems)) {
@@ -65,7 +105,7 @@ function CharacterControls(props) {
 
 	for (const [itemId, itemInfo] of Object.entries(invItems)) {
 		if (itemInfo.itemType === 'Medicine') {
-			const itemIndex = actionableItems.medicine.findIndex(item => item.name === itemInfo.name);
+			const itemIndex = actionableItems.medicine.findIndex(item => item[itemId].name === itemInfo.name);
 			if (itemIndex >= 0) {
 				actionableItems.medicine[itemIndex].amount += 1;
 			} else {
@@ -74,17 +114,14 @@ function CharacterControls(props) {
 		}
 	}
 
-	actionRefs[props.characterId].current = actionableItems.weapons.concat(actionableItems.medicine).map((item, index) => {
-		return actionRefs[props.characterId].current[index] || React.createRef();
-	});
 	const weaponButtons = (
 		<div className='weapon-buttons-container'>
 			{actionableItems.weapons.map((weapon, index) => {
 				actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || (weapon.ammo === 0)) ? 'button-inactive' :
-					(props.weaponButtonSelected.characterId === props.characterId && props.weaponButtonSelected.weaponId === weapon.weaponId) ? 'button-selected': '';
+					(props.isActiveCharacter && props.itemButtonSelected.characterId === props.characterId && props.itemButtonSelected.itemId === weapon.weaponId) ? 'button-selected': '';
 				return (
-					<div ref={actionRefs[props.characterId].current[index]} className={`weapon-button ${convertObjIdToClassId(weapon.weaponId)}-act ${actionButtonState}`} key={weapon.weaponId} onClick={() => {
-						props.toggleWeaponButton(props.characterId, weapon.weaponId, weapon.weaponName);
+					<div className={`weapon-button ${convertObjIdToClassId(weapon.weaponId)}-act ${actionButtonState}`} key={weapon.weaponId} onClick={() => {
+						props.toggleActionButton(props.characterId, weapon.weaponId, weapon.weaponName, 'weapon');
 					}}>{weapon.ammo >= 0 ? weapon.ammo : ''}</div>
 				);
 			})}
@@ -95,10 +132,10 @@ function CharacterControls(props) {
 			{actionableItems.medicine.map((item, index) => {
 				const itemId = Object.keys(item)[0];
 				actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0) ? 'button-inactive' :
-					(props.weaponButtonSelected.characterId === props.characterId && props.weaponButtonSelected.weaponId === item.name) ? 'button-selected': '';
+					(props.isActiveCharacter && props.itemButtonSelected.characterId === props.characterId && props.itemButtonSelected.itemId === itemId) ? 'button-selected': '';
 				return (
-					<div ref={actionRefs[props.characterId].current[index]} className={`weapon-button ${convertObjIdToClassId(itemId)}-act ${actionButtonState}`} key={itemId} onClick={() => {
-						props.toggleWeaponButton(props.characterId, itemId, item.name);
+					<div className={`weapon-button ${convertObjIdToClassId(itemId)}-act ${actionButtonState}`} key={itemId} onClick={() => {
+						props.toggleActionButton(props.characterId, itemId, item[itemId].name, 'item');
 					}}>{item.amount}</div>
 				);
 			})}
@@ -131,8 +168,6 @@ function CharacterInfoPanel(props) {
 		const itemId = e.target.id.includes('-2handed') ? e.target.id.slice(0, e.target.id.indexOf('-2handed')) : e.target.id;
 		draggedItem = {id: itemId, data: updateData.items[itemId] || updateData.weapons[itemId], sourcePC: updateData.id};
 		draggedItemSourceLoc = e.target.parentElement.id;
-		// e.dataTransfer.clearData();
-		// e.dataTransfer.setData('image/png:base64', itemId);
 	}
 	const handleItemOverDropZone = (e) => {
 		e.preventDefault();
@@ -241,7 +276,7 @@ function CharacterInfoPanel(props) {
 					<div>Profession: {props.characterInfo.profession}</div>
 				</div>
 				<div>
-					<div>Health: {props.characterInfo.currentHP} / {props.characterInfo.startingHP}</div>
+					<div>Health: {props.characterInfo.currentHealth} / {props.characterInfo.startingHealth}</div>
 					<div>Sanity: {props.characterInfo.currentSanity} / {props.characterInfo.startingSanity}</div>
 				</div>
 				<div className='general-button' onClick={() => props.updateUnitSelectionStatus(props.characterInfo.id, 'player')}>X</div>
@@ -318,7 +353,7 @@ function CreatureInfoPanel(props) {
 			<div className='general-button' onClick={() => props.updateUnitSelectionStatus(props.creatureInfo.id, 'creature')}>X</div>
 			<div>Name: {props.creatureInfo.name}</div>
 			<div>Level: {props.creatureInfo.level}</div>
-			<div>Health: {props.creatureInfo.currentHP} / {props.creatureInfo.startingHP}</div>
+			<div>Health: {props.creatureInfo.currentHealth} / {props.creatureInfo.startingHealth}</div>
 			<div>Strength: {props.creatureInfo.strength}</div>
 			<div>Agility: {props.creatureInfo.agility}</div>
 			<div>Mental Acuity: {props.creatureInfo.mentalAcuity}</div>
@@ -399,17 +434,8 @@ function ModeInfoPanel(props) {
 			{(props.inTacticalMode || !props.isPartyNearby) &&
 				<div>
 					<div>Turn: {charactersTurn}</div>
-					<div className={'general-button' + turnButtonState} onClick={() => {
-						let weaponName = '';
-						const activeButton = actionRefs[props.activeCharacter].current.find(weapon => {
-							weaponName = weapon.current.dataset['weapon'];
-							return weapon.current.classList.contains('button-selected');
-						});
-						if (activeButton) {
-							props.toggleWeaponButton(props.activeCharacter, weaponName, props.endTurnCallback);
-						} else {
-							props.endTurnCallback();
-						}
+					<div className={'general-button' + turnButtonState} onClick={(e) => {
+						props.toggleActionButton('', '', '', '', true, props.endTurnCallback);
 					}}>End Turn</div>
 				</div>
 			}

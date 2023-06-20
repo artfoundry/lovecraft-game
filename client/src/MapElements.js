@@ -57,9 +57,13 @@ function Item(props) {
 			style={props.styles}
 			onClick={() => {
 				if (props.isActivePlayerNearObject(props.objectInfo.coords)) {
-					props.addItemToPlayerInventory(props.objectInfo, props.objectId);
+					if (props.isActivePlayerInvFull && props.name !== 'ammo') {
+						props.setShowDialogProps(true, props.invFullDialogProps);
+					} else {
+						props.addItemToPlayerInventory(props.objectInfo, props.objectId);
+					}
 				} else {
-					props.setShowDialogProps(true, props.dialogProps);
+					props.setShowDialogProps(true, props.itemTooFarDialogProps);
 				}
 			}}
 		/>

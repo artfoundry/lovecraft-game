@@ -84,8 +84,8 @@ class UI extends React.Component {
 					equippedItems={playerInfo.equippedItems}
 					invItems={playerInfo.items}
 					ammo={playerInfo.ammo}
-					toggleWeaponButton={this.props.toggleWeapon}
-					weaponButtonSelected={this.props.weaponButtonSelected}
+					toggleActionButton={this.props.toggleActionButton}
+					itemButtonSelected={this.props.itemButtonSelected}
 					isActiveCharacter={id === this.props.activeCharacter}
 					movesRemaining={this.props.playerLimits.moves - this.props.actionsCompleted.moves}
 					actionsRemaining={this.props.playerLimits.actions - this.props.actionsCompleted.actions}
@@ -93,6 +93,7 @@ class UI extends React.Component {
 					updateCharacters={this.props.updateCharacters}
 					entireInventory={this.state.entireInventory}
 					updateInventory={this.updateInventory}
+					setShowDialogProps={this.props.setShowDialogProps}
 				/>
 			)
 		}
@@ -135,13 +136,14 @@ class UI extends React.Component {
 		});
 	}
 
-	_parseInvItems(){
-		const stackableWeapons = this.props.selectedCharacterInfo.ammo.stackable;
-		const allItems = Object.assign({...this.props.selectedCharacterInfo.weapons}, {...this.props.selectedCharacterInfo.items});
-		const equippedItems = this.props.selectedCharacterInfo.equippedItems;
+	_parseInvItems(charId, invItemsList){
+		const charInfo = this.props.playerCharacters[charId];
+		const stackableWeapons = charInfo.ammo.stackable;
+		const allItems = Object.assign({...charInfo.weapons}, {...charInfo.items});
+		const equippedItems = charInfo.equippedItems;
 		let stackablesAdded = []; // prevents listing multiple copies of same stackable weapon
-		const charId = this.props.selectedCharacterInfo.id;
-		let invItemsList = [...this.state.entireInventory[charId]];
+		// const charId = this.props.selectedCharacterInfo.id;
+		// let invItemsList = [...this.state.entireInventory[charId]];
 
 		for (const [itemId, itemInfo] of Object.entries(allItems)) {
 			if (itemId !== equippedItems.loadout1.right && itemId !== equippedItems.loadout1.left &&
@@ -178,11 +180,9 @@ class UI extends React.Component {
 
 	componentDidMount() {
 		if (Object.keys(this.state.entireInventory).length === 0) {
-			let entireInventory = {};
 			for (const id of Object.keys(this.props.playerCharacters)) {
-				entireInventory[id] = [];
+				this._parseInvItems(id, []);
 			}
-			this.setState({entireInventory});
 		}
 	}
 
@@ -191,7 +191,7 @@ class UI extends React.Component {
 			this.setState({logText: [...this.props.logText]}, this.scrollLog);
 		}
 		if (this.props.selectedCharacterInfo && prevProps.selectedCharacterInfo !== this.props.selectedCharacterInfo) {
-			this._parseInvItems();
+			this._parseInvItems(this.props.selectedCharacterInfo.id, [...this.state.entireInventory[this.props.selectedCharacterInfo.id]]);
 		}
 	}
 
@@ -221,7 +221,7 @@ class UI extends React.Component {
 								activeCharacter={this.props.activeCharacter}
 								updateActiveCharacter={this.props.updateActiveCharacter}
 								endTurnCallback={this.props.updateCurrentTurn}
-								toggleWeaponButton={this.props.toggleWeapon}
+								toggleActionButton={this.props.toggleActionButton}
 								updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
 								characterIsSelected={this.props.characterIsSelected}
 								characterInfo={this.props.selectedCharacterInfo}

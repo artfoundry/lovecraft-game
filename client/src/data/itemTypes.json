@@ -1,29 +1,29 @@
 {
-  "Light": {
-    "Lantern": {
-      "range": 4
-    },
-    "Torch": {
-      "range": 3
-    },
-    "Electric Torch": {
-      "range": 5
-    }
+  "Lantern": {
+    "itemType": "Light",
+    "range": 4
   },
-  "Medicine": {
-    "Pharmaceuticals": {
-      "healingAmount": 5,
-      "healingType": "sanity"
-    },
-    "First Aid Kit": {
-      "healingAmount": 20,
-      "healingType": "health"
-    }
+  "Torch": {
+    "itemType": "Light",
+    "range": 3
   },
-  "Ammo": ["handgun", "shotgun", "machineGun"],
-  "Armor": {
-    "Leather Jacket": {
-      "defense": 3
-    }
-  }
+  "Electric Torch": {
+    "itemType": "Light",
+    "range": 5
+  },
+  "Pharmaceuticals": {
+    "itemType": "Medicine",
+    "healingAmount": 3,
+    "healingType": "sanity"
+  },
+  "First Aid Kit": {
+    "itemType": "Medicine",
+    "healingAmount": 20,
+    "healingType": "health"
+  },
+  "Leather Jacket": {
+    "itemType": "Armor",
+    "defense": 3
+  },
+  "Ammo": ["handgun", "shotgun", "machineGun"]
 }

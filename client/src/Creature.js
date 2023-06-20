@@ -15,8 +15,9 @@ class Creature extends React.Component {
 		this.initiative = props.mentalAcuity + props.agility;
 		this.damage = props.damage;
 		this.defense = props.defense;
-		this.startingHP = props.startingHP;
-		this.currentHP = props.startingHP;
+		this.damageReduction = props.damageReduction;
+		this.startingHealth = props.startingHealth;
+		this.currentHealth = props.startingHealth;
 		this.range = props.range;
 		this.attackType = props.attackType;
 		this.moveSpeed = props.moveSpeed;
@@ -43,12 +44,13 @@ class Creature extends React.Component {
 			defenseRoll = targetData.mentalAcuity + diceRoll(6);
 			damage = this.mentalAcuity + diceRoll(6) - defenseRoll;
 		}
+		damage = damage < 0 ? 0 : damage;
 		isHit = hitRoll >= defenseRoll;
 
 		updateLog(`${this.name} attacks with ${hitRoll} to hit vs ${defenseRoll} defense`);
 		updateLog(isHit ? `${this.name} hits ${targetData.name} for ${damage} damage` : this.name + ' misses');
 		if (isHit) {
-			targetData.currentHP -= damage;
+			targetData.currentHealth -= damage;
 			updateTarget('player', targetData, targetData.id, false, false, updateTurnCallback);
 		} else if (updateTurnCallback) {
 			updateTurnCallback();

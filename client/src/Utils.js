@@ -13,6 +13,10 @@ export function convertPosToCoords(pos) {
 	return {xPos: coordArr[0], yPos: coordArr[1]};
 }
 
+export function convertCoordsToPos(coords) {
+	return `${coords.xPos}-${coords.yPos}`;
+}
+
 export function diceRoll(range) {
 	return Math.ceil(Math.random() * range);
 }

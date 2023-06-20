@@ -4,6 +4,7 @@ import Map from './Map';
 import Character from './Character';
 import PlayerCharacterTypes from './data/playerCharacterTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
+import ItemTypes from './data/itemTypes.json';
 import UI from './UI';
 import './css/app.css';
 import {diceRoll} from './Utils';
@@ -24,7 +25,7 @@ class Game extends React.Component {
 		 * Creature data structure : {
 		 *      CreatureData[name],
 		 *      GameLocations[location].creatures[name],
-		 * 		currentHP: CreatureData[name].startingHP,
+		 * 		currentHealth: CreatureData[name].startingHealth,
 		 * 		tileCoords: {xPos, yPos}
 		 * }
 		 **/
@@ -50,7 +51,7 @@ class Game extends React.Component {
 			creatureCoordsUpdate: null,
 			selectedCharacter: '',
 			selectedCreature: '',
-			weaponButtonSelected: {},
+			itemButtonSelected: {},
 			inTacticalMode: true, // start in tactical mode any time entering a new area
 			threatList: [],
 			partyIsNearby: true,
@@ -87,7 +88,7 @@ class Game extends React.Component {
 			creatureCoordsUpdate: null,
 			selectedCharacter: '',
 			selectedCreature: '',
-			weaponButtonSelected: {},
+			itemButtonSelected: {},
 			inTacticalMode: true, // start in tactical mode any time entering a new area
 			threatList: [],
 			partyIsNearby: true,
@@ -127,7 +128,7 @@ class Game extends React.Component {
 				}
 			}), () => {
 				if (this.state.selectedCreature === id) {
-					if (this.state[collection][id].currentHP <= 0 && type === 'creature') {
+					if (this.state[collection][id].currentHealth <= 0 && type === 'creature') {
 						this.updateUnitSelectionStatus(id, 'creature');
 					}
 				}
@@ -167,7 +168,7 @@ class Game extends React.Component {
 			type === 'creature' ? this.state.mapCreatures :
 			Object.assign({}, this.state.playerCharacters, this.state.mapCreatures); // copy all to empty object to avoid modifying originals
 		for (const [id, characterData] of Object.entries(collection)) {
-			if (characterData.currentHP > 0) {
+			if (characterData.currentHealth > 0) {
 				let coords = format === 'pos' ? `${characterData.coords.xPos}-${characterData.coords.yPos}` : characterData.coords;
 				allCharactersPos.push({id, [format]: coords});
 			}
@@ -272,76 +273,84 @@ class Game extends React.Component {
 			if (isInCombat && previousListSize === 0 ) {
 				this.toggleTacticalMode(isInCombat, callback);
 			// leaving combat...
-			} else if (!isInCombat && previousListSize > 0) {
+			} else if (!isInCombat) {
 				this.updateIfPartyIsNearby(checkLineOfSightToParty, () => {
-					if (this.state.partyIsNearby) {
+					// entering follow mode from combat
+					if (this.state.partyIsNearby && previousListSize > 0) {
 						this.toggleTacticalMode(isInCombat, callback);
+					// already in follow mode
+					} else if (callback) {
+						callback();
 					}
 				});
-			// in follow mode
-			} else {
-				this.updateIfPartyIsNearby(checkLineOfSightToParty, callback);
+			// already/still in combat
+			} else if (callback) {
+				callback();
 			}
 		});
 	}
 
 	/**
-	 * Updates to state what PC weapon is selected in the UI
-	 * Data stored in weaponButtonSelected: {characterId, weaponName, stats: WeaponTypes[weaponName]}
+	 * Updates to state what PC weapon or item button is selected in the UI
+	 * Data stored in itemButtonSelected: {characterId, itemId, itemName, stats: WeaponTypes[itemName] or ItemTypes[itemName]}
 	 * @param characterId: String
-	 * @param weaponId: String
-	 * @param weaponName: String
+	 * @param itemId: String
+	 * @param itemName: String
+	 * @param buttonType: String ('weapon' or 'item')
+	 * @param clearButtonState: Boolean
 	 * @param callback: Function
 	 */
-	toggleWeapon = (characterId, weaponId, weaponName, callback) => {
+	toggleActionButton = (characterId, itemId, itemName, buttonType, clearButtonState = false, callback) => {
 		let buttonState = {};
 		// if no weapon selected or weapon selected doesn't match new weapon selected, set weapon state to new weapon
-		if (Object.keys(this.state.weaponButtonSelected).length === 0 ||
-			(this.state.weaponButtonSelected.characterId !== characterId || this.state.weaponButtonSelected.weaponId !== weaponId)) {
-			buttonState = {characterId, weaponId, weaponName, stats: WeaponTypes[weaponName]};
+		if (!clearButtonState && (Object.keys(this.state.itemButtonSelected).length === 0 ||
+			(this.state.itemButtonSelected.characterId !== characterId || this.state.itemButtonSelected.itemId !== itemId)))
+		{
+			buttonState = {characterId, itemId, itemName, stats: buttonType === 'weapon' ? WeaponTypes[itemName] : ItemTypes[itemName]};
 		}
-		this.setState({weaponButtonSelected: buttonState}, () => {
+		this.setState({itemButtonSelected: buttonState}, () => {
 			if (callback) callback();
 		});
 	}
 
 	/**
-	 * User click handler for clicking on units to determine if it's being selected or acted upon (ie. attacked)
-	 * @param id: string
-	 * @param type: string
+	 * User click handler for clicking on units to determine if it's being selected or acted upon (ie. attacked, healed, etc.)
+	 * @param id: string (target ID)
+	 * @param type: string ('player' or 'creature')
 	 * @param isInRange: boolean
 	 * @param checkLineOfSightToParty: function (from Map)
 	 */
 	handleUnitClick = (id, type, isInRange, checkLineOfSightToParty) => {
-		if (Object.keys(this.state.weaponButtonSelected).length > 0 && isInRange) {
-			// clicked unit is getting attacked
-			const proceedWithAttack = () => {
-				const selectedWeaponInfo = this.state.weaponButtonSelected;
-				const attackProps = {
-					weaponId: selectedWeaponInfo.weaponId,
-					weaponStats: selectedWeaponInfo.stats,
-					creatureData: this.state.mapCreatures[id],
-					pcData: this.state.playerCharacters[this.state.activeCharacter],
+		if (Object.keys(this.state.itemButtonSelected).length > 0 && isInRange) {
+			// clicked unit is getting acted upon
+			const proceedWithAction = () => {
+				const selectedItemInfo = this.state.itemButtonSelected;
+				const activePC = this.state.playerCharacters[this.state.activeCharacter];
+				const actionProps = {
+					itemId: selectedItemInfo.itemId,
+					itemStats: selectedItemInfo.stats,
+					targetData: type === 'creature' ? this.state.mapCreatures[id] : this.state.playerCharacters[id],
+					pcData: activePC,
 					updateCharacter: this.updateCharacters,
 					updateLog: this.updateLog,
 					callback: () => {
-						this.toggleWeapon(selectedWeaponInfo.characterId, selectedWeaponInfo.weaponId, selectedWeaponInfo.weaponName);
-						if (this.state.mapCreatures[id].currentHP <= 0) {
+						this.toggleActionButton(selectedItemInfo.characterId, selectedItemInfo.itemId, selectedItemInfo.itemName, type === 'creature' ? 'weapon': 'item');
+						if (type === 'creature' && this.state.mapCreatures[id].currentHealth <= 0) {
 							this._removeDeadFromTurnOrder(id, this._updateActivePlayerActions, checkLineOfSightToParty);
 						} else {
 							this._updateActivePlayerActions();
 						}
 					}
 				};
-				this.state.playerCharacters[this.state.activeCharacter].attack(attackProps);
+				type === 'creature' ? activePC.attack(actionProps) : activePC.heal(actionProps);
 			}
 			if (!this.state.inTacticalMode) {
 				// not currently necessary to update list as must see creature to attack it, so would already be in list/in combat
 				// but if we add some way later of attacking creature not seen (like an area of effect spell), and it somehow
 				// discovers where player is, then it becomes a threat and will need to call this
-				this.updateThreatList([id], [], proceedWithAttack);
+				this.updateThreatList([id], [], proceedWithAction);
 			} else {
-				proceedWithAttack();
+				proceedWithAction();
 			}
 		} else {
 			this.updateUnitSelectionStatus(id, type);
@@ -606,6 +615,7 @@ class Game extends React.Component {
 	 * a flag used for indicating if there's an update to creature coords (in Map), such as creature dying
 	 * @param id: String
 	 * @param callback: function
+	 * @param checkLineOfSightToParty: function (from Map)
 	 * @private
 	 */
 	_removeDeadFromTurnOrder(id, callback, checkLineOfSightToParty) {
@@ -638,15 +648,15 @@ class Game extends React.Component {
 		}
 
 		// todo: uncomment below and comment Firebase component in render() for testing, remove for prod
-		this.setState({isLoggedIn: true});
+		// this.setState({isLoggedIn: true});
 	}
 
 	render() {
 		return (
 			<div className="game">
-				{/*<Firebase*/}
-				{/*	updateLoggedIn={this.updateLoggedIn}*/}
-				{/*/>*/}
+				<Firebase
+					updateLoggedIn={this.updateLoggedIn}
+				/>
 
 				{this.state.isLoggedIn &&
 					<UI
@@ -663,8 +673,8 @@ class Game extends React.Component {
 						updateUnitSelectionStatus={this.updateUnitSelectionStatus}
 						updateCharacters={this.updateCharacters}
 
-						weaponButtonSelected={this.state.weaponButtonSelected}
-						toggleWeapon={this.toggleWeapon}
+						itemButtonSelected={this.state.itemButtonSelected}
+						toggleActionButton={this.toggleActionButton}
 
 						updateCurrentTurn={this.updateCurrentTurn}
 						activeCharacter={this.state.activeCharacter}
@@ -706,7 +716,7 @@ class Game extends React.Component {
 
 						updateLog={this.updateLog}
 						handleUnitClick={this.handleUnitClick}
-						weaponButtonSelected={this.state.weaponButtonSelected}
+						itemButtonSelected={this.state.itemButtonSelected}
 
 						updateThreatList={this.updateThreatList}
 						threatList={this.state.threatList}

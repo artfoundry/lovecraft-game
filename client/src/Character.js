@@ -20,8 +20,8 @@ class Character extends React.Component {
 		this.agility = props.agility;
 		this.mentalAcuity = props.mentalAcuity;
 		this.initiative = props.mentalAcuity + props.agility;
-		this.startingHP = props.startingHP;
-		this.currentHP = props.startingHP;
+		this.startingHealth = props.startingHealth;
+		this.currentHealth = props.startingHealth;
 		this.startingSanity = props.startingSanity;
 		this.currentSanity = props.startingSanity;
 		this.skills = props.skills;
@@ -33,6 +33,7 @@ class Character extends React.Component {
 		};
 		this.ammo = props.ammo;
 		this.items = props.items;
+		this.maxItems = 12;
 		this.defense = this.agility + (this.items.armor ? this.items.armor.defense : 0);
 		this.damageReduction = this.items.armor ? this.items.armor.defense : 0;
 		this.coords = {};
@@ -48,9 +49,9 @@ class Character extends React.Component {
 	/**
 	 * Carry out an attack on a creature
 	 * @param props : object (
-	 *  weaponId: string,
-	 *  weaponStats: object,
-	 *  creatureData: object,
+	 *  itemId: string,
+	 *  itemStats: object,
+	 *  targetData: object,
 	 *  pcData: object,
 	 *  updateCharacter: function (from App),
 	 *  updateLog: function (from App),
@@ -58,33 +59,63 @@ class Character extends React.Component {
 	 * )
 	 */
 	attack = (props) => {
-		const {weaponId, weaponStats, creatureData, pcData, updateCharacter, updateLog, callback} = props;
+		const {itemId, itemStats, targetData, pcData, updateCharacter, updateLog, callback} = props;
 		let isHit, damage, hitRoll, defenseRoll;
-		let rangedStrHitModifier = weaponStats.usesStr ? Math.round(this.strength / 2) : 0;
+		let rangedStrHitModifier = itemStats.usesStr ? Math.round(this.strength / 2) : 0;
 		let updatedPcData = {...pcData};
-		let updatedCreatureData = {...creatureData};
+		let updatedCreatureData = {...targetData};
 
-		if (weaponStats.ranged) {
+		if (itemStats.ranged) {
 			hitRoll = this.agility + rangedStrHitModifier + diceRoll(20);
-			damage = rangedStrHitModifier + weaponStats.damage + diceRoll(6);
-			const gunType = this.weapons[weaponId].gunType;
-			gunType ? updatedPcData.ammo[gunType]-- : updatedPcData.ammo.stackable[this.weapons[weaponId].name]--;
+			damage = rangedStrHitModifier + itemStats.damage + diceRoll(6) - targetData.damageReduction;
+			const gunType = this.weapons[itemId].gunType;
+			gunType ? updatedPcData.ammo[gunType]-- : updatedPcData.ammo.stackable[this.weapons[itemId].name]--;
 		} else {
 			hitRoll = this.strength + Math.round(this.agility / 2) + diceRoll(20);
-			damage = this.strength + weaponStats.damage + diceRoll(6);
+			damage = this.strength + itemStats.damage + diceRoll(6) - targetData.damageReduction;
 		}
-		defenseRoll = creatureData.defense + diceRoll(6);
+		damage = damage < 0 ? 0 : damage;
+		defenseRoll = targetData.defense + diceRoll(6);
 		isHit = hitRoll >= defenseRoll;
 		updateLog(`${this.name} attacks with ${hitRoll} to hit vs ${defenseRoll} defense`);
 		updateCharacter('player', updatedPcData, pcData.id, false, false, () => {
 			if (isHit) {
-				updatedCreatureData.currentHP -= damage;
-				updateCharacter('creature', updatedCreatureData, creatureData.id, false, false, callback);
+				updatedCreatureData.currentHealth -= damage;
+				updateCharacter('creature', updatedCreatureData, targetData.id, false, false, callback);
 			} else if (callback) {
 				callback();
 			}
 		});
 		updateLog(isHit ? `${this.name} hits for ${damage} damage` : this.name + ' misses');
+	}
+
+	/**
+	 * Carry out a health or sanity heal on a companion
+	 * @param props : object (
+	 *  itemId: string,
+	 *  itemStats: object,
+	 *  targetData: object,
+	 *  pcData: object,
+	 *  updateCharacter: function (from App),
+	 *  updateLog: function (from App),
+	 *  callback: function (from App - calls toggleWeapon, _removeDeadFromTurnOrder if creature dies, then _updateActivePlayerActions)
+	 * )
+	 */
+	heal = (props) => {
+		const {itemId, itemStats, targetData, pcData, updateCharacter, updateLog, callback} = props;
+		const healItem = pcData.items[itemId].name;
+		const targetStat = itemStats.healingType === 'health' ? 'currentHealth' : 'currentSanity';
+		const startingStatValue = itemStats.healingType === 'health' ? 'startingHealth' : 'startingSanity';
+		const healAmount = Math.round(pcData.mentalAcuity / 2) + (itemStats.healingType === 'health' ? diceRoll(12) : diceRoll(4)) + itemStats.healingAmount;
+		let updatedTargetData = {...targetData};
+		const healedValue = targetData[targetStat] + healAmount;
+		updatedTargetData[targetStat] = healedValue > startingStatValue ? startingStatValue : healedValue;
+		let updatedHealerData = {...pcData};
+		delete updatedHealerData.items[itemId];
+		updateCharacter('player', updatedTargetData, targetData.id, false, false, () => {
+			updateLog(`${pcData.name} uses ${healItem} to increase ${targetData.name}'s ${targetStat.substring(7)}`);
+			updateCharacter('player', updatedHealerData, pcData.id, false, false, callback);
+		});
 	}
 
 }
