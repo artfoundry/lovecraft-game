@@ -87,6 +87,7 @@ function CharacterControls(props) {
 	}
 
 	for (const itemId of Object.values(equippedItems)) {
+		// need this check for two-handed weapons, since both hands list the same weaponId
 		const existingWeaponIndex = actionableItems.weapons.findIndex(weapon => weapon.weaponId === itemId);
 		if (currentPCdata.weapons[itemId] && existingWeaponIndex === -1) {
 			const weaponInfo = currentPCdata.weapons[itemId];
@@ -98,19 +99,19 @@ function CharacterControls(props) {
 					actionableItems.weapons.push({weaponId: itemId, weaponName: weaponInfo.name, ammo: props.ammo.stackable[weaponInfo.name]});
 				}
 			} else {
-				actionableItems.weapons.push({weaponId: itemId, weaponName: weaponInfo.name, ammo: -1});
+				actionableItems.weapons.push({weaponId: itemId, weaponName: weaponInfo.name, ammo: null});
 			}
 		}
 	}
 
 	for (const [itemId, itemInfo] of Object.entries(invItems)) {
 		if (itemInfo.itemType === 'Medicine') {
-			const itemIndex = actionableItems.medicine.findIndex(item => item[itemId].name === itemInfo.name);
-			if (itemIndex >= 0) {
-				actionableItems.medicine[itemIndex].amount += 1;
-			} else {
-				actionableItems.medicine.push({[itemId]: {name: itemInfo.name, amount: 1}});
+			const matchingItem = actionableItems.medicine.findLast(item => item.name === itemInfo.name);
+			let existingAmount = 1;
+			if (matchingItem) {
+				existingAmount = matchingItem.amount + 1;
 			}
+			actionableItems.medicine.push({itemId, name: itemInfo.name, amount: existingAmount});
 		}
 	}
 
@@ -122,7 +123,7 @@ function CharacterControls(props) {
 				return (
 					<div className={`weapon-button ${convertObjIdToClassId(weapon.weaponId)}-act ${actionButtonState}`} key={weapon.weaponId} onClick={() => {
 						props.toggleActionButton(props.characterId, weapon.weaponId, weapon.weaponName, 'weapon');
-					}}>{weapon.ammo >= 0 ? weapon.ammo : ''}</div>
+					}}>{weapon.ammo || ''}</div>
 				);
 			})}
 		</div>
@@ -130,14 +131,18 @@ function CharacterControls(props) {
 	const medicineButtons = (
 		<div className='item-buttons-container'>
 			{actionableItems.medicine.map((item, index) => {
-				const itemId = Object.keys(item)[0];
-				actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0) ? 'button-inactive' :
-					(props.isActiveCharacter && props.itemButtonSelected.characterId === props.characterId && props.itemButtonSelected.itemId === itemId) ? 'button-selected': '';
-				return (
-					<div className={`weapon-button ${convertObjIdToClassId(itemId)}-act ${actionButtonState}`} key={itemId} onClick={() => {
-						props.toggleActionButton(props.characterId, itemId, item[itemId].name, 'item');
-					}}>{item.amount}</div>
-				);
+				const itemCount = actionableItems.medicine.findLast(match => match.name === item.name).amount;
+				let button = null;
+				if (item.amount === itemCount) {
+					actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0) ? 'button-inactive' :
+						(props.isActiveCharacter && props.itemButtonSelected.characterId === props.characterId && props.itemButtonSelected.itemId === item.itemId) ? 'button-selected': '';
+					button = (
+						<div className={`weapon-button ${convertObjIdToClassId(item.itemId)}-act ${actionButtonState}`} key={item.itemId} onClick={() => {
+							props.toggleActionButton(props.characterId, item.itemId, item.name, 'item');
+						}}>{itemCount}</div>
+					);
+				}
+				return button;
 			})}
 		</div>
 	);
@@ -358,8 +363,9 @@ function CreatureInfoPanel(props) {
 			<div>Agility: {props.creatureInfo.agility}</div>
 			<div>Mental Acuity: {props.creatureInfo.mentalAcuity}</div>
 			<div>Initiative: {props.creatureInfo.initiative}</div>
-			<div>Defense: {props.creatureInfo.defense}</div>
 			<div>Damage: {props.creatureInfo.damage}</div>
+			<div>Defense: {props.creatureInfo.defense}</div>
+			<div>Damage Reduction: {props.creatureInfo.damageReduction}</div>
 			<div>Range: {props.creatureInfo.range}</div>
 			<div>Speed: {props.creatureInfo.moveSpeed}</div>
 			<div>Perception: {props.creatureInfo.perception}</div>
@@ -403,7 +409,7 @@ function ModeInfoPanel(props) {
 	return (
 		<div>
 			<div
-				className={`general-button ${props.inTacticalMode || !props.isPartyNearby ? 'button-tactical-mode-on' : ''}`}
+				className={`general-button ${props.inTacticalMode ? 'button-tactical-mode-on' : ''}`}
 				onClick={() => {
 					if (props.inTacticalMode) {
 						if (props.threatList.length > 0) {
@@ -435,7 +441,7 @@ function ModeInfoPanel(props) {
 				<div>
 					<div>Turn: {charactersTurn}</div>
 					<div className={'general-button' + turnButtonState} onClick={(e) => {
-						props.toggleActionButton('', '', '', '', true, props.endTurnCallback);
+						props.endTurnCallback();
 					}}>End Turn</div>
 				</div>
 			}

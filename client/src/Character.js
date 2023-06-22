@@ -105,11 +105,11 @@ class Character extends React.Component {
 		const {itemId, itemStats, targetData, pcData, updateCharacter, updateLog, callback} = props;
 		const healItem = pcData.items[itemId].name;
 		const targetStat = itemStats.healingType === 'health' ? 'currentHealth' : 'currentSanity';
-		const startingStatValue = itemStats.healingType === 'health' ? 'startingHealth' : 'startingSanity';
+		const startingStatValue = itemStats.healingType === 'health' ? targetData.startingHealth : targetData.startingSanity;
 		const healAmount = Math.round(pcData.mentalAcuity / 2) + (itemStats.healingType === 'health' ? diceRoll(12) : diceRoll(4)) + itemStats.healingAmount;
 		let updatedTargetData = {...targetData};
-		const healedValue = targetData[targetStat] + healAmount;
-		updatedTargetData[targetStat] = healedValue > startingStatValue ? startingStatValue : healedValue;
+		const healedStatValue = targetData[targetStat] + healAmount;
+		updatedTargetData[targetStat] = healedStatValue > startingStatValue ? startingStatValue : healedStatValue;
 		let updatedHealerData = {...pcData};
 		delete updatedHealerData.items[itemId];
 		updateCharacter('player', updatedTargetData, targetData.id, false, false, () => {

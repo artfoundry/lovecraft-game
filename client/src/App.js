@@ -274,15 +274,7 @@ class Game extends React.Component {
 				this.toggleTacticalMode(isInCombat, callback);
 			// leaving combat...
 			} else if (!isInCombat) {
-				this.updateIfPartyIsNearby(checkLineOfSightToParty, () => {
-					// entering follow mode from combat
-					if (this.state.partyIsNearby && previousListSize > 0) {
-						this.toggleTacticalMode(isInCombat, callback);
-					// already in follow mode
-					} else if (callback) {
-						callback();
-					}
-				});
+				this.updateIfPartyIsNearby(checkLineOfSightToParty, callback);
 			// already/still in combat
 			} else if (callback) {
 				callback();
@@ -297,13 +289,13 @@ class Game extends React.Component {
 	 * @param itemId: String
 	 * @param itemName: String
 	 * @param buttonType: String ('weapon' or 'item')
-	 * @param clearButtonState: Boolean
+	 * @param clearButtonState: Boolean (used when ending a turn to clear button state for char ending its turn)
 	 * @param callback: Function
 	 */
-	toggleActionButton = (characterId, itemId, itemName, buttonType, clearButtonState = false, callback) => {
+	toggleActionButton = (characterId, itemId, itemName, buttonType, callback) => {
 		let buttonState = {};
 		// if no weapon selected or weapon selected doesn't match new weapon selected, set weapon state to new weapon
-		if (!clearButtonState && (Object.keys(this.state.itemButtonSelected).length === 0 ||
+		if (characterId && (Object.keys(this.state.itemButtonSelected).length === 0 ||
 			(this.state.itemButtonSelected.characterId !== characterId || this.state.itemButtonSelected.itemId !== itemId)))
 		{
 			buttonState = {characterId, itemId, itemName, stats: buttonType === 'weapon' ? WeaponTypes[itemName] : ItemTypes[itemName]};
@@ -316,58 +308,56 @@ class Game extends React.Component {
 	/**
 	 * User click handler for clicking on units to determine if it's being selected or acted upon (ie. attacked, healed, etc.)
 	 * @param id: string (target ID)
-	 * @param type: string ('player' or 'creature')
+	 * @param target: string ('player' or 'creature')
 	 * @param isInRange: boolean
 	 * @param checkLineOfSightToParty: function (from Map)
 	 */
-	handleUnitClick = (id, type, isInRange, checkLineOfSightToParty) => {
+	handleUnitClick = (id, target, isInRange, checkLineOfSightToParty) => {
 		if (Object.keys(this.state.itemButtonSelected).length > 0 && isInRange) {
 			// clicked unit is getting acted upon
-			const proceedWithAction = () => {
-				const selectedItemInfo = this.state.itemButtonSelected;
-				const activePC = this.state.playerCharacters[this.state.activeCharacter];
-				const actionProps = {
-					itemId: selectedItemInfo.itemId,
-					itemStats: selectedItemInfo.stats,
-					targetData: type === 'creature' ? this.state.mapCreatures[id] : this.state.playerCharacters[id],
-					pcData: activePC,
-					updateCharacter: this.updateCharacters,
-					updateLog: this.updateLog,
-					callback: () => {
-						this.toggleActionButton(selectedItemInfo.characterId, selectedItemInfo.itemId, selectedItemInfo.itemName, type === 'creature' ? 'weapon': 'item');
-						if (type === 'creature' && this.state.mapCreatures[id].currentHealth <= 0) {
+			const selectedItemInfo = this.state.itemButtonSelected;
+			const activePC = this.state.playerCharacters[this.state.activeCharacter];
+			const actionProps = {
+				itemId: selectedItemInfo.itemId,
+				itemStats: selectedItemInfo.stats,
+				targetData: target === 'creature' ? this.state.mapCreatures[id] : this.state.playerCharacters[id],
+				pcData: activePC,
+				updateCharacter: this.updateCharacters,
+				updateLog: this.updateLog,
+				callback: () => {
+					this.toggleActionButton(selectedItemInfo.characterId, selectedItemInfo.itemId, selectedItemInfo.itemName, target === 'creature' ? 'weapon': 'item', () => {
+						if (target === 'creature' && this.state.mapCreatures[id].currentHealth <= 0) {
 							this._removeDeadFromTurnOrder(id, this._updateActivePlayerActions, checkLineOfSightToParty);
-						} else {
+						} else if (this.state.inTacticalMode) {
 							this._updateActivePlayerActions();
 						}
-					}
-				};
-				type === 'creature' ? activePC.attack(actionProps) : activePC.heal(actionProps);
-			}
-			if (!this.state.inTacticalMode) {
-				// not currently necessary to update list as must see creature to attack it, so would already be in list/in combat
-				// but if we add some way later of attacking creature not seen (like an area of effect spell), and it somehow
-				// discovers where player is, then it becomes a threat and will need to call this
-				this.updateThreatList([id], [], proceedWithAction);
-			} else {
-				proceedWithAction();
-			}
+					});
+				}
+			};
+			target === 'creature' ? activePC.attack(actionProps) : activePC.heal(actionProps);
 		} else {
-			this.updateUnitSelectionStatus(id, type);
+			// clicked unit is just being selected/deselected
+			this.updateUnitSelectionStatus(id, target);
 		}
 	}
 
 	/**
 	 * Increments and sets to state the current turn number (or resets if on last turn of unitTurnOrder),
 	 * as well as resets number of moves and actions taken by the active PC
-	 * then calls function to update what is the active character
+	 * then calls functions to clear any action button from previous char and then update which is the active character
 	 * @param startTurns: boolean (true if starting turns, ie. combat just started)
 	 * @param callback: function
 	 */
 	updateCurrentTurn = (startTurns = false, callback) => {
 		const currentTurn = startTurns || this.state.currentTurn === this.state.unitsTurnOrder.length - 1 ? 0 : this.state.currentTurn + 1;
 		this.setState({currentTurn, activePlayerActionsCompleted: 0, activePlayerMovesCompleted: 0}, () => {
-			this.updateActiveCharacter(callback);
+			if (this.state.playerCharacters[this.state.activeCharacter]) {
+				this.toggleActionButton('', '', '', '', () => {
+					this.updateActiveCharacter(callback);
+				});
+			} else {
+				this.updateActiveCharacter(callback);
+			}
 		});
 	}
 
