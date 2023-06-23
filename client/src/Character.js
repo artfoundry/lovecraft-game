@@ -19,7 +19,7 @@ class Character extends React.Component {
 		this.strength = props.strength;
 		this.agility = props.agility;
 		this.mentalAcuity = props.mentalAcuity;
-		this.initiative = props.mentalAcuity + props.agility;
+		this.initiative = this.calculateInitiative();
 		this.startingHealth = props.startingHealth;
 		this.currentHealth = props.startingHealth;
 		this.startingSanity = props.startingSanity;
@@ -34,12 +34,20 @@ class Character extends React.Component {
 		this.ammo = props.ammo;
 		this.items = props.items;
 		this.maxItems = 12;
-		this.defense = this.agility + (this.items.armor ? this.items.armor.defense : 0);
-		this.damageReduction = this.items.armor ? this.items.armor.defense : 0;
+		this.defense = this.calculateDefense();
+		this.damageReduction = this.equippedItems.armor ? this.items[this.equippedItems.armor].damageReduction : 0;
 		this.coords = {};
 		this.equippedLight = props.equippedLight || null;
 		this.lightRange = this.equippedLight ? this.items[this.equippedLight].range : 0;
 		this.lightTime = this.equippedLight ? this.items[this.equippedLight].time : null;
+	}
+
+	calculateDefense() {
+		return this.agility + (this.equippedItems.armor ? this.items[this.equippedItems.armor].defense : 0);
+	}
+
+	calculateInitiative() {
+		return this.mentalAcuity + this.agility;
 	}
 
 	weaponIsTwoHanded = (weapon) => {

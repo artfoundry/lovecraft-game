@@ -8,7 +8,7 @@ import ItemTypes from './data/itemTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
 import {Exit, LightElement, Character, Tile, Item, Door, MapCover} from './MapElements';
 import {StoneDoor} from './Audio';
-import {convertObjIdToClassId, randomTileMovementValue, convertPosToCoords, convertCoordsToPos, roundTowardZero} from './Utils';
+import {convertObjIdToClassId, randomTileMovementValue, convertPosToCoords, convertCoordsToPos, roundTowardZero, notEnoughSpaceInInventory} from './Utils';
 import './css/map.css';
 import './css/catacombs.css';
 import './css/dungeon.css';
@@ -808,7 +808,7 @@ class Map extends React.Component {
 			dialogClasses: ''
 		};
 		const activePlayer = this.props.playerCharacters[this.props.activeCharacter];
-		const isActivePlayerInvFull = activePlayer && Object.keys(activePlayer.items).length === activePlayer.maxItems;
+		const isActivePlayerInvFull = activePlayer && notEnoughSpaceInInventory(1, 0, activePlayer);
 
 		for (const [id, info] of Object.entries(this.props.mapObjects)) {
 			let idConvertedToClassName = id.includes('Ammo') ? 'ammo' : convertObjIdToClassId(id);
@@ -2074,13 +2074,12 @@ class Map extends React.Component {
 
 			let newCreatureCoordsArray = [];
 			let playerPos = '';
-			let targetPlayerID = '';
 			let targetPlayerPos = '';
 			let targetPlayerDistance = null;
 			let targetPlayerData = {};
 
 			// find closest player for creature to focus on
-			for (const [playerID, playerData] of Object.entries(this.props.playerCharacters)) {
+			for (const playerData of Object.values(this.props.playerCharacters)) {
 				playerPos = convertCoordsToPos(playerData.coords);
 				let playerDistance = 0;
 				let searchDistance = 0;
@@ -2096,7 +2095,6 @@ class Map extends React.Component {
 				if (playerDistance > 0 && (!targetPlayerDistance || playerDistance < targetPlayerDistance)) {
 					targetPlayerDistance = playerDistance;
 					targetPlayerPos = playerPos;
-					targetPlayerID = playerID;
 					targetPlayerData = playerData;
 				}
 			}
@@ -2114,7 +2112,7 @@ class Map extends React.Component {
 				if (creatureData.currentHealth < (creatureData.startingHealth * this.creatureSurvivalHpPercent)) {
 					// if player char is within attack range, then attack
 					if (targetPlayerDistance <= creatureData.range) {
-						this.props.updateLog(`${creatureID} attacks player at ${JSON.stringify(targetPlayerPos)}`);
+						// this.props.updateLog(`${creatureID} attacks player at ${JSON.stringify(targetPlayerPos)}`);
 						this.props.mapCreatures[creatureID].attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog);
 					}
 					// then move away from player
@@ -2137,7 +2135,7 @@ class Map extends React.Component {
 					this._storeNewCreatureCoords(creatureID, newCreatureCoordsArray, () => {
 						// if player char is within attack range, then attack
 						if (targetPlayerDistance <= creatureData.range) {
-							this.props.updateLog(`${creatureID} attacks player at ${JSON.stringify(targetPlayerPos)}`);
+							// this.props.updateLog(`${creatureID} attacks player at ${JSON.stringify(targetPlayerPos)}`);
 							this.props.mapCreatures[creatureID].attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog, updateThreatAndCurrentTurn);
 						} else {
 							this.props.updateCurrentTurn();
@@ -2145,7 +2143,7 @@ class Map extends React.Component {
 					});
 					// otherwise player is in attack range, so attack
 				} else {
-					this.props.updateLog(`${creatureID} attacks player at ${JSON.stringify(targetPlayerPos)}`);
+					// this.props.updateLog(`${creatureID} attacks player at ${JSON.stringify(targetPlayerPos)}`);
 					this.props.mapCreatures[creatureID].attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog, updateThreatAndCurrentTurn);
 				}
 				creatureDidAct = true;

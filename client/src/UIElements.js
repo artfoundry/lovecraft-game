@@ -1,5 +1,5 @@
 import React from 'react';
-import {convertObjIdToClassId} from './Utils';
+import {convertObjIdToClassId, notEnoughSpaceInInventory} from './Utils';
 
 let draggedItem = null;
 let draggedItemSourceLoc = null;
@@ -24,7 +24,6 @@ function CharacterControls(props) {
 		const sourcePCdata = {...allPCdata[draggedItem.sourcePC]};
 		const currentPCdata = {...allPCdata[props.characterId]};
 		let allPlayersInv = {...props.entireInventory};
-		const currentPCinvSize = Object.keys(currentPCdata.items).length;
 		let dialogProps = null;
 
 		if (Math.abs(currentPCdata.coords.xPos - sourcePCdata.coords.xPos) > 1 || Math.abs(currentPCdata.coords.yPos - sourcePCdata.coords.yPos) > 1) {
@@ -38,13 +37,24 @@ function CharacterControls(props) {
 				actionButtonCallback: null,
 				dialogClasses: ''
 			};
-		} else if (currentPCinvSize < currentPCdata.maxItems) {
+		} else if (notEnoughSpaceInInventory(1, 0, currentPCdata)) {
+			dialogProps = {
+				dialogContent: "That character's inventory is full. Free up some space first.",
+				closeButtonText: 'Ok',
+				closeButtonCallback: null,
+				disableCloseButton: false,
+				actionButtonVisible: false,
+				actionButtonText: '',
+				actionButtonCallback: null,
+				dialogClasses: ''
+			};
+		} else {
 			const sourceBoxIndex = draggedItemSourceLoc.match(/\d+/);
 			const firstOpenInvSlot = allPlayersInv[props.characterId].indexOf(null);
 
 			// add dragged item to current pc inv
 			allPlayersInv[props.characterId].splice(firstOpenInvSlot, 1, draggedItem.id);
-			currentPCdata.items[draggedItem.id] = draggedItem.data;
+			draggedItem.data.itemType ? currentPCdata.items[draggedItem.id] = draggedItem.data : currentPCdata.weapons[draggedItem.id] = draggedItem.data;
 
 			// remove dragged item from source pc inv
 			// if no source box index, then it was dragged from being equipped
@@ -54,7 +64,9 @@ function CharacterControls(props) {
 			draggedItem.data.itemType ? delete sourcePCdata.items[draggedItem.id] : delete sourcePCdata.weapons[draggedItem.id];
 			if (sourcePCdata.equippedItems.loadout1.left === draggedItem.id) {
 				sourcePCdata.equippedItems.loadout1.left = '';
-			} else if (sourcePCdata.equippedItems.loadout1.right === draggedItem.id) {
+			}
+			// this is not an else if because a two handed weapon would take up both left and right
+			if (sourcePCdata.equippedItems.loadout1.right === draggedItem.id) {
 				sourcePCdata.equippedItems.loadout1.right = '';
 			}
 			if (sourcePCdata.equippedLight === draggedItem.id) {
@@ -69,18 +81,8 @@ function CharacterControls(props) {
 					props.updateInventory(draggedItem.sourcePC, allPlayersInv[draggedItem.sourcePC]);
 				});
 			});
-		} else {
-			dialogProps = {
-				dialogContent: 'That inventory is full. Free up some space first.',
-				closeButtonText: 'Ok',
-				closeButtonCallback: null,
-				disableCloseButton: false,
-				actionButtonVisible: false,
-				actionButtonText: '',
-				actionButtonCallback: null,
-				dialogClasses: ''
-			};
 		}
+
 		if (dialogProps) {
 			props.setShowDialogProps(true, dialogProps);
 		}
@@ -164,11 +166,24 @@ function CharacterControls(props) {
 	);
 }
 
+
+
 function CharacterInfoPanel(props) {
 	const skillList = Object.values(props.characterInfo.skills).map(item => <li key={item + Math.random()}>{item}</li>);
 	const equippedLight = props.characterInfo.items[props.characterInfo.equippedLight];
 	const equippedItems = props.characterInfo.equippedItems;
+	const equippedIsTwoHanded = equippedItems.loadout1.right && equippedItems.loadout1.right === equippedItems.loadout1.left;
 	const updateData = {...props.characterInfo};
+	const notEnoughSpaceDialogProps = {
+		dialogContent: `There is not enough inventory space to do that.`,
+		closeButtonText: 'Ok',
+		closeButtonCallback: null,
+		disableCloseButton: false,
+		actionButtonVisible: false,
+		actionButtonText: '',
+		actionButtonCallback: null,
+		dialogClasses: ''
+	}
 	const dragItem = (e) => {
 		const itemId = e.target.id.includes('-2handed') ? e.target.id.slice(0, e.target.id.indexOf('-2handed')) : e.target.id;
 		draggedItem = {id: itemId, data: updateData.items[itemId] || updateData.weapons[itemId], sourcePC: updateData.id};
@@ -180,56 +195,115 @@ function CharacterInfoPanel(props) {
 	}
 	const dropItemToEquipped = (e) => {
 		e.preventDefault();
-		if (draggedItem.data.itemType && draggedItem.data.itemType !== 'Light') {
-			return;
-		}
 		const targetClasses = e.target.className;
 		const parentClasses = e.target.parentElement.className;
 		// don't know which hand dragged to and don't know if that hand already has an item equipped (if it doesn't, target class would include the "box" class)
-		const hand = targetClasses.includes('char-info-paper-doll-box') ? (targetClasses.includes('right') ? 'right' : 'left') : (parentClasses.includes('right') ? 'right' : 'left');
-		const oppositeHand = hand === 'right' ? 'left' : 'right';
+		const destination = targetClasses.includes('-arm') ? 'hand-swap' : parentClasses.includes('-arm') ? 'hand' : 'body';
+
+		// if item is dragged to a hand and is a non-light item (not including weapons) or item is dragged to body and isn't armor, exit out
+		if ((destination.includes('hand') && (draggedItem.data.itemType && draggedItem.data.itemType !== 'Light')) ||
+			(destination === 'body' && (!draggedItem.data.itemType || draggedItem.data.itemType !== 'Armor')))
+		{
+			return;
+		}
+
+		let hand = '';
+		let oppositeHand = '';
 		let tempAllItemsList = [...props.entireInventory[props.characterInfo.id]];
-		const sourceBoxIndex = +draggedItemSourceLoc.match(/\d+/)[0];
+		const sourceBoxIndex = draggedItemSourceLoc.match(/\d+/);
+		const loadout1 = equippedItems.loadout1;
+
+		if (destination === 'hand-swap') {
+			hand = targetClasses.includes('right') ? 'right' : 'left';
+		} else if (destination === 'hand') {
+			hand = parentClasses.includes('right') ? 'right' : 'left';
+		}
+		if (hand) {
+			oppositeHand = hand === 'right' ? 'left' : 'right';
+		}
 
 		// if dragged item is a light
 		if (draggedItem.data.itemType === 'Light') {
 			updateData.equippedLight = draggedItem.id;
 			updateData.lightRange = draggedItem.data.range;
 		// or if an equipped light is being unequipped (and not by a light)
-		} else if (updateData.equippedItems.loadout1[hand] === updateData.equippedLight ||
-			(draggedItem.data.twoHanded && updateData.equippedItems.loadout1[oppositeHand] === updateData.equippedLight)) {
+		} else if (hand && sourceBoxIndex && (loadout1[hand] === updateData.equippedLight ||
+			(draggedItem.data.twoHanded && loadout1[oppositeHand] === updateData.equippedLight))) {
 			updateData.equippedLight = null;
 			updateData.lightRange = 0;
 		}
 		// if dragged item is two-handed
-		if (draggedItem.data.twoHanded) {
+		if (hand && draggedItem.data.twoHanded) {
+			if (loadout1.right && loadout1.left && loadout1.right !== loadout1.left && notEnoughSpaceInInventory(2, 1, props.characterInfo)) {
+				const dialogProps = {
+					dialogContent: `The ${draggedItem.data.name} is two-handed, and there is not enough space in the inventory for both currently equipped items.`,
+					closeButtonText: 'Ok',
+					closeButtonCallback: null,
+					disableCloseButton: false,
+					actionButtonVisible: false,
+					actionButtonText: '',
+					actionButtonCallback: null,
+					dialogClasses: ''
+				}
+				props.setShowDialogProps(true, dialogProps);
+				return;
+			}
+			updateData.equippedItems.loadout1[hand] = draggedItem.id;
 			updateData.equippedItems.loadout1[oppositeHand] = draggedItem.id;
 		// or if we're replacing a two-handed item with a one-handed item
-		} else if (e.target.id.includes('2handed')) {
+		} else if (hand && equippedIsTwoHanded) {
+			updateData.equippedItems.loadout1[hand] = draggedItem.id;
 			updateData.equippedItems.loadout1[oppositeHand] = '';
+		// or we're just equipping a one-handed item
+		} else if (hand) {
+			// if item is dragged from one hand to another, sourceBoxIndex is null
+			if (!sourceBoxIndex) {
+				updateData.equippedItems.loadout1[oppositeHand] = updateData.equippedItems.loadout1[hand];
+			}
+			updateData.equippedItems.loadout1[hand] = draggedItem.id;
+		// or we're equipping a body item
+		} else if (destination === 'body') {
+			updateData.equippedItems.armor = draggedItem.id;
+			updateData.defense = props.characterInfo.calculateDefense();
+			updateData.damageReduction = draggedItem.data.damageReduction;
 		}
-		updateData.equippedItems.loadout1[hand] = draggedItem.id;
-		tempAllItemsList.splice(sourceBoxIndex, 1, null);
+
+		// if item is dragged from one hand to another, sourceBoxIndex is null
+		if (sourceBoxIndex) {
+			tempAllItemsList.splice(+sourceBoxIndex[0], 1, null);
+		}
 		props.updateInventory(props.characterInfo.id, tempAllItemsList, () => {
 			props.updateCharacters('player', updateData, props.characterInfo.id, false, false);
 		});
 	};
 	const dropItemToInv = (e) => {
 		e.preventDefault();
+		if (notEnoughSpaceInInventory(1, 0, props.characterInfo)) {
+			props.setShowDialogProps(true, notEnoughSpaceDialogProps);
+			return;
+		}
+
 		let draggingEquippedItem = false;
-		if (equippedItems.loadout1.left === draggedItem.id) {
+		if (equippedItems.armor === draggedItem.id) {
+			updateData.equippedItems.armor = '';
+			updateData.defense = props.characterInfo.calculateDefense();
+			updateData.damageReduction = 0;
+		} else if (equippedItems.loadout1.left === draggedItem.id) {
 			updateData.equippedItems.loadout1.left = '';
 			draggingEquippedItem = true;
 		}
+		// this is not an else if because a two handed weapon would take up both left and right
 		if (equippedItems.loadout1.right === draggedItem.id) {
 			updateData.equippedItems.loadout1.right = '';
 			draggingEquippedItem = true;
 		}
+
 		if (draggedItem.data.itemType && draggedItem.data.itemType === 'Light' && updateData.equippedLight === draggedItem.id) {
 			updateData.equippedLight = null;
 			updateData.lightRange = 0;
 			draggingEquippedItem = true;
 		}
+
 		if (draggingEquippedItem) {
 			props.updateCharacters('player', updateData, props.characterInfo.id, false, false);
 		} else {
@@ -273,6 +347,11 @@ function CharacterInfoPanel(props) {
 		</div>
 	);
 
+	const numItemsInLoadout1 = equippedIsTwoHanded || (equippedItems.loadout1.right && !equippedItems.loadout1.left) || (!equippedItems.loadout1.right && equippedItems.loadout1.left) ? 1 :
+		(equippedItems.loadout1.right && equippedItems.loadout1.left && equippedItems.loadout1.right !== equippedItems.loadout1.left) ? 2 : 0;
+	const numItemsInLoadout2 = (equippedItems.loadout2.right && equippedItems.loadout2.left && equippedItems.loadout2.right === equippedItems.loadout2.left) ||
+		(equippedItems.loadout2.right && !equippedItems.loadout2.left) || (!equippedItems.loadout2.right && equippedItems.loadout2.left) ? 1 :
+		(equippedItems.loadout2.right && equippedItems.loadout2.left && equippedItems.loadout2.right !== equippedItems.loadout2.left) ? 2 : 0;
 	return (
 		<div className={`character-info-container ui-panel ${props.characterIsSelected ? '' : 'hide'}`}>
 			<div className='char-info-header'>
@@ -303,7 +382,8 @@ function CharacterInfoPanel(props) {
 							onDrop={(e) => {dropItemToEquipped(e)}}
 						>
 							<div
-								id={equippedItems.loadout1.right === equippedItems.loadout1.left ? equippedItems.loadout1.right + '-2handed' : equippedItems.loadout1.right}
+								id={equippedIsTwoHanded ? equippedItems.loadout1.right + '-2handed' :
+									equippedItems.loadout1.right ? equippedItems.loadout1.right : 'right-hand'}
 								className={`${convertObjIdToClassId(equippedItems.loadout1.right)}-inv`}
 								draggable={true}
 								onDragStart={(e) => {dragItem(e, equippedItems.loadout1.right)}}
@@ -316,14 +396,21 @@ function CharacterInfoPanel(props) {
 							onDrop={(e) => {dropItemToEquipped(e)}}
 						>
 							<div
-								id={equippedItems.loadout1.left === equippedItems.loadout1.right ? equippedItems.loadout1.left + '-2handed' : equippedItems.loadout1.left}
+								id={equippedIsTwoHanded ? equippedItems.loadout1.left + '-2handed' :
+									equippedItems.loadout1.left ? equippedItems.loadout1.left : 'left-hand'}
 								className={`${convertObjIdToClassId(equippedItems.loadout1.left)}-inv`}
 								draggable={true}
 								onDragStart={(e) => {dragItem(e, equippedItems.loadout1.left)}}
 							>{equippedItems.loadout1.left ? '' : 'Left Hand'}</div>
 						</div>
 					</div>
-					<div className='char-info-equip-toggle-button general-button' onClick={() => props.switchEquipment(props.characterInfo.id)}>Switch equipment</div>
+					<div className='char-info-equip-toggle-button general-button' onClick={() => {
+						if (!notEnoughSpaceInInventory(numItemsInLoadout1, numItemsInLoadout2, props.characterInfo)) {
+							props.switchEquipment(props.characterInfo.id)
+						} else {
+							props.setShowDialogProps(true, notEnoughSpaceDialogProps);
+						}
+					}}>Switch equipment</div>
 				</div>
 
 				<div className='char-info-stats-container'>
@@ -425,7 +512,7 @@ function ModeInfoPanel(props) {
 						props.toggleTacticalMode(true);
 					}
 				}}>
-				{props.inTacticalMode || !props.isPartyNearby ? 'Tactical Mode' : 'Follow Mode'}
+				{props.inTacticalMode ? 'Tactical Mode' : 'Follow Mode'}
 			</div>
 			{!props.inTacticalMode && props.isPartyNearby &&
 				<label>

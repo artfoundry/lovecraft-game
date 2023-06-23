@@ -601,8 +601,7 @@ class Game extends React.Component {
 	}
 
 	/**
-	 * Updates to state the turn order with the dead unit removed and
-	 * a flag used for indicating if there's an update to creature coords (in Map), such as creature dying
+	 * Updates to state the turn order with the dead unit removed
 	 * @param id: String
 	 * @param callback: function
 	 * @param checkLineOfSightToParty: function (from Map)
@@ -620,7 +619,7 @@ class Game extends React.Component {
 			}
 			index++;
 		}
-		this.updateLog(`${id} is dead!`);
+		this.updateLog(`The ${this.state.mapCreatures[id].name} is dead!`);
 		this.setState({unitsTurnOrder}, () => {
 			this.updateThreatList([], [id], callback, checkLineOfSightToParty);
 		});

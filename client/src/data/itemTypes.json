@@ -23,7 +23,8 @@
   },
   "Leather Jacket": {
     "itemType": "Armor",
-    "defense": 3
+    "defense": 3,
+    "damageReduction": 1
   },
   "Ammo": ["handgun", "shotgun", "machineGun"]
 }

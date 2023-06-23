@@ -46,6 +46,23 @@ export function roundTowardZero(value) {
 	return Math.floor(Math.abs(value)) * sign;
 }
 
+export function notEnoughSpaceInInventory(numItemsMovingIntoInv, numItemsMovingOutOfInv, currentPCdata) {
+	const loadout1Items = currentPCdata.equippedItems.loadout1;
+	const maxInvSize = currentPCdata.maxItems;
+	let numEquippedItems = 0;
+	// if equipped with a two handed weapon or just 1 item
+	if ((loadout1Items.right && loadout1Items.left && loadout1Items.right === loadout1Items.left) ||
+		(!loadout1Items.right && loadout1Items.left) || (loadout1Items.right && !loadout1Items.left))
+	{
+		numEquippedItems = 1;
+		// otherwise if equipped with two separate items
+	} else if (loadout1Items.right && loadout1Items.left) {
+		numEquippedItems = 2;
+	}
+	const playerInvCount = Object.keys(currentPCdata.items).length + Object.keys(currentPCdata.weapons).length - numEquippedItems
+	return (playerInvCount + numItemsMovingIntoInv - numItemsMovingOutOfInv) > maxInvSize;
+}
+
 // just for testing purposes
 export function placeTileDotForTesting(coords) {
 	let dot = document.createElement('div');

@@ -245,6 +245,7 @@ class UI extends React.Component {
 						entireInventory={this.state.entireInventory}
 						updateInventory={this.updateInventory}
 						ammoList={this._calculateAmmo()}
+						setShowDialogProps={this.props.setShowDialogProps}
 					/>
 				}
 

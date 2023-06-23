@@ -47,8 +47,8 @@ class Creature extends React.Component {
 		damage = damage < 0 ? 0 : damage;
 		isHit = hitRoll >= defenseRoll;
 
-		updateLog(`${this.name} attacks with ${hitRoll} to hit vs ${defenseRoll} defense`);
-		updateLog(isHit ? `${this.name} hits ${targetData.name} for ${damage} damage` : this.name + ' misses');
+		updateLog(`A ${this.name} attacks ${targetData.name} with ${hitRoll} to hit vs ${defenseRoll} defense`);
+		updateLog(isHit ? `The ${this.name} hits for ${damage} damage` : `The ${this.name} misses`);
 		if (isHit) {
 			targetData.currentHealth -= damage;
 			updateTarget('player', targetData, targetData.id, false, false, updateTurnCallback);
