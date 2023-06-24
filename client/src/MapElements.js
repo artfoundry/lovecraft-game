@@ -29,17 +29,17 @@ function Exit(props) {
 }
 
 function Tile(props) {
-	const isTopOrBottomWall = props.classStrProp.includes('top-wall') || props.classStrProp.includes('bottom-wall');
-	const tileType = props.tileTypeProp === 'floor' || (props.tileTypeProp === 'wall' && isTopOrBottomWall) ? randomTileVariant() : '';
+	const isTopOrBottomWall = props.classStr.includes('top-wall') || props.classStr.includes('bottom-wall');
+	const tileType = props.tileType === 'floor' || (props.tileType === 'wall' && isTopOrBottomWall) ? randomTileVariant() : '';
 
 	const [randomizedVariantSuffix] = useState(tileType);
 
 	return (
-		<div className={`tile ${props.classStrProp}${randomizedVariantSuffix}`}
+		<div className={`tile ${props.classStr}${randomizedVariantSuffix}`}
 		     style={{...props.styleProp, fontSize: '18px'}}
-		     data-tile-num={props.tileNameProp}
+		     data-tile-num={props.tileName}
 		     onClick={e => {
-			     props.moveCharacterProp(props.tileNameProp, e);
+			     props.moveCharacter(props.tileName, e);
 		     }}>
 		</div>
 	);

@@ -680,11 +680,11 @@ class Map extends React.Component {
 
 		return (<Tile
 			key={tilePos}
-			tileTypeProp={tileData.type}
+			tileType={tileData.type}
 			styleProp={tileStyle}
-			tileNameProp={convertCoordsToPos(tileData)}
-			classStrProp={allClasses}
-			moveCharacterProp={(tilePos) => {this.checkIfTileOrObject(tilePos, null)}} />);
+			tileName={convertCoordsToPos(tileData)}
+			classStr={allClasses}
+			moveCharacter={(tilePos) => {this.checkIfTileOrObject(tilePos, null)}} />);
 	}
 
 	/**
@@ -2249,8 +2249,12 @@ class Map extends React.Component {
 			const threatLists = this._findChangesToNearbyThreats(allPlayerPos, creaturePositions);
 			if (threatLists.threatListToAdd.length > 0 || threatLists.threatListToRemove.length > 0) {
 				this.props.updateThreatList(threatLists.threatListToAdd, threatLists.threatListToRemove, null, this.isInLineOfSight);
-			} else if (!this.props.inTacticalMode) {
-				this.props.updateIfPartyIsNearby(this.isInLineOfSight);
+			} else {
+				this.props.updateIfPartyIsNearby(this.isInLineOfSight, () => {
+					if (!this.props.isPartyNearby && !this.props.inTacticalMode) {
+						this.props.toggleTacticalMode(true);
+					}
+				});
 			}
 		});
 	}

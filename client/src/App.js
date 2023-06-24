@@ -709,6 +709,7 @@ class Game extends React.Component {
 
 						updateThreatList={this.updateThreatList}
 						threatList={this.state.threatList}
+						toggleTacticalMode={this.toggleTacticalMode}
 						inTacticalMode={this.state.inTacticalMode}
 						isPartyNearby={this.state.partyIsNearby}
 						updateIfPartyIsNearby={this.updateIfPartyIsNearby}

@@ -488,7 +488,6 @@ function ModeInfoPanel(props) {
 		actionButtonCallback:  null,
 		dialogClasses: ''
 	}
-	const turnButtonState = props.inTacticalMode || !props.isPartyNearby ? '' : ' button-inactive';
 	const activePlayerObject = props.players[props.activeCharacter];
 	const charactersTurn = activePlayerObject && (props.inTacticalMode || !props.isPartyNearby) ? activePlayerObject.name :
 		props.inTacticalMode && props.threatList.length > 0 ? 'Enemies moving...' : 'Something creeps deep in the darkness...';
@@ -496,7 +495,7 @@ function ModeInfoPanel(props) {
 	return (
 		<div>
 			<div
-				className={`general-button ${props.inTacticalMode ? 'button-tactical-mode-on' : ''}`}
+				className={'general-button' + (props.inTacticalMode ? ' button-tactical-mode-on' : '')}
 				onClick={() => {
 					if (props.inTacticalMode) {
 						if (props.threatList.length > 0) {
@@ -512,7 +511,7 @@ function ModeInfoPanel(props) {
 						props.toggleTacticalMode(true);
 					}
 				}}>
-				{props.inTacticalMode ? 'Tactical Mode' : 'Follow Mode'}
+				{props.inTacticalMode ? 'In Tactical Mode' : 'In Follow Mode'}
 			</div>
 			{!props.inTacticalMode && props.isPartyNearby &&
 				<label>
@@ -527,7 +526,7 @@ function ModeInfoPanel(props) {
 			{(props.inTacticalMode || !props.isPartyNearby) &&
 				<div>
 					<div>Turn: {charactersTurn}</div>
-					<div className={'general-button' + turnButtonState} onClick={(e) => {
+					<div className='general-button' onClick={(e) => {
 						props.endTurnCallback();
 					}}>End Turn</div>
 				</div>
