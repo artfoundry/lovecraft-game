@@ -517,7 +517,7 @@ function ModeInfoPanel(props) {
 				<label>
 					<span>Leader: </span>
 					<select name='leader' value={props.activeCharacter} onChange={e => {
-						props.updateActiveCharacter(null, e.target.value);
+						props.updateActiveCharacter(() => props.updateFollowModeMoves([]), e.target.value);
 					}}>
 						{props.players && <ListOptions />}
 					</select>

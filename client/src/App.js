@@ -40,6 +40,7 @@ class Game extends React.Component {
 			mapCreatures: {},
 			mapObjects: {},
 			unitsTurnOrder: [],
+			followModeMoves: [],
 			currentTurn: 0,
 			activeCharacter: this.startingPlayerCharacters[0],
 			activePlayerMovesCompleted: 0,
@@ -351,7 +352,7 @@ class Game extends React.Component {
 	updateCurrentTurn = (startTurns = false, callback) => {
 		const currentTurn = startTurns || this.state.currentTurn === this.state.unitsTurnOrder.length - 1 ? 0 : this.state.currentTurn + 1;
 		this.setState({currentTurn, activePlayerActionsCompleted: 0, activePlayerMovesCompleted: 0}, () => {
-			if (this.state.playerCharacters[this.state.activeCharacter]) {
+			if (this.state.playerCharacters[this.state.activeCharacter] && this.state.itemButtonSelected) {
 				this.toggleActionButton('', '', '', '', () => {
 					this.updateActiveCharacter(callback);
 				});
@@ -401,6 +402,17 @@ class Game extends React.Component {
 			playerFollowOrder.unshift(newLeader);
 		}
 		this.setState({activeCharacter: id || currentTurnUnitInfo.id, playerFollowOrder}, () => {
+			if (callback) callback();
+		});
+	}
+
+	/**
+	 * Updates list of PC positions for follow mode
+	 * @param updatedList: array (of strings - positions of PCs, updated in moveCharacter in Map)
+	 * @param callback
+	 */
+	updateFollowModeMoves = (updatedList, callback) => {
+		this.setState({followModeMoves: updatedList}, () => {
 			if (callback) callback();
 		});
 	}
@@ -676,6 +688,7 @@ class Game extends React.Component {
 						isPartyNearby={this.state.partyIsNearby}
 						modeInfo={{inTacticalMode: this.state.inTacticalMode, turn: this.state.currentTurn + 1}}
 						updateActiveCharacter={this.updateActiveCharacter}
+						updateFollowModeMoves={this.updateFollowModeMoves}
 					/>
 				}
 
@@ -714,6 +727,8 @@ class Game extends React.Component {
 						isPartyNearby={this.state.partyIsNearby}
 						updateIfPartyIsNearby={this.updateIfPartyIsNearby}
 						playerFollowOrder={this.state.playerFollowOrder}
+						updateFollowModeMoves={this.updateFollowModeMoves}
+						followModeMoves={this.state.followModeMoves}
 					/>
 				}
 

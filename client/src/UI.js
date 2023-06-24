@@ -220,6 +220,7 @@ class UI extends React.Component {
 								players={this.props.playerCharacters}
 								activeCharacter={this.props.activeCharacter}
 								updateActiveCharacter={this.props.updateActiveCharacter}
+								updateFollowModeMoves={this.props.updateFollowModeMoves}
 								endTurnCallback={this.props.updateCurrentTurn}
 								toggleActionButton={this.props.toggleActionButton}
 								updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}

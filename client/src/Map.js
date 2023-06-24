@@ -66,7 +66,6 @@ class Map extends React.Component {
 			creaturesPlaced: false,
 			objectsPlaced: false,
 			playerVisited: {},
-			followModeMoves: [],
 			mapLayout: {},
 			mapLayoutDone: false,
 			exitPosition: {},
@@ -89,7 +88,6 @@ class Map extends React.Component {
 			creaturesPlaced: false,
 			objectsPlaced: false,
 			playerVisited: {},
-			followModeMoves: [],
 			mapLayout: {},
 			mapLayoutDone: false,
 			exitPosition: {},
@@ -1672,6 +1670,7 @@ class Map extends React.Component {
 				if (tiles.floors[creature.pos]) {
 					if (!this.props.threatList.includes(creature.id)) {
 						threatLists.threatListToAdd.push(creature.id);
+					// any creatures that are in view, remove from the threatListToRemove (thus, don't remove from the App's threatList)
 					} else if (threatLists.threatListToRemove.includes(creature.id)) {
 						threatLists.threatListToRemove.splice(threatLists.threatListToRemove.indexOf(creature.id), 1);
 					}
@@ -1799,7 +1798,7 @@ class Map extends React.Component {
 		// Find all visited tiles for determining lighting
 		const playerVisitedUpdatedState = {...this.state.playerVisited, ...this._findVisitedTiles(newCoords)};
 
-		const followModeMoves = inFollowMode ? [...this.state.followModeMoves] : [];
+		const followModeMoves = inFollowMode ? [...this.props.followModeMoves] : [];
 		// only update followModeMoves if we're moving the leader
 		// newest pos at end, oldest pos at beginning of array
 		if (inFollowMode && activePC === this.props.activeCharacter) {
@@ -1811,6 +1810,7 @@ class Map extends React.Component {
 
 		let updateData = {coords: newCoords};
 		const activePlayerData = this.props.playerCharacters[activePC];
+		// reduce light time remaining and range if time is really low
 		if (activePlayerData.equippedLight) {
 			updateData.items = activePlayerData.items;
 			let equippedLight = updateData.items[activePlayerData.equippedLight];
@@ -1827,14 +1827,21 @@ class Map extends React.Component {
 		this.props.updateCharacters('player', updateData, activePC, false, false, () => {
 			this.setState(prevState => ({
 				playerVisited: playerVisitedUpdatedState || {...prevState.playerVisited},
-				playerPlaced: true,
-				followModeMoves
+				playerPlaced: true
 			}), () => {
 				if (activePC === this.props.activeCharacter) {
 					this._moveMap();
 				}
 				if (tilePath.length === 0) {
 					this._checkForExit();
+				}
+
+				const updatePlayerMovesAndPartyStatus = () => {
+					this.props.updateActivePlayerMoves();
+					// if not in combat, check if party is nearby
+					if (this.props.threatList.length === 0) {
+						this.props.updateIfPartyIsNearby(this.isInLineOfSight);
+					}
 				}
 
 				// Find any creatures in range that could be a threat
@@ -1844,46 +1851,45 @@ class Map extends React.Component {
 				const threatLists = this._findChangesToNearbyThreats(playerPositions, creaturePositions);
 				if (threatLists.threatListToAdd.length > 0 || threatLists.threatListToRemove.length > 0) {
 					this.props.updateThreatList(threatLists.threatListToAdd, threatLists.threatListToRemove, () => {
-						// need to use preset value so if just now coming across threats, won't update player move count
+						// If previously in tactical mode before most recent move (and still in tactical mode), then update
 						if (!inFollowMode) {
-							this.props.updateActivePlayerMoves();
+							updatePlayerMovesAndPartyStatus();
 						}
 					}, this.isInLineOfSight)
-				}
-
-				// If either in combat or not in combat but party not nearby
-				if (!inFollowMode) {
-					this.props.updateActivePlayerMoves();
-					// not in combat, so party not nearby
-					if (this.props.threatList.length === 0) {
-						this.props.updateIfPartyIsNearby(this.isInLineOfSight);
-					}
 				} else {
-					// strip out the ids to make finding available pos easier
-					const listOfPlayerPos = playerPositions.map(player => player.pos);
-					let newFollowerPos = this.state.followModeMoves.find(pos => !listOfPlayerPos.includes(pos));
-					// if leader has moved at least 2x, there is at least 1 follower, and pc just moved was the leader,
-					// then call moveCharacter to update first follower next avail pos in followModeMoves array
-					if (this.state.followModeMoves.length >= 2 && this.props.playerFollowOrder.length >= 2 && !pcToMove) {
-						// to force characters to move one space at a time
-						setTimeout(() => {
-							this.moveCharacter(tilePath, newFollowerPos, this.props.playerFollowOrder[1]);
-						}, this.movementDelay);
+					this.props.updateFollowModeMoves(followModeMoves, () => {
+						// If either in combat or not in combat but party not nearby
+						if (this.props.inTacticalMode) {
+							updatePlayerMovesAndPartyStatus();
+							// can do follow mode as long as not in tactical mode either from before most recent move or after
+						} else {
+							// strip out the ids to make finding available pos easier
+							const listOfPlayerPos = playerPositions.map(player => player.pos);
+							let newFollowerPos = this.props.followModeMoves.find(pos => !listOfPlayerPos.includes(pos));
+							// if leader has moved at least 2x, there is at least 1 follower, and pc just moved was the leader,
+							// then call moveCharacter to update first follower next avail pos in followModeMoves array
+							if (this.props.followModeMoves.length >= 2 && this.props.playerFollowOrder.length >= 2 && !pcToMove) {
+								// to force characters to move one space at a time
+								setTimeout(() => {
+									this.moveCharacter(tilePath, newFollowerPos, this.props.playerFollowOrder[1]);
+								}, this.movementDelay);
 
-					// if leader has moved 3x, there are 2 followers, and 1st follower was just moved,
-					// then call moveCharacter to update second follower to next avail pos in followModeMoves array
-					} else if (this.state.followModeMoves.length >= 3 && this.props.playerFollowOrder.length === 3 && pcToMove === this.props.playerFollowOrder[1]) {
-						// to force characters to move one space at a time
-						setTimeout(() => {
-							this.moveCharacter(tilePath, newFollowerPos, this.props.playerFollowOrder[2]);
-						}, this.movementDelay);
-					// otherwise, moving to next tile in path
-					} else if (tilePath.length > 0) {
-						// to force characters to move one space at a time
-						setTimeout(() => {
-							this.moveCharacter(tilePath);
-						}, this.movementDelay);
-					}
+								// if leader has moved 3x, there are 2 followers, and 1st follower was just moved,
+								// then call moveCharacter to update second follower to next avail pos in followModeMoves array
+							} else if (this.props.followModeMoves.length >= 3 && this.props.playerFollowOrder.length === 3 && pcToMove === this.props.playerFollowOrder[1]) {
+								// to force characters to move one space at a time
+								setTimeout(() => {
+									this.moveCharacter(tilePath, newFollowerPos, this.props.playerFollowOrder[2]);
+								}, this.movementDelay);
+								// otherwise, moving to next tile in path
+							} else if (tilePath.length > 0) {
+								// to force characters to move one space at a time
+								setTimeout(() => {
+									this.moveCharacter(tilePath);
+								}, this.movementDelay);
+							}
+						}
+					});
 				}
 			});
 		});
