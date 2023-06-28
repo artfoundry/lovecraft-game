@@ -7,8 +7,6 @@ class Character extends React.Component {
 	constructor(props) {
 		super(props);
 
-		this.itemTypes = ItemTypes;
-
 		// For instantiation only - updated data is stored in App.state.playerCharacters
 		this.id = props.id;
 		this.name = props.name;
