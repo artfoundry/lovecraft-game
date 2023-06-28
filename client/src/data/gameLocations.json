@@ -23,6 +23,13 @@
 						"2": 0,
 						"3": 1
 					}
+				},
+				"Acid Concoction": {
+					"countPerLevel": {
+						"1": 21,
+						"2": 0,
+						"3": 1
+					}
 				}
 			},
 			"Ammo": {

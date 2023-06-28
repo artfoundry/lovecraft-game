@@ -29,8 +29,8 @@ class Character extends React.Component {
 			loadout2: {right: '', left: ''},
 			armor: props.equippedItems.armor || ''
 		};
-		this.ammo = props.ammo;
 		this.items = props.items;
+		this.stackableItems = this.collectStackables();
 		this.maxItems = 12;
 		this.defense = this.calculateDefense();
 		this.damageReduction = this.equippedItems.armor ? this.items[this.equippedItems.armor].damageReduction : 0;
@@ -38,6 +38,15 @@ class Character extends React.Component {
 		this.equippedLight = props.equippedLight || null;
 		this.lightRange = this.equippedLight ? this.items[this.equippedLight].range : 0;
 		this.lightTime = this.equippedLight ? this.items[this.equippedLight].time : null;
+	}
+
+	collectStackables() {
+		let stackables = {};
+		for (const [id, itemInfo] of Object.entries(this.items)) {
+			if (itemInfo.stackable) {
+				stackables[id] = {name: itemInfo.name}
+			}
+		}
 	}
 
 	calculateDefense() {
