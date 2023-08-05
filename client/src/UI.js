@@ -1,5 +1,5 @@
 import React from 'react';
-import {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ModeInfoPanel, DialogWindow} from './UIElements';
+import {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, DialogWindow} from './UIElements';
 import './css/ui.css';
 
 class UI extends React.Component {
@@ -20,7 +20,10 @@ class UI extends React.Component {
 			controlBarMinimized: false,
 			logMinimized: false,
 			modeMinimized: false,
-			entireInventory: {}
+			entireInventory: {},
+			objectIsSelected: false,
+			selectedObjPos: {},
+			objectSelected: {}
 		};
 	}
 
@@ -83,9 +86,8 @@ class UI extends React.Component {
 					characterName={playerInfo.name}
 					equippedItems={playerInfo.equippedItems}
 					invItems={playerInfo.items}
-					ammo={playerInfo.ammo}
 					toggleActionButton={this.props.toggleActionButton}
-					itemButtonSelected={this.props.itemButtonSelected}
+					actionButtonSelected={this.props.actionButtonSelected}
 					isActiveCharacter={id === this.props.activeCharacter}
 					movesRemaining={this.props.playerLimits.moves - this.props.actionsCompleted.moves}
 					actionsRemaining={this.props.playerLimits.actions - this.props.actionsCompleted.actions}
@@ -93,11 +95,35 @@ class UI extends React.Component {
 					updateCharacters={this.props.updateCharacters}
 					entireInventory={this.state.entireInventory}
 					updateInventory={this.updateInventory}
+					checkForExtraAmmo={this.checkForExtraAmmo}
+					reloadGun={this.props.reloadGun}
 					setShowDialogProps={this.props.setShowDialogProps}
 				/>
 			)
 		}
 		return controlPanels;
+	}
+
+	setObjectSelected = (objectSelected, evt) => {
+		const selectedObjPos = evt ? {left: evt.clientX, top: evt.clientY - 230} : null;
+		const objectIsSelected = objectSelected !== null && !this.state.objectIsSelected;
+		this.setState({objectSelected, objectIsSelected, selectedObjPos});
+		if (this.props.objectSelected && !objectSelected) {
+			this.props.setObjectSelected(null);
+		}
+	}
+
+	showObjectPanel = () => {
+		return (
+			<ObjectInfoPanel
+				objectInfo={this.state.objectSelected}
+				updateInventory={this.updateInventory}
+				characterInfo={this.props.selectedCharacterInfo}
+				updateCharacters={this.props.updateCharacters}
+				setObjectSelected={this.setObjectSelected}
+				selectedObjPos={this.state.selectedObjPos}
+			/>
+		)
 	}
 
 	switchEquipment = (id) => {
@@ -128,6 +154,36 @@ class UI extends React.Component {
 		})
 	}
 
+	/**
+	 *
+	 * @param currentPCdata: object (all char info, from CharacterControls in UIElements)
+	 * @returns {boolean}
+	 */
+	checkForExtraAmmo = (currentPCdata) => {
+		let hasExtraAmmo = false;
+		const equippedItems = currentPCdata.equippedItems.loadout1;
+		const gunInfo = currentPCdata.weapons[equippedItems.left] || currentPCdata.weapons[equippedItems.right];
+		const equippedGunType = gunInfo && gunInfo.gunType;
+		if (equippedGunType) {
+			const itemsInfo= Object.values(currentPCdata.items);
+			let itemNum = 0;
+			while (!hasExtraAmmo && itemNum < itemsInfo.length) {
+				if (itemsInfo[itemNum].itemType === 'Ammo' && itemsInfo[itemNum].gunType === equippedGunType) {
+					hasExtraAmmo = true;
+				} else {
+					itemNum++;
+				}
+			}
+		}
+		return hasExtraAmmo;
+	}
+
+	/**
+	 *
+	 * @param id: string (pc ID)
+	 * @param updatedList: array (of item/weapon IDs)
+	 * @param callback
+	 */
 	updateInventory = (id, updatedList, callback) => {
 		this.setState(prevState => ({
 			entireInventory: {...prevState.entireInventory, [id]: updatedList}
@@ -136,46 +192,33 @@ class UI extends React.Component {
 		});
 	}
 
+	/**
+	 * For setting up/updating player inventory (not the stored inventory from App) shown in the char info panel
+	 * @param charId: string
+	 * @param invItemsList: array of itemIds (or null if no item in that slot)
+	 * @private
+	 */
 	_parseInvItems(charId, invItemsList){
 		const charInfo = this.props.playerCharacters[charId];
-		const stackableWeapons = charInfo.ammo.stackable;
 		const allItems = Object.assign({...charInfo.weapons}, {...charInfo.items});
 		const equippedItems = charInfo.equippedItems;
-		let stackablesAdded = []; // prevents listing multiple copies of same stackable weapon
-		// const charId = this.props.selectedCharacterInfo.id;
-		// let invItemsList = [...this.state.entireInventory[charId]];
+		let tempInvList = [...invItemsList];
 
-		for (const [itemId, itemInfo] of Object.entries(allItems)) {
-			if (itemId !== equippedItems.loadout1.right && itemId !== equippedItems.loadout1.left &&
-				!stackablesAdded[itemInfo.name] && invItemsList.indexOf(itemId) === -1)
-			{
-				const emptyBox = invItemsList.indexOf(null);
-				invItemsList.splice(emptyBox, 1, itemId);
-
-				if (stackableWeapons && stackableWeapons[itemInfo.name]) {
-					stackablesAdded.push(itemInfo.name);
-				}
+		for (const itemId of Object.keys(allItems)) {
+			if (itemId !== equippedItems.loadout1.right && itemId !== equippedItems.loadout1.left && itemId !== equippedItems.armor && tempInvList.indexOf(itemId) === -1) {
+				const emptyBoxId = tempInvList.indexOf(null);
+				tempInvList.splice(emptyBoxId, 1, itemId);
 			}
 		}
 
+		// need to fill in the rest of the inv slots with null, so char info panel shows empty boxes
 		let updatedInventory = [];
 		for (let i=0; i < this.inventoryLength; i++) {
-			updatedInventory.push(invItemsList[i] || null);
+			updatedInventory.push(tempInvList[i] || null);
 		}
 		this.setState(prevState => ({
 			entireInventory: {...prevState.entireInventory, [charId]: updatedInventory}
 		}));
-	}
-
-	_calculateAmmo() {
-		let list = [];
-		let gunAmmo = {...this.props.selectedCharacterInfo.ammo};
-		delete gunAmmo.stackable;
-
-		for (const [type, amount] of Object.entries(gunAmmo)) {
-			list.push(<span key={type + Math.random()}>{type}: {amount} rounds</span>)
-		}
-		return list;
 	}
 
 	componentDidMount() {
@@ -191,7 +234,11 @@ class UI extends React.Component {
 			this.setState({logText: [...this.props.logText]}, this.scrollLog);
 		}
 		if (this.props.selectedCharacterInfo && prevProps.selectedCharacterInfo !== this.props.selectedCharacterInfo) {
-			this._parseInvItems(this.props.selectedCharacterInfo.id, [...this.state.entireInventory[this.props.selectedCharacterInfo.id]]);
+			this._parseInvItems(this.props.selectedCharacterInfo.id, this.state.entireInventory[this.props.selectedCharacterInfo.id]);
+		}
+		if (this.props.objectSelected && prevProps.objectSelected !== this.props.objectSelected) {
+			const objectInfo = {...this.props.objectSelected.object, isMapObj: true};
+			this.setObjectSelected(objectInfo, this.props.objectSelected.evt);
 		}
 	}
 
@@ -199,6 +246,8 @@ class UI extends React.Component {
 		return (
 			<div className='ui-container'>
 				{this.props.showDialog && this.props.dialogProps && <this.showDialog />}
+
+				{this.state.objectIsSelected && <this.showObjectPanel />}
 
 				<div ref={this.uiRefs.turnInfo} className='turn-info-container ui-panel'>
 					<div ref={this.uiRefs.log} className='log-container'>
@@ -245,8 +294,8 @@ class UI extends React.Component {
 						updateCharacters={this.props.updateCharacters}
 						entireInventory={this.state.entireInventory}
 						updateInventory={this.updateInventory}
-						ammoList={this._calculateAmmo()}
 						setShowDialogProps={this.props.setShowDialogProps}
+						setObjectSelected={this.setObjectSelected}
 					/>
 				}
 

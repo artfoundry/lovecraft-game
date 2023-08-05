@@ -51,25 +51,50 @@ function CharacterControls(props) {
 		} else {
 			const sourceBoxIndex = draggedItemSourceLoc.match(/\d+/);
 			const firstOpenInvSlot = allPlayersInv[props.characterId].indexOf(null);
+			const invObjectCategory = draggedItem.data.itemType ? 'items' : 'weapons';
+			let invId = draggedItem.data.id;
 
 			// add dragged item to current pc inv
-			allPlayersInv[props.characterId].splice(firstOpenInvSlot, 1, draggedItem.id);
-			draggedItem.data.itemType ? currentPCdata.items[draggedItem.id] = draggedItem.data : currentPCdata.weapons[draggedItem.id] = draggedItem.data;
+			if (draggedItem.data.stackable) {
+				// gun ammo
+				if (draggedItem.data.gunType) {
+					if (!currentPCdata.items[invId]) {
+						currentPCdata.items[invId] = {...draggedItem.data};
+					} else {
+						currentPCdata.items[invId].amount += draggedItem.data.amount;
+					}
+				} else {
+					if (!currentPCdata[invObjectCategory][invId]) {
+						currentPCdata[invObjectCategory][invId] = {...draggedItem.data};
+					} else if (invObjectCategory === 'weapons'){
+						currentPCdata.weapons[invId].currentRounds += draggedItem.data.currentRounds;
+					} else {
+						currentPCdata.items[invId].amount += draggedItem.data.amount;
+					}
+				}
+			} else {
+				currentPCdata[invObjectCategory][draggedItem.data.id] = {...draggedItem.data};
+			}
+
+			// now add item to inv shown in char info panel
+			if (!allPlayersInv[props.characterId].includes(invId) && !currentPCdata.equippedItems.loadout1.right && !currentPCdata.equippedItems.loadout1.left) {
+				allPlayersInv[props.characterId].splice(firstOpenInvSlot, 1, invId);
+			}
 
 			// remove dragged item from source pc inv
 			// if no source box index, then it was dragged from being equipped
 			if (sourceBoxIndex) {
 				allPlayersInv[draggedItem.sourcePC].splice(+sourceBoxIndex[0], 1, null);
 			}
-			draggedItem.data.itemType ? delete sourcePCdata.items[draggedItem.id] : delete sourcePCdata.weapons[draggedItem.id];
-			if (sourcePCdata.equippedItems.loadout1.left === draggedItem.id) {
+			delete sourcePCdata[invObjectCategory][invId];
+			if (sourcePCdata.equippedItems.loadout1.left === invId) {
 				sourcePCdata.equippedItems.loadout1.left = '';
 			}
 			// this is not an else if because a two handed weapon would take up both left and right
-			if (sourcePCdata.equippedItems.loadout1.right === draggedItem.id) {
+			if (sourcePCdata.equippedItems.loadout1.right === invId) {
 				sourcePCdata.equippedItems.loadout1.right = '';
 			}
-			if (sourcePCdata.equippedLight === draggedItem.id) {
+			if (sourcePCdata.equippedLight === invId) {
 				sourcePCdata.equippedLight = null;
 				sourcePCdata.lightRange = 0;
 			}
@@ -94,11 +119,15 @@ function CharacterControls(props) {
 		if (currentPCdata.weapons[itemId] && existingWeaponIndex === -1) {
 			const weaponInfo = currentPCdata.weapons[itemId];
 			if (weaponInfo.ranged) {
+				const weaponButtonIndex = actionableItems.weapons.findIndex(listItem => listItem.weaponName === weaponInfo.name);
 				if (weaponInfo.gunType) {
-					actionableItems.weapons.push({weaponId: itemId, weaponName: weaponInfo.name, isGun: true, ammo: props.ammo[weaponInfo.gunType]});
-					// check to make sure this weapon isn't already in the controls and has some ammo
-				} else if (!actionableItems.weapons.find(listItem => listItem.weaponName === weaponInfo.name) && props.ammo.stackable[weaponInfo.name] > 0) {
-					actionableItems.weapons.push({weaponId: itemId, weaponName: weaponInfo.name, ammo: props.ammo.stackable[weaponInfo.name]});
+					actionableItems.weapons.push({weaponId: itemId, weaponName: weaponInfo.name, isGun: true, ammo: weaponInfo.currentRounds});
+				// check to make sure this stackable weapon isn't already in the controls and has some ammo
+				} else if (weaponButtonIndex === -1 && weaponInfo.stackable && weaponInfo.currentRounds > 0) {
+					actionableItems.weapons.push({weaponId: itemId, weaponName: weaponInfo.name, ammo: weaponInfo.currentRounds});
+				// stackable weapon is already added, so we just need to update its ammo count (this is in case there are multiple stacks under different IDs)
+				} else if (weaponButtonIndex >= 0 && weaponInfo.stackable) {
+					actionableItems.weapons[weaponButtonIndex].ammo += weaponInfo.currentRounds;
 				}
 			} else {
 				actionableItems.weapons.push({weaponId: itemId, weaponName: weaponInfo.name, ammo: null});
@@ -117,19 +146,44 @@ function CharacterControls(props) {
 		}
 	}
 
+	const handleWeaponClick = (weapon) => {
+		const ammoId = currentPCdata.weapons[weapon.weaponId].gunType + 'Ammo0';
+		if (weapon.ammo === 0) {
+			// if all extra ammo used up, update inventory in UI
+			const gunInfo = currentPCdata.weapons[weapon.weaponId];
+			let availAmmo = currentPCdata.items[gunInfo.gunType + 'Ammo0'].amount;
+			if (availAmmo <= gunInfo.rounds) {
+				const updatedInventory = props.entireInventory[props.characterId];
+				const ammoInvIndex = updatedInventory.indexOf(ammoId);
+				updatedInventory.splice(ammoInvIndex, 1);
+				props.updateInventory(props.characterId, updatedInventory, () => {
+					props.reloadGun(weapon, gunInfo, availAmmo, currentPCdata);
+				});
+			}
+		} else {
+			props.toggleActionButton(props.characterId, weapon.weaponId, weapon.weaponName, 'weapon');
+		}
+	};
+	const hasExtraAmmo = props.checkForExtraAmmo(currentPCdata);
+
 	const weaponButtons = (
-		<div className='weapon-buttons-container'>
+		<div className='action-buttons-container'>
 			{actionableItems.weapons.map((weapon, index) => {
-				actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || (weapon.ammo === 0)) ? 'button-inactive' :
-					(props.isActiveCharacter && props.itemButtonSelected.characterId === props.characterId && props.itemButtonSelected.itemId === weapon.weaponId) ? 'button-selected': '';
+				actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || (weapon.ammo === 0 && !hasExtraAmmo)) ? 'button-inactive' :
+					(props.isActiveCharacter && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === weapon.weaponId) ? 'button-selected': '';
 				return (
-					<div className={`weapon-button ${convertObjIdToClassId(weapon.weaponId)}-act ${actionButtonState}`} key={weapon.weaponId} onClick={() => {
-						props.toggleActionButton(props.characterId, weapon.weaponId, weapon.weaponName, 'weapon');
-					}}>{weapon.ammo || ''}</div>
+					<div
+						className={`action-button ${convertObjIdToClassId(weapon.weaponId)}-act ${actionButtonState} ${weapon.ammo === 0 ? 'gun-reload-icon' : ''}`}
+						key={weapon.weaponId}
+						onClick={() => {
+							handleWeaponClick(weapon);
+						}}
+					>{weapon.ammo || ''}</div>
 				);
 			})}
 		</div>
 	);
+
 	const medicineButtons = (
 		<div className='item-buttons-container'>
 			{actionableItems.medicine.map((item, index) => {
@@ -137,9 +191,9 @@ function CharacterControls(props) {
 				let button = null;
 				if (item.amount === itemCount) {
 					actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0) ? 'button-inactive' :
-						(props.isActiveCharacter && props.itemButtonSelected.characterId === props.characterId && props.itemButtonSelected.itemId === item.itemId) ? 'button-selected': '';
+						(props.isActiveCharacter && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === item.itemId) ? 'button-selected': '';
 					button = (
-						<div className={`weapon-button ${convertObjIdToClassId(item.itemId)}-act ${actionButtonState}`} key={item.itemId} onClick={() => {
+						<div className={`action-button ${convertObjIdToClassId(item.itemId)}-act ${actionButtonState}`} key={item.itemId} onClick={() => {
 							props.toggleActionButton(props.characterId, item.itemId, item.name, 'item');
 						}}>{itemCount}</div>
 					);
@@ -174,6 +228,7 @@ function CharacterInfoPanel(props) {
 	const equippedItems = props.characterInfo.equippedItems;
 	const equippedIsTwoHanded = equippedItems.loadout1.right && equippedItems.loadout1.right === equippedItems.loadout1.left;
 	const updateData = {...props.characterInfo};
+	const inventoryItems = props.entireInventory[props.characterInfo.id];
 	const notEnoughSpaceDialogProps = {
 		dialogContent: `There is not enough inventory space to do that.`,
 		closeButtonText: 'Ok',
@@ -183,11 +238,11 @@ function CharacterInfoPanel(props) {
 		actionButtonText: '',
 		actionButtonCallback: null,
 		dialogClasses: ''
-	}
+	};
 	const dragItem = (e) => {
-		const itemId = e.target.id.includes('-2handed') ? e.target.id.slice(0, e.target.id.indexOf('-2handed')) : e.target.id;
-		draggedItem = {id: itemId, data: updateData.items[itemId] || updateData.weapons[itemId], sourcePC: updateData.id};
-		draggedItemSourceLoc = e.target.parentElement.id;
+		const itemId = e.target.id.includes('-leftHand') ? e.target.id.slice(0, e.target.id.indexOf('-leftHand')) : e.target.id;
+		draggedItem = {data: updateData.items[itemId] || updateData.weapons[itemId], sourcePC: updateData.id};
+		draggedItemSourceLoc = e.target.parentElement.id; //only used if being dragged from inv (not from equipped)
 	}
 	const handleItemOverDropZone = (e) => {
 		e.preventDefault();
@@ -209,7 +264,7 @@ function CharacterInfoPanel(props) {
 
 		let hand = '';
 		let oppositeHand = '';
-		let tempAllItemsList = [...props.entireInventory[props.characterInfo.id]];
+		let tempAllItemsList = [...inventoryItems];
 		const sourceBoxIndex = draggedItemSourceLoc.match(/\d+/);
 		const loadout1 = equippedItems.loadout1;
 
@@ -224,14 +279,16 @@ function CharacterInfoPanel(props) {
 
 		// if dragged item is a light
 		if (draggedItem.data.itemType === 'Light') {
-			updateData.equippedLight = draggedItem.id;
+			updateData.equippedLight = draggedItem.data.id;
 			updateData.lightRange = draggedItem.data.range;
 		// or if an equipped light is being unequipped (and not by a light)
 		} else if (hand && sourceBoxIndex && (loadout1[hand] === updateData.equippedLight ||
-			(draggedItem.data.twoHanded && loadout1[oppositeHand] === updateData.equippedLight))) {
+			(draggedItem.data.twoHanded && loadout1[oppositeHand] === updateData.equippedLight)))
+		{
 			updateData.equippedLight = null;
 			updateData.lightRange = 0;
 		}
+
 		// if dragged item is two-handed
 		if (hand && draggedItem.data.twoHanded) {
 			if (loadout1.right && loadout1.left && loadout1.right !== loadout1.left && notEnoughSpaceInInventory(2, 1, props.characterInfo)) {
@@ -248,11 +305,11 @@ function CharacterInfoPanel(props) {
 				props.setShowDialogProps(true, dialogProps);
 				return;
 			}
-			updateData.equippedItems.loadout1[hand] = draggedItem.id;
-			updateData.equippedItems.loadout1[oppositeHand] = draggedItem.id;
+			updateData.equippedItems.loadout1[hand] = draggedItem.data.id;
+			updateData.equippedItems.loadout1[oppositeHand] = draggedItem.data.id;
 		// or if we're replacing a two-handed item with a one-handed item
 		} else if (hand && equippedIsTwoHanded) {
-			updateData.equippedItems.loadout1[hand] = draggedItem.id;
+			updateData.equippedItems.loadout1[hand] = draggedItem.data.id;
 			updateData.equippedItems.loadout1[oppositeHand] = '';
 		// or we're just equipping a one-handed item
 		} else if (hand) {
@@ -260,10 +317,10 @@ function CharacterInfoPanel(props) {
 			if (!sourceBoxIndex) {
 				updateData.equippedItems.loadout1[oppositeHand] = updateData.equippedItems.loadout1[hand];
 			}
-			updateData.equippedItems.loadout1[hand] = draggedItem.id;
+			updateData.equippedItems.loadout1[hand] = draggedItem.data.id;
 		// or we're equipping a body item
 		} else if (destination === 'body') {
-			updateData.equippedItems.armor = draggedItem.id;
+			updateData.equippedItems.armor = draggedItem.data.id;
 			updateData.defense = props.characterInfo.calculateDefense();
 			updateData.damageReduction = draggedItem.data.damageReduction;
 		}
@@ -272,6 +329,7 @@ function CharacterInfoPanel(props) {
 		if (sourceBoxIndex) {
 			tempAllItemsList.splice(+sourceBoxIndex[0], 1, null);
 		}
+
 		props.updateInventory(props.characterInfo.id, tempAllItemsList, () => {
 			props.updateCharacters('player', updateData, props.characterInfo.id, false, false);
 		});
@@ -284,21 +342,23 @@ function CharacterInfoPanel(props) {
 		}
 
 		let draggingEquippedItem = false;
-		if (equippedItems.armor === draggedItem.id) {
+		if (equippedItems.armor === draggedItem.data.id) {
 			updateData.equippedItems.armor = '';
 			updateData.defense = props.characterInfo.calculateDefense();
 			updateData.damageReduction = 0;
-		} else if (equippedItems.loadout1.left === draggedItem.id) {
+			draggingEquippedItem = true;
+		} else if (equippedItems.loadout1.left === draggedItem.data.id) {
 			updateData.equippedItems.loadout1.left = '';
 			draggingEquippedItem = true;
 		}
+
 		// this is not an else if because a two handed weapon would take up both left and right
-		if (equippedItems.loadout1.right === draggedItem.id) {
+		if (equippedItems.loadout1.right === draggedItem.data.id) {
 			updateData.equippedItems.loadout1.right = '';
 			draggingEquippedItem = true;
 		}
 
-		if (draggedItem.data.itemType && draggedItem.data.itemType === 'Light' && updateData.equippedLight === draggedItem.id) {
+		if (draggedItem.data.itemType && draggedItem.data.itemType === 'Light' && updateData.equippedLight === draggedItem.data.id) {
 			updateData.equippedLight = null;
 			updateData.lightRange = 0;
 			draggingEquippedItem = true;
@@ -307,7 +367,7 @@ function CharacterInfoPanel(props) {
 		if (draggingEquippedItem) {
 			props.updateCharacters('player', updateData, props.characterInfo.id, false, false);
 		} else {
-			let tempAllItemsList = [...props.entireInventory[props.characterInfo.id]];
+			let tempAllItemsList = [...inventoryItems];
 			const targetIsBox = e.target.id.includes('invBox');
 			const targetId = +e.target.id.match(/\d+/)[0];
 			const parentId = !targetIsBox ? +e.target.parentElement.id.match(/\d+/)[0] : null;
@@ -316,15 +376,16 @@ function CharacterInfoPanel(props) {
 			const sourceBoxIndex = +draggedItemSourceLoc.match(/\d+/)[0];
 
 			// replace contents of destination spot with dragged item
-			tempAllItemsList.splice(destBoxIndex, 1, draggedItem.id);
+			tempAllItemsList.splice(destBoxIndex, 1, draggedItem.data.id);
 			// replace contents of source spot with replaced destination item
 			tempAllItemsList.splice(sourceBoxIndex, 1, destBoxContents);
 			props.updateInventory(props.characterInfo.id, tempAllItemsList);
 		}
-	}
+	};
 	const itemsIntoElements = (
 		<div className='char-info-inv-items'>
-			{props.entireInventory[props.characterInfo.id].map((itemId, index) => {
+			{inventoryItems.map((itemId, index) => {
+				const itemInfo = props.characterInfo.weapons[itemId] || props.characterInfo.items[itemId];
 				return (
 					<div
 						id={'invBox' + index}
@@ -336,10 +397,11 @@ function CharacterInfoPanel(props) {
 						{itemId &&
 							<div
 								id={itemId}
-								className={`${convertObjIdToClassId(itemId)}-inv`}
+								className={`inv-object ${convertObjIdToClassId(itemId)}-inv`}
 								draggable={true}
 								onDragStart={(e) => {dragItem(e, itemId)}}
-							></div>
+								onClick={(e) => {props.setObjectSelected({...itemInfo, id: itemId}, e)}}
+							>{itemInfo.currentRounds || itemInfo.amount || ''}</div>
 						}
 					</div>
 				);
@@ -352,8 +414,15 @@ function CharacterInfoPanel(props) {
 	const numItemsInLoadout2 = (equippedItems.loadout2.right && equippedItems.loadout2.left && equippedItems.loadout2.right === equippedItems.loadout2.left) ||
 		(equippedItems.loadout2.right && !equippedItems.loadout2.left) || (!equippedItems.loadout2.right && equippedItems.loadout2.left) ? 1 :
 		(equippedItems.loadout2.right && equippedItems.loadout2.left && equippedItems.loadout2.right !== equippedItems.loadout2.left) ? 2 : 0;
+	const weaponsPossessed = props.characterInfo.weapons;
+	const itemsPossessed = props.characterInfo.items;
+	const rightEquippedItemInfo = weaponsPossessed[equippedItems.loadout1.right] || itemsPossessed[equippedItems.loadout1.right];
+	const leftEquippedItemInfo = weaponsPossessed[equippedItems.loadout1.left] || itemsPossessed[equippedItems.loadout1.left];
+	const rightItemAmount = (rightEquippedItemInfo && rightEquippedItemInfo.amount) ? rightEquippedItemInfo.amount : (rightEquippedItemInfo && rightEquippedItemInfo.currentRounds) ? rightEquippedItemInfo.currentRounds : '';
+	const leftItemAmount = (leftEquippedItemInfo && leftEquippedItemInfo.amount) ? leftEquippedItemInfo.amount : (leftEquippedItemInfo && leftEquippedItemInfo.currentRounds) ? leftEquippedItemInfo.currentRounds : '';
+
 	return (
-		<div className={`character-info-container ui-panel ${props.characterIsSelected ? '' : 'hide'}`}>
+		<div className={`character-info-container ui-panel`}>
 			<div className='char-info-header'>
 				<div>
 					<div>Name: {props.characterInfo.name}</div>
@@ -369,25 +438,35 @@ function CharacterInfoPanel(props) {
 			<div className='char-info-inv-container'>
 				<div className='char-info-doll-container'>
 					<div className='char-info-paper-doll'></div>
-					<div className='char-info-doll-boxes'>
+					<div className='char-info-doll-boxes-container'>
 						<div
 							className='char-info-paper-doll-body char-info-paper-doll-box'
 							onDragOver={(e) => {handleItemOverDropZone(e)}}
 							onDrop={(e) => {dropItemToEquipped(e)}}
-						>{equippedItems.armor ? '' : 'Body'}</div>
+						>
+							{(equippedItems.armor &&
+							<div
+								id={equippedItems.armor ? equippedItems.armor : 'body'}
+								className={`inv-object ${convertObjIdToClassId(equippedItems.armor)}-inv`}
+								draggable={true}
+								onDragStart={(e) => {dragItem(e, equippedItems.armor)}}
+								onClick={(e) => {props.setObjectSelected({...itemsPossessed[equippedItems.armor], id: equippedItems.armor}, e)}}
+							></div>) || 'Body'}
+						</div>
 
 						<div
 							className='char-info-paper-doll-right-arm char-info-paper-doll-box'
 							onDragOver={(e) => {handleItemOverDropZone(e)}}
 							onDrop={(e) => {dropItemToEquipped(e)}}
 						>
+							{(equippedItems.loadout1.right &&
 							<div
-								id={equippedIsTwoHanded ? equippedItems.loadout1.right + '-2handed' :
-									equippedItems.loadout1.right ? equippedItems.loadout1.right : 'right-hand'}
-								className={`${convertObjIdToClassId(equippedItems.loadout1.right)}-inv`}
+								id={equippedItems.loadout1.right ? equippedItems.loadout1.right : 'right-hand'}
+								className={`inv-object ${convertObjIdToClassId(equippedItems.loadout1.right)}-inv`}
 								draggable={true}
 								onDragStart={(e) => {dragItem(e, equippedItems.loadout1.right)}}
-							>{equippedItems.loadout1.right ? '' : 'Right Hand'}</div>
+								onClick={(e) => {props.setObjectSelected({...rightEquippedItemInfo, id: equippedItems.loadout1.right}, e)}}
+							>{equippedItems.loadout1.right ? rightItemAmount : ''}</div>) || 'Right Hand'}
 						</div>
 
 						<div
@@ -395,13 +474,15 @@ function CharacterInfoPanel(props) {
 							onDragOver={(e) => {handleItemOverDropZone(e)}}
 							onDrop={(e) => {dropItemToEquipped(e)}}
 						>
+							{(equippedItems.loadout1.left &&
 							<div
-								id={equippedIsTwoHanded ? equippedItems.loadout1.left + '-2handed' :
+								id={equippedIsTwoHanded ? equippedItems.loadout1.left + '-leftHand' :
 									equippedItems.loadout1.left ? equippedItems.loadout1.left : 'left-hand'}
-								className={`${convertObjIdToClassId(equippedItems.loadout1.left)}-inv`}
+								className={`inv-object ${convertObjIdToClassId(equippedItems.loadout1.left)}-inv`}
 								draggable={true}
 								onDragStart={(e) => {dragItem(e, equippedItems.loadout1.left)}}
-							>{equippedItems.loadout1.left ? '' : 'Left Hand'}</div>
+								onClick={(e) => {props.setObjectSelected({...leftEquippedItemInfo, id: equippedItems.loadout1.left}, e)}}
+							>{equippedItems.loadout1.left ? leftItemAmount : ''}</div>) || 'Left Hand'}
 						</div>
 					</div>
 					<div className='char-info-equip-toggle-button general-button' onClick={() => {
@@ -420,21 +501,45 @@ function CharacterInfoPanel(props) {
 					<div>Agility: {props.characterInfo.agility}</div>
 					<div>Mental Acuity: {props.characterInfo.mentalAcuity}</div>
 					<div>Initiative: {props.characterInfo.initiative}</div>
-					<div>Defense: {props.characterInfo.defense}{props.characterInfo.items.armor ? ` from ${props.characterInfo.items.armor}` : ''}</div>
+					<div>Defense: {props.characterInfo.defense}</div>
+					<div>Damage Reduction: {props.characterInfo.damageReduction}{equippedItems.armor ? ` (from ${itemsPossessed[equippedItems.armor].name})` : ''}</div>
 					<div>Skills:
 						<ul>{skillList}</ul>
 					</div>
 				</div>
 			</div>
 
-			<div>
-				<div>Equipped Light: {props.characterInfo.equippedLight ? `${equippedLight.name} (Time left: ${equippedLight.time})`: 'none'}</div>
-				<div>
-					Ammunition: {props.ammoList}
-				</div>
-			</div>
+			<div className='char-info-equipped-light'>Equipped Light: {props.characterInfo.equippedLight ? `${equippedLight.name} (Time left: ${equippedLight.time})`: 'none'}</div>
 
 			{itemsIntoElements}
+		</div>
+	);
+}
+
+function ObjectInfoPanel(props) {
+	const {objectInfo, updateInventory, characterInfo, updateCharacters} = {...props};
+
+	const splitStack = () => {
+
+	};
+
+	return (
+		<div className={'object-info-panel'} style={{left: props.selectedObjPos.left, top: props.selectedObjPos.top}}>
+			<div className='general-button' onClick={() => props.setObjectSelected(null)}>X</div>
+			<div className='object-panel-container'>
+				<div className={`inv-object ${convertObjIdToClassId(objectInfo.id)}-inv`}></div>
+				<div className='object-text-container'>
+					<div className='font-fancy'>{objectInfo.name}</div>
+					<div>{objectInfo.itemType ? objectInfo.itemType : (objectInfo.ranged ? 'Ranged' : 'Melee') + ' weapon'}</div>
+					{objectInfo.rounds && <div>Capacity: {objectInfo.rounds} rounds</div>}
+					{(!objectInfo.isMapObj && objectInfo.amount && <div>Amount: {objectInfo.amount}</div>) ||
+						(!objectInfo.isMapObj && objectInfo.currentRounds >= 0 && <div>Rounds remaining: {objectInfo.currentRounds}</div>)}
+					{objectInfo.twoHanded && <div>Two-handed</div>}
+					{objectInfo.damage && <div>Damage: {objectInfo.damage}</div>}
+					{!objectInfo.isMapObj && objectInfo.time && <div>Light remaining: {objectInfo.time} steps</div>}
+					<div>{objectInfo.description}</div>
+				</div>
+			</div>
 		</div>
 	);
 }
@@ -515,7 +620,7 @@ function ModeInfoPanel(props) {
 			</div>
 			{!props.inTacticalMode && props.isPartyNearby &&
 				<label>
-					<span>Leader: </span>
+					<div>Leader</div>
 					<select name='leader' value={props.activeCharacter} onChange={e => {
 						props.updateActiveCharacter(() => props.updateFollowModeMoves([]), e.target.value);
 					}}>
@@ -574,4 +679,4 @@ function HelpPopUp(props) {
 	);
 }
 
-export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ModeInfoPanel, DialogWindow};
+export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, DialogWindow};

@@ -13,24 +13,29 @@
     },
     "weapons": {
       "coltRevolver0": {
+        "id": "coltRevolver0",
         "name": "Colt Revolver",
-        "damage": 5,
-        "ranged": true,
-        "rounds": 6,
-        "usesStr": false,
-        "gunType": "handgun",
-        "twoHanded": false
+        "currentRounds": 0
       }
     },
-    "equippedItems": {"right": "coltRevolver0", "left": "electricTorch0", "body": ""},
-    "ammo": {"handgun": 6},
+    "equippedItems": {"right": "coltRevolver0", "left": "electricTorch0", "armor": "leatherJacket0"},
     "items": {
       "electricTorch0": {
+        "id": "electricTorch0",
         "name": "Electric Torch",
         "itemType": "Light",
-        "time": 500,
-        "equipped": true,
-        "range": 5
+        "time": 500
+      },
+      "handgunAmmo0": {
+        "id": "handgunAmmo0",
+        "name": "Handgun Ammo",
+        "itemType": "Ammo",
+        "amount": 6
+      },
+      "leatherJacket0": {
+        "id": "leatherJacket0",
+        "name": "Leather Jacket",
+        "itemType": "Armor"
       }
     },
     "equippedLight": "electricTorch0"
@@ -49,22 +54,17 @@
     },
     "weapons": {
       "pickaxe0": {
-        "name": "Pickaxe",
-        "damage": 2,
-        "ranged": false,
-        "usesStr": true,
-        "twoHanded": true
+        "id": "pickaxe0",
+        "name": "Pickaxe"
       }
     },
-    "equippedItems": {"right": "pickaxe0", "left": "", "body": ""},
-    "ammo": {},
+    "equippedItems": {"right": "pickaxe0", "left": "", "armor": ""},
     "items": {
       "torch0": {
+        "id": "torch0",
         "name": "Torch",
         "itemType": "Light",
-        "time": 100,
-        "equipped": false,
-        "range": 3
+        "time": 100
       }
     },
     "equippedLight": ""
@@ -83,29 +83,24 @@
     },
     "weapons": {
       "acidConcoction0": {
+        "id": "acidConcoction0",
         "name": "Acid Concoction",
-        "damage": 10,
-        "ranged": true,
-        "rounds": 1,
-        "usesStr": false,
-        "stackable": true,
-        "twoHanded": false
+        "currentRounds": 2
       }
     },
-    "equippedItems": {"right": "acidConcoction0", "left": "lantern0", "body": ""},
-    "ammo": {"stackable": {"Acid Concoction": 2}},
+    "equippedItems": {"right": "acidConcoction0", "left": "lantern0", "armor": ""},
     "items": {
       "pharmaceuticals0": {
+        "id": "pharmaceuticals0",
         "name": "Pharmaceuticals",
         "itemType": "Medicine",
         "amount": 1
       },
       "lantern0": {
+        "id": "lantern0",
         "name": "Lantern",
         "itemType": "Light",
-        "time": 300,
-        "equipped": false,
-        "range": 4
+        "time": 300
       }
     },
     "equippedLight": "lantern0"

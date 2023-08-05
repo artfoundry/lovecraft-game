@@ -591,29 +591,24 @@ class Map extends React.Component {
 	_setInitialObjectData() {
 		let mapItems = {};
 		let itemCoords = {};
-		for (const [itemType, itemTypesInfo] of Object.entries(this.currentMapData.items)) {
-			for (const [itemName, countInfo] of Object.entries(itemTypesInfo)) {
+		for (const [objectType, objectTypesInfo] of Object.entries(this.currentMapData.objects)) {
+			for (const [itemName, countInfo] of Object.entries(objectTypesInfo)) {
 				for (let i=0; i < countInfo.countPerLevel[this.props.currentLevel]; i++) {
-					const itemInfo = itemType === 'Weapon' ? WeaponTypes[itemName] : ItemTypes[itemName];
+					const itemInfo = objectType === 'Weapon' ? WeaponTypes[itemName] : ItemTypes[itemName];
 					const tileType = itemName === 'Torch' ? 'wall' : 'floor';
 					const lowerCaseName = itemName.slice(0, 1).toLowerCase() + itemName.slice(1, itemName.length).replaceAll(' ', '');
-					const itemID = lowerCaseName + i;
-					const ammoName = itemType === 'Ammo' ? itemName.slice(0, itemName.indexOf(' Ammo')).toLowerCase() : '';
-					const looseAmmoRandomAmount = itemType === 'Ammo' ? Math.floor(Math.random() * 10) + 2 : null;
-					const gunType = itemType === 'Weapon' && itemInfo.gunType ? itemInfo.gunType : null;
-					const weaponAmmoRandomAmount = gunType ? Math.round(Math.random() * itemInfo.rounds) : null;
+					const itemID = lowerCaseName + (i + 1);
+					const ammoName = objectType === 'Ammo' ? itemName.slice(0, itemName.indexOf(' Ammo')).toLowerCase() : '';
+					const looseItemAmount = objectType === 'Ammo' ? Math.floor(Math.random() * 10) + 2 : objectType === 'Medicine' ? 1 : null;
+					const gunType = objectType === 'Weapon' && itemInfo.gunType ? itemInfo.gunType : null;
+					const weaponCurrentRounds = gunType ? Math.round(Math.random() * itemInfo.rounds) : objectType === 'Weapon' ? 1 : null;
 					const coords = this._getInitialRandomCoords(itemCoords, tileType); // this.props.playerCharacters['privateEye'].coords (to easily test objects)
-					const range = itemType === 'Light' ? itemInfo.range : null;
-					// some attributes (already avail in itemInfo) repeated at root level for convenience
 					mapItems[itemID] = {
-						itemType,
-						itemInfo: {...itemInfo},
-						gunType,
-						name: itemType === 'Ammo' ? ammoName : itemName,
-						amount: looseAmmoRandomAmount,
-						includedAmmo: weaponAmmoRandomAmount,
-						coords,
-						range
+						...itemInfo,
+						name: objectType === 'Ammo' ? ammoName : itemName,
+						amount: looseItemAmount,
+						currentRounds: weaponCurrentRounds,
+						coords
 					};
 					itemCoords[itemID] = coords;
 				}
@@ -708,7 +703,7 @@ class Map extends React.Component {
 		characterIDs.forEach(id => {
 			characterCoords = characters[id].coords;
 			const characterPos = convertCoordsToPos(characterCoords);
-			const actionButtonIsSelected = Object.keys(this.props.itemButtonSelected).length > 0;
+			const actionButtonIsSelected = Object.keys(this.props.actionButtonSelected).length > 0;
 			let targetIsInRange = false;
 			let companionIsAdjacent = false;
 			let activePlayerPos = '';
@@ -740,7 +735,7 @@ class Map extends React.Component {
 
 			if (actionButtonIsSelected) {
 				const activeCharIsPlayer = this.props.playerCharacters[this.props.activeCharacter];
-				actionIsItem = this.props.itemButtonSelected.stats.itemType;
+				actionIsItem = this.props.actionButtonSelected.stats.itemType;
 				if (actionIsItem && props.characterType === 'player') {
 					activePlayerPos = convertCoordsToPos(activeCharIsPlayer.coords);
 					adjacentTiles = this._getAllSurroundingTilesToRange(activePlayerPos, 1);
@@ -751,7 +746,7 @@ class Map extends React.Component {
 					}
 					targetIsInRange = activeCharIsPlayer && (companionIsAdjacent || activePlayerPos === characterPos);
 				} else if (!actionIsItem && props.characterType === 'creature') {
-					targetIsInRange = activeCharIsPlayer && this.isCreatureInRange(id, this.props.itemButtonSelected);
+					targetIsInRange = activeCharIsPlayer && this.isCreatureInRange(id, this.props.actionButtonSelected);
 				}
 			}
 
@@ -798,16 +793,6 @@ class Map extends React.Component {
 
 	_addItems() {
 		let items = [];
-		const itemTooFarDialogProps = {
-			dialogContent: 'You must be next to the object to pick it up.',
-			closeButtonText: 'Ok',
-			closeButtonCallback: null,
-			disableCloseButton: false,
-			actionButtonVisible: false,
-			actionButtonText: '',
-			actionButtonCallback: null,
-			dialogClasses: ''
-		};
 		const invFullDialogProps = {
 			dialogContent: 'Inventory is full. Free up some space first.',
 			closeButtonText: 'Ok',
@@ -836,13 +821,12 @@ class Map extends React.Component {
 			}
 			items.push((<Item
 				key={id}
-				objectId={id}
-				objectInfo={info}
+				objectInfo={{id, ...info}}
 				name={idConvertedToClassName}
 				isActivePlayerNearObject={this.isActivePlayerNearObject}
 				isActivePlayerInvFull={isActivePlayerInvFull}
 				addItemToPlayerInventory={this.addItemToPlayerInventory}
-				itemTooFarDialogProps={itemTooFarDialogProps}
+				setObjectSelected={this.props.setObjectSelected}
 				invFullDialogProps={invFullDialogProps}
 				setShowDialogProps={this.props.setShowDialogProps}
 				styles={{
@@ -912,7 +896,7 @@ class Map extends React.Component {
 	findMapLights() {
 		let mapLights = [];
 		for (const [id, objInfo] of Object.entries(this.props.mapObjects)) {
-			if (objInfo.itemType === 'Light') {
+			if (objInfo.itemType && objInfo.itemType === 'Light') {
 				const light = {id, pos: convertCoordsToPos(objInfo.coords), range: objInfo.range};
 				mapLights.push(light);
 			}
@@ -1739,46 +1723,37 @@ class Map extends React.Component {
 	 * @param id: string
 	 */
 	addItemToPlayerInventory = (itemData, id) => {
-		const itemName = itemData.name;
 		const player = this.props.playerCharacters[this.props.activeCharacter];
-		const generalItemType = itemData.itemType === 'Weapon' ? 'weapons' : itemData.itemType === 'Ammo' ? 'ammo' : 'items';
-		let inventoryList = {...player[generalItemType]};
-		const gunType = itemData.gunType;
-		let includedGunAmmo = null;
+		const objectType = itemData.itemType ? itemData.itemType : 'Weapon';
+		const invObjectCategory = objectType === 'Weapon' ? 'weapons' : 'items';
+		let inventoryList = {...player[invObjectCategory]};
+		let invId = '';
 
-		if (itemData.itemType === 'Ammo') {
-			inventoryList[itemName] = inventoryList[itemName] ? inventoryList[itemName] + itemData.amount : itemData.amount;
-		// if item is weapon, is already in inventory, and is stackable
-		} else if (generalItemType === 'weapons' && player.ammo.stackable && player.ammo.stackable[itemName]) {
-			player.ammo.stackable[itemName]++;
-		// or item is anything else, whether in inv or not
+		if (objectType === 'Ammo') {
+			invId = itemData.gunType + 'Ammo0';
+			const currentAmmoCount = inventoryList[invId] ? inventoryList[invId].amount : 0;
+			inventoryList[invId] = {...itemData};
+			inventoryList[invId].id  = invId; // replace original id with inventory specific id for stackable items
+			inventoryList[invId].amount = currentAmmoCount + itemData.amount;
+		} else if (objectType === 'Light') {
+			inventoryList[id] = {...itemData};
+			inventoryList[id].time = this.lightTimes[itemData.name];
+		} else if (itemData.stackable) {
+			invId = id.replace(/\d+$/, '0');
+			if (!inventoryList[invId]) {
+				inventoryList[invId] = {...itemData};
+				inventoryList[invId].id  = invId; // replace original id with inventory specific id for stackable items
+				inventoryList[invId].currentRounds = itemData.currentRounds || 1;
+			} else if (objectType === 'Weapon') {
+				inventoryList[invId].currentRounds += itemData.currentRounds;
+			} else {
+				inventoryList[invId].amount += itemData.amount;
+			}
 		} else {
-			inventoryList[id] = {...itemData.itemInfo};
-			inventoryList[id].name = itemName;
-			if (itemData.stackable) {
-				if (player.ammo.stackable) {
-					player.ammo.stackable[itemName] = 1;
-				} else {
-					player.ammo.stackable = {[itemName]: 1};
-				}
-			}
-			if (itemData.itemType === 'Light') {
-				inventoryList[id].time = this.lightTimes[itemName];
-				inventoryList[id].equipped = false;
-			}
-			if (itemData.itemType === 'Weapon') {
-				inventoryList[id].equipped = false;
-				if (gunType) {
-					if (itemData.includedAmmo > 0) {
-						includedGunAmmo = player.ammo[gunType] ? player.ammo[gunType] + itemData.includedAmmo : itemData.includedAmmo;
-					}
-				}
-			}
+			inventoryList[id] = {...itemData};
 		}
-		let updatedData = {[generalItemType]: inventoryList};
-		if (includedGunAmmo) {
-			updatedData.ammo = {[gunType]: includedGunAmmo};
-		}
+
+		let updatedData = {[invObjectCategory]: inventoryList};
 		this.props.updateCharacters('player', updatedData, this.props.activeCharacter, false, false, () => {
 			this.removeItemFromMap(id);
 		});

@@ -52,7 +52,8 @@ class Game extends React.Component {
 			creatureCoordsUpdate: null,
 			selectedCharacter: '',
 			selectedCreature: '',
-			itemButtonSelected: {},
+			actionButtonSelected: {},
+			objectSelected: null,
 			inTacticalMode: true, // start in tactical mode any time entering a new area
 			threatList: [],
 			partyIsNearby: true,
@@ -89,7 +90,8 @@ class Game extends React.Component {
 			creatureCoordsUpdate: null,
 			selectedCharacter: '',
 			selectedCreature: '',
-			itemButtonSelected: {},
+			actionButtonSelected: {},
+			objectSelected: null,
 			inTacticalMode: true, // start in tactical mode any time entering a new area
 			threatList: [],
 			partyIsNearby: true,
@@ -114,7 +116,7 @@ class Game extends React.Component {
 	 * If id is passed in, updating only one creature; otherwise updating all
 	 * @param type: String ('player' or 'creature')
 	 * @param updateData: Object (can be any number of data objects unless updating all characters of a type, then must be all data)
-	 * @param id: String
+	 * @param id: String (char/creature Id)
 	 * @param isInitialCreatureSetup: Boolean
 	 * @param isInitialCharacterSetup: Boolean
 	 * @param callback: Function
@@ -285,7 +287,7 @@ class Game extends React.Component {
 
 	/**
 	 * Updates to state what PC weapon or item button is selected in the UI
-	 * Data stored in itemButtonSelected: {characterId, itemId, itemName, stats: WeaponTypes[itemName] or ItemTypes[itemName]}
+	 * Data stored in actionButtonSelected: {characterId, itemId, itemName, stats: WeaponTypes[itemName] or ItemTypes[itemName]}
 	 * @param characterId: String
 	 * @param itemId: String
 	 * @param itemName: String
@@ -296,13 +298,44 @@ class Game extends React.Component {
 	toggleActionButton = (characterId, itemId, itemName, buttonType, callback) => {
 		let buttonState = {};
 		// if no weapon selected or weapon selected doesn't match new weapon selected, set weapon state to new weapon
-		if (characterId && (Object.keys(this.state.itemButtonSelected).length === 0 ||
-			(this.state.itemButtonSelected.characterId !== characterId || this.state.itemButtonSelected.itemId !== itemId)))
+		if (characterId && (Object.keys(this.state.actionButtonSelected).length === 0 ||
+			(this.state.actionButtonSelected.characterId !== characterId || this.state.actionButtonSelected.itemId !== itemId)))
 		{
 			buttonState = {characterId, itemId, itemName, stats: buttonType === 'weapon' ? WeaponTypes[itemName] : ItemTypes[itemName]};
 		}
-		this.setState({itemButtonSelected: buttonState}, () => {
+		this.setState({actionButtonSelected: buttonState}, () => {
 			if (callback) callback();
+		});
+	}
+
+	/**
+	 * Map calls this to send id of object player clicked on in map so object info panel can be displayed in UI
+	 * @param objectInfo: object
+	 * @param selectionEvt: event object
+	 */
+	setObjectSelected = (objectInfo, selectionEvt) => {
+		const objectSelected = objectInfo ? {object: objectInfo, evt: selectionEvt} : null;
+		this.setState({objectSelected});
+	}
+
+	/**
+	 * Reloading active character's gun using ammo in inv we already know we have
+	 * @param weapon: object (from CharacterControls in UIElements: {weaponId: itemId, weaponName: weaponInfo.name, isGun: true, ammo: weaponInfo.currentRounds})
+	 * @param gunInfo: object
+	 * @param availAmmo: number (available ammo in inventory)
+	 * @param currentPCdata: object (all char info, from CharacterControls in UIElements)
+	 */
+	reloadGun = (weapon, gunInfo, availAmmo, currentPCdata) => {
+		const gunType = gunInfo.gunType;
+		const resupplyAmmo = gunInfo.rounds <= availAmmo ? gunInfo.rounds : availAmmo;
+		let updatedPCdata = {...currentPCdata};
+		updatedPCdata.weapons[weapon.weaponId].currentRounds = resupplyAmmo;
+		updatedPCdata.items[gunType + 'Ammo0'].amount = availAmmo - resupplyAmmo;
+		if (updatedPCdata.items[gunType + 'Ammo0'].amount === 0) {
+			delete updatedPCdata.items[gunType + 'Ammo0'];
+		}
+		this.updateCharacters('player', updatedPCdata, currentPCdata.id, false, false, () => {
+			this._updateActivePlayerActions();
 		});
 	}
 
@@ -314,9 +347,9 @@ class Game extends React.Component {
 	 * @param checkLineOfSightToParty: function (from Map)
 	 */
 	handleUnitClick = (id, target, isInRange, checkLineOfSightToParty) => {
-		if (Object.keys(this.state.itemButtonSelected).length > 0 && isInRange) {
+		if (Object.keys(this.state.actionButtonSelected).length > 0 && isInRange) {
 			// clicked unit is getting acted upon
-			const selectedItemInfo = this.state.itemButtonSelected;
+			const selectedItemInfo = this.state.actionButtonSelected;
 			const activePC = this.state.playerCharacters[this.state.activeCharacter];
 			const actionProps = {
 				itemId: selectedItemInfo.itemId,
@@ -352,7 +385,7 @@ class Game extends React.Component {
 	updateCurrentTurn = (startTurns = false, callback) => {
 		const currentTurn = startTurns || this.state.currentTurn === this.state.unitsTurnOrder.length - 1 ? 0 : this.state.currentTurn + 1;
 		this.setState({currentTurn, activePlayerActionsCompleted: 0, activePlayerMovesCompleted: 0}, () => {
-			if (this.state.playerCharacters[this.state.activeCharacter] && this.state.itemButtonSelected) {
+			if (this.state.playerCharacters[this.state.activeCharacter] && this.state.actionButtonSelected) {
 				this.toggleActionButton('', '', '', '', () => {
 					this.updateActiveCharacter(callback);
 				});
@@ -674,8 +707,12 @@ class Game extends React.Component {
 						updateUnitSelectionStatus={this.updateUnitSelectionStatus}
 						updateCharacters={this.updateCharacters}
 
-						itemButtonSelected={this.state.itemButtonSelected}
+						setObjectSelected={this.setObjectSelected}
+						objectSelected={this.state.objectSelected}
+
+						actionButtonSelected={this.state.actionButtonSelected}
 						toggleActionButton={this.toggleActionButton}
+						reloadGun={this.reloadGun}
 
 						updateCurrentTurn={this.updateCurrentTurn}
 						activeCharacter={this.state.activeCharacter}
@@ -708,6 +745,7 @@ class Game extends React.Component {
 
 						updateMapObjects={this.updateMapObjects}
 						mapObjects={this.state.mapObjects}
+						setObjectSelected={this.setObjectSelected}
 
 						currentTurn={this.state.currentTurn}
 						updateCurrentTurn={this.updateCurrentTurn}
@@ -718,7 +756,7 @@ class Game extends React.Component {
 
 						updateLog={this.updateLog}
 						handleUnitClick={this.handleUnitClick}
-						itemButtonSelected={this.state.itemButtonSelected}
+						actionButtonSelected={this.state.actionButtonSelected}
 
 						updateThreatList={this.updateThreatList}
 						threatList={this.state.threatList}
