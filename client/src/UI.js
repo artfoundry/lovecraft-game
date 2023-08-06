@@ -7,6 +7,8 @@ class UI extends React.Component {
 		super(props);
 
 		this.uiPanelHeight = 95;
+		this.objectPanelWidth = 300;
+		this.objectPanelHeight = 200;
 		this.inventoryLength = 12;
 
 		this.uiRefs = {
@@ -105,7 +107,10 @@ class UI extends React.Component {
 	}
 
 	setObjectSelected = (objectSelected, evt) => {
-		const selectedObjPos = evt ? {left: evt.clientX, top: evt.clientY - 230} : null;
+		const buffer = 30;
+		const leftMod = evt && evt.clientX > (window.innerWidth - this.objectPanelWidth) ? -(this.objectPanelWidth + buffer) : 0;
+		const topMod = evt && evt.clientY < (window.screenTop + this.objectPanelHeight) ? buffer : -this.objectPanelHeight;
+		const selectedObjPos = evt ? {left: evt.clientX + leftMod, top: evt.clientY + topMod} : null;
 		const objectIsSelected = objectSelected !== null && !this.state.objectIsSelected;
 		this.setState({objectSelected, objectIsSelected, selectedObjPos});
 		if (this.props.objectSelected && !objectSelected) {

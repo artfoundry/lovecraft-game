@@ -17,7 +17,7 @@ class Game extends React.Component {
 		this.startingLocation = 'catacombs';
 		this.startingPlayerCharacters = ['privateEye', 'archaeologist', 'chemist'];
 		this.playerMovesLimit = 3;
-		this.playerActionsLimit = 1;
+		this.playerActionsLimit = 2;
 
 		this.firebase = new Firebase();
 
