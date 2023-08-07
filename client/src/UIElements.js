@@ -3,6 +3,7 @@ import {convertObjIdToClassId, notEnoughSpaceInInventory} from './Utils';
 
 let draggedItem = null;
 let draggedItemSourceLoc = null;
+let draggedItemSourceClasses = null;
 
 function CharacterControls(props) {
 	let actionButtonState = '';
@@ -265,6 +266,7 @@ function CharacterInfoPanel(props) {
 		const itemId = e.target.id.includes('-leftHand') ? e.target.id.slice(0, e.target.id.indexOf('-leftHand')) : e.target.id;
 		draggedItem = {data: updateData.items[itemId] || updateData.weapons[itemId], sourcePC: updateData.id};
 		draggedItemSourceLoc = e.target.parentElement.id; //only used if being dragged from inv (not from equipped)
+		draggedItemSourceClasses = e.target.parentElement.className;
 	}
 	const handleItemOverDropZone = (e) => {
 		e.preventDefault();
@@ -277,8 +279,9 @@ function CharacterInfoPanel(props) {
 		// don't know which hand dragged to and don't know if that hand already has an item equipped (if it doesn't, target class would include the "box" class)
 		const destination = targetClasses.includes('-arm') ? 'hand-swap' : parentClasses.includes('-arm') ? 'hand' : 'body';
 
-		// if item is dragged to a hand and is a non-light item (not including weapons) or item is dragged to body and isn't armor, exit out
-		if ((destination.includes('hand') && (draggedItem.data.itemType && draggedItem.data.itemType !== 'Light')) ||
+		// if item is dragged and released on its own box, dragged to a hand and is a non-light item (not including weapons), or dragged to body and isn't armor, exit out
+		if (parentClasses === draggedItemSourceClasses ||
+			(destination.includes('hand') && (draggedItem.data.itemType && draggedItem.data.itemType !== 'Light')) ||
 			(destination === 'body' && (!draggedItem.data.itemType || draggedItem.data.itemType !== 'Armor')))
 		{
 			return;

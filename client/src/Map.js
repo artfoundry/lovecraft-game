@@ -1290,7 +1290,7 @@ class Map extends React.Component {
 	pathFromAtoB(startTileCoords, endTileCoords) {
 		const allPcPos = this.props.getAllCharactersPos('player', 'pos');
 		const allCreaturePos = this.props.getAllCharactersPos('creature', 'pos');
-//todo: need allObjectPos
+//todo: need allObjectPos for env objects (not for picking up)
 		const allObjectPos = [];
 
 		let tilePath = [];
@@ -1743,7 +1743,7 @@ class Map extends React.Component {
 			if (!inventoryList[invId]) {
 				inventoryList[invId] = {...itemData};
 				inventoryList[invId].id  = invId; // replace original id with inventory specific id for stackable items
-				inventoryList[invId].currentRounds = itemData.currentRounds || 1;
+				inventoryList[invId].currentRounds = itemData.currentRounds;
 			} else if (objectType === 'Weapon') {
 				inventoryList[invId].currentRounds += itemData.currentRounds;
 			} else {
