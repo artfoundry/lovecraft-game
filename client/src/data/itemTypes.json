@@ -16,18 +16,21 @@
   },
   "Oil": {
     "itemType": "Miscellaneous",
+    "stackable": true,
     "description": "Oil for refilling a lantern or applying to a torch."
   },
   "Pharmaceuticals": {
     "itemType": "Medicine",
     "healingAmount": 3,
     "healingType": "sanity",
+    "stackable": true,
     "description": "Western medicine's chemical solution to psychological and physiological maladies. Helps minimize anxiety and placate fears. For a while..."
   },
   "First Aid Kit": {
     "itemType": "Medicine",
     "healingAmount": 20,
     "healingType": "health",
+    "stackable": true,
     "description": "A basic first aid kit to patch up minor wounds."
   },
   "Leather Jacket": {

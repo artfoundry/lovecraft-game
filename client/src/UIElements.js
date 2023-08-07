@@ -53,59 +53,81 @@ function CharacterControls(props) {
 			const firstOpenInvSlot = allPlayersInv[props.characterId].indexOf(null);
 			const invObjectCategory = draggedItem.data.itemType ? 'items' : 'weapons';
 			let invId = draggedItem.data.id;
+			const updateCurrentAndSourceData = (sourceItemCount) => {
+				// now add item to inv shown in char info panel
+				if (!allPlayersInv[props.characterId].includes(invId) && currentPCdata.equippedItems.loadout1.right !== invId && currentPCdata.equippedItems.loadout1.left !== invId) {
+					allPlayersInv[props.characterId].splice(firstOpenInvSlot, 1, invId);
+				}
+
+				// remove dragged item from source pc inv if it's a single object or an entire stack (of ammo, oil, etc.)
+				if (!draggedItem.data.stackable || sourceItemCount === 0) {
+					// if no source box index, then it was dragged from being equipped
+					if (sourceBoxIndex) {
+						allPlayersInv[draggedItem.sourcePC].splice(+sourceBoxIndex[0], 1, null);
+					}
+					delete sourcePCdata[invObjectCategory][invId];
+					if (sourcePCdata.equippedItems.loadout1.left === invId) {
+						sourcePCdata.equippedItems.loadout1.left = '';
+					}
+					// this is not an else if because a two handed weapon would take up both left and right
+					if (sourcePCdata.equippedItems.loadout1.right === invId) {
+						sourcePCdata.equippedItems.loadout1.right = '';
+					}
+					if (sourcePCdata.equippedLight === invId) {
+						sourcePCdata.equippedLight = null;
+						sourcePCdata.lightRange = 0;
+					}
+				// otherwise just update its item count
+				} else if (sourceItemCount > 0) {
+					if (draggedItem.data.gunType || invObjectCategory === 'items') {
+						sourcePCdata[invObjectCategory][invId].amount = sourceItemCount;
+					} else {
+						sourcePCdata[invObjectCategory][invId].currentRounds = sourceItemCount;
+					}
+				}
+
+				allPCdata[props.characterId] = currentPCdata;
+				allPCdata[draggedItem.sourcePC] = sourcePCdata;
+				props.updateCharacters('player', allPCdata, null, false, false, () => {
+					// sourcePc inv update should be handled by UI from componentDidUpdate -> _parseInvItems
+					props.updateInventory(props.characterId, allPlayersInv[props.characterId]);
+				});
+			}
 
 			// add dragged item to current pc inv
 			if (draggedItem.data.stackable) {
-				// gun ammo
-				if (draggedItem.data.gunType) {
-					if (!currentPCdata.items[invId]) {
-						currentPCdata.items[invId] = {...draggedItem.data};
-					} else {
-						currentPCdata.items[invId].amount += draggedItem.data.amount;
+				props.setObjectSelected(draggedItem.data, e, (draggedItemCount, sourceItemCount) => {
+					if (draggedItem) {
+						// for stackable items, need to update count from object planel split
+						if (draggedItem.data.gunType || invObjectCategory === 'items') {
+							draggedItem.data.amount = draggedItemCount;
+						} else {
+							draggedItem.data.currentRounds = draggedItemCount;
+						}
+
+						// gun ammo
+						if (draggedItem.data.gunType) {
+							if (!currentPCdata.items[invId]) {
+								currentPCdata.items[invId] = {...draggedItem.data};
+							} else {
+								currentPCdata.items[invId].amount += draggedItem.data.amount;
+							}
+						} else {
+							if (!currentPCdata[invObjectCategory][invId]) {
+								currentPCdata[invObjectCategory][invId] = {...draggedItem.data};
+							} else if (invObjectCategory === 'weapons'){
+								currentPCdata.weapons[invId].currentRounds += draggedItem.data.currentRounds;
+							} else {
+								currentPCdata.items[invId].amount += draggedItem.data.amount;
+							}
+						}
+						updateCurrentAndSourceData(sourceItemCount);
 					}
-				} else {
-					if (!currentPCdata[invObjectCategory][invId]) {
-						currentPCdata[invObjectCategory][invId] = {...draggedItem.data};
-					} else if (invObjectCategory === 'weapons'){
-						currentPCdata.weapons[invId].currentRounds += draggedItem.data.currentRounds;
-					} else {
-						currentPCdata.items[invId].amount += draggedItem.data.amount;
-					}
-				}
+				});
 			} else {
 				currentPCdata[invObjectCategory][draggedItem.data.id] = {...draggedItem.data};
+				updateCurrentAndSourceData();
 			}
-
-			// now add item to inv shown in char info panel
-			if (!allPlayersInv[props.characterId].includes(invId) && !currentPCdata.equippedItems.loadout1.right && !currentPCdata.equippedItems.loadout1.left) {
-				allPlayersInv[props.characterId].splice(firstOpenInvSlot, 1, invId);
-			}
-
-			// remove dragged item from source pc inv
-			// if no source box index, then it was dragged from being equipped
-			if (sourceBoxIndex) {
-				allPlayersInv[draggedItem.sourcePC].splice(+sourceBoxIndex[0], 1, null);
-			}
-			delete sourcePCdata[invObjectCategory][invId];
-			if (sourcePCdata.equippedItems.loadout1.left === invId) {
-				sourcePCdata.equippedItems.loadout1.left = '';
-			}
-			// this is not an else if because a two handed weapon would take up both left and right
-			if (sourcePCdata.equippedItems.loadout1.right === invId) {
-				sourcePCdata.equippedItems.loadout1.right = '';
-			}
-			if (sourcePCdata.equippedLight === invId) {
-				sourcePCdata.equippedLight = null;
-				sourcePCdata.lightRange = 0;
-			}
-
-			allPCdata[props.characterId] = currentPCdata;
-			allPCdata[draggedItem.sourcePC] = sourcePCdata;
-			props.updateCharacters('player', allPCdata, null, false, false, () => {
-				props.updateInventory(props.characterId, allPlayersInv[props.characterId], () => {
-					props.updateInventory(draggedItem.sourcePC, allPlayersInv[draggedItem.sourcePC]);
-				});
-			});
 		}
 
 		if (dialogProps) {
@@ -517,15 +539,25 @@ function CharacterInfoPanel(props) {
 }
 
 function ObjectInfoPanel(props) {
-	const {objectInfo, updateInventory, characterInfo, updateCharacters} = {...props};
+	const {objectInfo, setObjectSelected, selectedObjPos, objPanelCallback} = {...props};
 
-	const splitStack = () => {
+	const splitStack = (e) => {
+		e.preventDefault();
+		const splitValue = +e.target[0].value;
+		const remainingCount = objectInfo.amount ? objectInfo.amount - splitValue : objectInfo.currentRounds - splitValue;
 
+		setObjectSelected(null);
+		objPanelCallback(splitValue, remainingCount);
 	};
 
+	const cancelObjPanel = () => {
+		draggedItem = null;
+		setObjectSelected(null);
+	}
+
 	return (
-		<div className={'object-info-panel'} style={{left: props.selectedObjPos.left, top: props.selectedObjPos.top}}>
-			<div className='general-button' onClick={() => props.setObjectSelected(null)}>X</div>
+		<div className={`object-info-panel ${!selectedObjPos ? 'ui-panel' : ''}`} style={{left: selectedObjPos.left, top: selectedObjPos.top}}>
+			<div className='general-button' onClick={() => cancelObjPanel()}>X</div>
 			<div className='object-panel-container'>
 				<div className={`inv-object ${convertObjIdToClassId(objectInfo.id)}-inv`}></div>
 				<div className='object-text-container'>
@@ -539,6 +571,23 @@ function ObjectInfoPanel(props) {
 					{!objectInfo.isMapObj && objectInfo.time && <div>Light remaining: {objectInfo.time} steps</div>}
 					<div>{objectInfo.description}</div>
 				</div>
+				{draggedItem && objectInfo.stackable &&
+					<form className='object-split-buttons' onSubmit={(e) => splitStack(e)}>
+						<label htmlFor='object-split'>Move how many?</label>
+						<input type='number' id='object-split' name='object-split' defaultValue='1' min='1' max={objectInfo.amount || objectInfo.currentRounds} />
+						<button className='general-button' type='submit'>Move</button>
+					</form>
+				}
+				{!objectInfo.isMapObj && !draggedItem &&
+					<div className='object-panel-buttons'>
+						<span className='general-button'>Equip Right Hand</span>
+						<span className='general-button'>Equip Left Hand</span>
+						<span className='general-button'>Unequip</span>
+						<span className='general-button'>Drop</span>
+						<span className='general-button'>Trade</span>
+					</div>
+				}
+				<span className='general-button' onClick={() => cancelObjPanel()}>Cancel</span>
 			</div>
 		</div>
 	);

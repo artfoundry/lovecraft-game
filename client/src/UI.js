@@ -8,7 +8,7 @@ class UI extends React.Component {
 
 		this.uiPanelHeight = 95;
 		this.objectPanelWidth = 300;
-		this.objectPanelHeight = 200;
+		this.objectPanelHeight = 250;
 		this.inventoryLength = 12;
 
 		this.uiRefs = {
@@ -100,33 +100,40 @@ class UI extends React.Component {
 					checkForExtraAmmo={this.checkForExtraAmmo}
 					reloadGun={this.props.reloadGun}
 					setShowDialogProps={this.props.setShowDialogProps}
+					setObjectSelected={this.setObjectSelected}
 				/>
 			)
 		}
 		return controlPanels;
 	}
 
-	setObjectSelected = (objectSelected, evt) => {
+	/**
+	 * Store whether an object in inv or on the map has been selected (or if callback is passed, item is being dragged instead)
+	 * @param objectSelected
+	 * @param evt
+	 * @param objPanelCallback
+	 */
+	setObjectSelected = (objectSelected, evt, objPanelCallback) => {
 		const buffer = 30;
 		const leftMod = evt && evt.clientX > (window.innerWidth - this.objectPanelWidth) ? -(this.objectPanelWidth + buffer) : 0;
 		const topMod = evt && evt.clientY < (window.screenTop + this.objectPanelHeight) ? buffer : -this.objectPanelHeight;
 		const selectedObjPos = evt ? {left: evt.clientX + leftMod, top: evt.clientY + topMod} : null;
 		const objectIsSelected = objectSelected !== null && !this.state.objectIsSelected;
-		this.setState({objectSelected, objectIsSelected, selectedObjPos});
-		if (this.props.objectSelected && !objectSelected) {
-			this.props.setObjectSelected(null);
-		}
+		this.setState({objectSelected, objectIsSelected, selectedObjPos, objPanelCallback}, () => {
+			// if object selected from map and then was clicked on again, then deselect and close panel
+			if (this.props.objectSelected && !objectSelected) {
+				this.props.setObjectSelected(null);
+			}
+		});
 	}
 
 	showObjectPanel = () => {
 		return (
 			<ObjectInfoPanel
 				objectInfo={this.state.objectSelected}
-				updateInventory={this.updateInventory}
-				characterInfo={this.props.selectedCharacterInfo}
-				updateCharacters={this.props.updateCharacters}
 				setObjectSelected={this.setObjectSelected}
 				selectedObjPos={this.state.selectedObjPos}
+				objPanelCallback={this.state.objPanelCallback}
 			/>
 		)
 	}
@@ -216,14 +223,19 @@ class UI extends React.Component {
 			}
 		}
 
+		// remove from inv list any items that are no longer among character's items/weapons
+		tempInvList.forEach((id, index) => {
+			if (!allItems[id]) {
+				tempInvList.splice(index, 1, null);
+			}
+		});
+
 		// need to fill in the rest of the inv slots with null, so char info panel shows empty boxes
 		let updatedInventory = [];
 		for (let i=0; i < this.inventoryLength; i++) {
 			updatedInventory.push(tempInvList[i] || null);
 		}
-		this.setState(prevState => ({
-			entireInventory: {...prevState.entireInventory, [charId]: updatedInventory}
-		}));
+		this.updateInventory(charId, updatedInventory);
 	}
 
 	componentDidMount() {
