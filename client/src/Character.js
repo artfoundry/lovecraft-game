@@ -1,5 +1,5 @@
 import React from 'react';
-import {diceRoll} from './Utils';
+import {diceRoll, deepCopy} from './Utils';
 import ItemTypes from './data/itemTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
 
@@ -76,8 +76,8 @@ class Character extends React.Component {
 		const {itemId, itemStats, targetData, pcData, updateCharacter, updateLog, callback} = props;
 		let isHit, damage, hitRoll, defenseRoll;
 		let rangedStrHitModifier = itemStats.usesStr ? Math.round(this.strength / 2) : 0;
-		let updatedPcData = {...pcData};
-		let updatedCreatureData = {...targetData};
+		let updatedPcData = deepCopy(pcData);
+		let updatedCreatureData = deepCopy(targetData);
 		const weaponInfo = updatedPcData.weapons[itemId];
 		const equippedSide = pcData.equippedItems.loadout1.right === itemId ? 'right' : 'left';
 
@@ -126,10 +126,10 @@ class Character extends React.Component {
 		const targetStat = itemStats.healingType === 'health' ? 'currentHealth' : 'currentSanity';
 		const startingStatValue = itemStats.healingType === 'health' ? targetData.startingHealth : targetData.startingSanity;
 		const healAmount = Math.round(pcData.mentalAcuity / 2) + (itemStats.healingType === 'health' ? diceRoll(12) : diceRoll(4)) + itemStats.healingAmount;
-		let updatedTargetData = {...targetData};
+		let updatedTargetData = deepCopy(targetData);
 		const healedStatValue = targetData[targetStat] + healAmount;
 		updatedTargetData[targetStat] = healedStatValue > startingStatValue ? startingStatValue : healedStatValue;
-		let updatedHealerData = {...pcData};
+		let updatedHealerData = deepCopy(pcData);
 		delete updatedHealerData.items[itemId];
 		updateCharacter('player', updatedTargetData, targetData.id, false, false, () => {
 			updateLog(`${pcData.name} uses ${healItem} to increase ${targetData.name}'s ${targetStat.substring(7)}`);

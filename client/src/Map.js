@@ -8,7 +8,7 @@ import ItemTypes from './data/itemTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
 import {Exit, LightElement, Character, Tile, Item, Door, MapCover} from './MapElements';
 import {StoneDoor} from './Audio';
-import {convertObjIdToClassId, randomTileMovementValue, convertPosToCoords, convertCoordsToPos, roundTowardZero, notEnoughSpaceInInventory} from './Utils';
+import {convertObjIdToClassId, randomTileMovementValue, convertPosToCoords, convertCoordsToPos, roundTowardZero, notEnoughSpaceInInventory, deepCopy} from './Utils';
 import './css/map.css';
 import './css/catacombs.css';
 import './css/dungeon.css';
@@ -471,14 +471,14 @@ class Map extends React.Component {
 	 * Finds the nearest available (doesn't already contain another player) tile to the one passed in
 	 * Don't need ot look for creature positions because players are placed first
 	 * @param previousPlayerCoords: Object (xPos, yPos)
+	 * @param playerPositions: Array (of pos strings)
 	 * @returns String (new available pos)
 	 * @private
 	 */
-	_findNearbyAvailableTile(previousPlayerCoords) {
+	_findNearbyAvailableTile(previousPlayerCoords, playerPositions) {
 		let availableTile = null;
 		let distanceAway = 1;
 		const tileList = Object.keys(this.state.mapLayout).filter(tilePos => this.state.mapLayout[tilePos].type === 'floor');
-		const allCharactersPos = this.props.getAllCharactersPos('player', 'pos').map(posObj => posObj.pos);
 		while (!availableTile) {
 			const newNearbyPos1 = `${previousPlayerCoords.xPos + distanceAway}-${previousPlayerCoords.yPos}`;
 			const newNearbyPos2 = `${previousPlayerCoords.xPos - distanceAway}-${previousPlayerCoords.yPos}`;
@@ -488,21 +488,21 @@ class Map extends React.Component {
 			const newNearbyPos6 = `${previousPlayerCoords.xPos - distanceAway}-${previousPlayerCoords.yPos - distanceAway}`;
 			const newNearbyPos7 = `${previousPlayerCoords.xPos + distanceAway}-${previousPlayerCoords.yPos - distanceAway}`;
 			const newNearbyPos8 = `${previousPlayerCoords.xPos - distanceAway}-${previousPlayerCoords.yPos + distanceAway}`;
-			if (tileList.includes(newNearbyPos1) && !allCharactersPos.includes(newNearbyPos1)) {
+			if (tileList.includes(newNearbyPos1) && !playerPositions.includes(newNearbyPos1)) {
 				availableTile = newNearbyPos1;
-			} else if (tileList.includes(newNearbyPos2) && !allCharactersPos.includes(newNearbyPos2)) {
+			} else if (tileList.includes(newNearbyPos2) && !playerPositions.includes(newNearbyPos2)) {
 				availableTile = newNearbyPos2;
-			} else if (tileList.includes(newNearbyPos3) && !allCharactersPos.includes(newNearbyPos3)) {
+			} else if (tileList.includes(newNearbyPos3) && !playerPositions.includes(newNearbyPos3)) {
 				availableTile = newNearbyPos3;
-			} else if (tileList.includes(newNearbyPos4) && !allCharactersPos.includes(newNearbyPos4)) {
+			} else if (tileList.includes(newNearbyPos4) && !playerPositions.includes(newNearbyPos4)) {
 				availableTile = newNearbyPos4;
-			} else if (tileList.includes(newNearbyPos5) && !allCharactersPos.includes(newNearbyPos5)) {
+			} else if (tileList.includes(newNearbyPos5) && !playerPositions.includes(newNearbyPos5)) {
 				availableTile = newNearbyPos5;
-			} else if (tileList.includes(newNearbyPos6) && !allCharactersPos.includes(newNearbyPos6)) {
+			} else if (tileList.includes(newNearbyPos6) && !playerPositions.includes(newNearbyPos6)) {
 				availableTile = newNearbyPos6;
-			} else if (tileList.includes(newNearbyPos7) && !allCharactersPos.includes(newNearbyPos7)) {
+			} else if (tileList.includes(newNearbyPos7) && !playerPositions.includes(newNearbyPos7)) {
 				availableTile = newNearbyPos7;
-			} else if (tileList.includes(newNearbyPos8) && !allCharactersPos.includes(newNearbyPos8)) {
+			} else if (tileList.includes(newNearbyPos8) && !playerPositions.includes(newNearbyPos8)) {
 				availableTile = newNearbyPos8;
 			} else {
 				distanceAway++;
@@ -518,22 +518,23 @@ class Map extends React.Component {
 	 * @private
 	 */
 	_setInitialCharacterCoords(initialSetupCallback) {
-		let updatedPlayerData = {...this.props.playerCharacters};
+		let updatedPlayerData = deepCopy(this.props.playerCharacters);
 		let playerVisitedUpdatedState = {};
 		let previousPlayerCoords = null;
+		let playerPositions = [];
 
 		for (const playerID of Object.keys(this.props.playerCharacters)) {
 			let tilePos = '';
 			let newCoords = [];
 			if (!previousPlayerCoords) {
 				tilePos = this._generateRandomLocation();
-				newCoords = convertPosToCoords(tilePos);
-				previousPlayerCoords = newCoords;
 			} else {
 				// look for empty nearby tile to place 2nd/3rd PC
-				newCoords = convertPosToCoords(this._findNearbyAvailableTile(previousPlayerCoords));
-				previousPlayerCoords = newCoords;
+				tilePos = this._findNearbyAvailableTile(previousPlayerCoords, playerPositions);
 			}
+			playerPositions.push(tilePos);
+			newCoords = convertPosToCoords(tilePos);
+			previousPlayerCoords = newCoords;
 			playerVisitedUpdatedState = Object.assign(this.state.playerVisited, this._findVisitedTiles(newCoords));
 			updatedPlayerData[playerID].coords = newCoords;
 		}
@@ -663,12 +664,6 @@ class Map extends React.Component {
 	_createMapTile(tilePos) {
 		let allClasses = this.currentMapData.name;
 		const tileData = this.state.mapLayout[tilePos];
-
-		if (tileData.classes && tileData.classes !== '') {
-			allClasses += ` ${tileData.classes}`;
-		} else if (tileData.type === 'floor') {
-			allClasses += ' floor'
-		}
 		const xPos = (tileData.xPos * this.tileSize) + 'px';
 		const yPos = (tileData.yPos * this.tileSize) + 'px';
 		const size = this.tileSize + 'px';
@@ -678,12 +673,19 @@ class Map extends React.Component {
 			height: size
 		};
 
+		if (tileData.classes && tileData.classes !== '') {
+			allClasses += ` ${tileData.classes}`;
+		} else if (tileData.type === 'floor') {
+			allClasses += ' floor'
+		}
+
 		return (<Tile
 			key={tilePos}
 			tileType={tileData.type}
 			styleProp={tileStyle}
 			tileName={convertCoordsToPos(tileData)}
 			classStr={allClasses}
+			setHasObjBeenDropped={this.props.setHasObjBeenDropped}
 			moveCharacter={(tilePos) => {this.checkIfTileOrObject(tilePos, null)}} />);
 	}
 
@@ -1726,7 +1728,7 @@ class Map extends React.Component {
 		const player = this.props.playerCharacters[this.props.activeCharacter];
 		const objectType = itemData.itemType ? itemData.itemType : 'Weapon';
 		const invObjectCategory = objectType === 'Weapon' ? 'weapons' : 'items';
-		let inventoryList = {...player[invObjectCategory]};
+		let inventoryList = deepCopy(player[invObjectCategory]);
 		let invId = '';
 
 		if (objectType === 'Ammo') {
@@ -2048,7 +2050,7 @@ class Map extends React.Component {
 	_storeNewCreatureCoords(creatureID, newCoords, callback) {
 		let newCoordsArray = newCoords;
 		const nextCoords = newCoordsArray.shift();
-		const creatureData = {...this.props.mapCreatures};
+		const creatureData = deepCopy(this.props.mapCreatures);
 		creatureData[creatureID].coords = nextCoords;
 
 		this.props.updateCharacters('creature', creatureData[creatureID], creatureID, false, false, () => {

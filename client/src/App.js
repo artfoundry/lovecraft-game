@@ -7,7 +7,7 @@ import WeaponTypes from './data/weaponTypes.json';
 import ItemTypes from './data/itemTypes.json';
 import UI from './UI';
 import './css/app.css';
-import {diceRoll} from './Utils';
+import {diceRoll, deepCopy} from './Utils';
 
 class Game extends React.Component {
 	constructor(props) {
@@ -54,6 +54,7 @@ class Game extends React.Component {
 			selectedCreature: '',
 			actionButtonSelected: {},
 			objectSelected: null,
+			objHasBeenDropped: false,
 			inTacticalMode: true, // start in tactical mode any time entering a new area
 			threatList: [],
 			partyIsNearby: true,
@@ -92,6 +93,7 @@ class Game extends React.Component {
 			selectedCreature: '',
 			actionButtonSelected: {},
 			objectSelected: null,
+			objHasBeenDropped: false,
 			inTacticalMode: true, // start in tactical mode any time entering a new area
 			threatList: [],
 			partyIsNearby: true,
@@ -309,12 +311,12 @@ class Game extends React.Component {
 	}
 
 	/**
-	 * Map calls this to send id of object player clicked on in map so object info panel can be displayed in UI
+	 * Map calls this to send id of object that player clicked on in map so object info panel can be displayed in UI
 	 * @param objectInfo: object
 	 * @param selectionEvt: event object
 	 */
 	setObjectSelected = (objectInfo, selectionEvt) => {
-		const objectSelected = objectInfo ? {object: objectInfo, evt: selectionEvt} : null;
+		const objectSelected = objectInfo && (!this.state.objectSelected || objectInfo.id !== this.state.objectSelected.object.id) ? {object: objectInfo, evt: selectionEvt} : null;
 		this.setState({objectSelected});
 	}
 
@@ -328,7 +330,7 @@ class Game extends React.Component {
 	reloadGun = (weapon, gunInfo, availAmmo, currentPCdata) => {
 		const gunType = gunInfo.gunType;
 		const resupplyAmmo = gunInfo.rounds <= availAmmo ? gunInfo.rounds : availAmmo;
-		let updatedPCdata = {...currentPCdata};
+		let updatedPCdata = deepCopy(currentPCdata);
 		updatedPCdata.weapons[weapon.weaponId].currentRounds = resupplyAmmo;
 		updatedPCdata.items[gunType + 'Ammo0'].amount = availAmmo - resupplyAmmo;
 		if (updatedPCdata.items[gunType + 'Ammo0'].amount === 0) {
@@ -448,6 +450,14 @@ class Game extends React.Component {
 		this.setState({followModeMoves: updatedList}, () => {
 			if (callback) callback();
 		});
+	}
+
+	/**
+	 * Called from Map when player drags object to tile
+	 * @param objHasBeenDropped: boolean
+	 */
+	setHasObjBeenDropped = (objHasBeenDropped) => {
+		this.setState({objHasBeenDropped});
 	}
 
 
@@ -709,6 +719,8 @@ class Game extends React.Component {
 
 						setObjectSelected={this.setObjectSelected}
 						objectSelected={this.state.objectSelected}
+						objHasBeenDropped={this.state.objHasBeenDropped}
+						setHasObjBeenDropped={this.setHasObjBeenDropped}
 
 						actionButtonSelected={this.state.actionButtonSelected}
 						toggleActionButton={this.toggleActionButton}
@@ -746,6 +758,7 @@ class Game extends React.Component {
 						updateMapObjects={this.updateMapObjects}
 						mapObjects={this.state.mapObjects}
 						setObjectSelected={this.setObjectSelected}
+						setHasObjBeenDropped={this.setHasObjBeenDropped}
 
 						currentTurn={this.state.currentTurn}
 						updateCurrentTurn={this.updateCurrentTurn}

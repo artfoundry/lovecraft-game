@@ -31,13 +31,18 @@ function Exit(props) {
 function Tile(props) {
 	const isTopOrBottomWall = props.classStr.includes('top-wall') || props.classStr.includes('bottom-wall');
 	const tileType = props.tileType === 'floor' || (props.tileType === 'wall' && isTopOrBottomWall) ? randomTileVariant() : '';
-
+	const handleItemOverDropZone = (e) => {
+		e.preventDefault();
+		e.dataTransfer.dropEffect = 'move';
+	};
 	const [randomizedVariantSuffix] = useState(tileType);
 
 	return (
 		<div className={`tile ${props.classStr}${randomizedVariantSuffix}`}
 		     style={{...props.styleProp, fontSize: '18px'}}
 		     data-tile-num={props.tileName}
+		     onDragOver={(e) => {handleItemOverDropZone(e)}}
+		     onDrop={(e) => {props.setHasObjBeenDropped(true)}}
 		     onClick={e => {
 			     props.moveCharacter(props.tileName, e);
 		     }}>
