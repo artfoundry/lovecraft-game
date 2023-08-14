@@ -86,7 +86,7 @@
 	position: absolute;
 }
 
-.torch-top-wall {
+.torch-top-wall, .torch {
 	content: url('../assets/objects/torch_sml.png');
 }
 
@@ -112,8 +112,8 @@
 	content: url('../assets/objects/oil_sml.png');
 }
 
-.ammo {
-	content: url('../assets/objects/ammo_sml.png');
+.handgun-ammo {
+	content: url('../assets/objects/handgunammo_sml.png');
 }
 
 .first-aid-kit {

@@ -426,7 +426,7 @@ select {
 
 .object-info-panel {
 	position: fixed;
-	width: 300px;
+	max-width: 400px;
 	padding: 10px;
 	background-color: #225555;
 	font-family: "Century Gothic", sans-serif;
@@ -465,11 +465,19 @@ select {
 	flex-wrap: wrap;
 }
 
-.object-split-buttons {
+.object-row-with-buttons {
 	display: flex;
 	width: 100%;
-	justify-content: space-evenly;
 	align-items: center;
+	gap: 10px;
+}
+
+.object-row-with-buttons .inv-object {
+	cursor: default;
+}
+
+.object-list-objname {
+	width: 150px;
 }
 
 .hide {
@@ -504,7 +512,7 @@ select {
 }
 
 .handgun-ammo-inv {
-	background-image: url('../assets/objects/ammo_lrg.png');
+	background-image: url('../assets/objects/handgunammo_lrg.png');
 }
 
 .first-aid-kit-inv {

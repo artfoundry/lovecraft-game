@@ -18,6 +18,11 @@ class Game extends React.Component {
 		this.startingPlayerCharacters = ['privateEye', 'archaeologist', 'chemist'];
 		this.playerMovesLimit = 3;
 		this.playerActionsLimit = 2;
+		this.lightTimes = {
+			'Torch': 100,
+			'Lantern': 300,
+			'Electric Torch': 500
+		};
 
 		this.firebase = new Firebase();
 
@@ -152,10 +157,8 @@ class Game extends React.Component {
 		}
 	}
 
-	updateMapObjects = (objects, callback) => {
-		this.setState(prevState => ({
-			mapObjects: {...prevState.mapObjects, ...objects}
-		}), () => {
+	updateMapObjects = (mapObjects, callback) => {
+		this.setState({mapObjects}, () => {
 			if (callback) callback();
 		});
 	}
@@ -311,16 +314,6 @@ class Game extends React.Component {
 	}
 
 	/**
-	 * Map calls this to send id of object that player clicked on in map so object info panel can be displayed in UI
-	 * @param objectInfo: object
-	 * @param selectionEvt: event object
-	 */
-	setObjectSelected = (objectInfo, selectionEvt) => {
-		const objectSelected = objectInfo && (!this.state.objectSelected || objectInfo.id !== this.state.objectSelected.object.id) ? {object: objectInfo, evt: selectionEvt} : null;
-		this.setState({objectSelected});
-	}
-
-	/**
 	 * Reloading active character's gun using ammo in inv we already know we have
 	 * @param weapon: object (from CharacterControls in UIElements: {weaponId: itemId, weaponName: weaponInfo.name, isGun: true, ammo: weaponInfo.currentRounds})
 	 * @param gunInfo: object
@@ -375,6 +368,63 @@ class Game extends React.Component {
 			// clicked unit is just being selected/deselected
 			this.updateUnitSelectionStatus(id, target);
 		}
+	}
+
+	/**
+	 * Updates to state the status of what PC or NPC (or both) is selected in the UI
+	 * @param id: String
+	 * @param type: String ('player' or 'creature')
+	 */
+	updateUnitSelectionStatus = (id, type) => {
+		let unitTypeObjectName = '';
+		let unitTypeSelected = '';
+		let unitNameForSelectionStateChg = '';
+		let unitToDeselect = '';
+
+		if (type === 'player') {
+			unitTypeObjectName = 'playerCharacters';
+			unitTypeSelected = 'selectedCharacter';
+		} else if (type === 'creature') {
+			unitTypeObjectName = 'mapCreatures';
+			unitTypeSelected = 'selectedCreature';
+		}
+
+		// clicked unit is being selected/deselected
+		if (this.state.selectedCharacter === id || this.state.selectedCreature === id) {
+			// selected character was just clicked to deselect
+			unitNameForSelectionStateChg = '';
+		} else {
+			// no unit previously selected or different unit previously selected
+			unitNameForSelectionStateChg = id;
+			if (this.state[unitTypeSelected] !== '') {
+				unitToDeselect = this.state[unitTypeSelected];
+			}
+		}
+
+		// toggle selected state of clicked unit
+		this.setState(prevState => ({
+			[unitTypeSelected]: unitNameForSelectionStateChg,
+			[unitTypeObjectName]: {
+				...prevState[unitTypeObjectName],
+				[id]: {
+					...prevState[unitTypeObjectName][id],
+					isSelected: !prevState[unitTypeObjectName][id].isSelected
+				}
+			}
+		}), () => {
+			if (unitToDeselect !== '') {
+				this.setState(prevState => ({
+					[unitTypeObjectName]: {
+						...prevState[unitTypeObjectName],
+						[unitToDeselect]: {
+							...prevState[unitTypeObjectName][unitToDeselect],
+							isSelected: !prevState[unitTypeObjectName][unitToDeselect].isSelected
+						}
+					}
+				}));
+			}
+			this.toggleCharIsSelected(type, this.state[unitTypeObjectName][id].isSelected);
+		});
 	}
 
 	/**
@@ -453,11 +503,72 @@ class Game extends React.Component {
 	}
 
 	/**
-	 * Called from Map when player drags object to tile
-	 * @param objHasBeenDropped: boolean
+	 * Map calls this to send id of object that player clicked on in map so object info panel can be displayed in UI
+	 * @param objectInfo: object
+	 * @param selectionEvt: event object
 	 */
-	setHasObjBeenDropped = (objHasBeenDropped) => {
-		this.setState({objHasBeenDropped});
+	setObjectSelected = (objectInfo, selectionEvt) => {
+		const allObjectsOnTile = [];
+		if (objectInfo) {
+			const selectedCoords = objectInfo.coords;
+			for (const [id, mapObjectInfo] of Object.entries(this.state.mapObjects)) {
+				if (selectedCoords.xPos === mapObjectInfo.coords.xPos && selectedCoords.yPos === mapObjectInfo.coords.yPos) {
+					allObjectsOnTile.push({id, ...mapObjectInfo});
+				}
+			}
+		}
+		const objectSelected = objectInfo && (!this.state.objectSelected || !this.state.objectSelected.objectList.some(object => object.id === objectInfo.id)) ? {objectList: allObjectsOnTile, evt: selectionEvt} : null;
+		this.setState({objectSelected});
+	}
+
+	/**
+	 * Called from Map when player drags object to tile
+	 * @param props: {objHasBeenDropped (boolean), evt (event object)}
+	 */
+	setHasObjBeenDropped = (props) => {
+		this.setState({objHasBeenDropped: {dropped: props.objHasBeenDropped, evt: props.evt}});
+	}
+
+	/**
+	 * Add picked up item or weapon to char's inventory
+	 * @param itemData: object
+	 * @param objId: string
+	 */
+	addItemToPlayerInventory = (itemData, objId) => {
+		const player = this.state.playerCharacters[this.state.activeCharacter];
+		const objectType = itemData.itemType ? itemData.itemType : 'Weapon';
+		const invObjectCategory = objectType === 'Weapon' ? 'weapons' : 'items';
+		let inventoryList = deepCopy(player[invObjectCategory]);
+		let invId = '';
+
+		if (objectType === 'Ammo') {
+			invId = itemData.gunType + 'Ammo0';
+			const currentAmmoCount = inventoryList[invId] ? inventoryList[invId].amount : 0;
+			inventoryList[invId] = {...itemData};
+			inventoryList[invId].id  = invId; // replace original id with inventory specific id for stackable items
+			inventoryList[invId].amount = currentAmmoCount + itemData.amount;
+		} else if (objectType === 'Light') {
+			inventoryList[objId] = {...itemData};
+			inventoryList[objId].time = this.lightTimes[itemData.name];
+		} else if (itemData.stackable) {
+			invId = objId.replace(/\d+$/, '0');
+			if (!inventoryList[invId]) {
+				inventoryList[invId] = {...itemData};
+				inventoryList[invId].id  = invId; // replace original id with inventory specific id for stackable items
+				inventoryList[invId].currentRounds = itemData.currentRounds;
+			} else if (objectType === 'Weapon') {
+				inventoryList[invId].currentRounds += itemData.currentRounds;
+			} else {
+				inventoryList[invId].amount += itemData.amount;
+			}
+		} else {
+			inventoryList[objId] = {...itemData};
+		}
+
+		let updatedData = {[invObjectCategory]: inventoryList};
+		this.updateCharacters('player', updatedData, this.state.activeCharacter, false, false, () => {
+			this._removeItemFromMap(objId);
+		});
 	}
 
 
@@ -590,63 +701,6 @@ class Game extends React.Component {
 	}
 
 	/**
-	 * Updates to state the status of what PC or NPC (or both) is selected in the UI
-	 * @param id: String
-	 * @param type: String ('player' or 'creature')
-	 */
-	updateUnitSelectionStatus = (id, type) => {
-		let unitTypeObjectName = '';
-		let unitTypeSelected = '';
-		let unitNameForSelectionStateChg = '';
-		let unitToDeselect = '';
-
-		if (type === 'player') {
-			unitTypeObjectName = 'playerCharacters';
-			unitTypeSelected = 'selectedCharacter';
-		} else if (type === 'creature') {
-			unitTypeObjectName = 'mapCreatures';
-			unitTypeSelected = 'selectedCreature';
-		}
-
-		// clicked unit is being selected/deselected
-		if (this.state.selectedCharacter === id || this.state.selectedCreature === id) {
-			// selected character was just clicked to deselect
-			unitNameForSelectionStateChg = '';
-		} else {
-			// no unit previously selected or different unit previously selected
-			unitNameForSelectionStateChg = id;
-			if (this.state[unitTypeSelected] !== '') {
-				unitToDeselect = this.state[unitTypeSelected];
-			}
-		}
-
-		// toggle selected state of clicked unit
-		this.setState(prevState => ({
-			[unitTypeSelected]: unitNameForSelectionStateChg,
-			[unitTypeObjectName]: {
-				...prevState[unitTypeObjectName],
-				[id]: {
-					...prevState[unitTypeObjectName][id],
-					isSelected: !prevState[unitTypeObjectName][id].isSelected
-				}
-			}
-		}), () => {
-			if (unitToDeselect !== '') {
-				this.setState(prevState => ({
-					[unitTypeObjectName]: {
-						...prevState[unitTypeObjectName],
-						[unitToDeselect]: {
-							...prevState[unitTypeObjectName][unitToDeselect],
-							isSelected: !prevState[unitTypeObjectName][unitToDeselect].isSelected
-						}
-					}
-				}));
-			}
-			this.toggleCharIsSelected(type, this.state[unitTypeObjectName][id].isSelected);
-		});
-	}
-
-	/**
 	 * Increments and updates to state number of actions the active PC has done
 	 * @private
 	 */
@@ -678,6 +732,12 @@ class Game extends React.Component {
 		this.setState({unitsTurnOrder}, () => {
 			this.updateThreatList([], [id], callback, checkLineOfSightToParty);
 		});
+	}
+
+	_removeItemFromMap(id) {
+		const updatedObjects = deepCopy(this.state.mapObjects);
+		delete updatedObjects[id];
+		this.updateMapObjects(updatedObjects);
 	}
 
 
@@ -721,6 +781,10 @@ class Game extends React.Component {
 						objectSelected={this.state.objectSelected}
 						objHasBeenDropped={this.state.objHasBeenDropped}
 						setHasObjBeenDropped={this.setHasObjBeenDropped}
+						addItemToPlayerInventory={this.addItemToPlayerInventory}
+
+						updateMapObjects={this.updateMapObjects}
+						mapObjects={this.state.mapObjects}
 
 						actionButtonSelected={this.state.actionButtonSelected}
 						toggleActionButton={this.toggleActionButton}
@@ -759,6 +823,8 @@ class Game extends React.Component {
 						mapObjects={this.state.mapObjects}
 						setObjectSelected={this.setObjectSelected}
 						setHasObjBeenDropped={this.setHasObjBeenDropped}
+						addItemToPlayerInventory={this.addItemToPlayerInventory}
+						lightTimes={this.lightTimes}
 
 						currentTurn={this.state.currentTurn}
 						updateCurrentTurn={this.updateCurrentTurn}

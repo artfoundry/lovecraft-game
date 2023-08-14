@@ -1,5 +1,5 @@
 import React from 'react';
-import { useRef } from 'react';
+import {useRef} from 'react';
 import MapData from './data/mapData.json';
 import GameLocations from './data/gameLocations.json';
 import CreatureData from './data/creatureTypes.json';
@@ -8,7 +8,15 @@ import ItemTypes from './data/itemTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
 import {Exit, LightElement, Character, Tile, Item, Door, MapCover} from './MapElements';
 import {StoneDoor} from './Audio';
-import {convertObjIdToClassId, randomTileMovementValue, convertPosToCoords, convertCoordsToPos, roundTowardZero, notEnoughSpaceInInventory, deepCopy} from './Utils';
+import {
+	convertObjIdToClassId,
+	randomTileMovementValue,
+	convertPosToCoords,
+	convertCoordsToPos,
+	roundTowardZero,
+	notEnoughSpaceInInventory,
+	deepCopy,
+	handleItemOverDropZone} from './Utils';
 import './css/map.css';
 import './css/catacombs.css';
 import './css/dungeon.css';
@@ -38,11 +46,6 @@ class Map extends React.Component {
 		};
 		this.creatureSurvivalHpPercent = 0.25;
 		this.movementDelay = 100;
-		this.lightTimes = {
-			'Torch': 100,
-			'Lantern': 300,
-			'Electric Torch': 500
-		};
 		this.lightRanges = {
 			'Torch': ItemTypes['Torch'].range,
 			'Lantern': ItemTypes['Lantern'].range,
@@ -599,14 +602,13 @@ class Map extends React.Component {
 					const tileType = itemName === 'Torch' ? 'wall' : 'floor';
 					const lowerCaseName = itemName.slice(0, 1).toLowerCase() + itemName.slice(1, itemName.length).replaceAll(' ', '');
 					const itemID = lowerCaseName + (i + 1);
-					const ammoName = objectType === 'Ammo' ? itemName.slice(0, itemName.indexOf(' Ammo')).toLowerCase() : '';
 					const looseItemAmount = objectType === 'Ammo' ? Math.floor(Math.random() * 10) + 2 : objectType === 'Medicine' ? 1 : null;
 					const gunType = objectType === 'Weapon' && itemInfo.gunType ? itemInfo.gunType : null;
 					const weaponCurrentRounds = gunType ? Math.round(Math.random() * itemInfo.rounds) : objectType === 'Weapon' ? 1 : null;
 					const coords = this._getInitialRandomCoords(itemCoords, tileType); // this.props.playerCharacters['privateEye'].coords (to easily test objects)
 					mapItems[itemID] = {
 						...itemInfo,
-						name: objectType === 'Ammo' ? ammoName : itemName,
+						name: itemName,
 						amount: looseItemAmount,
 						currentRounds: weaponCurrentRounds,
 						coords
@@ -685,7 +687,6 @@ class Map extends React.Component {
 			styleProp={tileStyle}
 			tileName={convertCoordsToPos(tileData)}
 			classStr={allClasses}
-			setHasObjBeenDropped={this.props.setHasObjBeenDropped}
 			moveCharacter={(tilePos) => {this.checkIfTileOrObject(tilePos, null)}} />);
 	}
 
@@ -793,6 +794,11 @@ class Map extends React.Component {
 		return allObjects;
 	}
 
+	/**
+	 * Creates list of item components from props.mapObjects
+	 * @returns {*[]}
+	 * @private
+	 */
 	_addItems() {
 		let items = [];
 		const invFullDialogProps = {
@@ -809,7 +815,7 @@ class Map extends React.Component {
 		const isActivePlayerInvFull = activePlayer && notEnoughSpaceInInventory(1, 0, activePlayer);
 
 		for (const [id, info] of Object.entries(this.props.mapObjects)) {
-			let idConvertedToClassName = id.includes('Ammo') ? 'ammo' : convertObjIdToClassId(id);
+			let idConvertedToClassName = convertObjIdToClassId(id);
 			if (idConvertedToClassName === 'torch') {
 				const pos = convertCoordsToPos(info.coords);
 				switch (this.state.mapLayout[pos].classes) {
@@ -827,7 +833,7 @@ class Map extends React.Component {
 				name={idConvertedToClassName}
 				isActivePlayerNearObject={this.isActivePlayerNearObject}
 				isActivePlayerInvFull={isActivePlayerInvFull}
-				addItemToPlayerInventory={this.addItemToPlayerInventory}
+				addItemToPlayerInventory={this.props.addItemToPlayerInventory}
 				setObjectSelected={this.props.setObjectSelected}
 				invFullDialogProps={invFullDialogProps}
 				setShowDialogProps={this.props.setShowDialogProps}
@@ -1720,54 +1726,6 @@ class Map extends React.Component {
 	}
 
 	/**
-	 * Add picked up item or weapon to char's inventory
-	 * @param itemData: object
-	 * @param id: string
-	 */
-	addItemToPlayerInventory = (itemData, id) => {
-		const player = this.props.playerCharacters[this.props.activeCharacter];
-		const objectType = itemData.itemType ? itemData.itemType : 'Weapon';
-		const invObjectCategory = objectType === 'Weapon' ? 'weapons' : 'items';
-		let inventoryList = deepCopy(player[invObjectCategory]);
-		let invId = '';
-
-		if (objectType === 'Ammo') {
-			invId = itemData.gunType + 'Ammo0';
-			const currentAmmoCount = inventoryList[invId] ? inventoryList[invId].amount : 0;
-			inventoryList[invId] = {...itemData};
-			inventoryList[invId].id  = invId; // replace original id with inventory specific id for stackable items
-			inventoryList[invId].amount = currentAmmoCount + itemData.amount;
-		} else if (objectType === 'Light') {
-			inventoryList[id] = {...itemData};
-			inventoryList[id].time = this.lightTimes[itemData.name];
-		} else if (itemData.stackable) {
-			invId = id.replace(/\d+$/, '0');
-			if (!inventoryList[invId]) {
-				inventoryList[invId] = {...itemData};
-				inventoryList[invId].id  = invId; // replace original id with inventory specific id for stackable items
-				inventoryList[invId].currentRounds = itemData.currentRounds;
-			} else if (objectType === 'Weapon') {
-				inventoryList[invId].currentRounds += itemData.currentRounds;
-			} else {
-				inventoryList[invId].amount += itemData.amount;
-			}
-		} else {
-			inventoryList[id] = {...itemData};
-		}
-
-		let updatedData = {[invObjectCategory]: inventoryList};
-		this.props.updateCharacters('player', updatedData, this.props.activeCharacter, false, false, () => {
-			this.removeItemFromMap(id);
-		});
-	}
-
-	removeItemFromMap = (id) => {
-		const updatedObjects = this.props.mapObjects;
-		delete updatedObjects[id];
-		this.props.updateMapObjects(updatedObjects);
-	}
-
-	/**
 	 * Determines if user's key/tap/click movement command is valid, and if so, updates coords for the active PC,
 	 * then calls _moveMap to keep the active PC centered on screen,
 	 * then if in combat, updates the threatList, and if not, calls moveCharacter again to move followers
@@ -1823,9 +1781,9 @@ class Map extends React.Component {
 			if (activePlayerData.lightTime > 0) {
 				equippedLight.time = activePlayerData.lightTime - 1;
 				updateData.lightTime = activePlayerData.lightTime - 1;
-				if (activePlayerData.lightTime <= (this.lightTimes[equippedLight.name] * 0.1)) {
+				if (activePlayerData.lightTime <= (this.props.lightTimes[equippedLight.name] * 0.1)) {
 					updateData.lightRange = this.lightRanges[equippedLight.name] - 2;
-				} else if (activePlayerData.lightTime <= (this.lightTimes[equippedLight.name] * 0.2)) {
+				} else if (activePlayerData.lightTime <= (this.props.lightTimes[equippedLight.name] * 0.2)) {
 					updateData.lightRange = this.lightRanges[equippedLight.name] - 1;
 				}
 			}
@@ -2365,21 +2323,25 @@ class Map extends React.Component {
 		}
 	}
 
-	shouldComponentUpdate(nextProps, nextState, nextContext) {
-		if (nextState.mapLayoutDone !== this.state.mapLayoutDone ||
-			nextState.creaturesPlaced !== this.state.creaturesPlaced ||
-			nextState.objectsPlaced !== this.state.objectsPlaced ||
-			nextState.exitPlaced !== this.state.exitPlaced)
-		{
-			return false;
-		}
-		return true;
-	}
+	// shouldComponentUpdate(nextProps, nextState, nextContext) {
+	// 	if (nextState.mapLayoutDone !== this.state.mapLayoutDone ||
+	// 		nextState.creaturesPlaced !== this.state.creaturesPlaced ||
+	// 		nextState.objectsPlaced !== this.state.objectsPlaced ||
+	// 		nextState.exitPlaced !== this.state.exitPlaced)
+	// 	{
+	// 		return false;
+	// 	}
+	// 	return true;
+	// }
 
 	// Add below for testing: <button onClick={this.resetMap}>Reset</button>
 	render() {
 		return (
-			<div className="world" style={{height: `${(this.state.worldHeight * this.tileSize)}px`, padding: `${this.uiPadding}px`}}>
+			<div className="world"
+			     style={{height: `${(this.state.worldHeight * this.tileSize)}px`, padding: `${this.uiPadding}px`}}
+			     onDragOver={(evt) => {handleItemOverDropZone(evt)}}
+			     onDrop={(evt) => {this.props.setHasObjBeenDropped({objHasBeenDropped: true, evt})}}
+			>
 				<div className="map">
 					{ this.state.mapLayoutDone && <this.createAllMapPieces /> }
 				</div>

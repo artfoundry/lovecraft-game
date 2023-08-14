@@ -1,6 +1,6 @@
 import React from 'react';
 import {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, DialogWindow} from './UIElements';
-import {notEnoughSpaceInInventory, deepCopy} from './Utils';
+import {convertCoordsToPos, notEnoughSpaceInInventory, deepCopy} from './Utils';
 import './css/ui.css';
 
 class UI extends React.Component {
@@ -38,7 +38,10 @@ class UI extends React.Component {
 			objectIsSelected: false,
 			selectedObjPos: {},
 			objectSelected: {},
-			needToShowObjectPanel: false
+			draggedObjectMetaData: {},
+			draggedObjRecipient: '',
+			needToShowObjectPanel: false,
+			isPickUpAction: true
 		};
 	}
 
@@ -89,9 +92,62 @@ class UI extends React.Component {
 		this.setState(prevState => ({[panelStateName]: !prevState[panelStateName]}));
 	}
 
-	dropItemToPC = (evt, draggedItem, recipientId, clearDraggedItem) => {
+	/**
+	 * Remove dragged item from source pc inv if it's a single object or an entire stack (of ammo, oil, etc.)
+	 * @param invObjectCategory
+	 * @param sourceItemCount
+	 * @param sourcePCdata
+	 * @param allPlayersInv
+	 * @param callback
+	 */
+	updateSourcePcInvAfterTransfer = (invObjectCategory, sourceItemCount, sourcePCdata, allPlayersInv, callback = null) => {
+		const draggedItem = this.state.objectSelected;
+		const draggedObjectMetaData = this.state.draggedObjectMetaData;
+		const sourceBoxIndex = draggedObjectMetaData.sourceLoc.match(/\d+/);
+		const invId = draggedItem.id;
+
+		if (!draggedItem.stackable || sourceItemCount === 0) {
+			// if no source box index, then it was dragged from being equipped and doesn't exist in allPlayersInv
+			if (sourceBoxIndex) {
+				allPlayersInv[draggedObjectMetaData.sourcePC].splice(+sourceBoxIndex[0], 1, null);
+			}
+
+			delete sourcePCdata[invObjectCategory][invId];
+			if (sourcePCdata.equippedItems.armor === invId) {
+				sourcePCdata.equippedItems.armor = '';
+			} else if (sourcePCdata.equippedItems.loadout1.left === invId) {
+				sourcePCdata.equippedItems.loadout1.left = '';
+				if (draggedItem.twoHanded) {
+					sourcePCdata.equippedItems.loadout1.right = '';
+				}
+			} else if (sourcePCdata.equippedItems.loadout1.right === invId) {
+				sourcePCdata.equippedItems.loadout1.right = '';
+			}
+			if (sourcePCdata.equippedLight === invId) {
+				sourcePCdata.equippedLight = null;
+				sourcePCdata.lightRange = 0;
+			}
+		// otherwise just update its item count
+		} else if (sourceItemCount > 0) {
+			if (draggedItem.gunType || invObjectCategory === 'items') {
+				sourcePCdata[invObjectCategory][invId].amount = sourceItemCount;
+			} else {
+				sourcePCdata[invObjectCategory][invId].currentRounds = sourceItemCount;
+			}
+		}
+
+		this.updateInventory(null, allPlayersInv, () => {
+			this.props.updateCharacters('player', sourcePCdata, draggedObjectMetaData.sourcePC, false, false, callback);
+		});
+	}
+
+	dropItemToPC = (evt, recipientId) => {
+		const draggedItem = this.state.objectSelected;
+		const draggedObjectMetaData = this.state.draggedObjectMetaData;
+		if (!draggedItem) return;
+
 		const allPCdata = deepCopy(this.props.playerCharacters);
-		const sourcePCdata = allPCdata[draggedItem.sourcePC];
+		const sourcePCdata = allPCdata[draggedObjectMetaData.sourcePC];
 		const currentPCdata = allPCdata[recipientId];
 		const allPlayersInv = deepCopy(this.state.entireInventory);
 		let dialogProps = null;
@@ -119,86 +175,23 @@ class UI extends React.Component {
 				dialogClasses: ''
 			};
 		} else {
-			const sourceBoxIndex = draggedItem.sourceLoc.match(/\d+/);
 			const firstOpenInvSlot = allPlayersInv[recipientId].indexOf(null);
-			const invObjectCategory = draggedItem.data.itemType ? 'items' : 'weapons';
-			let invId = draggedItem.data.id;
-			const updateCurrentAndSourceData = (sourceItemCount) => {
+			const invObjectCategory = draggedItem.itemType ? 'items' : 'weapons';
+			const invId = draggedItem.id;
+
+			// add dragged item to current pc inv
+			if (draggedItem.stackable) {
+				this.setObjectPanelDisplayOption(true, evt, recipientId);
+			} else {
+				currentPCdata[invObjectCategory][draggedItem.id] = {...draggedItem};
 				// now add item to inv shown in char info panel
 				if (!allPlayersInv[recipientId].includes(invId) && currentPCdata.equippedItems.loadout1.right !== invId && currentPCdata.equippedItems.loadout1.left !== invId) {
 					allPlayersInv[recipientId].splice(firstOpenInvSlot, 1, invId);
 				}
 
-				// remove dragged item from source pc inv if it's a single object or an entire stack (of ammo, oil, etc.)
-				if (!draggedItem.data.stackable || sourceItemCount === 0) {
-					// if no source box index, then it was dragged from being equipped
-					if (sourceBoxIndex) {
-						allPlayersInv[draggedItem.sourcePC].splice(+sourceBoxIndex[0], 1, null);
-					}
-
-					delete sourcePCdata[invObjectCategory][invId];
-					if (sourcePCdata.equippedItems.loadout1.left === invId) {
-						sourcePCdata.equippedItems.loadout1.left = '';
-					}
-					// this is not an else if because a two handed weapon would take up both left and right
-					if (sourcePCdata.equippedItems.loadout1.right === invId) {
-						sourcePCdata.equippedItems.loadout1.right = '';
-					}
-					if (sourcePCdata.equippedLight === invId) {
-						sourcePCdata.equippedLight = null;
-						sourcePCdata.lightRange = 0;
-					}
-				// otherwise just update its item count
-				} else if (sourceItemCount > 0) {
-					if (draggedItem.data.gunType || invObjectCategory === 'items') {
-						sourcePCdata[invObjectCategory][invId].amount = sourceItemCount;
-					} else {
-						sourcePCdata[invObjectCategory][invId].currentRounds = sourceItemCount;
-					}
-				}
-
-				allPCdata[recipientId] = currentPCdata;
-				allPCdata[draggedItem.sourcePC] = sourcePCdata;
-				this.updateInventory(null, allPlayersInv, () => {
-					this.props.updateCharacters('player', allPCdata, null, false, false, () => {
-						clearDraggedItem();
-					});
+				this.updateSourcePcInvAfterTransfer(invObjectCategory, null, sourcePCdata, allPlayersInv, () => {
+					this.props.updateCharacters('player', currentPCdata, recipientId);
 				});
-			}
-
-			// add dragged item to current pc inv
-			if (draggedItem.data.stackable) {
-				this.setObjectSelected(draggedItem.data, evt, true, (draggedItemCount, sourceItemCount) => {
-					if (draggedItem) {
-						// for stackable items, need to update count from object panel split
-						if (draggedItem.data.gunType || invObjectCategory === 'items') {
-							draggedItem.data.amount = draggedItemCount;
-						} else {
-							draggedItem.data.currentRounds = draggedItemCount;
-						}
-
-						// gun ammo
-						if (draggedItem.data.gunType) {
-							if (!currentPCdata.items[invId]) {
-								currentPCdata.items[invId] = {...draggedItem.data};
-							} else {
-								currentPCdata.items[invId].amount += draggedItem.data.amount;
-							}
-						} else {
-							if (!currentPCdata[invObjectCategory][invId]) {
-								currentPCdata[invObjectCategory][invId] = {...draggedItem.data};
-							} else if (invObjectCategory === 'weapons'){
-								currentPCdata.weapons[invId].currentRounds += draggedItem.data.currentRounds;
-							} else {
-								currentPCdata.items[invId].amount += draggedItem.data.amount;
-							}
-						}
-						updateCurrentAndSourceData(sourceItemCount);
-					}
-				});
-			} else {
-				currentPCdata[invObjectCategory][draggedItem.data.id] = {...draggedItem.data};
-				updateCurrentAndSourceData();
 			}
 		}
 
@@ -207,18 +200,20 @@ class UI extends React.Component {
 		}
 	}
 
-	dropItemToEquipped = (evt, draggedItem, clearDraggedItem) => {
+	dropItemToEquipped = (evt) => {
+		const draggedItem = this.state.objectSelected;
+		const draggedObjectMetaData = this.state.draggedObjectMetaData;
+		if (!draggedItem) return;
 		const targetClasses = evt.target.className;
 		const parentClasses = evt.target.parentElement.className;
 		// don't know which hand dragged to and don't know if that hand already has an item equipped (if it doesn't, target class would include the "box" class)
 		const destination = targetClasses.includes('-arm') ? 'hand-swap' : parentClasses.includes('-arm') ? 'hand' : 'body';
 
 		// if item is dragged and released on its own box, dragged to a hand and is a non-light item (not including weapons), or dragged to body and isn't armor, exit out
-		if (parentClasses === draggedItem.sourceClasses ||
-			(destination.includes('hand') && (draggedItem.data.itemType && draggedItem.data.itemType !== 'Light')) ||
-			(destination === 'body' && (!draggedItem.data.itemType || draggedItem.data.itemType !== 'Armor')))
+		if (parentClasses === draggedObjectMetaData.sourceClasses ||
+			(destination.includes('hand') && (draggedItem.itemType && draggedItem.itemType !== 'Light')) ||
+			(destination === 'body' && (!draggedItem.itemType || draggedItem.itemType !== 'Armor')))
 		{
-			clearDraggedItem();
 			return;
 		}
 
@@ -227,7 +222,7 @@ class UI extends React.Component {
 		const updateData = deepCopy(this.props.selectedCharacterInfo);
 		const inventoryItems = this.state.entireInventory[this.props.selectedCharacterInfo.id];
 		let tempAllItemsList = [...inventoryItems];
-		const sourceBoxIndex = draggedItem.sourceLoc.match(/\d+/);
+		const sourceBoxIndex = draggedObjectMetaData.sourceLoc.match(/\d+/);
 		const loadout1 = updateData.equippedItems.loadout1;
 
 		if (destination === 'hand-swap') {
@@ -240,22 +235,22 @@ class UI extends React.Component {
 		}
 
 		// if dragged item is a light
-		if (draggedItem.data.itemType === 'Light') {
-			updateData.equippedLight = draggedItem.data.id;
-			updateData.lightRange = draggedItem.data.range;
+		if (draggedItem.itemType === 'Light') {
+			updateData.equippedLight = draggedItem.id;
+			updateData.lightRange = draggedItem.range;
 		// or if an equipped light is being unequipped (and not by a light)
 		} else if (hand && sourceBoxIndex && (loadout1[hand] === updateData.equippedLight ||
-			(draggedItem.data.twoHanded && loadout1[oppositeHand] === updateData.equippedLight)))
+			(draggedItem.twoHanded && loadout1[oppositeHand] === updateData.equippedLight)))
 		{
 			updateData.equippedLight = null;
 			updateData.lightRange = 0;
 		}
 
 		// if dragged item is two-handed
-		if (hand && draggedItem.data.twoHanded) {
+		if (hand && draggedItem.twoHanded) {
 			if (loadout1.right && loadout1.left && loadout1.right !== loadout1.left && notEnoughSpaceInInventory(2, 1, this.props.selectedCharacterInfo)) {
 				const dialogProps = {
-					dialogContent: `The ${draggedItem.data.name} is two-handed, and there is not enough space in the inventory for both currently equipped items.`,
+					dialogContent: `The ${draggedItem.name} is two-handed, and there is not enough space in the inventory for both currently equipped items.`,
 					closeButtonText: 'Ok',
 					closeButtonCallback: null,
 					disableCloseButton: false,
@@ -267,11 +262,11 @@ class UI extends React.Component {
 				this.props.setShowDialogProps(true, dialogProps);
 				return;
 			}
-			updateData.equippedItems.loadout1[hand] = draggedItem.data.id;
-			updateData.equippedItems.loadout1[oppositeHand] = draggedItem.data.id;
+			updateData.equippedItems.loadout1[hand] = draggedItem.id;
+			updateData.equippedItems.loadout1[oppositeHand] = draggedItem.id;
 		// or if we're replacing a two-handed item with a one-handed item
 		} else if (hand && loadout1.right && loadout1.right === loadout1.left) {
-			updateData.equippedItems.loadout1[hand] = draggedItem.data.id;
+			updateData.equippedItems.loadout1[hand] = draggedItem.id;
 			updateData.equippedItems.loadout1[oppositeHand] = '';
 		// or we're just equipping a one-handed item
 		} else if (hand) {
@@ -279,12 +274,12 @@ class UI extends React.Component {
 			if (!sourceBoxIndex) {
 				updateData.equippedItems.loadout1[oppositeHand] = updateData.equippedItems.loadout1[hand];
 			}
-			updateData.equippedItems.loadout1[hand] = draggedItem.data.id;
+			updateData.equippedItems.loadout1[hand] = draggedItem.id;
 		// or we're equipping a body item
 		} else if (destination === 'body') {
-			updateData.equippedItems.armor = draggedItem.data.id;
+			updateData.equippedItems.armor = draggedItem.id;
 			updateData.defense = this.props.selectedCharacterInfo.calculateDefense();
-			updateData.damageReduction = draggedItem.data.damageReduction;
+			updateData.damageReduction = draggedItem.damageReduction;
 		}
 
 		// if item is dragged from one hand to another, sourceBoxIndex is null
@@ -294,11 +289,13 @@ class UI extends React.Component {
 
 		this.updateInventory(this.props.selectedCharacterInfo.id, tempAllItemsList, () => {
 			this.props.updateCharacters('player', updateData, this.props.selectedCharacterInfo.id, false, false);
-			clearDraggedItem();
 		});
 	}
 
-	dropItemToInv = (evt, draggedItem, clearDraggedItem) => {
+	dropItemToInv = (evt) => {
+		const draggedItem = this.state.objectSelected;
+		const draggedObjectMetaData = this.state.draggedObjectMetaData;
+		if (!draggedItem) return;
 		if (notEnoughSpaceInInventory(1, 0, this.props.selectedCharacterInfo)) {
 			this.props.setShowDialogProps(true, this.notEnoughSpaceDialogProps);
 			return;
@@ -309,23 +306,23 @@ class UI extends React.Component {
 		const inventoryItems = this.state.entireInventory[this.props.selectedCharacterInfo.id];
 
 		let draggingEquippedItem = false;
-		if (equippedItems.armor === draggedItem.data.id) {
+		if (equippedItems.armor === draggedItem.id) {
 			updateData.equippedItems.armor = '';
 			updateData.defense = this.props.selectedCharacterInfo.calculateDefense();
 			updateData.damageReduction = 0;
 			draggingEquippedItem = true;
-		} else if (equippedItems.loadout1.left === draggedItem.data.id) {
+		} else if (equippedItems.loadout1.left === draggedItem.id) {
 			updateData.equippedItems.loadout1.left = '';
 			draggingEquippedItem = true;
 		}
 
 		// this is not an else if because a two handed weapon would take up both left and right
-		if (equippedItems.loadout1.right === draggedItem.data.id) {
+		if (equippedItems.loadout1.right === draggedItem.id) {
 			updateData.equippedItems.loadout1.right = '';
 			draggingEquippedItem = true;
 		}
 
-		if (draggedItem.data.itemType && draggedItem.data.itemType === 'Light' && updateData.equippedLight === draggedItem.data.id) {
+		if (draggedItem.itemType && draggedItem.itemType === 'Light' && updateData.equippedLight === draggedItem.id) {
 			updateData.equippedLight = null;
 			updateData.lightRange = 0;
 			draggingEquippedItem = true;
@@ -340,15 +337,14 @@ class UI extends React.Component {
 			const parentId = !targetIsBox ? +evt.target.parentElement.id.match(/\d+/)[0] : null;
 			const destBoxIndex = targetIsBox ? targetId : parentId;
 			const destBoxContents = tempAllItemsList[destBoxIndex];
-			const sourceBoxIndex = +draggedItem.sourceLoc.match(/\d+/)[0];
+			const sourceBoxIndex = +draggedObjectMetaData.sourceLoc.match(/\d+/)[0];
 
 			// replace contents of destination spot with dragged item
-			tempAllItemsList.splice(destBoxIndex, 1, draggedItem.data.id);
+			tempAllItemsList.splice(destBoxIndex, 1, draggedItem.id);
 			// replace contents of source spot with replaced destination item
 			tempAllItemsList.splice(sourceBoxIndex, 1, destBoxContents);
 			this.updateInventory(this.props.selectedCharacterInfo.id, tempAllItemsList);
 		}
-		clearDraggedItem();
 	}
 
 	showControlBar = () => {
@@ -375,7 +371,6 @@ class UI extends React.Component {
 					checkForExtraAmmo={this.checkForExtraAmmo}
 					reloadGun={this.props.reloadGun}
 					setShowDialogProps={this.props.setShowDialogProps}
-					setObjectSelected={this.setObjectSelected}
 					dropItemToPC={this.dropItemToPC}
 				/>
 			)
@@ -383,38 +378,127 @@ class UI extends React.Component {
 		return controlPanels;
 	}
 
+	addObjToOtherPc = (draggedItemCount, sourceItemCount) => {
+		const draggedItem = this.state.objectSelected;
+		const draggedObjectMetaData = this.state.draggedObjectMetaData;
+		if (!draggedItem) return;
+
+		const allPCdata = deepCopy(this.props.playerCharacters);
+		const sourcePCdata = allPCdata[draggedObjectMetaData.sourcePC];
+		const recipientId = this.state.draggedObjRecipient;
+		const currentPCdata = allPCdata[recipientId];
+		const allPlayersInv = deepCopy(this.state.entireInventory);
+		const invObjectCategory = draggedItem.itemType ? 'items' : 'weapons';
+		const invId = draggedItem.id;
+
+		// for stackable items, need to update count from object panel split
+		if (draggedItem.gunType || invObjectCategory === 'items') {
+			draggedItem.amount = draggedItemCount;
+		} else {
+			draggedItem.currentRounds = draggedItemCount;
+		}
+
+		// gun ammo
+		if (draggedItem.gunType) {
+			if (!currentPCdata.items[invId]) {
+				currentPCdata.items[invId] = {...draggedItem};
+			} else {
+				currentPCdata.items[invId].amount += draggedItem.amount;
+			}
+		} else {
+			if (!currentPCdata[invObjectCategory][invId]) {
+				currentPCdata[invObjectCategory][invId] = {...draggedItem};
+			} else if (invObjectCategory === 'weapons'){
+				currentPCdata.weapons[invId].currentRounds += draggedItem.currentRounds;
+			} else {
+				currentPCdata.items[invId].amount += draggedItem.amount;
+			}
+		}
+
+		// now add item to inv shown in char info panel
+		const firstOpenInvSlot = allPlayersInv[recipientId].indexOf(null);
+		if (!allPlayersInv[recipientId].includes(invId) && currentPCdata.equippedItems.loadout1.right !== invId && currentPCdata.equippedItems.loadout1.left !== invId) {
+			allPlayersInv[recipientId].splice(firstOpenInvSlot, 1, invId);
+		}
+
+		this.updateSourcePcInvAfterTransfer(invObjectCategory, sourceItemCount, sourcePCdata, allPlayersInv, () => {
+			this.props.updateCharacters('player', currentPCdata, recipientId);
+		});
+	}
+
 	/**
-	 * Store whether an object in inv or on the map has been selected (or if callback is passed, item is being dragged instead)
-	 * @param objectSelected
-	 * @param evt
-	 * @param needToShowObjectPanel
-	 * @param objPanelCallback
+	 * adds object to map and removes from PC inv when an object is dropped
+	 * @param draggedItemCount: number (comes from callback from ObjectInfoPanel - only used for stackable items)
+	 * @param sourceItemCount: number (comes from callback from ObjectInfoPanel - only used for stackable items)
 	 */
-	setObjectSelected = (objectSelected, evt, needToShowObjectPanel, objPanelCallback) => {
-		const buffer = 30;
-		const leftMod = evt && evt.clientX > (window.innerWidth - this.objectPanelWidth) ? -(this.objectPanelWidth + buffer) : 0;
-		const topMod = evt && evt.clientY < (window.screenTop + this.objectPanelHeight) ? buffer : -this.objectPanelHeight;
-		const selectedObjPos = evt ? {left: evt.clientX + leftMod, top: evt.clientY + topMod} : this.state.selectedObjPos ? {...this.state.selectedObjPos} : null;
+	addObjectToMap = (draggedItemCount, sourceItemCount) => {
+		const sourcePcData = deepCopy(this.props.playerCharacters[this.state.draggedObjectMetaData.sourcePC]);
+		const allPlayersInv = deepCopy(this.state.entireInventory);
+		const invObjectCategory = this.state.objectSelected.itemType ? 'items' : 'weapons';
+		const draggedObject = deepCopy(this.state.objectSelected);
+
+		// for stackable items, need to update count from object panel split
+		if (draggedObject.amount) {
+			draggedObject.amount = draggedItemCount;
+		} else if (draggedObject.currentRounds) {
+			draggedObject.currentRounds = draggedItemCount;
+		}
+		this.updateSourcePcInvAfterTransfer(invObjectCategory, sourceItemCount, sourcePcData, allPlayersInv, () => {
+			const mapObjects = deepCopy(this.props.mapObjects);
+			mapObjects[draggedObject.id] = {
+				...draggedObject,
+				coords: sourcePcData.coords
+			}
+			this.props.updateMapObjects(mapObjects, () => this.props.setHasObjBeenDropped(false));
+		});
+	}
+
+	/**
+	 * Store whether an object in inv or on the map has been selected (if callback is passed, item was selected on map)
+	 * @param objectInfo: array or object or null (array only if object was clicked on in the map, object any other time, null if obj is deselected or obj panel closed)
+	 * @param draggedObjectMetaData: object (source info for dragged item: sourcePC, sourceLoc, sourceClasses)
+	 * @callback: function
+	 */
+	setObjectSelected = (objectInfo, draggedObjectMetaData, callback) => {
+		const objectSelected = objectInfo && objectInfo.length && objectInfo.length === 1 ? objectInfo[0] : objectInfo;
 		const objectIsSelected = objectSelected !== null;
-		this.setState({objectSelected, objectIsSelected, selectedObjPos, needToShowObjectPanel, objPanelCallback}, () => {
+		this.setState({objectSelected, objectIsSelected, draggedObjectMetaData}, () => {
+			if (callback) callback();
 			// if object info panel is closed by clicking cancel/X button
 			if (!objectIsSelected && this.props.objectSelected) {
 				this.props.setObjectSelected(null);
 			}
-			if (this.props.objHasBeenDropped) {
-				this.props.setHasObjBeenDropped(false);
-			}
 		});
+	}
+
+	/**
+	 * Sets whether to show object info panel
+	 * @param needToShowObjectPanel: boolean
+	 * @param evt: event object
+	 * @param draggedObjRecipient: string (ID - used for addObjToOtherPc)
+	 */
+	setObjectPanelDisplayOption = (needToShowObjectPanel, evt, draggedObjRecipient) => {
+		const buffer = 30;
+		const leftMod = evt && evt.clientX > (window.innerWidth - this.objectPanelWidth) ? -(this.objectPanelWidth + buffer) : 0;
+		const topMod = evt && evt.clientY < (window.screenTop + this.objectPanelHeight) ? buffer : -this.objectPanelHeight;
+		const selectedObjPos = evt ? {left: evt.clientX + leftMod, top: evt.clientY + topMod} : this.state.selectedObjPos ? this.state.selectedObjPos : null;
+		this.setState({needToShowObjectPanel, selectedObjPos, draggedObjRecipient});
 	}
 
 	showObjectPanel = () => {
 		return (
 			<ObjectInfoPanel
 				objectInfo={this.state.objectSelected}
+				isDraggedObject={this.state.draggedObjectMetaData !== null}
 				setObjectSelected={this.setObjectSelected}
+				setObjectPanelDisplayOption={this.setObjectPanelDisplayOption}
 				selectedObjPos={this.state.selectedObjPos}
 				objHasBeenDropped={this.props.objHasBeenDropped}
-				objPanelCallback={this.state.objPanelCallback}
+				setHasObjBeenDropped={this.props.setHasObjBeenDropped}
+				addObjectToMap={this.addObjectToMap}
+				addObjToOtherPc={this.addObjToOtherPc}
+				addItemToPlayerInventory={this.props.addItemToPlayerInventory}
+				isPickUpAction={this.state.isPickUpAction}
 			/>
 		)
 	}
@@ -538,16 +622,26 @@ class UI extends React.Component {
 		if (this.props.selectedCharacterInfo && prevProps.selectedCharacterInfo !== this.props.selectedCharacterInfo) {
 			this._parseInvItems(this.props.selectedCharacterInfo.id, this.state.entireInventory[this.props.selectedCharacterInfo.id]);
 		}
+		// for handling object clicked/selected on map
 		if (this.props.objectSelected && prevProps.objectSelected !== this.props.objectSelected) {
-			if (!prevProps.objectSelected || prevProps.objectSelected.object.id !== this.props.objectSelected.object.id) {
-				const objectInfo = {...this.props.objectSelected.object, isMapObj: true};
-				this.setObjectSelected(objectInfo, this.props.objectSelected.evt, true);
+			if (!prevProps.objectSelected || convertCoordsToPos(prevProps.objectSelected.objectList[0].coords) !== convertCoordsToPos(this.props.objectSelected.objectList[0].coords)) {
+				this.setObjectSelected(this.props.objectSelected.objectList, null, () => {
+					this.setObjectPanelDisplayOption(true, this.props.objectSelected.evt, null);
+				});
 			} else {
-				this.setObjectSelected(null, this.props.objectSelected.evt, false);
+				this.setObjectSelected(null, null, () => {
+					this.setObjectPanelDisplayOption(false, null, null);
+				});
 			}
 		}
-		if (!prevProps.objHasBeenDropped && this.props.objHasBeenDropped) {
-			this.setObjectSelected({...this.state.objectSelected}, null, true);
+		// for handling dropping object from inv to map
+		if (!prevProps.objHasBeenDropped.dropped && this.props.objHasBeenDropped.dropped) {
+			if (this.state.objectSelected.stackable) {
+				this.setObjectPanelDisplayOption(true, this.props.objHasBeenDropped.evt, null);
+			} else {
+				// don't need to pass in dropped and source counts, as it's not a stackable object
+				this.addObjectToMap();
+			}
 		}
 	}
 
@@ -605,6 +699,7 @@ class UI extends React.Component {
 						updateInventory={this.updateInventory}
 						setShowDialogProps={this.props.setShowDialogProps}
 						setObjectSelected={this.setObjectSelected}
+						setObjectPanelDisplayOption={this.setObjectPanelDisplayOption}
 						dropItemToInv={this.dropItemToInv}
 						dropItemToEquipped={this.dropItemToEquipped}
 						notEnoughSpaceDialogProps={this.notEnoughSpaceDialogProps}

@@ -1,16 +1,6 @@
-import React from 'react';
-import {convertObjIdToClassId, notEnoughSpaceInInventory, deepCopy} from './Utils';
+import React, {useState} from 'react';
+import {convertObjIdToClassId, notEnoughSpaceInInventory, deepCopy, handleItemOverDropZone} from './Utils';
 
-let draggedItem = null;
-let isValidDrop = false;
-const clearDraggedItem = () => {
-	draggedItem = null;
-	isValidDrop = false;
-}
-const handleItemOverDropZone = (evt) => {
-	evt.preventDefault();
-	evt.dataTransfer.dropEffect = 'move';
-}
 
 function CharacterControls(props) {
 	let actionButtonState = '';
@@ -115,11 +105,8 @@ function CharacterControls(props) {
 	return (
 		<div
 			className='character-control-container'
-			onDragOver={(evt) => {handleItemOverDropZone(evt)}}
-			onDrop={(evt) => {
-				isValidDrop = true;
-				props.dropItemToPC(evt, draggedItem, props.characterId, clearDraggedItem);
-			}}
+			onDragOver={(evt) => handleItemOverDropZone(evt)}
+			onDrop={(evt) => props.dropItemToPC(evt, props.characterId)}
 		>
 			<div>
 				<div className='character-name font-fancy'>{props.characterName}</div>
@@ -139,23 +126,16 @@ function CharacterInfoPanel(props) {
 	const equippedItems = props.characterInfo.equippedItems;
 	const equippedIsTwoHanded = equippedItems.loadout1.right && equippedItems.loadout1.right === equippedItems.loadout1.left;
 	const inventoryItems = deepCopy(props.entireInventory[props.characterInfo.id]);
-
 	const dragItem = (evt) => {
 		const itemId = evt.target.id.includes('-leftHand') ? evt.target.id.slice(0, evt.target.id.indexOf('-leftHand')) : evt.target.id;
 		const selectedChar = props.characterInfo;
-		draggedItem = {
-			data: selectedChar.items[itemId] || selectedChar.weapons[itemId],
+		const draggedItem = selectedChar.items[itemId] || selectedChar.weapons[itemId];
+		const draggedItemData = {
 			sourcePC: selectedChar.id,
 			sourceLoc: evt.target.parentElement.id, //only used if being dragged from inv (not from equipped)
 			sourceClasses: evt.target.parentElement.className
 		};
-		props.setObjectSelected(draggedItem.data, evt, false);
-	}
-	const endDragging = () => {
-		if (!isValidDrop) {
-			clearDraggedItem();
-			props.setObjectSelected(null, null, false);
-		}
+		props.setObjectSelected(draggedItem, draggedItemData);
 	}
 	const itemsIntoElements = (
 		<div className='char-info-inv-items'>
@@ -167,7 +147,7 @@ function CharacterInfoPanel(props) {
 						key={'invBox' + index}
 						className='char-info-inv-item-box'
 						onDragOver={(evt) => {handleItemOverDropZone(evt)}}
-						onDrop={(evt) => {isValidDrop = true; props.dropItemToInv(evt, draggedItem, clearDraggedItem);}}
+						onDrop={(evt) => { props.dropItemToInv(evt);}}
 					>
 						{itemId &&
 							<div
@@ -175,8 +155,10 @@ function CharacterInfoPanel(props) {
 								className={`inv-object ${convertObjIdToClassId(itemId)}-inv`}
 								draggable={true}
 								onDragStart={(evt) => {dragItem(evt, itemId)}}
-								onDragEnd={() => endDragging()}
-								onClick={(evt) => {props.setObjectSelected({...itemInfo, id: itemId}, evt, true)}}
+								onClick={(evt) => {
+									props.setObjectSelected({...itemInfo, id: itemId}, null);
+									props.setObjectPanelDisplayOption(true, evt);
+								}}
 							>{itemInfo.currentRounds || itemInfo.amount || ''}</div>
 						}
 					</div>
@@ -217,7 +199,7 @@ function CharacterInfoPanel(props) {
 						<div
 							className='char-info-paper-doll-body char-info-paper-doll-box'
 							onDragOver={(evt) => {handleItemOverDropZone(evt)}}
-							onDrop={(evt) => {isValidDrop = true; props.dropItemToEquipped(evt, draggedItem, clearDraggedItem);}}
+							onDrop={(evt) => props.dropItemToEquipped(evt)}
 						>
 							{(equippedItems.armor &&
 							<div
@@ -225,15 +207,17 @@ function CharacterInfoPanel(props) {
 								className={`inv-object ${convertObjIdToClassId(equippedItems.armor)}-inv`}
 								draggable={true}
 								onDragStart={(evt) => {dragItem(evt, equippedItems.armor)}}
-								onDragEnd={() => endDragging()}
-								onClick={(evt) => {props.setObjectSelected({...itemsPossessed[equippedItems.armor], id: equippedItems.armor}, evt, true)}}
+								onClick={(evt) => {
+									props.setObjectSelected({...itemsPossessed[equippedItems.armor], id: equippedItems.armor}, null);
+									props.setObjectPanelDisplayOption(true, evt);
+								}}
 							></div>) || 'Body'}
 						</div>
 
 						<div
 							className='char-info-paper-doll-right-arm char-info-paper-doll-box'
 							onDragOver={(evt) => {handleItemOverDropZone(evt)}}
-							onDrop={(evt) => {isValidDrop = true; props.dropItemToEquipped(evt, draggedItem, clearDraggedItem);}}
+							onDrop={(evt) => props.dropItemToEquipped(evt)}
 						>
 							{(equippedItems.loadout1.right &&
 							<div
@@ -241,15 +225,17 @@ function CharacterInfoPanel(props) {
 								className={`inv-object ${convertObjIdToClassId(equippedItems.loadout1.right)}-inv`}
 								draggable={true}
 								onDragStart={(evt) => {dragItem(evt, equippedItems.loadout1.right)}}
-								onDragEnd={() => endDragging()}
-								onClick={(evt) => {props.setObjectSelected({...rightEquippedItemInfo, id: equippedItems.loadout1.right}, evt, true)}}
+								onClick={(evt) => {
+									props.setObjectSelected({...rightEquippedItemInfo, id: equippedItems.loadout1.right}, null);
+									props.setObjectPanelDisplayOption(true, evt);
+								}}
 							>{equippedItems.loadout1.right ? rightItemAmount : ''}</div>) || 'Right Hand'}
 						</div>
 
 						<div
 							className='char-info-paper-doll-left-arm char-info-paper-doll-box'
 							onDragOver={(evt) => {handleItemOverDropZone(evt)}}
-							onDrop={(evt) => {isValidDrop = true; props.dropItemToEquipped(evt, draggedItem, clearDraggedItem);}}
+							onDrop={(evt) => props.dropItemToEquipped(evt)}
 						>
 							{(equippedItems.loadout1.left &&
 							<div
@@ -258,8 +244,10 @@ function CharacterInfoPanel(props) {
 								className={`inv-object ${convertObjIdToClassId(equippedItems.loadout1.left)}-inv`}
 								draggable={true}
 								onDragStart={(evt) => {dragItem(evt, equippedItems.loadout1.left)}}
-								onDragEnd={() => endDragging()}
-								onClick={(evt) => {props.setObjectSelected({...leftEquippedItemInfo, id: equippedItems.loadout1.left}, evt, true)}}
+								onClick={(evt) => {
+									props.setObjectSelected({...leftEquippedItemInfo, id: equippedItems.loadout1.left}, null);
+									props.setObjectPanelDisplayOption(true, evt);
+								}}
 							>{equippedItems.loadout1.left ? leftItemAmount : ''}</div>) || 'Left Hand'}
 						</div>
 					</div>
@@ -295,49 +283,107 @@ function CharacterInfoPanel(props) {
 }
 
 function ObjectInfoPanel(props) {
-	const {objectInfo, setObjectSelected, selectedObjPos, objHasBeenDropped, objPanelCallback} = {...props};
-
+	const {
+		objectInfo,
+		isDraggedObject,
+		setObjectSelected,
+		setObjectPanelDisplayOption,
+		selectedObjPos,
+		objHasBeenDropped,
+		setHasObjBeenDropped,
+		addObjectToMap,
+		addObjToOtherPc,
+		addItemToPlayerInventory,
+		isPickUpAction} = {...props};
+	const isMapObj = objectInfo.length;
+	let [origObjectList, updateOrigObjectList] = useState(objectInfo);
+	let [objectToShow, updateObjToShow] = useState(isMapObj ? null : objectInfo);
 	const splitStack = (evt) => {
 		evt.preventDefault();
 		const splitValue = +evt.target[0].value;
 		const remainingCount = objectInfo.amount ? objectInfo.amount - splitValue : objectInfo.currentRounds - splitValue;
 
-		setObjectSelected(null, null, false);
-		objPanelCallback(splitValue, remainingCount);
+		if (objHasBeenDropped) {
+			addObjectToMap(splitValue, remainingCount)
+		} else {
+			addObjToOtherPc(splitValue, remainingCount);
+		}
+		cancelObjPanel();
 	};
-
+	const objectList = () => {
+		const list = [];
+		origObjectList.forEach((obj, index) => {
+			if (obj) {
+				list.push(
+					<div key={obj.id}>
+						<div className='object-row-with-buttons'>
+							<div className={`inv-object ${convertObjIdToClassId(obj.id)}`}></div>
+							<div className='font-fancy object-list-objname'>{obj.name}</div>
+							<div className='general-button' onClick={() => updateObjToShow(obj)}>Show</div>
+							{isPickUpAction &&
+							<div className='general-button' onClick={() => {
+								addItemToPlayerInventory(obj, obj.id);
+								const updatedList = origObjectList;
+								updatedList[index] = undefined;
+								updateOrigObjectList(updatedList);
+								if (updatedList.every(obj => obj === undefined)) {
+									cancelObjPanel();
+								}
+							}}>Pick up</div>
+							}
+						</div>
+					</div>
+				)
+			}
+		});
+		return list;
+	}
 	const cancelObjPanel = () => {
-		clearDraggedItem();
-		setObjectSelected(null, null, false);
+		setObjectSelected(null, null);
+		setObjectPanelDisplayOption(false);
+		if (objHasBeenDropped) {
+			setHasObjBeenDropped(false);
+		}
 	}
 
 	return (
 		<div className={`object-info-panel ${!selectedObjPos ? 'ui-panel' : ''}`} style={{left: selectedObjPos.left, top: selectedObjPos.top}}>
 			<div className='general-button' onClick={() => cancelObjPanel()}>X</div>
-			<div className='object-panel-container'>
-				<div className={`inv-object ${convertObjIdToClassId(objectInfo.id)}-inv`}></div>
-				<div className='object-text-container'>
-					<div className='font-fancy'>{objectInfo.name}</div>
-					<div>{objectInfo.itemType ? objectInfo.itemType : (objectInfo.ranged ? 'Ranged' : 'Melee') + ' weapon'}</div>
-					{objectInfo.rounds && <div>Capacity: {objectInfo.rounds} rounds</div>}
-					{(!objectInfo.isMapObj && objectInfo.amount && <div>Amount: {objectInfo.amount}</div>) ||
-						(!objectInfo.isMapObj && objectInfo.currentRounds >= 0 && <div>Rounds remaining: {objectInfo.currentRounds}</div>)}
-					{objectInfo.twoHanded && <div>Two-handed</div>}
-					{objectInfo.damage && <div>Damage: {objectInfo.damage}</div>}
-					{!objectInfo.isMapObj && objectInfo.time && <div>Light remaining: {objectInfo.time} steps</div>}
-					<div>{objectInfo.description}</div>
+			{(isMapObj && !objectToShow) &&
+			<div>
+				<div className='object-list-container'>
+					{objectList()}
 				</div>
-				{draggedItem && objectInfo.stackable &&
-					<form className='object-split-buttons' onSubmit={(evt) => splitStack(evt)}>
+			</div>
+			}
+			{objectToShow &&
+			<div className='object-panel-container'>
+				<div className={`inv-object ${convertObjIdToClassId(objectToShow.id)}-inv`}></div>
+				<div className='object-text-container'>
+					<div className='font-fancy'>{objectToShow.name}</div>
+					<div>{objectToShow.itemType ? objectToShow.itemType : (objectToShow.ranged ? 'Ranged' : 'Melee') + ' weapon'}</div>
+					{objectToShow.rounds && <div>Capacity: {objectToShow.rounds} rounds</div>}
+					{(!isMapObj && objectToShow.amount && <div>Amount: {objectToShow.amount}</div>) ||
+						(!isMapObj && objectToShow.currentRounds >= 0 && <div>Rounds remaining: {objectToShow.currentRounds}</div>)}
+					{objectToShow.twoHanded && <div>Two-handed</div>}
+					{objectToShow.damage && <div>Damage: {objectToShow.damage}</div>}
+					{!isMapObj && objectToShow.time && <div>Light remaining: {objectToShow.time} steps</div>}
+					<div>{objectToShow.description}</div>
+				</div>
+				{isDraggedObject && objectToShow.stackable &&
+					<form className='object-row-with-buttons' onSubmit={(evt) => splitStack(evt)}>
 						<label htmlFor='object-split'>{objHasBeenDropped ? 'Drop' : 'Trade'} how many?</label>
-						<input type='number' id='object-split' name='object-split' defaultValue='1' min='1' max={objectInfo.amount || objectInfo.currentRounds} />
+						<input type='number' id='object-split' name='object-split' size='3' defaultValue='1' min='1' max={objectToShow.amount || objectToShow.currentRounds} />
 						<button className='general-button' type='submit'>{objHasBeenDropped ? 'Drop' : 'Trade'}</button>
 					</form>
 				}
-				{!objectInfo.isMapObj && !draggedItem &&
+				{isMapObj &&
+					<div className='general-button' onClick={() => updateObjToShow(null)}>Back</div>
+				}
+				{!isMapObj && !isDraggedObject &&
 					<div className='object-panel-buttons'>
-						<span className='general-button'>Equip Right Hand</span>
-						<span className='general-button'>Equip Left Hand</span>
+						<span className='general-button'>Equip Right</span>
+						<span className='general-button'>Equip Left</span>
 						<span className='general-button'>Unequip</span>
 						<span className='general-button'>Drop</span>
 						<span className='general-button'>Trade</span>
@@ -345,6 +391,7 @@ function ObjectInfoPanel(props) {
 				}
 				<span className='general-button' onClick={() => cancelObjPanel()}>Cancel</span>
 			</div>
+			}
 		</div>
 	);
 }

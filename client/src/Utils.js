@@ -63,6 +63,11 @@ export function notEnoughSpaceInInventory(numItemsMovingIntoInv, numItemsMovingO
 	return (playerInvCount + numItemsMovingIntoInv - numItemsMovingOutOfInv) > maxInvSize;
 }
 
+export function handleItemOverDropZone(evt) {
+	evt.preventDefault();
+	evt.dataTransfer.dropEffect = 'move';
+}
+
 export function deepCopy(object) {
 	let objectCopy = null;
 
