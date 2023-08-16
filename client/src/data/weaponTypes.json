@@ -54,7 +54,6 @@
   "Acid Concoction": {
     "damage": 10,
     "ranged": true,
-    "rounds": 1,
     "usesStr": false,
     "stackable": true,
     "twoHanded": false

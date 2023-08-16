@@ -1,5 +1,5 @@
 .ui-panel {
-	background-color: darkslategray;
+	background-color: #225555;
 	font-family: "Century Gothic", sans-serif;
 	color: white;
 	pointer-events: all;
@@ -10,7 +10,7 @@
 .ui-container {
 	position: fixed;
 	display: grid;
-	grid-template-columns: 440px 1fr 300px;
+	grid-template-columns: 500px 1fr 300px;
 	grid-template-rows: 1.5fr 580px 1.5fr;
 	grid-template-areas:
 	"turnInfo turnInfo turnInfo"
@@ -41,7 +41,7 @@
 	border: 2px solid lightgray;
 	border-radius: 10px;
 	color: lightgray;
-	background-color: darkslategray;
+	background-color: #225555;
 	text-align: center;
 	padding: 20px;
 	font-size: 24px;
@@ -83,7 +83,7 @@
 	top: 0;
 	left: 0;
 	justify-content: center;
-	background-color: #332211;
+	background-color: #225555;
 	border: none;
 	border-radius: unset;
 }
@@ -156,7 +156,7 @@
 	justify-self: center;
 	width: 100%;
 	max-height: 128px;
-	border: 2px solid cornflowerblue;
+	border: 2px solid seagreen;
 	border-top: 0;
 	border-radius: 0 0 5px 5px;
 	box-sizing: border-box;
@@ -169,8 +169,8 @@
 	justify-content: space-between;
 	height: 128px;
 	padding: 10px;
-	border-left: 1px solid cornflowerblue;
-	border-right: 1px solid cornflowerblue;
+	border-left: 1px solid seagreen;
+	border-right: 1px solid seagreen;
 	box-sizing: border-box;
 	font-size: 20px;
 }
@@ -194,16 +194,19 @@
 	flex-basis: 250px;
 	height: 128px;
 	padding: 10px;
-	border-left: 1px solid cornflowerblue;
-	border-right: 1px solid cornflowerblue;
+	border-left: 1px solid seagreen;
+	border-right: 1px solid seagreen;
 	box-sizing: border-box;
 }
 
 .character-info-container {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-around;
 	grid-area: characterInfo;
 	min-width: 250px;
 	padding: 20px;
-	border: 2px solid cornflowerblue;
+	border: 2px solid seagreen;
 	border-left: 0;
 	border-radius: 0 5px 5px 0;
 	box-sizing: border-box;
@@ -217,7 +220,6 @@
 
 .char-info-inv-container {
 	display: flex;
-	flex-wrap: wrap;
 	align-items: center;
 	margin-bottom: 20px;
 }
@@ -239,14 +241,15 @@
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
+	align-items: center;
 	width: 64px;
 	height: 64px;
 	margin-left: 25px;
-	border: 2px solid powderblue;
+	border: 2px solid seagreen;
 	text-align: center;
 }
 
-.char-info-doll-boxes {
+.char-info-doll-boxes-container {
 	position: relative;
 	top: -170px;
 	left: 0;
@@ -274,6 +277,7 @@
 }
 
 .char-info-stats-container {
+	min-width: 150px;
 	padding: 10px;
 }
 
@@ -282,21 +286,24 @@
 	flex-direction: row;
 	flex-wrap: wrap;
 	margin-top: 20px;
+	align-self: center;
+	width: calc(66px * 6);
 }
 
 .char-info-inv-item-box {
-	border-top: 1px solid powderblue;
-	border-bottom: 1px solid powderblue;
-	border-right: 1px solid powderblue;
-	border-left: 1px solid powderblue;
 	width: 64px;
 	height: 64px;
+	border: 1px solid seagreen;
+}
+
+.char-info-equipped-light {
+	align-self: center;
 }
 
 .creature-info-container {
 	grid-area: creatureInfo;
 	padding: 10px;
-	border: 2px solid cornflowerblue;
+	border: 2px solid seagreen;
 	border-right: 0;
 	border-radius: 5px 0 0 5px;
 	box-sizing: border-box;
@@ -310,7 +317,7 @@
 	align-self: end;
 	width: 100%;
 	max-height: 128px;
-	border: 2px solid cornflowerblue;
+	border: 2px solid seagreen;
 	border-bottom: 0;
 	border-radius: 5px 5px 0 0;
 	box-sizing: border-box;
@@ -323,8 +330,8 @@
 	align-items: center;
 	flex-basis: 100%;
 	padding: 5px;
-	border-left: 1px solid cornflowerblue;
-	border-right: 1px solid cornflowerblue;
+	border-left: 1px solid seagreen;
+	border-right: 1px solid seagreen;
 	text-align: center;
 }
 
@@ -332,10 +339,10 @@
 	display: inline-block;
 	padding: 3px;
 	font-size: 16px;
-	border-bottom: 1px solid darkslategray;
+	border-bottom: 1px solid #225555;
 }
 
-.weapon-buttons-container {
+.action-buttons-container {
 	display: flex;
 }
 
@@ -344,9 +351,10 @@
 	height: min-content;
 	margin: 5px 0;
 	padding: 5px;
-	border: 1px solid cornflowerblue;
+	border: 1px solid #CC9933;
 	border-radius: 5px;
-	background-color: darkslateblue;
+	color: white;
+	background-color: #996633;
 }
 
 .minimize-button {
@@ -359,15 +367,28 @@
 	text-align: center;
 }
 
-.weapon-button {
+.action-button {
+	width: 32px;
+	height: 32px;
 	margin: 5px;
 	padding: 5px;
-	border: 1px solid cornflowerblue;
+	border: 1px solid seagreen;
 	border-radius: 5px;
 	background-color: limegreen;
+	background-position: center;
+	background-repeat: no-repeat;
 }
 
-.general-button:hover {
+.gun-reload-icon {
+	font-size: 30px;
+	line-height: 30px;
+}
+
+.gun-reload-icon::after {
+	content: '\21BA';
+}
+
+.general-button:hover, select:hover {
 	border-color: yellow;
 	cursor: pointer;
 }
@@ -375,20 +396,93 @@
 .button-inactive {
 	cursor: default;
 	pointer-events: none;
-	background-color: darkslategrey;
+	background-color: #333333;
 }
 
 .button-selected {
 	background-color: darkred;
 }
 
-.weapon-button:hover {
+.action-button:hover {
 	border-color: red;
 	cursor: pointer;
 }
 
 .button-tactical-mode-on {
-	background-color: red;
+	background-color: darkred;
+}
+
+select {
+	margin-top: 5px;
+	margin-bottom: 5px;
+	padding: 5px;
+	border: 1px solid #CC9933;
+	border-radius: 5px;
+	background-color: #996633;
+	color: white;
+	font-size: inherit;
+	font-family: inherit;
+}
+
+.object-info-panel {
+	position: fixed;
+	max-width: 400px;
+	padding: 10px;
+	background-color: #225555;
+	font-family: "Century Gothic", sans-serif;
+	color: white;
+	pointer-events: all;
+	border: 1px solid white;
+	border-radius: 5px;
+	transition: transform 0.5s;
+	box-shadow: 5px 5px 10px black;
+	z-index: 1;
+}
+
+.object-panel-container {
+	display: flex;
+	justify-content: space-around;
+	margin-bottom: 20px;
+	flex-wrap: wrap;
+}
+
+.object-text-container {
+	flex-basis: 70%;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	gap: 5px;
+	max-height: 200px;
+	overflow-y: auto;
+	margin-bottom: 20px;
+}
+
+.object-panel-buttons-container {
+	display: flex;
+	justify-content: center;
+	gap: 5px;
+	flex-wrap: wrap;
+}
+
+.object-panel-buttons {
+	display: flex;
+	gap: 5px;
+	align-items: center;
+}
+
+.object-row-with-buttons {
+	display: flex;
+	width: 100%;
+	align-items: center;
+	gap: 10px;
+}
+
+.object-row-with-buttons .inv-object {
+	cursor: default;
+}
+
+.object-list-objname {
+	width: 150px;
 }
 
 .hide {
@@ -397,133 +491,101 @@
 
 /* INV OBJECTS */
 
-.torch-inv {
+.inv-object {
 	width: 64px;
 	height: 64px;
-	background-image: url('../assets/objects/torch_lrg.png');
+	cursor: pointer;
 	background-position: center;
 	background-repeat: no-repeat;
+	text-align: left;
+}
+
+.torch-inv {
+	background-image: url('../assets/objects/torch_lrg.png');
 }
 
 .lantern-inv {
-	width: 64px;
-	height: 64px;
 	background-image: url('../assets/objects/lantern_lrg.png');
-	background-position: center;
-	background-repeat: no-repeat;
 }
 
 .electric-torch-inv {
-	width: 64px;
-	height: 64px;
 	background-image:  url('../assets/objects/flashlight_lrg.png');
-	background-position: center;
-	background-repeat: no-repeat;
 }
 
-.ammo-inv {
-	width: 64px;
-	height: 64px;
-	background-image: url('../assets/objects/ammo_sml.png');
-	background-position: center;
-	background-repeat: no-repeat;
+.oil-inv {
+	background-image:  url('../assets/objects/oil_lrg.png');
+}
+
+.handgun-ammo-inv {
+	background-image: url('../assets/objects/handgunammo_lrg.png');
 }
 
 .first-aid-kit-inv {
-	width: 64px;
-	height: 64px;
 	background-image: url('../assets/objects/firstaidkit_lrg.png');
-	background-position: center;
-	background-repeat: no-repeat;
 }
 
 .pharmaceuticals-inv {
-	width: 64px;
-	height: 64px;
 	background-image: url('../assets/objects/pharmaceuticals_lrg.png');
-	background-position: center;
-	background-repeat: no-repeat;
 }
 
 .acid-concoction-inv {
-	width: 64px;
-	height: 64px;
 	background-image: url('../assets/objects/acid_lrg.png');
-	background-position: center;
-	background-repeat: no-repeat;
 }
 
 .pickaxe-inv {
-	width: 64px;
-	height: 64px;
 	background-image: url('../assets/objects/pickaxe_lrg.png');
-	background-position: center;
-	background-repeat: no-repeat;
 }
 
 .colt-revolver-inv {
-	width: 64px;
-	height: 64px;
 	background-image: url('../assets/objects/coltRevolver_lrg.png');
-	background-position: center;
-	background-repeat: no-repeat;
 }
 
 .s-and-w-revolver-inv {
-	width: 64px;
-	height: 64px;
 	background-image: url('../assets/objects/SandWrevolver_lrg.png');
-	background-position: center;
-	background-repeat: no-repeat;
+}
+
+.leather-jacket-inv {
+	background-image: url('../assets/objects/leatherJacket_lrg.png');
+}
+
+.bulletproof-vest-inv {
+	background-image: url('../assets/objects/bulletproofVest_lrg.png');
 }
 
 
 /* ACTION BUTTON ICONS */
 
-.first-aid-kit-act {
+.action-button {
 	width: 32px;
 	height: 32px;
-	background-image: url('../assets/ui/firstaidkit_32.png');
 	background-position: center;
 	background-repeat: no-repeat;
+}
+
+.first-aid-kit-act {
+	background-image: url('../assets/ui/firstaidkit_32.png');
 }
 
 .pharmaceuticals-act {
-	width: 32px;
-	height: 32px;
 	background-image: url('../assets/ui/pharmaceuticals_32.png');
-	background-position: center;
-	background-repeat: no-repeat;
+}
+
+.oil-act {
+	background-image: url('../assets/ui/oil_32.png');
 }
 
 .acid-concoction-act {
-	width: 32px;
-	height: 32px;
 	background-image: url('../assets/ui/acid_32.png');
-	background-position: center;
-	background-repeat: no-repeat;
 }
 
 .pickaxe-act {
-	width: 32px;
-	height: 32px;
 	background-image: url('../assets/ui/pickaxe_32.png');
-	background-position: center;
-	background-repeat: no-repeat;
 }
 
 .colt-revolver-act {
-	width: 32px;
-	height: 32px;
 	background-image: url('../assets/ui/coltRevolver_32.png');
-	background-position: center;
-	background-repeat: no-repeat;
 }
 
 .s-and-w-revolver-act {
-	width: 32px;
-	height: 32px;
 	background-image: url('../assets/ui/SandWrevolver_32.png');
-	background-position: center;
-	background-repeat: no-repeat;
 }

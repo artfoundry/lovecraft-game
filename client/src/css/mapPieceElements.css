@@ -86,7 +86,7 @@
 	position: absolute;
 }
 
-.torch-top-wall {
+.torch-top-wall, .torch {
 	content: url('../assets/objects/torch_sml.png');
 }
 
@@ -108,8 +108,12 @@
 	content: url('../assets/objects/lantern_sml.png');
 }
 
-.ammo {
-	content: url('../assets/objects/ammo_sml.png');
+.oil {
+	content: url('../assets/objects/oil_sml.png');
+}
+
+.handgun-ammo {
+	content: url('../assets/objects/handgunammo_sml.png');
 }
 
 .first-aid-kit {
@@ -134,4 +138,12 @@
 
 .s-and-w-revolver {
 	content: url('../assets/objects/SandWrevolver_sml.png');
+}
+
+.leather-jacket {
+	content: url('../assets/objects/leatherJacket_sml.png');
+}
+
+.bulletproof-vest {
+	content: url('../assets/objects/bulletproofVest_sml.png');
 }

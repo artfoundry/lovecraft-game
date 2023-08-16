@@ -1,30 +1,61 @@
 {
   "Lantern": {
     "itemType": "Light",
-    "range": 4
+    "range": 4,
+    "description": "A long lasting light source with a good range of visible light."
   },
   "Torch": {
     "itemType": "Light",
-    "range": 3
+    "range": 3,
+    "description": "A short term light source with a small range of visible light. Easier to find, but not as reliable."
   },
   "Electric Torch": {
     "itemType": "Light",
-    "range": 5
+    "range": 5,
+    "description": "The longest lasting light source with a very good range of visible light. Expensive and harder to find than a lantern."
+  },
+  "Oil": {
+    "itemType": "Miscellaneous",
+    "stackable": true,
+    "description": "Oil for refilling a lantern or applying to a torch."
   },
   "Pharmaceuticals": {
     "itemType": "Medicine",
     "healingAmount": 3,
-    "healingType": "sanity"
+    "healingType": "sanity",
+    "stackable": true,
+    "description": "Western medicine's chemical solution to psychological and physiological maladies. Helps minimize anxiety and placate fears. For a while..."
   },
   "First Aid Kit": {
     "itemType": "Medicine",
     "healingAmount": 20,
-    "healingType": "health"
+    "healingType": "health",
+    "stackable": true,
+    "description": "A basic first aid kit to patch up minor wounds."
   },
   "Leather Jacket": {
     "itemType": "Armor",
     "defense": 3,
     "damageReduction": 1
   },
-  "Ammo": ["handgun", "shotgun", "machineGun"]
+  "Bulletproof Vest": {
+    "itemType": "Armor",
+    "defense": 4,
+    "damageReduction": 2
+  },
+  "Handgun Ammo": {
+    "itemType": "Ammo",
+    "gunType":  "handgun",
+    "stackable": true
+  },
+  "Shotgun Ammo": {
+    "itemType": "Ammo",
+    "gunType":  "shotgun",
+    "stackable": true
+  },
+  "Machine Gun Ammo": {
+    "itemType": "Ammo",
+    "gunType":  "machineGun",
+    "stackable": true
+  }
 }

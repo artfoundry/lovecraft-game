@@ -55,15 +55,15 @@ function Item(props) {
 			alt={props.name}
 			className={`object ${props.name}`}
 			style={props.styles}
-			onClick={() => {
+			onClick={(evt) => {
 				if (props.isActivePlayerNearObject(props.objectInfo.coords)) {
-					if (props.isActivePlayerInvFull && props.name !== 'ammo') {
+					if (props.isActivePlayerInvFull) {
 						props.setShowDialogProps(true, props.invFullDialogProps);
 					} else {
-						props.addItemToPlayerInventory(props.objectInfo, props.objectId);
+						props.addItemToPlayerInventory(props.objectInfo, props.objectInfo.id);
 					}
 				} else {
-					props.setShowDialogProps(true, props.itemTooFarDialogProps);
+					props.setObjectSelected(props.objectInfo, evt);
 				}
 			}}
 		/>

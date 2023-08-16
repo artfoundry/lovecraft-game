@@ -1,13 +1,11 @@
 import React from 'react';
-import {diceRoll} from './Utils';
+import {diceRoll, deepCopy} from './Utils';
 import ItemTypes from './data/itemTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
 
 class Character extends React.Component {
 	constructor(props) {
 		super(props);
-
-		this.itemTypes = ItemTypes;
 
 		// For instantiation only - updated data is stored in App.state.playerCharacters
 		this.id = props.id;
@@ -25,14 +23,13 @@ class Character extends React.Component {
 		this.startingSanity = props.startingSanity;
 		this.currentSanity = props.startingSanity;
 		this.skills = props.skills;
-		this.weapons = props.weapons;
+		this.weapons = this._populateInfo('weapon', props.weapons);
 		this.equippedItems = {
 			loadout1: {right: props.equippedItems.right, left: this.weaponIsTwoHanded(props.equippedItems.right) ? props.equippedItems.right : props.equippedItems.left},
 			loadout2: {right: '', left: ''},
 			armor: props.equippedItems.armor || ''
 		};
-		this.ammo = props.ammo;
-		this.items = props.items;
+		this.items = this._populateInfo('item', props.items);
 		this.maxItems = 12;
 		this.defense = this.calculateDefense();
 		this.damageReduction = this.equippedItems.armor ? this.items[this.equippedItems.armor].damageReduction : 0;
@@ -42,7 +39,16 @@ class Character extends React.Component {
 		this.lightTime = this.equippedLight ? this.items[this.equippedLight].time : null;
 	}
 
-	calculateDefense() {
+	_populateInfo(type, props) {
+		const fullData = type === 'weapon' ? WeaponTypes : ItemTypes;
+		let allInfo = {};
+		for (const [id, info] of Object.entries(props)) {
+			allInfo[id] = {...info, ...fullData[info.name]};
+		}
+		return allInfo;
+	}
+
+	calculateDefense = () => {
 		return this.agility + (this.equippedItems.armor ? this.items[this.equippedItems.armor].defense : 0);
 	}
 
@@ -70,14 +76,19 @@ class Character extends React.Component {
 		const {itemId, itemStats, targetData, pcData, updateCharacter, updateLog, callback} = props;
 		let isHit, damage, hitRoll, defenseRoll;
 		let rangedStrHitModifier = itemStats.usesStr ? Math.round(this.strength / 2) : 0;
-		let updatedPcData = {...pcData};
-		let updatedCreatureData = {...targetData};
+		let updatedPcData = deepCopy(pcData);
+		let updatedCreatureData = deepCopy(targetData);
+		const weaponInfo = updatedPcData.weapons[itemId];
+		const equippedSide = pcData.equippedItems.loadout1.right === itemId ? 'right' : 'left';
 
 		if (itemStats.ranged) {
 			hitRoll = this.agility + rangedStrHitModifier + diceRoll(20);
 			damage = rangedStrHitModifier + itemStats.damage + diceRoll(6) - targetData.damageReduction;
-			const gunType = this.weapons[itemId].gunType;
-			gunType ? updatedPcData.ammo[gunType]-- : updatedPcData.ammo.stackable[this.weapons[itemId].name]--;
+			weaponInfo.currentRounds--;
+			if (weaponInfo.currentRounds === 0 && weaponInfo.stackable) {
+				delete updatedPcData.weapons[itemId];
+				updatedPcData.equippedItems.loadout1[equippedSide] = '';
+			}
 		} else {
 			hitRoll = this.strength + Math.round(this.agility / 2) + diceRoll(20);
 			damage = this.strength + itemStats.damage + diceRoll(6) - targetData.damageReduction;
@@ -115,10 +126,10 @@ class Character extends React.Component {
 		const targetStat = itemStats.healingType === 'health' ? 'currentHealth' : 'currentSanity';
 		const startingStatValue = itemStats.healingType === 'health' ? targetData.startingHealth : targetData.startingSanity;
 		const healAmount = Math.round(pcData.mentalAcuity / 2) + (itemStats.healingType === 'health' ? diceRoll(12) : diceRoll(4)) + itemStats.healingAmount;
-		let updatedTargetData = {...targetData};
+		let updatedTargetData = deepCopy(targetData);
 		const healedStatValue = targetData[targetStat] + healAmount;
 		updatedTargetData[targetStat] = healedStatValue > startingStatValue ? startingStatValue : healedStatValue;
-		let updatedHealerData = {...pcData};
+		let updatedHealerData = deepCopy(pcData);
 		delete updatedHealerData.items[itemId];
 		updateCharacter('player', updatedTargetData, targetData.id, false, false, () => {
 			updateLog(`${pcData.name} uses ${healItem} to increase ${targetData.name}'s ${targetStat.substring(7)}`);

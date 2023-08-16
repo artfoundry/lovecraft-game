@@ -63,6 +63,31 @@ export function notEnoughSpaceInInventory(numItemsMovingIntoInv, numItemsMovingO
 	return (playerInvCount + numItemsMovingIntoInv - numItemsMovingOutOfInv) > maxInvSize;
 }
 
+export function handleItemOverDropZone(evt) {
+	evt.preventDefault();
+	evt.dataTransfer.dropEffect = 'move';
+}
+
+export function deepCopy(object) {
+	let objectCopy = null;
+
+	if (Array.isArray(object)) {
+		objectCopy = [];
+		object.forEach((arrayItem, index) => {
+			objectCopy[index] = deepCopy(arrayItem);
+		});
+	} else if (!object || typeof object !== 'object') {
+		objectCopy = object;
+	} else {
+		objectCopy = {};
+		for (const [key, value] of Object.entries(object)) {
+			objectCopy[key] = typeof value === 'object' ? deepCopy(value) : value;
+		}
+	}
+
+	return objectCopy;
+}
+
 // just for testing purposes
 export function placeTileDotForTesting(coords) {
 	let dot = document.createElement('div');
