@@ -297,7 +297,8 @@ function ObjectInfoPanel(props) {
 		isPickUpAction,
 		isMapObj} = {...props};
 	let [origObjectList, updateOrigObjectList] = useState(objectInfo);
-	let [objectToShow, updateObjToShow] = useState(isMapObj ? null : objectInfo);
+	const multipleMapObs = objectInfo.length > 1;
+	let [objectToShow, updateObjToShow] = useState(isMapObj && multipleMapObs ? null : isMapObj && !multipleMapObs ? objectInfo[0] : objectInfo);
 	const splitStack = (evt) => {
 		evt.preventDefault();
 		const splitValue = +evt.target[0].value;
@@ -378,7 +379,7 @@ function ObjectInfoPanel(props) {
 							<button className='general-button' type='submit'>{objHasBeenDropped ? 'Drop' : 'Trade'}</button>
 						</form>
 					}
-					{isMapObj &&
+					{isMapObj && multipleMapObs &&
 						<span className='general-button' onClick={() => updateObjToShow(null)}>Back</span>
 					}
 					{!isMapObj && !isDraggedObject &&
