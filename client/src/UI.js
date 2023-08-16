@@ -454,15 +454,15 @@ class UI extends React.Component {
 	}
 
 	/**
-	 * Store whether an object in inv or on the map has been selected (if callback is passed, item was selected on map)
-	 * @param objectInfo: array or object or null (array only if object was clicked on in the map, object any other time, null if obj is deselected or obj panel closed)
+	 * Store whether an object in inv or on the map has been selected (if isMapObj is true, item was selected on map instead of inv)
+	 * @param objectSelected: array or object or null (array only if object was clicked on in the map, object any other time, null if obj is deselected or obj panel closed)
 	 * @param draggedObjectMetaData: object (source info for dragged item: sourcePC, sourceLoc, sourceClasses)
-	 * @callback: function
+	 * @param isMapObj: boolean (indicates user clicked on a map object/stack of objects)
+	 * @param callback: function
 	 */
-	setObjectSelected = (objectInfo, draggedObjectMetaData, callback) => {
-		const objectSelected = objectInfo && objectInfo.length && objectInfo.length === 1 ? objectInfo[0] : objectInfo;
+	setObjectSelected = (objectSelected, draggedObjectMetaData, isMapObj, callback) => {
 		const objectIsSelected = objectSelected !== null;
-		this.setState({objectSelected, objectIsSelected, draggedObjectMetaData}, () => {
+		this.setState({objectSelected, objectIsSelected, draggedObjectMetaData, isMapObj}, () => {
 			if (callback) callback();
 			// if object info panel is closed by clicking cancel/X button
 			if (!objectIsSelected && this.props.objectSelected) {
@@ -499,6 +499,7 @@ class UI extends React.Component {
 				addObjToOtherPc={this.addObjToOtherPc}
 				addItemToPlayerInventory={this.props.addItemToPlayerInventory}
 				isPickUpAction={this.state.isPickUpAction}
+				isMapObj={this.state.isMapObj}
 			/>
 		)
 	}
@@ -625,7 +626,7 @@ class UI extends React.Component {
 		// for handling object clicked/selected on map
 		if (this.props.objectSelected && prevProps.objectSelected !== this.props.objectSelected) {
 			if (!prevProps.objectSelected || convertCoordsToPos(prevProps.objectSelected.objectList[0].coords) !== convertCoordsToPos(this.props.objectSelected.objectList[0].coords)) {
-				this.setObjectSelected(this.props.objectSelected.objectList, null, () => {
+				this.setObjectSelected(this.props.objectSelected.objectList, null, true, () => {
 					this.setObjectPanelDisplayOption(true, this.props.objectSelected.evt, null);
 				});
 			} else {

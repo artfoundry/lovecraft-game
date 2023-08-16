@@ -294,8 +294,8 @@ function ObjectInfoPanel(props) {
 		addObjectToMap,
 		addObjToOtherPc,
 		addItemToPlayerInventory,
-		isPickUpAction} = {...props};
-	const isMapObj = objectInfo.length;
+		isPickUpAction,
+		isMapObj} = {...props};
 	let [origObjectList, updateOrigObjectList] = useState(objectInfo);
 	let [objectToShow, updateObjToShow] = useState(isMapObj ? null : objectInfo);
 	const splitStack = (evt) => {
@@ -370,26 +370,28 @@ function ObjectInfoPanel(props) {
 					{!isMapObj && objectToShow.time && <div>Light remaining: {objectToShow.time} steps</div>}
 					<div>{objectToShow.description}</div>
 				</div>
-				{isDraggedObject && objectToShow.stackable &&
-					<form className='object-row-with-buttons' onSubmit={(evt) => splitStack(evt)}>
-						<label htmlFor='object-split'>{objHasBeenDropped ? 'Drop' : 'Trade'} how many?</label>
-						<input type='number' id='object-split' name='object-split' size='3' defaultValue='1' min='1' max={objectToShow.amount || objectToShow.currentRounds} />
-						<button className='general-button' type='submit'>{objHasBeenDropped ? 'Drop' : 'Trade'}</button>
-					</form>
-				}
-				{isMapObj &&
-					<div className='general-button' onClick={() => updateObjToShow(null)}>Back</div>
-				}
-				{!isMapObj && !isDraggedObject &&
-					<div className='object-panel-buttons'>
-						<span className='general-button'>Equip Right</span>
-						<span className='general-button'>Equip Left</span>
-						<span className='general-button'>Unequip</span>
-						<span className='general-button'>Drop</span>
-						<span className='general-button'>Trade</span>
-					</div>
-				}
-				<span className='general-button' onClick={() => cancelObjPanel()}>Cancel</span>
+				<div className='object-panel-buttons-container'>
+					{isDraggedObject && objectToShow.stackable &&
+						<form className='object-row-with-buttons' onSubmit={(evt) => splitStack(evt)}>
+							<label htmlFor='object-split'>{objHasBeenDropped ? 'Drop' : 'Trade'} how many?</label>
+							<input type='number' id='object-split' name='object-split' size='3' defaultValue='1' min='1' max={objectToShow.amount || objectToShow.currentRounds} />
+							<button className='general-button' type='submit'>{objHasBeenDropped ? 'Drop' : 'Trade'}</button>
+						</form>
+					}
+					{isMapObj &&
+						<span className='general-button' onClick={() => updateObjToShow(null)}>Back</span>
+					}
+					{!isMapObj && !isDraggedObject &&
+						<div className='object-panel-buttons'>
+							<span className='general-button'>Equip Right</span>
+							<span className='general-button'>Equip Left</span>
+							<span className='general-button'>Unequip</span>
+							<span className='general-button'>Drop</span>
+							<span className='general-button'>Trade</span>
+						</div>
+					}
+					<span className='general-button' onClick={() => cancelObjPanel()}>Cancel</span>
+				</div>
 			</div>
 			}
 		</div>
