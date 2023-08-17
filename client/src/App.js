@@ -18,11 +18,6 @@ class Game extends React.Component {
 		this.startingPlayerCharacters = ['privateEye', 'archaeologist', 'chemist'];
 		this.playerMovesLimit = 3;
 		this.playerActionsLimit = 2;
-		this.lightTimes = {
-			'Torch': 100,
-			'Lantern': 300,
-			'Electric Torch': 500
-		};
 
 		this.firebase = new Firebase();
 
@@ -90,6 +85,16 @@ class Game extends React.Component {
 		};
 		this.noMoreActionsDialogProps = {
 			dialogContent: `That character has no more actions this turn`,
+			closeButtonText: 'Ok',
+			closeButtonCallback: null,
+			disableCloseButton: false,
+			actionButtonVisible: false,
+			actionButtonText: '',
+			actionButtonCallback: null,
+			dialogClasses: ''
+		};
+		this.noMoreMovesDialogProps = {
+			dialogContent: `That character has no more moves this turn`,
 			closeButtonText: 'Ok',
 			closeButtonCallback: null,
 			disableCloseButton: false,
@@ -345,13 +350,29 @@ class Game extends React.Component {
 	reloadGun = (weapon, gunInfo, availAmmo, currentPCdata) => {
 		const gunType = gunInfo.gunType;
 		const resupplyAmmo = gunInfo.rounds <= availAmmo ? gunInfo.rounds : availAmmo;
-		let updatedPCdata = deepCopy(currentPCdata);
+		const updatedPCdata = deepCopy(currentPCdata);
 		updatedPCdata.weapons[weapon.weaponId].currentRounds = resupplyAmmo;
 		updatedPCdata.items[gunType + 'Ammo0'].amount = availAmmo - resupplyAmmo;
 		if (updatedPCdata.items[gunType + 'Ammo0'].amount === 0) {
 			delete updatedPCdata.items[gunType + 'Ammo0'];
 		}
 		this.updateCharacters('player', updatedPCdata, currentPCdata.id, false, false, () => {
+			this._updateActivePlayerActions();
+		});
+	}
+
+	refillLight = () => {
+		const activePcData = deepCopy(this.state.playerCharacters[this.state.activeCharacter]);
+		const equippedLight = activePcData.items[activePcData.equippedLight];
+		const oil = activePcData.items.oil0;
+		const oilNeeded = equippedLight.maxTime - activePcData.lightTime;
+		equippedLight.time = oil.amount < oilNeeded ? activePcData.lightTime + oil.amount : equippedLight.maxTime;
+		activePcData.lightTime = equippedLight.time;
+		oil.amount -= oil.amount < oilNeeded ? oil.amount : oilNeeded;
+		if (oil.amount <= 0) {
+			delete activePcData.items.oil0;
+		}
+		this.updateCharacters('player', activePcData, this.state.activeCharacter, false, false, () => {
 			this._updateActivePlayerActions();
 		});
 	}
@@ -379,7 +400,7 @@ class Game extends React.Component {
 					this.toggleActionButton(selectedItemInfo.characterId, selectedItemInfo.itemId, selectedItemInfo.itemName, target === 'creature' ? 'weapon': 'item', () => {
 						if (target === 'creature' && this.state.mapCreatures[id].currentHealth <= 0) {
 							this._removeDeadFromTurnOrder(id, this._updateActivePlayerActions, checkLineOfSightToParty);
-						} else if (this.state.inTacticalMode) {
+						} else {
 							this._updateActivePlayerActions();
 						}
 					});
@@ -564,7 +585,7 @@ class Game extends React.Component {
 			inventoryList[invId].amount = currentAmmoCount + itemData.amount;
 		} else if (objectType === 'Light') {
 			inventoryList[objId] = {...itemData};
-			inventoryList[objId].time = this.lightTimes[itemData.name];
+			inventoryList[objId].time = itemData.maxTime;
 		} else if (itemData.stackable) {
 			invId = objId.replace(/\d+$/, '0');
 			if (!inventoryList[invId]) {
@@ -583,7 +604,7 @@ class Game extends React.Component {
 		let updatedData = {[invObjectCategory]: inventoryList};
 		this.updateCharacters('player', updatedData, this.state.activeCharacter, false, false, () => {
 			this._removeItemFromMap(objId);
-			if (isPickUpAction && this.state.inTacticalMode) {
+			if (isPickUpAction) {
 				this._updateActivePlayerActions();
 			}
 		});
@@ -723,8 +744,10 @@ class Game extends React.Component {
 	 * @private
 	 */
 	_updateActivePlayerActions = () => {
-		const activePlayerActionsCompleted = this.state.activePlayerActionsCompleted + 1;
-		this.setState({activePlayerActionsCompleted});
+		if (this.state.inTacticalMode) {
+			const activePlayerActionsCompleted = this.state.activePlayerActionsCompleted + 1;
+			this.setState({activePlayerActionsCompleted});
+		}
 	}
 
 	/**
@@ -810,6 +833,7 @@ class Game extends React.Component {
 						actionButtonSelected={this.state.actionButtonSelected}
 						toggleActionButton={this.toggleActionButton}
 						reloadGun={this.reloadGun}
+						refillLight={this.refillLight}
 
 						updateCurrentTurn={this.updateCurrentTurn}
 						activeCharacter={this.state.activeCharacter}
@@ -831,6 +855,7 @@ class Game extends React.Component {
 						setShowDialogProps={this.setShowDialogProps}
 						notEnoughSpaceDialogProps={this.notEnoughSpaceDialogProps}
 						noMoreActionsDialogProps={this.noMoreActionsDialogProps}
+						noMoreMovesDialogProps={this.noMoreMovesDialogProps}
 
 						pcTypes={this.state.pcTypes}
 						playerCharacters={this.state.playerCharacters}
@@ -847,7 +872,6 @@ class Game extends React.Component {
 						setMapObjectSelected={this.setMapObjectSelected}
 						setHasObjBeenDropped={this.setHasObjBeenDropped}
 						addItemToPlayerInventory={this.addItemToPlayerInventory}
-						lightTimes={this.lightTimes}
 
 						currentTurn={this.state.currentTurn}
 						updateCurrentTurn={this.updateCurrentTurn}

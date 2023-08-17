@@ -3,7 +3,6 @@ import {convertObjIdToClassId, notEnoughSpaceInInventory, deepCopy, handleItemOv
 
 
 function CharacterControls(props) {
-	let actionButtonState = '';
 	const currentPCdata = props.playerCharacters[props.characterId];
 	const equippedItems = props.equippedItems.loadout1;
 	const invItems = props.invItems;
@@ -32,7 +31,7 @@ function CharacterControls(props) {
 	};
 	const hasExtraAmmo = props.checkForExtraAmmo(currentPCdata);
 	const objAvailableToPickup = props.mapObjectsOnPcTiles[props.characterId];
-	const examineButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0) ? 'button-inactive' : '';
+	const actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0) ? 'button-inactive' : '';
 
 	for (const itemId of Object.values(equippedItems)) {
 		// need this check for two-handed weapons, since both hands list the same weaponId
@@ -70,7 +69,7 @@ function CharacterControls(props) {
 	const weaponButtons = (
 		<div className='weapon-buttons-container'>
 			{actionableItems.weapons.map((weapon, index) => {
-				actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || (weapon.ammo === 0 && !hasExtraAmmo)) ? 'button-inactive' :
+				const actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || (weapon.ammo === 0 && !hasExtraAmmo)) ? 'button-inactive' :
 					(props.isActiveCharacter && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === weapon.weaponId) ? 'button-selected': '';
 				return (
 					<div
@@ -91,7 +90,7 @@ function CharacterControls(props) {
 				const itemCount = actionableItems.medicine.findLast(match => match.name === item.name).amount;
 				let button = null;
 				if (item.amount === itemCount) {
-					actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0) ? 'button-inactive' :
+					const actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0) ? 'button-inactive' :
 						(props.isActiveCharacter && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === item.itemId) ? 'button-selected': '';
 					button = (
 						<div className={`action-button ${convertObjIdToClassId(item.itemId)}-act ${actionButtonState}`} key={item.itemId} onClick={() => {
@@ -117,8 +116,12 @@ function CharacterControls(props) {
 			</div>
 			{weaponButtons}
 			{medicineButtons}
+			{((currentPCdata.equippedLight && (currentPCdata.equippedLight.includes('lantern') || currentPCdata.equippedLight.includes('torch'))) &&
+			currentPCdata.lightTime < currentPCdata.items[currentPCdata.equippedLight].maxTime && currentPCdata.items.oil0) &&
+			<div className={`action-button refill-button ${actionButtonState}`} onClick={() => props.refillLight()}></div>
+			}
 			{(objAvailableToPickup.length > 0) &&
-				<div className={`action-button examine-button ${examineButtonState}`} onClick={(evt) => props.setMapObjectSelected(objAvailableToPickup, evt, true)}></div>
+				<div className={`action-button examine-button ${actionButtonState}`} onClick={(evt) => props.setMapObjectSelected(objAvailableToPickup, evt, true)}></div>
 			}
 		</div>
 	);
@@ -378,8 +381,8 @@ function ObjectInfoPanel(props) {
 					<div className='font-fancy'>{objectToShow.name}</div>
 					<div>{objectToShow.itemType ? objectToShow.itemType : (objectToShow.ranged ? 'Ranged' : 'Melee') + ' weapon'}</div>
 					{objectToShow.rounds && <div>Capacity: {objectToShow.rounds} rounds</div>}
-					{(objectToShow.amount && <div>Amount: {objectToShow.amount}</div>) ||
-						(objectToShow.currentRounds >= 0 && <div>Rounds remaining: {objectToShow.currentRounds}</div>)}
+					{objectToShow.amount && <div>Amount: {objectToShow.amount}</div>}
+					{objectToShow.currentRounds && objectToShow.currentRounds >= 0 && <div>Rounds remaining: {objectToShow.currentRounds}</div>}
 					{objectToShow.twoHanded && <div>Two-handed</div>}
 					{objectToShow.damage && <div>Damage: {objectToShow.damage}</div>}
 					{objectToShow.time && <div>Light remaining: {objectToShow.time} steps</div>}
@@ -397,6 +400,7 @@ function ObjectInfoPanel(props) {
 						<span className='general-button' onClick={() => updateObjToShow(null)}>Back</span>
 					}
 					{/* MAY ADD THESE IN LATER IF NEEDED */}
+
 					{/*{!isMapObj && !isDraggedObject &&*/}
 					{/*	<div className='object-panel-buttons'>*/}
 					{/*		<span className='general-button' onClick={() => dropItemToEquipped(null)}>Equip Right</span>*/}

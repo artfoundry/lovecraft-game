@@ -1,17 +1,20 @@
 {
-  "Lantern": {
-    "itemType": "Light",
-    "range": 4,
-    "description": "A long lasting light source with a good range of visible light."
-  },
   "Torch": {
     "itemType": "Light",
     "range": 3,
+    "maxTime": 100,
     "description": "A short term light source with a small range of visible light. Easier to find, but not as reliable."
+  },
+  "Lantern": {
+    "itemType": "Light",
+    "range": 4,
+    "maxTime": 300,
+    "description": "A long lasting light source with a good range of visible light."
   },
   "Electric Torch": {
     "itemType": "Light",
     "range": 5,
+    "maxTime": 500,
     "description": "The longest lasting light source with a very good range of visible light. Expensive and harder to find than a lantern."
   },
   "Oil": {

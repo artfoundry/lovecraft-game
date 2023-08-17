@@ -593,3 +593,7 @@ select {
 .examine-button {
 	background-image: url('../assets/ui/magnifyingGlass_sml.png');
 }
+
+.refill-button {
+	background-image: url('../assets/ui/refillLight_sml.png');
+}

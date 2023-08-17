@@ -602,7 +602,10 @@ class Map extends React.Component {
 					const tileType = itemName === 'Torch' ? 'wall' : 'floor';
 					const lowerCaseName = itemName.slice(0, 1).toLowerCase() + itemName.slice(1, itemName.length).replaceAll(' ', '');
 					const itemID = lowerCaseName + (i + 1);
-					const looseItemAmount = objectType === 'Ammo' ? Math.floor(Math.random() * 10) + 2 : objectType === 'Medicine' ? 1 : null;
+					const looseItemAmount =
+						objectType === 'Ammo' ? Math.floor(Math.random() * 10) + 2 :
+						itemName === 'Oil' ? Math.floor(Math.random() * 90) + 10 :
+						objectType === 'Medicine' ? 1 : null;
 					const gunType = objectType === 'Weapon' && itemInfo.gunType ? itemInfo.gunType : null;
 					const weaponCurrentRounds = gunType ? Math.round(Math.random() * itemInfo.rounds) : objectType === 'Weapon' ? 1 : null;
 					const coords = this._getInitialRandomCoords(itemCoords, tileType); // this.props.playerCharacters['privateEye'].coords (to easily test objects)
@@ -1730,7 +1733,7 @@ class Map extends React.Component {
 		}
 		if (this.props.inTacticalMode && this.props.activePlayerMovesCompleted >= this.props.playerMovesLimit) {
 			const showDialog = true;
-			this.props.setShowDialogProps(showDialog, this.props.noMoreActionsDialogProps);
+			this.props.setShowDialogProps(showDialog, this.props.noMoreMovesDialogProps);
 			return;
 		}
 		let newCoords = convertPosToCoords(newTilePos);
@@ -1760,9 +1763,9 @@ class Map extends React.Component {
 			if (activePlayerData.lightTime > 0) {
 				equippedLight.time = activePlayerData.lightTime - 1;
 				updateData.lightTime = activePlayerData.lightTime - 1;
-				if (activePlayerData.lightTime <= (this.props.lightTimes[equippedLight.name] * 0.1)) {
+				if (activePlayerData.lightTime <= (equippedLight.maxTime * 0.1)) {
 					updateData.lightRange = this.lightRanges[equippedLight.name] - 2;
-				} else if (activePlayerData.lightTime <= (this.props.lightTimes[equippedLight.name] * 0.2)) {
+				} else if (activePlayerData.lightTime <= (equippedLight.maxTime * 0.2)) {
 					updateData.lightRange = this.lightRanges[equippedLight.name] - 1;
 				}
 			}

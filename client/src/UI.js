@@ -105,6 +105,7 @@ class UI extends React.Component {
 					updateInventory={this.updateInventory}
 					checkForExtraAmmo={this.checkForExtraAmmo}
 					reloadGun={this.props.reloadGun}
+					refillLight={this.props.refillLight}
 					setShowDialogProps={this.props.setShowDialogProps}
 					dropItemToPC={this.dropItemToPC}
 					setMapObjectSelected={this.props.setMapObjectSelected}
@@ -269,12 +270,14 @@ class UI extends React.Component {
 		if (draggedItem.itemType === 'Light') {
 			updateData.equippedLight = draggedItem.id;
 			updateData.lightRange = draggedItem.range;
+			updateData.lightTime = draggedItem.time;
 		// or if an equipped light is being unequipped (and not by a light)
 		} else if (hand && sourceBoxIndex && (loadout1[hand] === updateData.equippedLight ||
 			(draggedItem.twoHanded && loadout1[oppositeHand] === updateData.equippedLight)))
 		{
 			updateData.equippedLight = null;
 			updateData.lightRange = 0;
+			updateData.lightTime = 0;
 		}
 
 		// if dragged item is two-handed
