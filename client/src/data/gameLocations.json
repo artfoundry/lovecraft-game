@@ -35,7 +35,7 @@
 			"Ammo": {
 				"Handgun Ammo": {
 					"countPerLevel": {
-						"1": 15,
+						"1": 5,
 						"2": 4,
 						"3": 3
 					}
@@ -44,7 +44,7 @@
 			"Medicine": {
 				"First Aid Kit": {
 					"countPerLevel": {
-						"1": 15,
+						"1": 5,
 						"2": 1,
 						"3": 0
 					}

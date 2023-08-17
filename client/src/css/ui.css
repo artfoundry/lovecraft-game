@@ -342,7 +342,7 @@
 	border-bottom: 1px solid #225555;
 }
 
-.action-buttons-container {
+.weapon-buttons-container {
 	display: flex;
 }
 
@@ -563,29 +563,33 @@ select {
 }
 
 .first-aid-kit-act {
-	background-image: url('../assets/ui/firstaidkit_32.png');
+	background-image: url('../assets/ui/firstaidkit_sml.png');
 }
 
 .pharmaceuticals-act {
-	background-image: url('../assets/ui/pharmaceuticals_32.png');
+	background-image: url('../assets/ui/pharmaceuticals_sml.png');
 }
 
 .oil-act {
-	background-image: url('../assets/ui/oil_32.png');
+	background-image: url('../assets/ui/oil_sml.png');
 }
 
 .acid-concoction-act {
-	background-image: url('../assets/ui/acid_32.png');
+	background-image: url('../assets/ui/acid_sml.png');
 }
 
 .pickaxe-act {
-	background-image: url('../assets/ui/pickaxe_32.png');
+	background-image: url('../assets/ui/pickaxe_sml.png');
 }
 
 .colt-revolver-act {
-	background-image: url('../assets/ui/coltRevolver_32.png');
+	background-image: url('../assets/ui/coltRevolver_sml.png');
 }
 
 .s-and-w-revolver-act {
-	background-image: url('../assets/ui/SandWrevolver_32.png');
+	background-image: url('../assets/ui/SandWrevolver_sml.png');
+}
+
+.examine-button {
+	background-image: url('../assets/ui/magnifyingGlass_sml.png');
 }

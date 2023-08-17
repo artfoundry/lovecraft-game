@@ -55,17 +55,7 @@ function Item(props) {
 			alt={props.name}
 			className={`object ${props.name}`}
 			style={props.styles}
-			onClick={(evt) => {
-				if (props.isActivePlayerNearObject(props.objectInfo.coords)) {
-					if (props.isActivePlayerInvFull) {
-						props.setShowDialogProps(true, props.invFullDialogProps);
-					} else {
-						props.addItemToPlayerInventory(props.objectInfo, props.objectInfo.id);
-					}
-				} else {
-					props.setObjectSelected(props.objectInfo, evt);
-				}
-			}}
+			onClick={(evt) => props.setMapObjectSelected([props.objectInfo], evt, false)}
 		/>
 	)
 }

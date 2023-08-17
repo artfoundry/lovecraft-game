@@ -12,17 +12,6 @@ class UI extends React.Component {
 		this.objectPanelHeight = 250;
 		this.inventoryLength = 12;
 
-		this.notEnoughSpaceDialogProps = {
-			dialogContent: `There is not enough inventory space to do that.`,
-			closeButtonText: 'Ok',
-			closeButtonCallback: null,
-			disableCloseButton: false,
-			actionButtonVisible: false,
-			actionButtonText: '',
-			actionButtonCallback: null,
-			dialogClasses: ''
-		};
-
 		this.uiRefs = {
 			controlBar: React.createRef(),
 			turnInfo: React.createRef(),
@@ -41,7 +30,7 @@ class UI extends React.Component {
 			draggedObjectMetaData: {},
 			draggedObjRecipient: '',
 			needToShowObjectPanel: false,
-			isPickUpAction: true
+			isPickUpAction: false
 		};
 	}
 
@@ -80,17 +69,68 @@ class UI extends React.Component {
 		logLinesContainer.scroll({top: logLinesContainer.scrollHeight, behavior: 'smooth'});
 	}
 
-	minimizePanel = (refName) => {
-		const panelStateName = refName + 'Minimized';
-		if (this.state[panelStateName]) {
-			this.uiRefs[refName].current.style = 'transform: translateY(0)';
-		} else if (refName === 'controlBar') {
-			this.uiRefs[refName].current.style = `transform: translateY(${this.uiPanelHeight}px)`;
-		} else if (refName === 'turnInfo') {
-			this.uiRefs[refName].current.style = `transform: translateY(-${this.uiPanelHeight}px)`;
+	showControlBar = () => {
+		let controlPanels = [];
+		const allPcPos = this.props.getAllCharactersPos('player', 'coords');
+		let mapObjectsOnPcTiles = {};
+
+		allPcPos.forEach(pc => mapObjectsOnPcTiles[pc.id] = []);
+		for (const [objId, objInfo] of Object.entries(this.props.mapObjects)) {
+			allPcPos.forEach(pc => {
+				const xDelta = Math.abs(pc.coords.xPos - objInfo.coords.xPos);
+				const yDelta = Math.abs(pc.coords.yPos - objInfo.coords.yPos);
+				if (xDelta <= 1 && yDelta <= 1) {
+					mapObjectsOnPcTiles[pc.id].push({...objInfo, id: objId});
+				}
+			});
 		}
-		this.setState(prevState => ({[panelStateName]: !prevState[panelStateName]}));
+
+		for (const [id, playerInfo] of Object.entries(this.props.playerCharacters)) {
+			controlPanels.push(
+				<CharacterControls
+					key={id}
+					playerCharacters={this.props.playerCharacters}
+					characterId={id}
+					characterName={playerInfo.name}
+					equippedItems={playerInfo.equippedItems}
+					invItems={playerInfo.items}
+					toggleActionButton={this.props.toggleActionButton}
+					actionButtonSelected={this.props.actionButtonSelected}
+					isActiveCharacter={id === this.props.activeCharacter}
+					movesRemaining={this.props.playerLimits.moves - this.props.actionsCompleted.moves}
+					actionsRemaining={this.props.playerLimits.actions - this.props.actionsCompleted.actions}
+					inTacticalMode={this.props.inTacticalMode}
+					updateCharacters={this.props.updateCharacters}
+					entireInventory={this.state.entireInventory}
+					updateInventory={this.updateInventory}
+					checkForExtraAmmo={this.checkForExtraAmmo}
+					reloadGun={this.props.reloadGun}
+					setShowDialogProps={this.props.setShowDialogProps}
+					dropItemToPC={this.dropItemToPC}
+					setMapObjectSelected={this.props.setMapObjectSelected}
+					mapObjectsOnPcTiles={mapObjectsOnPcTiles}
+				/>
+			)
+		}
+		return controlPanels;
 	}
+
+	/**
+	 * Control to minimize space taken up by a panel, so user can see more of the map
+	 * NOTE: not currently in use
+	 * @param refName: string (ref name for the panel)
+	 */
+	// minimizePanel = (refName) => {
+	// 	const panelStateName = refName + 'Minimized';
+	// 	if (this.state[panelStateName]) {
+	// 		this.uiRefs[refName].current.style = 'transform: translateY(0)';
+	// 	} else if (refName === 'controlBar') {
+	// 		this.uiRefs[refName].current.style = `transform: translateY(${this.uiPanelHeight}px)`;
+	// 	} else if (refName === 'turnInfo') {
+	// 		this.uiRefs[refName].current.style = `transform: translateY(-${this.uiPanelHeight}px)`;
+	// 	}
+	// 	this.setState(prevState => ({[panelStateName]: !prevState[panelStateName]}));
+	// }
 
 	/**
 	 * Remove dragged item from source pc inv if it's a single object or an entire stack (of ammo, oil, etc.)
@@ -164,16 +204,7 @@ class UI extends React.Component {
 				dialogClasses: ''
 			};
 		} else if (notEnoughSpaceInInventory(1, 0, currentPCdata)) {
-			dialogProps = {
-				dialogContent: "That character's inventory is full. Free up some space first.",
-				closeButtonText: 'Ok',
-				closeButtonCallback: null,
-				disableCloseButton: false,
-				actionButtonVisible: false,
-				actionButtonText: '',
-				actionButtonCallback: null,
-				dialogClasses: ''
-			};
+			dialogProps = this.props.notEnoughSpaceDialogProps;
 		} else {
 			const firstOpenInvSlot = allPlayersInv[recipientId].indexOf(null);
 			const invObjectCategory = draggedItem.itemType ? 'items' : 'weapons';
@@ -297,7 +328,7 @@ class UI extends React.Component {
 		const draggedObjectMetaData = this.state.draggedObjectMetaData;
 		if (!draggedItem) return;
 		if (notEnoughSpaceInInventory(1, 0, this.props.selectedCharacterInfo)) {
-			this.props.setShowDialogProps(true, this.notEnoughSpaceDialogProps);
+			this.props.setShowDialogProps(true, this.props.notEnoughSpaceDialogProps);
 			return;
 		}
 
@@ -345,37 +376,6 @@ class UI extends React.Component {
 			tempAllItemsList.splice(sourceBoxIndex, 1, destBoxContents);
 			this.updateInventory(this.props.selectedCharacterInfo.id, tempAllItemsList);
 		}
-	}
-
-	showControlBar = () => {
-		let controlPanels = [];
-
-		for (const [id, playerInfo] of Object.entries(this.props.playerCharacters)) {
-			controlPanels.push(
-				<CharacterControls
-					key={id}
-					playerCharacters={this.props.playerCharacters}
-					characterId={id}
-					characterName={playerInfo.name}
-					equippedItems={playerInfo.equippedItems}
-					invItems={playerInfo.items}
-					toggleActionButton={this.props.toggleActionButton}
-					actionButtonSelected={this.props.actionButtonSelected}
-					isActiveCharacter={id === this.props.activeCharacter}
-					movesRemaining={this.props.playerLimits.moves - this.props.actionsCompleted.moves}
-					actionsRemaining={this.props.playerLimits.actions - this.props.actionsCompleted.actions}
-					inTacticalMode={this.props.inTacticalMode}
-					updateCharacters={this.props.updateCharacters}
-					entireInventory={this.state.entireInventory}
-					updateInventory={this.updateInventory}
-					checkForExtraAmmo={this.checkForExtraAmmo}
-					reloadGun={this.props.reloadGun}
-					setShowDialogProps={this.props.setShowDialogProps}
-					dropItemToPC={this.dropItemToPC}
-				/>
-			)
-		}
-		return controlPanels;
 	}
 
 	addObjToOtherPc = (draggedItemCount, sourceItemCount) => {
@@ -455,18 +455,20 @@ class UI extends React.Component {
 
 	/**
 	 * Store whether an object in inv or on the map has been selected (if isMapObj is true, item was selected on map instead of inv)
-	 * @param objectSelected: array or object or null (array only if object was clicked on in the map, object any other time, null if obj is deselected or obj panel closed)
+	 * @param objectSelected: array or object or null (array only if object was clicked on in the map, object any other time, null if obj is deselected or obj panel closed;
+	 *      object format: {...itemInfo, id: itemId})
 	 * @param draggedObjectMetaData: object (source info for dragged item: sourcePC, sourceLoc, sourceClasses)
 	 * @param isMapObj: boolean (indicates user clicked on a map object/stack of objects)
+	 * @param isPickUpAction: boolean
 	 * @param callback: function
 	 */
-	setObjectSelected = (objectSelected, draggedObjectMetaData, isMapObj, callback) => {
+	setObjectSelected = (objectSelected, draggedObjectMetaData, isMapObj, isPickUpAction, callback) => {
 		const objectIsSelected = objectSelected !== null;
-		this.setState({objectSelected, objectIsSelected, draggedObjectMetaData, isMapObj}, () => {
+		this.setState({objectSelected, objectIsSelected, draggedObjectMetaData, isMapObj, isPickUpAction}, () => {
 			if (callback) callback();
 			// if object info panel is closed by clicking cancel/X button
 			if (!objectIsSelected && this.props.objectSelected) {
-				this.props.setObjectSelected(null);
+				this.props.setMapObjectSelected(null);
 			}
 		});
 	}
@@ -486,6 +488,12 @@ class UI extends React.Component {
 	}
 
 	showObjectPanel = () => {
+		let dialogProps = null;
+		if ((this.props.playerLimits.actions - this.props.actionsCompleted.actions) === 0) {
+			dialogProps = this.props.noMoreActionsDialogProps;
+		} else if (notEnoughSpaceInInventory(1, 0, this.props.playerCharacters[this.props.activeCharacter])) {
+			dialogProps = this.props.notEnoughSpaceDialogProps;
+		}
 		return (
 			<ObjectInfoPanel
 				objectInfo={this.state.objectSelected}
@@ -495,11 +503,16 @@ class UI extends React.Component {
 				selectedObjPos={this.state.selectedObjPos}
 				objHasBeenDropped={this.props.objHasBeenDropped}
 				setHasObjBeenDropped={this.props.setHasObjBeenDropped}
+				dropItemToPC={this.dropItemToPC}
+				dropItemToEquipped={this.dropItemToEquipped}
+				dropItemToInv={this.dropItemToInv}
 				addObjectToMap={this.addObjectToMap}
 				addObjToOtherPc={this.addObjToOtherPc}
 				addItemToPlayerInventory={this.props.addItemToPlayerInventory}
 				isPickUpAction={this.state.isPickUpAction}
 				isMapObj={this.state.isMapObj}
+				dialogProps={dialogProps}
+				setShowDialogProps={this.props.setShowDialogProps}
 			/>
 		)
 	}
@@ -625,12 +638,27 @@ class UI extends React.Component {
 		}
 		// for handling object clicked/selected on map
 		if (this.props.objectSelected && prevProps.objectSelected !== this.props.objectSelected) {
-			if (!prevProps.objectSelected || convertCoordsToPos(prevProps.objectSelected.objectList[0].coords) !== convertCoordsToPos(this.props.objectSelected.objectList[0].coords)) {
-				this.setObjectSelected(this.props.objectSelected.objectList, null, true, () => {
+			const clickedObjPos = convertCoordsToPos(this.props.objectSelected.objectList[0].coords);
+			// if no object selected before or different object selected than before
+			if (!prevProps.objectSelected || convertCoordsToPos(prevProps.objectSelected.objectList[0].coords) !== clickedObjPos) {
+				// if object was clicked on on the map, check if any other objects are on the same tile
+				let clickedObjects = [];
+				if (!this.props.objectSelected.isPickUpAction) {
+					for (const [objId, objInfo] of Object.entries(this.props.mapObjects)) {
+						const objPos = convertCoordsToPos(objInfo.coords);
+						if (clickedObjPos === objPos) {
+							clickedObjects.push({...objInfo, id: objId});
+						}
+					}
+				} else {
+					//todo: not sure deepcopy is needed, as currently nothing is modifying this.state.selectedObject outside of setObjectSelected for clicked objects
+					clickedObjects = deepCopy(this.props.objectSelected.objectList);
+				}
+				this.setObjectSelected(clickedObjects, null, true, this.props.objectSelected.isPickUpAction, () => {
 					this.setObjectPanelDisplayOption(true, this.props.objectSelected.evt, null);
 				});
 			} else {
-				this.setObjectSelected(null, null, () => {
+				this.setObjectSelected(null, null, false, false, () => {
 					this.setObjectPanelDisplayOption(false, null, null);
 				});
 			}
@@ -703,7 +731,7 @@ class UI extends React.Component {
 						setObjectPanelDisplayOption={this.setObjectPanelDisplayOption}
 						dropItemToInv={this.dropItemToInv}
 						dropItemToEquipped={this.dropItemToEquipped}
-						notEnoughSpaceDialogProps={this.notEnoughSpaceDialogProps}
+						notEnoughSpaceDialogProps={this.props.notEnoughSpaceDialogProps}
 					/>
 				}
 

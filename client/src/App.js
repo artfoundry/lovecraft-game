@@ -41,17 +41,29 @@ class Game extends React.Component {
 			gameSetupComplete: false,
 			playerCharacters: {},
 			pcTypes: PlayerCharacterTypes,
+			currentLocation: '',
+			currentLevel: 1,
 			playerFollowOrder: [],
+			followModeMoves: [],
+			showDialog: false,
+			dialogProps: {
+			dialogContent: this.initialDialogContent,
+				closeButtonText: 'Close',
+				closeButtonCallback: null,
+				disableCloseButton: false,
+				actionButtonVisible: false,
+				actionButtonText: '',
+				actionButtonCallback:  null,
+				dialogClasses: ''
+		},
+			// these need resetting on level change
 			mapCreatures: {},
 			mapObjects: {},
 			unitsTurnOrder: [],
-			followModeMoves: [],
 			currentTurn: 0,
 			activeCharacter: this.startingPlayerCharacters[0],
 			activePlayerMovesCompleted: 0,
 			activePlayerActionsCompleted: 0,
-			currentLocation: '',
-			currentLevel: 1,
 			characterIsSelected: false,
 			creatureIsSelected: false,
 			creatureCoordsUpdate: null,
@@ -63,19 +75,29 @@ class Game extends React.Component {
 			inTacticalMode: true, // start in tactical mode any time entering a new area
 			threatList: [],
 			partyIsNearby: true,
-			logText: [],
-			showDialog: false,
-			dialogProps: {
-				dialogContent: this.initialDialogContent,
-				closeButtonText: 'Close',
-				closeButtonCallback: null,
-				disableCloseButton: false,
-				actionButtonVisible: false,
-				actionButtonText: '',
-				actionButtonCallback:  null,
-				dialogClasses: ''
-			}
+			logText: []
 		}
+
+		this.notEnoughSpaceDialogProps = {
+			dialogContent: `That character's inventory space is full. Drop or trade out something first.`,
+			closeButtonText: 'Ok',
+			closeButtonCallback: null,
+			disableCloseButton: false,
+			actionButtonVisible: false,
+			actionButtonText: '',
+			actionButtonCallback: null,
+			dialogClasses: ''
+		};
+		this.noMoreActionsDialogProps = {
+			dialogContent: `That character has no more actions this turn`,
+			closeButtonText: 'Ok',
+			closeButtonCallback: null,
+			disableCloseButton: false,
+			actionButtonVisible: false,
+			actionButtonText: '',
+			actionButtonCallback: null,
+			dialogClasses: ''
+		};
 	}
 
 	/**
@@ -503,21 +525,13 @@ class Game extends React.Component {
 	}
 
 	/**
-	 * Map calls this to send id of object that player clicked on in map so object info panel can be displayed in UI
-	 * @param objectInfo: object
+	 * UIElements calls this to send id(s) of object(s) that player clicked on in map so object info panel can be displayed in UI
+	 * @param objectInfo: array (of objects: {objId: objInfo})
 	 * @param selectionEvt: event object
+	 * @param isPickUpAction: boolean (true if action button clicked to inspect/pickup object)
 	 */
-	setObjectSelected = (objectInfo, selectionEvt) => {
-		const allObjectsOnTile = [];
-		if (objectInfo) {
-			const selectedCoords = objectInfo.coords;
-			for (const [id, mapObjectInfo] of Object.entries(this.state.mapObjects)) {
-				if (selectedCoords.xPos === mapObjectInfo.coords.xPos && selectedCoords.yPos === mapObjectInfo.coords.yPos) {
-					allObjectsOnTile.push({id, ...mapObjectInfo});
-				}
-			}
-		}
-		const objectSelected = objectInfo && (!this.state.objectSelected || !this.state.objectSelected.objectList.some(object => object.id === objectInfo.id)) ? {objectList: allObjectsOnTile, evt: selectionEvt} : null;
+	setMapObjectSelected = (objectInfo, selectionEvt, isPickUpAction) => {
+		const objectSelected = objectInfo && !this.state.objectSelected ? {objectList: objectInfo, evt: selectionEvt, isPickUpAction} : null;
 		this.setState({objectSelected});
 	}
 
@@ -533,8 +547,9 @@ class Game extends React.Component {
 	 * Add picked up item or weapon to char's inventory
 	 * @param itemData: object
 	 * @param objId: string
+	 * @param isPickUpAction: boolean (item was picked up using action button)
 	 */
-	addItemToPlayerInventory = (itemData, objId) => {
+	addItemToPlayerInventory = (itemData, objId, isPickUpAction) => {
 		const player = this.state.playerCharacters[this.state.activeCharacter];
 		const objectType = itemData.itemType ? itemData.itemType : 'Weapon';
 		const invObjectCategory = objectType === 'Weapon' ? 'weapons' : 'items';
@@ -568,6 +583,9 @@ class Game extends React.Component {
 		let updatedData = {[invObjectCategory]: inventoryList};
 		this.updateCharacters('player', updatedData, this.state.activeCharacter, false, false, () => {
 			this._removeItemFromMap(objId);
+			if (isPickUpAction && this.state.inTacticalMode) {
+				this._updateActivePlayerActions();
+			}
 		});
 	}
 
@@ -767,6 +785,8 @@ class Game extends React.Component {
 						showDialog={this.state.showDialog}
 						setShowDialogProps={this.setShowDialogProps}
 						dialogProps={this.state.dialogProps}
+						notEnoughSpaceDialogProps={this.notEnoughSpaceDialogProps}
+						noMoreActionsDialogProps={this.noMoreActionsDialogProps}
 
 						logText={this.state.logText}
 
@@ -776,8 +796,9 @@ class Game extends React.Component {
 						creatureIsSelected={this.state.creatureIsSelected}
 						updateUnitSelectionStatus={this.updateUnitSelectionStatus}
 						updateCharacters={this.updateCharacters}
+						getAllCharactersPos={this.getAllCharactersPos}
 
-						setObjectSelected={this.setObjectSelected}
+						setMapObjectSelected={this.setMapObjectSelected}
 						objectSelected={this.state.objectSelected}
 						objHasBeenDropped={this.state.objHasBeenDropped}
 						setHasObjBeenDropped={this.setHasObjBeenDropped}
@@ -808,6 +829,8 @@ class Game extends React.Component {
 				{this.state.isLoggedIn && this.state.gameSetupComplete &&
 					<Map
 						setShowDialogProps={this.setShowDialogProps}
+						notEnoughSpaceDialogProps={this.notEnoughSpaceDialogProps}
+						noMoreActionsDialogProps={this.noMoreActionsDialogProps}
 
 						pcTypes={this.state.pcTypes}
 						playerCharacters={this.state.playerCharacters}
@@ -821,7 +844,7 @@ class Game extends React.Component {
 
 						updateMapObjects={this.updateMapObjects}
 						mapObjects={this.state.mapObjects}
-						setObjectSelected={this.setObjectSelected}
+						setMapObjectSelected={this.setMapObjectSelected}
 						setHasObjBeenDropped={this.setHasObjBeenDropped}
 						addItemToPlayerInventory={this.addItemToPlayerInventory}
 						lightTimes={this.lightTimes}

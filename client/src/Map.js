@@ -801,16 +801,6 @@ class Map extends React.Component {
 	 */
 	_addItems() {
 		let items = [];
-		const invFullDialogProps = {
-			dialogContent: 'Inventory is full. Free up some space first.',
-			closeButtonText: 'Ok',
-			closeButtonCallback: null,
-			disableCloseButton: false,
-			actionButtonVisible: false,
-			actionButtonText: '',
-			actionButtonCallback: null,
-			dialogClasses: ''
-		};
 		const activePlayer = this.props.playerCharacters[this.props.activeCharacter];
 		const isActivePlayerInvFull = activePlayer && notEnoughSpaceInInventory(1, 0, activePlayer);
 
@@ -834,8 +824,8 @@ class Map extends React.Component {
 				isActivePlayerNearObject={this.isActivePlayerNearObject}
 				isActivePlayerInvFull={isActivePlayerInvFull}
 				addItemToPlayerInventory={this.props.addItemToPlayerInventory}
-				setObjectSelected={this.props.setObjectSelected}
-				invFullDialogProps={invFullDialogProps}
+				setMapObjectSelected={this.props.setMapObjectSelected}
+				invFullDialogProps={this.props.notEnoughSpaceDialogProps}
 				setShowDialogProps={this.props.setShowDialogProps}
 				styles={{
 					transform: `translate(${this._calculateObjectTransform(info.coords.xPos, info.coords.yPos)})`,
@@ -1738,20 +1728,9 @@ class Map extends React.Component {
 		if (!pcToMove) {
 			tilePath.shift();
 		}
-		const activePcData = this.props.playerCharacters[this.props.activeCharacter];
 		if (this.props.inTacticalMode && this.props.activePlayerMovesCompleted >= this.props.playerMovesLimit) {
 			const showDialog = true;
-			const dialogProps = {
-				dialogContent: `${activePcData.name} has no more moves this turn`,
-				closeButtonText: 'Ok',
-				closeButtonCallback: null,
-				disableCloseButton: false,
-				actionButtonVisible: false,
-				actionButtonText: '',
-				actionButtonCallback: null,
-				dialogClasses: ''
-			};
-			this.props.setShowDialogProps(showDialog, dialogProps);
+			this.props.setShowDialogProps(showDialog, this.props.noMoreActionsDialogProps);
 			return;
 		}
 		let newCoords = convertPosToCoords(newTilePos);

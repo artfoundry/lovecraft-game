@@ -31,6 +31,8 @@ function CharacterControls(props) {
 		}
 	};
 	const hasExtraAmmo = props.checkForExtraAmmo(currentPCdata);
+	const objAvailableToPickup = props.mapObjectsOnPcTiles[props.characterId];
+	const examineButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0) ? 'button-inactive' : '';
 
 	for (const itemId of Object.values(equippedItems)) {
 		// need this check for two-handed weapons, since both hands list the same weaponId
@@ -66,7 +68,7 @@ function CharacterControls(props) {
 	}
 
 	const weaponButtons = (
-		<div className='action-buttons-container'>
+		<div className='weapon-buttons-container'>
 			{actionableItems.weapons.map((weapon, index) => {
 				actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || (weapon.ammo === 0 && !hasExtraAmmo)) ? 'button-inactive' :
 					(props.isActiveCharacter && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === weapon.weaponId) ? 'button-selected': '';
@@ -115,10 +117,12 @@ function CharacterControls(props) {
 			</div>
 			{weaponButtons}
 			{medicineButtons}
+			{(objAvailableToPickup.length > 0) &&
+				<div className={`action-button examine-button ${examineButtonState}`} onClick={(evt) => props.setMapObjectSelected(objAvailableToPickup, evt, true)}></div>
+			}
 		</div>
 	);
 }
-
 
 function CharacterInfoPanel(props) {
 	const skillList = Object.values(props.characterInfo.skills).map(item => <li key={item + Math.random()}>{item}</li>);
@@ -291,14 +295,18 @@ function ObjectInfoPanel(props) {
 		selectedObjPos,
 		objHasBeenDropped,
 		setHasObjBeenDropped,
+		dropItemToPC,
+		dropItemToEquipped,
+		dropItemToInv,
 		addObjectToMap,
 		addObjToOtherPc,
 		addItemToPlayerInventory,
 		isPickUpAction,
-		isMapObj} = {...props};
-	let [origObjectList, updateOrigObjectList] = useState(objectInfo);
-	const multipleMapObs = objectInfo.length > 1;
-	let [objectToShow, updateObjToShow] = useState(isMapObj && multipleMapObs ? null : isMapObj && !multipleMapObs ? objectInfo[0] : objectInfo);
+		isMapObj,
+		dialogProps,
+		setShowDialogProps} = {...props};
+	const [origObjectList, updateOrigObjectList] = useState(objectInfo);
+	const [objectToShow, updateObjToShow] = useState(isMapObj ? null : objectInfo);
 	const splitStack = (evt) => {
 		evt.preventDefault();
 		const splitValue = +evt.target[0].value;
@@ -320,15 +328,21 @@ function ObjectInfoPanel(props) {
 						<div className='object-row-with-buttons'>
 							<div className={`inv-object ${convertObjIdToClassId(obj.id)}`}></div>
 							<div className='font-fancy object-list-objname'>{obj.name}</div>
-							<div className='general-button' onClick={() => updateObjToShow(obj)}>Show</div>
+							{isPickUpAction &&
+								<div className='general-button' onClick={() => updateObjToShow(obj)}>Show</div>
+							}
 							{isPickUpAction &&
 							<div className='general-button' onClick={() => {
-								addItemToPlayerInventory(obj, obj.id);
-								const updatedList = origObjectList;
-								updatedList[index] = undefined;
-								updateOrigObjectList(updatedList);
-								if (updatedList.every(obj => obj === undefined)) {
-									cancelObjPanel();
+								if (dialogProps) {
+									setShowDialogProps(true, dialogProps);
+								} else {
+									addItemToPlayerInventory(obj, obj.id, isPickUpAction);
+									const updatedList = origObjectList;
+									updatedList[index] = undefined;
+									updateOrigObjectList(updatedList);
+									if (updatedList.every(obj => obj === undefined)) {
+										cancelObjPanel();
+									}
 								}
 							}}>Pick up</div>
 							}
@@ -350,7 +364,7 @@ function ObjectInfoPanel(props) {
 	return (
 		<div className={`object-info-panel ${!selectedObjPos ? 'ui-panel' : ''}`} style={{left: selectedObjPos.left, top: selectedObjPos.top}}>
 			<div className='general-button' onClick={() => cancelObjPanel()}>X</div>
-			{(isMapObj && !objectToShow) &&
+			{!objectToShow &&
 			<div>
 				<div className='object-list-container'>
 					{objectList()}
@@ -364,11 +378,11 @@ function ObjectInfoPanel(props) {
 					<div className='font-fancy'>{objectToShow.name}</div>
 					<div>{objectToShow.itemType ? objectToShow.itemType : (objectToShow.ranged ? 'Ranged' : 'Melee') + ' weapon'}</div>
 					{objectToShow.rounds && <div>Capacity: {objectToShow.rounds} rounds</div>}
-					{(!isMapObj && objectToShow.amount && <div>Amount: {objectToShow.amount}</div>) ||
-						(!isMapObj && objectToShow.currentRounds >= 0 && <div>Rounds remaining: {objectToShow.currentRounds}</div>)}
+					{(objectToShow.amount && <div>Amount: {objectToShow.amount}</div>) ||
+						(objectToShow.currentRounds >= 0 && <div>Rounds remaining: {objectToShow.currentRounds}</div>)}
 					{objectToShow.twoHanded && <div>Two-handed</div>}
 					{objectToShow.damage && <div>Damage: {objectToShow.damage}</div>}
-					{!isMapObj && objectToShow.time && <div>Light remaining: {objectToShow.time} steps</div>}
+					{objectToShow.time && <div>Light remaining: {objectToShow.time} steps</div>}
 					<div>{objectToShow.description}</div>
 				</div>
 				<div className='object-panel-buttons-container'>
@@ -379,18 +393,30 @@ function ObjectInfoPanel(props) {
 							<button className='general-button' type='submit'>{objHasBeenDropped ? 'Drop' : 'Trade'}</button>
 						</form>
 					}
-					{isMapObj && multipleMapObs &&
+					{isMapObj &&
 						<span className='general-button' onClick={() => updateObjToShow(null)}>Back</span>
 					}
-					{!isMapObj && !isDraggedObject &&
-						<div className='object-panel-buttons'>
-							<span className='general-button'>Equip Right</span>
-							<span className='general-button'>Equip Left</span>
-							<span className='general-button'>Unequip</span>
-							<span className='general-button'>Drop</span>
-							<span className='general-button'>Trade</span>
-						</div>
-					}
+					{/* MAY ADD THESE IN LATER IF NEEDED */}
+					{/*{!isMapObj && !isDraggedObject &&*/}
+					{/*	<div className='object-panel-buttons'>*/}
+					{/*		<span className='general-button' onClick={() => dropItemToEquipped(null)}>Equip Right</span>*/}
+					{/*		<span className='general-button' onClick={() => dropItemToEquipped(null)}>Equip Left</span>*/}
+					{/*		<span className='general-button' onClick={() => dropItemToInv(null)}>Unequip</span>*/}
+					{/*		<span className='general-button' onClick={() => {*/}
+					{/*			if (objectToShow.stackable) {*/}
+					{/*				setObjectPanelDisplayOption(true, null, null);*/}
+					{/*			} else {*/}
+					{/*				// don't need to pass in dropped and source counts, as it's not a stackable object*/}
+					{/*				addObjectToMap();*/}
+					{/*			}*/}
+					{/*		}}>Drop</span>*/}
+					{/*		<span className='general-button' onClick={() => {*/}
+					{/*			let recipientId = '';*/}
+
+					{/*			dropItemToPC(null, recipientId);*/}
+					{/*		}}>Trade</span>*/}
+					{/*	</div>*/}
+					{/*}*/}
 					<span className='general-button' onClick={() => cancelObjPanel()}>Cancel</span>
 				</div>
 			</div>
