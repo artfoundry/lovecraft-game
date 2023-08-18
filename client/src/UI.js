@@ -497,6 +497,7 @@ class UI extends React.Component {
 		} else if (notEnoughSpaceInInventory(1, 0, this.props.playerCharacters[this.props.activeCharacter])) {
 			dialogProps = this.props.notEnoughSpaceDialogProps;
 		}
+		const creatureCoords = this.props.getAllCharactersPos('creature', 'coords');
 		return (
 			<ObjectInfoPanel
 				objectInfo={this.state.objectSelected}
@@ -516,6 +517,7 @@ class UI extends React.Component {
 				isMapObj={this.state.isMapObj}
 				dialogProps={dialogProps}
 				setShowDialogProps={this.props.setShowDialogProps}
+				creatureCoords={creatureCoords}
 			/>
 		)
 	}

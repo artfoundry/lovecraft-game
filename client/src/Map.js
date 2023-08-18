@@ -709,7 +709,7 @@ class Map extends React.Component {
 		characterIDs.forEach(id => {
 			characterCoords = characters[id].coords;
 			const characterPos = convertCoordsToPos(characterCoords);
-			const actionButtonIsSelected = Object.keys(this.props.actionButtonSelected).length > 0;
+			const actionButtonIsSelected = this.props.actionButtonSelected;
 			let targetIsInRange = false;
 			let companionIsAdjacent = false;
 			let activePlayerPos = '';

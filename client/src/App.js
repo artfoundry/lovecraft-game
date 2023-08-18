@@ -64,7 +64,7 @@ class Game extends React.Component {
 			creatureCoordsUpdate: null,
 			selectedCharacter: '',
 			selectedCreature: '',
-			actionButtonSelected: {},
+			actionButtonSelected: null,
 			objectSelected: null,
 			objHasBeenDropped: false,
 			inTacticalMode: true, // start in tactical mode any time entering a new area
@@ -74,7 +74,7 @@ class Game extends React.Component {
 		}
 
 		this.notEnoughSpaceDialogProps = {
-			dialogContent: `That character's inventory space is full. Drop or trade out something first.`,
+			dialogContent: "That character's inventory space is full. Drop or trade out something first.",
 			closeButtonText: 'Ok',
 			closeButtonCallback: null,
 			disableCloseButton: false,
@@ -84,7 +84,7 @@ class Game extends React.Component {
 			dialogClasses: ''
 		};
 		this.noMoreActionsDialogProps = {
-			dialogContent: `That character has no more actions this turn`,
+			dialogContent: 'That character has no more actions this turn',
 			closeButtonText: 'Ok',
 			closeButtonCallback: null,
 			disableCloseButton: false,
@@ -94,7 +94,7 @@ class Game extends React.Component {
 			dialogClasses: ''
 		};
 		this.noMoreMovesDialogProps = {
-			dialogContent: `That character has no more moves this turn`,
+			dialogContent: 'That character has no more moves this turn',
 			closeButtonText: 'Ok',
 			closeButtonCallback: null,
 			disableCloseButton: false,
@@ -123,7 +123,7 @@ class Game extends React.Component {
 			creatureCoordsUpdate: null,
 			selectedCharacter: '',
 			selectedCreature: '',
-			actionButtonSelected: {},
+			actionButtonSelected: null,
 			objectSelected: null,
 			objHasBeenDropped: false,
 			inTacticalMode: true, // start in tactical mode any time entering a new area
@@ -324,13 +324,12 @@ class Game extends React.Component {
 	 * @param itemId: String
 	 * @param itemName: String
 	 * @param buttonType: String ('weapon' or 'item')
-	 * @param clearButtonState: Boolean (used when ending a turn to clear button state for char ending its turn)
 	 * @param callback: Function
 	 */
 	toggleActionButton = (characterId, itemId, itemName, buttonType, callback) => {
-		let buttonState = {};
-		// if no weapon selected or weapon selected doesn't match new weapon selected, set weapon state to new weapon
-		if (characterId && (Object.keys(this.state.actionButtonSelected).length === 0 ||
+		let buttonState = null;
+		// if no weapon/item selected or weapon/item selected doesn't match new weapon/item selected, set weapon/item state to new weapon/item
+		if (characterId && (!this.state.actionButtonSelected ||
 			(this.state.actionButtonSelected.characterId !== characterId || this.state.actionButtonSelected.itemId !== itemId)))
 		{
 			buttonState = {characterId, itemId, itemName, stats: buttonType === 'weapon' ? WeaponTypes[itemName] : ItemTypes[itemName]};
@@ -341,22 +340,21 @@ class Game extends React.Component {
 	}
 
 	/**
-	 * Reloading active character's gun using ammo in inv we already know we have
-	 * @param weapon: object (from CharacterControls in UIElements: {weaponId: itemId, weaponName: weaponInfo.name, isGun: true, ammo: weaponInfo.currentRounds})
-	 * @param gunInfo: object
-	 * @param availAmmo: number (available ammo in inventory)
-	 * @param currentPCdata: object (all char info, from CharacterControls in UIElements)
+	 * Reloading active character's gun using ammo in inv we already know we have, as determined by CharacterControls in UIElements
+	 * @param weaponId: string
 	 */
-	reloadGun = (weapon, gunInfo, availAmmo, currentPCdata) => {
+	reloadGun = (weaponId) => {
+		const updatedPCdata = deepCopy(this.state.playerCharacters[this.state.activeCharacter]);
+		const gunInfo = updatedPCdata.weapons[weaponId];
 		const gunType = gunInfo.gunType;
+		const availAmmo = updatedPCdata.items[gunType + 'Ammo0'].amount;
 		const resupplyAmmo = gunInfo.rounds <= availAmmo ? gunInfo.rounds : availAmmo;
-		const updatedPCdata = deepCopy(currentPCdata);
-		updatedPCdata.weapons[weapon.weaponId].currentRounds = resupplyAmmo;
+		updatedPCdata.weapons[weaponId].currentRounds = resupplyAmmo;
 		updatedPCdata.items[gunType + 'Ammo0'].amount = availAmmo - resupplyAmmo;
 		if (updatedPCdata.items[gunType + 'Ammo0'].amount === 0) {
 			delete updatedPCdata.items[gunType + 'Ammo0'];
 		}
-		this.updateCharacters('player', updatedPCdata, currentPCdata.id, false, false, () => {
+		this.updateCharacters('player', updatedPCdata, this.state.activeCharacter, false, false, () => {
 			this._updateActivePlayerActions();
 		});
 	}
@@ -385,7 +383,7 @@ class Game extends React.Component {
 	 * @param checkLineOfSightToParty: function (from Map)
 	 */
 	handleUnitClick = (id, target, isInRange, checkLineOfSightToParty) => {
-		if (Object.keys(this.state.actionButtonSelected).length > 0 && isInRange) {
+		if (this.state.actionButtonSelected && isInRange) {
 			// clicked unit is getting acted upon
 			const selectedItemInfo = this.state.actionButtonSelected;
 			const activePC = this.state.playerCharacters[this.state.activeCharacter];

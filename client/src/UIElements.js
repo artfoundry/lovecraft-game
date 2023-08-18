@@ -14,16 +14,18 @@ function CharacterControls(props) {
 	const handleWeaponClick = (weapon) => {
 		const ammoId = currentPCdata.weapons[weapon.weaponId].gunType + 'Ammo0';
 		if (weapon.ammo === 0) {
-			// if all extra ammo used up, update inventory in UI
+			// if reloading gun uses up remaining ammo in inv, remove ammo item in inv and update inventory in UI
 			const gunInfo = currentPCdata.weapons[weapon.weaponId];
-			let availAmmo = currentPCdata.items[gunInfo.gunType + 'Ammo0'].amount;
+			const availAmmo = currentPCdata.items[gunInfo.gunType + 'Ammo0'].amount;
 			if (availAmmo <= gunInfo.rounds) {
 				let updatedInventory = props.entireInventory[props.characterId];
 				const ammoInvIndex = updatedInventory.indexOf(ammoId);
 				updatedInventory.splice(ammoInvIndex, 1);
 				props.updateInventory(props.characterId, updatedInventory, () => {
-					props.reloadGun(weapon, gunInfo, availAmmo, currentPCdata);
+					props.reloadGun(weapon.weaponId);
 				});
+			} else {
+				props.reloadGun(weapon.weaponId);
 			}
 		} else {
 			props.toggleActionButton(props.characterId, weapon.weaponId, weapon.weaponName, 'weapon');
@@ -70,7 +72,7 @@ function CharacterControls(props) {
 		<div className='weapon-buttons-container'>
 			{actionableItems.weapons.map((weapon, index) => {
 				const actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || (weapon.ammo === 0 && !hasExtraAmmo)) ? 'button-inactive' :
-					(props.isActiveCharacter && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === weapon.weaponId) ? 'button-selected': '';
+					(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === weapon.weaponId) ? 'button-selected': '';
 				return (
 					<div
 						className={`action-button ${convertObjIdToClassId(weapon.weaponId)}-act ${actionButtonState} ${weapon.ammo === 0 ? 'gun-reload-icon' : ''}`}
@@ -91,7 +93,7 @@ function CharacterControls(props) {
 				let button = null;
 				if (item.amount === itemCount) {
 					const actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0) ? 'button-inactive' :
-						(props.isActiveCharacter && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === item.itemId) ? 'button-selected': '';
+						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === item.itemId) ? 'button-selected': '';
 					button = (
 						<div className={`action-button ${convertObjIdToClassId(item.itemId)}-act ${actionButtonState}`} key={item.itemId} onClick={() => {
 							props.toggleActionButton(props.characterId, item.itemId, item.name, 'item');
@@ -307,7 +309,8 @@ function ObjectInfoPanel(props) {
 		isPickUpAction,
 		isMapObj,
 		dialogProps,
-		setShowDialogProps} = {...props};
+		setShowDialogProps,
+		creatureCoords} = {...props};
 	const [origObjectList, updateOrigObjectList] = useState(objectInfo);
 	const [objectToShow, updateObjToShow] = useState(isMapObj ? null : objectInfo);
 	const splitStack = (evt) => {
@@ -338,6 +341,18 @@ function ObjectInfoPanel(props) {
 							<div className='general-button' onClick={() => {
 								if (dialogProps) {
 									setShowDialogProps(true, dialogProps);
+								} else if (creatureCoords.find(creature => creature.coords.xPos === obj.coords.xPos && creature.coords.yPos === obj.coords.yPos)) {
+									const guardedDialogProps = {
+										dialogContent: "That item can't be picked up, as it's being guarded by something horrid!",
+										closeButtonText: 'Ok',
+										closeButtonCallback: null,
+										disableCloseButton: false,
+										actionButtonVisible: false,
+										actionButtonText: '',
+										actionButtonCallback: null,
+										dialogClasses: ''
+									}
+									setShowDialogProps(true, guardedDialogProps);
 								} else {
 									addItemToPlayerInventory(obj, obj.id, isPickUpAction);
 									const updatedList = origObjectList;
@@ -382,7 +397,7 @@ function ObjectInfoPanel(props) {
 					<div>{objectToShow.itemType ? objectToShow.itemType : (objectToShow.ranged ? 'Ranged' : 'Melee') + ' weapon'}</div>
 					{objectToShow.rounds && <div>Capacity: {objectToShow.rounds} rounds</div>}
 					{objectToShow.amount && <div>Amount: {objectToShow.amount}</div>}
-					{objectToShow.currentRounds && objectToShow.currentRounds >= 0 && <div>Rounds remaining: {objectToShow.currentRounds}</div>}
+					{objectToShow.currentRounds !== null && objectToShow.currentRounds >= 0 && <div>Rounds remaining: {objectToShow.currentRounds}</div>}
 					{objectToShow.twoHanded && <div>Two-handed</div>}
 					{objectToShow.damage && <div>Damage: {objectToShow.damage}</div>}
 					{objectToShow.time && <div>Light remaining: {objectToShow.time} steps</div>}
