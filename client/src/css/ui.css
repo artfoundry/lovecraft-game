@@ -1,3 +1,7 @@
+@font-face {
+	font-family: Copperplate; src: url('Copperplate-Gothic-Light-Regular.ttf');
+}
+
 .ui-panel {
 	background-color: #225555;
 	font-family: "Century Gothic", sans-serif;
@@ -25,7 +29,7 @@
 }
 
 .font-fancy {
-	font-family: "Copperplate Gothic Light", fantasy;
+	font-family: Copperplate, "Gill Sans", sans-serif;
 }
 
 .dialog {
