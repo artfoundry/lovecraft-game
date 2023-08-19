@@ -256,6 +256,8 @@ class UI extends React.Component {
 		let tempAllItemsList = [...inventoryItems];
 		const sourceBoxIndex = draggedObjectMetaData.sourceLoc.match(/\d+/);
 		const loadout1 = updateData.equippedItems.loadout1;
+		let lightBeingSwapped = null;
+		let dialogProps = {};
 
 		if (destination === 'hand-swap') {
 			hand = targetClasses.includes('right') ? 'right' : 'left';
@@ -268,6 +270,21 @@ class UI extends React.Component {
 
 		// if dragged item is a light
 		if (draggedItem.itemType === 'Light') {
+			// if light is already equipped and not just switching light to other hand
+			if (updateData.equippedLight && sourceBoxIndex) {
+				lightBeingSwapped = updateData.equippedLight;
+				dialogProps = {
+					dialogContent: 'That character already has an equipped light, and only one light may be equipped. Swapping the equipped one with this one.',
+					closeButtonText: 'Ok',
+					closeButtonCallback: null,
+					disableCloseButton: false,
+					actionButtonVisible: false,
+					actionButtonText: '',
+					actionButtonCallback: null,
+					dialogClasses: ''
+				}
+				this.props.setShowDialogProps(true, dialogProps);
+			}
 			updateData.equippedLight = draggedItem.id;
 			updateData.lightRange = draggedItem.range;
 			updateData.lightTime = draggedItem.time;
@@ -283,7 +300,7 @@ class UI extends React.Component {
 		// if dragged item is two-handed
 		if (hand && draggedItem.twoHanded) {
 			if (loadout1.right && loadout1.left && loadout1.right !== loadout1.left && notEnoughSpaceInInventory(2, 1, this.props.selectedCharacterInfo)) {
-				const dialogProps = {
+				dialogProps = {
 					dialogContent: `The ${draggedItem.name} is two-handed, and there is not enough space in the inventory for both currently equipped items.`,
 					closeButtonText: 'Ok',
 					closeButtonCallback: null,
@@ -296,19 +313,25 @@ class UI extends React.Component {
 				this.props.setShowDialogProps(true, dialogProps);
 				return;
 			}
-			updateData.equippedItems.loadout1[hand] = draggedItem.id;
-			updateData.equippedItems.loadout1[oppositeHand] = draggedItem.id;
+			loadout1[hand] = draggedItem.id;
+			loadout1[oppositeHand] = draggedItem.id;
 		// or if we're replacing a two-handed item with a one-handed item
 		} else if (hand && loadout1.right && loadout1.right === loadout1.left) {
-			updateData.equippedItems.loadout1[hand] = draggedItem.id;
-			updateData.equippedItems.loadout1[oppositeHand] = '';
+			loadout1[hand] = draggedItem.id;
+			loadout1[oppositeHand] = '';
 		// or we're just equipping a one-handed item
 		} else if (hand) {
 			// if item is dragged from one hand to another, sourceBoxIndex is null
 			if (!sourceBoxIndex) {
-				updateData.equippedItems.loadout1[oppositeHand] = updateData.equippedItems.loadout1[hand];
+				loadout1[oppositeHand] = loadout1[hand];
+			} else if (loadout1.left === lightBeingSwapped) {
+				loadout1.left = '';
+				hand = 'left';
+			} else if (loadout1.right === lightBeingSwapped) {
+				loadout1.right = '';
+				hand = 'right';
 			}
-			updateData.equippedItems.loadout1[hand] = draggedItem.id;
+			loadout1[hand] = draggedItem.id;
 		// or we're equipping a body item
 		} else if (destination === 'body') {
 			updateData.equippedItems.armor = draggedItem.id;
