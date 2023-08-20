@@ -96,12 +96,12 @@
 }
 
 .torch-left-wall {
-	left: 25px;
+	left: calc(var(--tile-size) / -2.56); /* 25px at tile size of 64px */
 	content: url('../assets/objects/torch_sml.png');
 }
 
 .torch-right-wall {
-	left: -25px;
+	left: calc(var(--tile-size) / 2.56); /* -25px at tile size of 64px */
 	content: url('../assets/objects/torch_sml.png');
 }
 
