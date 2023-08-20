@@ -4,6 +4,11 @@
 	box-sizing: border-box;
 }
 
+.door {
+	z-index: 1;
+	pointer-events: none;
+}
+
 .map-cover {
 	position: fixed;
 	top: 0;

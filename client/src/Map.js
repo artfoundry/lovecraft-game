@@ -59,7 +59,7 @@ class Map extends React.Component {
 			catacombs: {}
 		};
 		this.currentMapData = GameLocations[this.props.currentLocation];
-		// total number of map pieces in MapData: 17;
+		// total number of map pieces in currentMapData: 17;
 		this.numMapPieceTwoDoorHalls = 6;
 		this.charRefs = {};
 
@@ -868,19 +868,37 @@ class Map extends React.Component {
 		for (const [tilePos, tileData] of Object.entries(this.state.mapLayout)) {
 			const tileCoords = convertPosToCoords(tilePos);
 			if (tileData.type === 'door') {
-				let doorClass = this.currentMapData.name + ' object';
+				let doorClass = this.currentMapData.name + ' object door';
+				let topStyle = '';
+				let leftStyle = '';
 				if (tileData.classes.includes('top-bottom-door')) {
 					doorClass += tileData.doorIsOpen ? ' front-door-open' : ' front-door';
+					if (doorClass.includes('open')) {
+						topStyle = (this.tileSize / 2) + 'px';
+						leftStyle = -(this.tileSize / 2) + 'px';
+					}
 				} else if (tileData.classes.includes('left-door')) {
 					doorClass += tileData.doorIsOpen ? ' left-side-door-open' : ' side-door';
-				} else {
+					if (doorClass.includes('open')) {
+						topStyle = -(this.tileSize / 2) + 'px';
+						leftStyle = -(this.tileSize / 2) + 'px';
+					}
+				} else if (tileData.classes.includes('right-door')) {
 					doorClass += tileData.doorIsOpen ? ' right-side-door-open' : ' side-door';
+					if (doorClass.includes('open')) {
+						topStyle = -(this.tileSize / 2) + 'px';
+						leftStyle = (this.tileSize / 2) + 'px';
+					}
 				}
 				objects.push(
 					<Door
 						key={`object-${tilePos}`}
 						styleProp={{
 							transform: `translate(${this._calculateObjectTransform(tileCoords.xPos, tileCoords.yPos)})`,
+							width: this.tileSize + 'px',
+							height: this.tileSize + 'px',
+							top: topStyle,
+							left: leftStyle
 						}}
 						classProp={doorClass}
 					/>

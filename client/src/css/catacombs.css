@@ -125,49 +125,23 @@
 /* OBJECTS */
 
 .front-door {
-	width: 64px;
-	height: 64px;
 	background-position: -386px -128px;
-	z-index: 1;
-	pointer-events: none;
 }
 
 .front-door-open {
-	width: 64px;
-	height: 64px;
-	top: 32px;
-	left: -32px;
 	background-position: -448px -128px;
-	z-index: 1;
-	pointer-events: none;
 }
 
 .side-door {
-	width: 64px;
-	height: 64px;
 	background-position: -448px -128px;
-	z-index: 1;
-	pointer-events: none;
 }
 
 .left-side-door-open {
-	width: 64px;
-	height: 64px;
-	top: -32px;
-	left: -32px;
 	background-position: -386px -128px;
-	z-index: 1;
-	pointer-events: none;
 }
 
 .right-side-door-open {
-	width: 64px;
-	height: 64px;
-	top: -32px;
-	left: 32px;
 	background-position: -386px -128px;
-	z-index: 1;
-	pointer-events: none;
 }
 
 .exit {
