@@ -1123,6 +1123,11 @@ class Map extends React.Component {
 	 * @param direction: String
 	 */
 	checkIfTileOrObject = (tilePos, direction) => {
+		if (this.props.inTacticalMode && this.props.activePlayerMovesCompleted >= this.props.playerMovesLimit) {
+			this.props.setShowDialogProps(true, this.props.noMoreMovesDialogProps);
+			return;
+		}
+
 		let newPos = tilePos;
 		let tileData = this.state.mapLayout[tilePos];
 		const activePCCoords = this.props.playerCharacters[this.props.activeCharacter].coords;
@@ -1305,9 +1310,9 @@ class Map extends React.Component {
 	}
 
 	/**
-	 * Searches tiles between start and end to find a clear path (no PCs, no creatures, no objects, no walls, no closed doors)
+	 * Searches tiles between start and end to find a clear path (no PCs, no creatures, no objects, no walls)
 	 * Does this by looking at all 8 connections around a tile, prioritized by most direct route to least direct
-	 * Tiles are rated by distance (x+y) to the end or 0 if it's blocked
+	 * Tiles are rated by distance (x+y) to the end, lower being better, or 0 if it's blocked
 	 * Tile positions and their ratings are temp stored in order to reference/return to them should a path become blocked.
 	 * @param startTileCoords: Object (of x and y values)
 	 * @param endTileCoords: Object (of x and y values)
@@ -1326,7 +1331,6 @@ class Map extends React.Component {
 		const startXDelta = Math.abs(endTileCoords.xPos - startTileCoords.xPos);
 		const startYDelta = Math.abs(endTileCoords.yPos - startTileCoords.yPos);
 		const startRating = startXDelta + startYDelta;
-		let foundClosedDoor = false;
 		let checkedTiles = {[startingPos]: {rating: startRating}};
 		let noPathAvail = false;
 
@@ -1334,11 +1338,7 @@ class Map extends React.Component {
 			let testPos = convertCoordsToPos(coords);
 			let isTestPosOk = true;
 
-			if (this.state.mapLayout[testPos].type === 'door' && !this.state.mapLayout[testPos].doorIsOpen) {
-				foundClosedDoor = true;
-			}
-
-			if (this.state.mapLayout[testPos].type === 'wall' || foundClosedDoor ||
+			if (this.state.mapLayout[testPos].type === 'wall' ||
 				allPcPos.find(pc => pc.pos === testPos) || allCreaturePos.find(creature => creature.pos === testPos))
 			{
 				// rated 0 for blocked tile
@@ -1362,22 +1362,22 @@ class Map extends React.Component {
 			return isTestPosOk;
 		}
 
-		while (!noPathAvail && (currentX !== endTileCoords.xPos || currentY !== endTileCoords.yPos) && !foundClosedDoor) {
+		const modifierPairs = [
+			{x: -1, y: -1}, // 0
+			{x: 0, y: -1}, // 1
+			{x: 1, y: -1}, // 2
+			{x: 1, y: 0}, // 3
+			{x: 1, y: 1}, // 4
+			{x: 0, y: 1}, // 5
+			{x: -1, y: 1}, // 6
+			{x: -1, y: 0} // 7
+		];
+		while (!noPathAvail && (currentX !== endTileCoords.xPos || currentY !== endTileCoords.yPos)) {
 			let xDelta = endTileCoords.xPos - currentX;
 			let yDelta = endTileCoords.yPos - currentY;
 			const rating = Math.abs(xDelta) + Math.abs(yDelta);
 			const initialXmod = xDelta < 0 ? -1 : xDelta > 0 ? 1 : 0;
 			const initialYmod = yDelta < 0 ? -1 : yDelta > 0 ? 1 : 0;
-			const modifierPairs = [
-				{x: -1, y: -1}, // 0
-				{x: 0, y: -1}, // 1
-				{x: 1, y: -1}, // 2
-				{x: 1, y: 0}, // 3
-				{x: 1, y: 1}, // 4
-				{x: 0, y: 1}, // 5
-				{x: -1, y: 1}, // 6
-				{x: -1, y: 0} // 7
-			];
 			// find index in modifierPairs for which x,y values match initial x,y mods
 			const modifiersIndex = modifierPairs.findIndex(pair => pair.x === initialXmod && pair.y === initialYmod);
 			// setting up indexes for modifierPairs to provide mods (coordsToCheck) for 6 other directions besides directly toward destination - opposite direction is not included
@@ -1403,8 +1403,9 @@ class Map extends React.Component {
 			];
 			let tileIndex = 0;
 			let newPos = null;
+			let backwardMoves = 0;
 			// loop through coordsToCheck to find first one that's not blocked
-			while (tileIndex < coordsToCheck.length && !newPos && !foundClosedDoor) {
+			while (tileIndex < coordsToCheck.length && !newPos) {
 				startingPos = `${currentX}-${currentY}`;
 				newPos = convertCoordsToPos(coordsToCheck[tileIndex]);
 				// should never revisit checked tile (except through backtracking 12 lines below)
@@ -1413,12 +1414,17 @@ class Map extends React.Component {
 					tileIndex++;
 				}
 			}
-			if (newPos) {
+			// shouldn't need more than 2 backward moves
+			if (newPos && backwardMoves < 3) {
+				// if moving away from goal, add to backward moves count
+				if (tileIndex >= 5) {
+					backwardMoves++;
+				}
 				startingPos = newPos;
 				tilePath.push(newPos);
 			} else if (tilePath.length === 0) {
 				noPathAvail = true;
-			} else if (!foundClosedDoor) {
+			} else {
 				// backtracking: if current startingPos is a dead end, then we didn't find a lower rated pos and need to back up
 				tilePath.pop();
 				if (tilePath.length > 0) {
@@ -1446,6 +1452,7 @@ class Map extends React.Component {
 						} else {
 							// all tile's connections are 0
 							pathCopy.pop();
+							// if not back to the beginning of the path
 							if (i > 0) {
 								checkedTiles[tilePath[i-1]][tilePath[i]] = 0;
 							} else {
@@ -1758,13 +1765,22 @@ class Map extends React.Component {
 	 */
 	moveCharacter = (tilePath, newTile = null, pcToMove = null) => {
 		const newTilePos = newTile || tilePath[0];
+		if (this.state.mapLayout[newTilePos].type === 'door' && !this.state.mapLayout[newTilePos].doorIsOpen) {
+			const dialogProps = {
+				dialogContent: 'The door is closed. Open the door first.',
+				closeButtonText: 'Ok',
+				closeButtonCallback: null,
+				disableCloseButton: false,
+				actionButtonVisible: false,
+				actionButtonText: '',
+				actionButtonCallback: null,
+				dialogClasses: ''
+			};
+			this.props.setShowDialogProps(true, dialogProps);
+			return;
+		}
 		if (!pcToMove) {
 			tilePath.shift();
-		}
-		if (this.props.inTacticalMode && this.props.activePlayerMovesCompleted >= this.props.playerMovesLimit) {
-			const showDialog = true;
-			this.props.setShowDialogProps(showDialog, this.props.noMoreMovesDialogProps);
-			return;
 		}
 		let newCoords = convertPosToCoords(newTilePos);
 		let playerPositions = this.props.getAllCharactersPos('player', 'pos');
