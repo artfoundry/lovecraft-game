@@ -4,51 +4,58 @@
     "ranged": true,
     "rounds": 6,
     "usesStr": false,
-    "gunType": "handgun"
+    "gunType": "handgun",
+    "twoHanded": false
   },
   "S And W Revolver": {
     "damage": 7,
     "ranged": true,
     "rounds": 6,
     "usesStr": false,
-    "gunType": "handgun"
+    "gunType": "handgun",
+    "twoHanded": false
   },
   "Browning Semi-automatic": {
     "damage": 7,
     "ranged": true,
     "rounds": 10,
     "usesStr": false,
-    "gunType": "handgun"
+    "gunType": "handgun",
+    "twoHanded": false
   },
   "Remington": {
     "damage": 10,
     "ranged": true,
     "rounds": 5,
     "usesStr": false,
-    "gunType": "shotgun"
+    "gunType": "shotgun",
+    "twoHanded": true
   },
   "Winchester": {
     "damage": 18,
     "ranged": true,
     "rounds": 2,
     "usesStr": false,
-    "gunType": "shotgun"
+    "gunType": "shotgun",
+    "twoHanded": true
   },
   "Baseball Bat": {
     "damage": 2,
     "ranged": false,
-    "usesStr": true
+    "usesStr": true,
+    "twoHanded": true
   },
   "Pickaxe": {
     "damage": 2,
     "ranged": false,
-    "usesStr": true
+    "usesStr": true,
+    "twoHanded": true
   },
   "Acid Concoction": {
     "damage": 10,
     "ranged": true,
-    "rounds": 1,
     "usesStr": false,
-    "stackable": true
+    "stackable": true,
+    "twoHanded": false
   }
 }

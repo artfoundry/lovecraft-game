@@ -1,5 +1,9 @@
+@font-face {
+	font-family: Copperplate; src: url('Copperplate-Gothic-Light-Regular.ttf');
+}
+
 .ui-panel {
-	background-color: darkslategray;
+	background-color: #225555;
 	font-family: "Century Gothic", sans-serif;
 	color: white;
 	pointer-events: all;
@@ -10,14 +14,12 @@
 .ui-container {
 	position: fixed;
 	display: grid;
-	grid-template-columns: 3fr 0 5fr 1fr 3fr;
-	grid-template-rows: 1.5fr 1fr 2fr 1fr 1.5fr;
+	grid-template-columns: 500px 1fr 300px;
+	grid-template-rows: 1.5fr 580px 1.5fr;
 	grid-template-areas:
-	"log log log . modeInfo"
-	"characterInfo . . . creatureInfo"
-	"characterInfo . dialog . creatureInfo"
-	"characterInfo . . . creatureInfo"
-	"controlBar controlBar controlBar controlBar controlBar";
+	"turnInfo turnInfo turnInfo"
+	"characterInfo . creatureInfo"
+	"controlBar controlBar controlBar";
 	width: 100%;
 	height: 100%;
 	top: 0;
@@ -27,11 +29,14 @@
 }
 
 .font-fancy {
-	font-family: "Copperplate Gothic Light", fantasy;
+	font-family: Copperplate, "Gill Sans", sans-serif;
 }
 
 .dialog {
-	grid-area: dialog;
+	position: fixed;
+	width: 400px;
+	top: 40%;
+	left: calc(50% - 200px);
 	display: flex;
 	flex-direction: column;
 	justify-content: space-around;
@@ -40,7 +45,7 @@
 	border: 2px solid lightgray;
 	border-radius: 10px;
 	color: lightgray;
-	background-color: darkslategray;
+	background-color: #225555;
 	text-align: center;
 	padding: 20px;
 	font-size: 24px;
@@ -57,6 +62,7 @@
 	justify-content: space-around;
 	flex-direction: row;
 	width: 100%;
+	margin-top: 20px;
 }
 
 .dialog-button {
@@ -68,12 +74,20 @@
 	cursor: pointer;
 }
 
+.help-popup {
+	position: absolute;
+	width: 300px;
+	height: 200px;
+}
+
 .login {
 	position: absolute;
 	width: 100%;
-	height: 700px;
+	height: 100%;
+	top: 0;
+	left: 0;
 	justify-content: center;
-	background-color: #332211;
+	background-color: #225555;
 	border: none;
 	border-radius: unset;
 }
@@ -139,17 +153,29 @@
 	border-top: 2px solid burlywood;
 }
 
+.turn-info-container {
+	grid-area: turnInfo;
+	align-items: end;
+	display: flex;
+	justify-self: center;
+	width: 100%;
+	max-height: 128px;
+	border: 2px solid seagreen;
+	border-top: 0;
+	border-radius: 0 0 5px 5px;
+	box-sizing: border-box;
+}
+
 .log-container {
-	grid-area: log;
+	flex-grow: 1;
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
+	height: 128px;
 	padding: 10px;
-	border: 2px solid cornflowerblue;
-	border-top: 0;
-	border-left: 0;
-	border-radius: 0 0 5px 0;
-	opacity: 0.6;
+	border-left: 1px solid seagreen;
+	border-right: 1px solid seagreen;
+	box-sizing: border-box;
 	font-size: 20px;
 }
 
@@ -166,62 +192,150 @@
 }
 
 .mode-info-container {
-	grid-area: modeInfo;
 	display: flex;
-	flex-direction: column;
+	flex-direction: row;
 	justify-content: space-between;
+	flex-basis: 340px;
+	height: 128px;
 	padding: 10px;
-	border: 2px solid cornflowerblue;
-	border-top: 0;
-	border-right: 0;
-	border-radius: 0 0 0 5px;
+	border-left: 1px solid seagreen;
+	border-right: 1px solid seagreen;
 	box-sizing: border-box;
-	opacity: 0.6;
 }
 
 .character-info-container {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-around;
 	grid-area: characterInfo;
-	padding: 10px;
-	border: 2px solid cornflowerblue;
+	min-width: 250px;
+	padding: 20px;
+	border: 2px solid seagreen;
 	border-left: 0;
 	border-radius: 0 5px 5px 0;
 	box-sizing: border-box;
 	overflow-y: auto;
-	opacity: 0.6;
+}
+
+.char-info-header {
+	display: flex;
+	justify-content: space-between;
+}
+
+.char-info-inv-container {
+	display: flex;
+	align-items: center;
+	margin-bottom: 20px;
+}
+
+.char-info-doll-container {
+	min-width: 190px;
+	height: 220px;
+	padding: 10px;
+	margin-right: 20px;
+}
+
+.char-info-paper-doll {
+	content: url('../assets/ui/investigator_inv_doll.png');
+	margin: auto;
+}
+
+.char-info-paper-doll-box {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	width: 64px;
+	height: 64px;
+	margin-left: 25px;
+	border: 2px solid seagreen;
+	text-align: center;
+}
+
+.char-info-doll-boxes-container {
+	position: relative;
+	top: -170px;
+	left: 0;
+}
+
+.char-info-paper-doll-body {
+	top: 0;
+	left: 35px;
+}
+
+.char-info-paper-doll-right-arm {
+	top: -10px;
+	left: -35px;
+}
+
+.char-info-paper-doll-left-arm {
+	top: -78px;
+	left: 105px;
+}
+
+.char-info-equip-toggle-button {
+	position: relative;
+	top: -210px;
+	left: 15px;
+}
+
+.char-info-stats-container {
+	min-width: 150px;
+	padding: 10px;
+}
+
+.char-info-inv-items {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	margin-top: 20px;
+	align-self: center;
+	width: calc(66px * 6);
+}
+
+.char-info-inv-item-box {
+	width: 64px;
+	height: 64px;
+	border: 1px solid seagreen;
+}
+
+.char-info-equipped-light {
+	align-self: center;
 }
 
 .creature-info-container {
 	grid-area: creatureInfo;
 	padding: 10px;
-	border: 2px solid cornflowerblue;
+	border: 2px solid seagreen;
 	border-right: 0;
 	border-radius: 5px 0 0 5px;
 	box-sizing: border-box;
 	overflow-y: auto;
-	opacity: 0.6;
 }
 
 .control-bar-container {
 	grid-area: controlBar;
 	display: flex;
 	justify-self: center;
+	align-self: end;
 	width: 100%;
-	border: 2px solid cornflowerblue;
+	max-height: 128px;
+	border: 2px solid seagreen;
 	border-bottom: 0;
 	border-radius: 5px 5px 0 0;
 	box-sizing: border-box;
-	opacity: 0.6;
 }
 
 .character-control-container {
 	display: flex;
-	flex-direction: column;
+	flex-direction: row;
 	justify-content: space-evenly;
 	align-items: center;
 	flex-basis: 100%;
 	padding: 5px;
-	border-left: 1px solid cornflowerblue;
-	border-right: 1px solid cornflowerblue;
+	border-left: 1px solid seagreen;
+	border-right: 1px solid seagreen;
 	text-align: center;
 }
 
@@ -229,7 +343,17 @@
 	display: inline-block;
 	padding: 3px;
 	font-size: 16px;
-	border-bottom: 1px solid darkslategray;
+	border-bottom: 1px solid #225555;
+}
+
+.context-manu-container {
+	position: absolute;
+	display: flex;
+	gap: 5px;
+	padding: 5px;
+	border-left: 1px solid seagreen;
+	border-right: 1px solid seagreen;
+	box-sizing: border-box;
 }
 
 .weapon-buttons-container {
@@ -238,11 +362,13 @@
 
 .general-button {
 	width: fit-content;
+	height: min-content;
 	margin: 5px 0;
 	padding: 5px;
-	border: 1px solid cornflowerblue;
+	border: 1px solid #CC9933;
 	border-radius: 5px;
-	background-color: darkslateblue;
+	color: white;
+	background-color: #996633;
 }
 
 .minimize-button {
@@ -255,15 +381,28 @@
 	text-align: center;
 }
 
-.weapon-button {
+.action-button {
+	width: 32px;
+	height: 32px;
 	margin: 5px;
 	padding: 5px;
-	border: 1px solid cornflowerblue;
+	border: 1px solid seagreen;
 	border-radius: 5px;
-	background-color: darkslategray;
+	background-color: limegreen;
+	background-position: center;
+	background-repeat: no-repeat;
 }
 
-.general-button:hover {
+.gun-reload-icon {
+	font-size: 30px;
+	line-height: 30px;
+}
+
+.gun-reload-icon::after {
+	content: '\21BA';
+}
+
+.general-button:hover, select:hover {
 	border-color: yellow;
 	cursor: pointer;
 }
@@ -271,22 +410,245 @@
 .button-inactive {
 	cursor: default;
 	pointer-events: none;
-	background-color: dimgray;
+	background-color: #333333;
 }
 
 .button-selected {
 	background-color: darkred;
 }
 
-.weapon-button:hover {
+.action-button:hover {
 	border-color: red;
 	cursor: pointer;
 }
 
 .button-tactical-mode-on {
-	background-color: red;
+	background-color: darkred;
+}
+
+select {
+	margin-top: 5px;
+	margin-bottom: 5px;
+	padding: 5px;
+	border: 1px solid #CC9933;
+	border-radius: 5px;
+	background-color: #996633;
+	color: white;
+	font-size: inherit;
+	font-family: inherit;
+}
+
+.object-info-panel {
+	position: fixed;
+	max-width: 400px;
+	padding: 10px;
+	background-color: #225555;
+	font-family: "Century Gothic", sans-serif;
+	color: white;
+	pointer-events: all;
+	border: 1px solid white;
+	border-radius: 5px;
+	transition: transform 0.5s;
+	box-shadow: 5px 5px 10px black;
+	z-index: 1;
+}
+
+.object-panel-container {
+	display: flex;
+	justify-content: space-around;
+	margin-bottom: 20px;
+	flex-wrap: wrap;
+}
+
+.object-text-container {
+	flex-basis: 70%;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	gap: 5px;
+	max-height: 200px;
+	overflow-y: auto;
+	margin-bottom: 20px;
+}
+
+.object-panel-buttons-container {
+	display: flex;
+	justify-content: center;
+	gap: 5px;
+	flex-wrap: wrap;
+}
+
+.object-panel-buttons {
+	display: flex;
+	gap: 5px;
+	align-items: center;
+}
+
+.object-row-with-buttons {
+	display: flex;
+	width: 100%;
+	align-items: center;
+	gap: 10px;
+}
+
+.object-row-with-buttons .inv-object {
+	cursor: default;
+}
+
+.object-list-objname {
+	width: 150px;
 }
 
 .hide {
+	display: none;
+}
+
+/* INV OBJECTS */
+
+.inv-object {
+	width: 64px;
+	height: 64px;
+	cursor: pointer;
+	background-position: center;
+	background-repeat: no-repeat;
+	text-align: left;
+}
+
+.torch-inv {
+	background-image: url('../assets/objects/torch_lrg.png');
+}
+
+.lantern-inv {
+	background-image: url('../assets/objects/lantern_lrg.png');
+}
+
+.electric-torch-inv {
+	background-image:  url('../assets/objects/flashlight_lrg.png');
+}
+
+.oil-inv {
+	background-image:  url('../assets/objects/oil_lrg.png');
+}
+
+.handgun-ammo-inv {
+	background-image: url('../assets/objects/handgunammo_lrg.png');
+}
+
+.first-aid-kit-inv {
+	background-image: url('../assets/objects/firstaidkit_lrg.png');
+}
+
+.pharmaceuticals-inv {
+	background-image: url('../assets/objects/pharmaceuticals_lrg.png');
+}
+
+.acid-concoction-inv {
+	background-image: url('../assets/objects/acid_lrg.png');
+}
+
+.pickaxe-inv {
+	background-image: url('../assets/objects/pickaxe_lrg.png');
+}
+
+.colt-revolver-inv {
+	background-image: url('../assets/objects/coltRevolver_lrg.png');
+}
+
+.s-and-w-revolver-inv {
+	background-image: url('../assets/objects/SandWrevolver_lrg.png');
+}
+
+.leather-jacket-inv {
+	background-image: url('../assets/objects/leatherJacket_lrg.png');
+}
+
+.bulletproof-vest-inv {
+	background-image: url('../assets/objects/bulletproofVest_lrg.png');
+}
+
+
+/* ACTION BUTTON ICONS */
+
+.action-button {
+	width: 32px;
+	height: 32px;
+	background-position: center;
+	background-repeat: no-repeat;
+}
+
+.first-aid-kit-action {
+	background-image: url('../assets/ui/firstaidkit_sml.png');
+}
+
+.pharmaceuticals-action {
+	background-image: url('../assets/ui/pharmaceuticals_sml.png');
+}
+
+.oil-action {
+	background-image: url('../assets/ui/oil_sml.png');
+}
+
+.acid-concoction-action {
+	background-image: url('../assets/ui/acid_sml.png');
+}
+
+.pickaxe-action {
+	background-image: url('../assets/ui/pickaxe_sml.png');
+}
+
+.colt-revolver-action {
+	background-image: url('../assets/ui/coltRevolver_sml.png');
+}
+
+.s-and-w-revolver-action {
+	background-image: url('../assets/ui/SandWrevolver_sml.png');
+}
+
+.refill-action {
+	background-image: url('../assets/ui/refillLight_sml.png');
+}
+
+.examine-action {
+	background-image: url('../assets/ui/magnifyingGlass_sml.png');
+}
+
+.look-action {
+	background-image: url('../assets/ui/eyes_sml.png');
+}
+
+.player-action {
+	background-image: url('../assets/ui/player-icon_sml.png');
+}
+
+.creature-action {
+	background-image: url('../assets/ui/creature-icon_sml.png');
+}
+
+.move-action {
+	background-image: url('../assets/ui/move-icon_sml.png');
+}
+
+/* Audio */
+
+/* Specifies the size of the audio container */
+.audio-music  {
+	width: 125px;
+	height: 25px;
+	margin: 5px;
+	border: 1px solid #CC9933;
+	border-radius: 25px;
+}
+.audio-music::-webkit-media-controls-panel {
+	-webkit-justify-content: center;
+	height: 25px;
+	background-color: seagreen;
+}
+.audio-music::-webkit-media-controls-timeline {
+	display: none !important;
+}
+.audio-music::-webkit-media-controls-current-time-display {
+	display: none;
+}
+.audio-music::-webkit-media-controls-time-remaining-display {
 	display: none;
 }

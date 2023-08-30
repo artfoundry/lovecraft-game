@@ -4,6 +4,10 @@ import Game from './App';
 // import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
+
+// prevent zoom on mobile
+document.querySelector('meta[name="viewport"]').setAttribute("content", "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no");
+
 root.render(
   <React.StrictMode>
     <Game />

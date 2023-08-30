@@ -4,6 +4,23 @@
 	box-sizing: border-box;
 }
 
+.door {
+	z-index: 1;
+	pointer-events: none;
+}
+
+.map-cover {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 20;
+	background-color: black;
+	transition: opacity 0.5s;
+	pointer-events: none;
+}
+
 /* LIGHTING */
 
 .light-tile {
@@ -68,38 +85,70 @@
 	background-color: yellow;
 }
 
-/* OBJECTS */
+/* MAP OBJECTS */
 
 .object {
 	position: absolute;
 }
 
-.torch-top-wall {
-	content: url('../assets/objects/torch.png');
+.torch-top-wall, .torch {
+	content: url('../assets/objects/torch_sml.png');
 }
 
 .torch-left-wall {
-	left: 25px;
-	content: url('../assets/objects/torch.png');
+	left: calc(var(--tile-size) / -2.56); /* 25px at tile size of 64px */
+	content: url('../assets/objects/torch_sml.png');
 }
 
 .torch-right-wall {
-	left: -25px;
-	content: url('../assets/objects/torch.png');
+	left: calc(var(--tile-size) / 2.56); /* -25px at tile size of 64px */
+	content: url('../assets/objects/torch_sml.png');
+}
+
+.electric-torch {
+	content:  url('../assets/objects/flashlight_sml.png');
 }
 
 .lantern {
-	content: url('../assets/objects/lantern.png');
+	content: url('../assets/objects/lantern_sml.png');
 }
 
-.ammo {
-	content: url('../assets/objects/ammo.png');
+.oil {
+	content: url('../assets/objects/oil_sml.png');
+}
+
+.handgun-ammo {
+	content: url('../assets/objects/handgunammo_sml.png');
 }
 
 .first-aid-kit {
-	content: url('../assets/objects/firstaidkit.png');
+	content: url('../assets/objects/firstaidkit_sml.png');
+}
+
+.pharmaceuticals {
+	content: url('../assets/objects/pharmaceuticals_sml.png');
+}
+
+.acid-concoction {
+	content: url('../assets/objects/acid_sml.png');
+}
+
+.pickaxe {
+	content: url('../assets/objects/pickaxe_sml.png');
+}
+
+.colt-revolver {
+	content: url('../assets/objects/coltRevolver_sml.png');
 }
 
 .s-and-w-revolver {
 	content: url('../assets/objects/SandWrevolver_sml.png');
+}
+
+.leather-jacket {
+	content: url('../assets/objects/leatherJacket_sml.png');
+}
+
+.bulletproof-vest {
+	content: url('../assets/objects/bulletproofVest_sml.png');
 }
