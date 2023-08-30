@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
 import {randomTileVariant} from './Utils';
+import './css/mapPieceElements.css';
 
 function Character(props) {
 	const isHiddenClass = props.isHidden ? ' hidden' : '';
@@ -12,33 +13,33 @@ function Character(props) {
 			 alt={props.classes}
 		     className={props.characterType + ' ' + props.idClassName + isHiddenClass + isSelectedClass + isDeadClass + isInRangeClass}
 		     style={props.styles}
-		     data-location={`${props.dataLoc.xPos}-${props.dataLoc.yPos}`}
-			 onClick={() => {
-				 props.clickUnit(props.id, props.dataCharType, props.isInRange);
+		     data-location={props.dataLoc}
+			 onClick={(evt) => {
+				 props.updateContextMenu(props.characterType, props.dataLoc, evt, {id: props.id, target: props.dataCharType, isInRange: props.isInRange, checkLineOfSightToParty: props.isLineOfSight});
 			 }} />
 	)
 }
 
 function Exit(props) {
 	return (
-		<img alt="exit"
+		<img alt='exit'
 		     className='object exit'
 		     style={props.styleProp} />
 	)
 }
 
 function Tile(props) {
-	const isTopOrBottomWall = props.classStrProp.includes('top-wall') || props.classStrProp.includes('bottom-wall');
-	const tileType = props.tileTypeProp === 'floor' || (props.tileTypeProp === 'wall' && isTopOrBottomWall) ? randomTileVariant() : '';
+	const isTopOrBottomWall = props.classStr.includes('top-wall') || props.classStr.includes('bottom-wall');
+	const tileType = props.tileType === 'floor' || (props.tileType === 'wall' && isTopOrBottomWall) ? randomTileVariant() : '';
 
 	const [randomizedVariantSuffix] = useState(tileType);
 
 	return (
-		<div className={`tile ${props.classStrProp}${randomizedVariantSuffix}`}
+		<div className={`tile ${props.classStr}${randomizedVariantSuffix}`}
 		     style={{...props.styleProp, fontSize: '18px'}}
-		     data-tile-num={props.tileNameProp}
+		     data-tile-num={props.tileName}
 		     onClick={e => {
-			     props.moveCharacterProp(props.tileNameProp, e);
+			     props.moveCharacter(props.tileName, e);
 		     }}>
 		</div>
 	);
@@ -46,6 +47,17 @@ function Tile(props) {
 
 function Door(props) {
 	return <div className={props.classProp} style={props.styleProp} />;
+}
+
+function Item(props) {
+	return (
+		<img
+			alt={props.name}
+			className={`object ${props.name}`}
+			style={props.styles}
+			onClick={(evt) => props.updateContextMenu('look', props.tilePos, evt, {objectInfo: [props.objectInfo], selectionEvt: evt, isPickUpAction: false})}
+		/>
+	)
 }
 
 function LightElement(props) {
@@ -56,4 +68,10 @@ function LightElement(props) {
 	);
 }
 
-export {Character, Exit, Tile, Door, LightElement};
+function MapCover(props) {
+	return (
+		<div className='map-cover' style={props.styleProp}></div>
+	)
+}
+
+export {Character, Exit, Tile, Door, Item, LightElement, MapCover};

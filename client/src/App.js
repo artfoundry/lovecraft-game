@@ -4,26 +4,31 @@ import Map from './Map';
 import Character from './Character';
 import PlayerCharacterTypes from './data/playerCharacterTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
+import ItemTypes from './data/itemTypes.json';
 import UI from './UI';
 import './css/app.css';
-import './css/map.css';
-import './css/mapPieceElements.css';
-import './css/catacombs.css'
-import './css/creatures.css';
-import './css/playerCharacters.css';
-import {diceRoll} from './Utils';
+import {diceRoll, deepCopy, convertCoordsToPos} from './Utils';
 
 class Game extends React.Component {
 	constructor(props) {
 		super(props);
 
-		this.initialDialogContent = 'Find the stairs down to enter a new dungeon! Click/tap or use arrow keys to move.';
+		this.initialDialogContent = '';
 		this.startingLocation = 'catacombs';
 		this.startingPlayerCharacters = ['privateEye', 'archaeologist', 'chemist'];
 		this.playerMovesLimit = 3;
-		this.playerActionsLimit = 1;
+		this.playerActionsLimit = 2;
 
 		this.firebase = new Firebase();
+
+		/**
+		 * Creature data structure : {
+		 *      CreatureData[name],
+		 *      GameLocations[location].creatures[name],
+		 * 		currentHealth: CreatureData[name].startingHealth,
+		 * 		tileCoords: {xPos, yPos}
+		 * }
+		 **/
 
 		this.state = {
 			userData: {},
@@ -31,29 +36,13 @@ class Game extends React.Component {
 			gameSetupComplete: false,
 			playerCharacters: {},
 			pcTypes: PlayerCharacterTypes,
-			playerFollowOrder: [],
-			mapCreatures: {},
-			unitsTurnOrder: [],
-			currentTurn: 0,
-			activeCharacter: this.startingPlayerCharacters[0],
-			activePlayerMovesCompleted: 0,
-			activePlayerActionsCompleted: 0,
 			currentLocation: '',
-			characterIsSelected: false,
-			characterInfoText: '',
-			creatureIsSelected: false,
-			creatureInfoText: '',
-			creatureCoordsUpdate: null,
-			selectedCharacter: '',
-			selectedCreature: '',
-			weaponButtonSelected: {},
-			isInCombat: true, // start in tactical mode any time entering a new area
-			threatList: [],
-			partyIsNearby: true,
-			logText: [],
-			showDialog: true,
+			currentLevel: 1,
+			playerFollowOrder: [],
+			followModeMoves: [],
+			showDialog: false,
 			dialogProps: {
-				dialogContent: this.initialDialogContent,
+			dialogContent: this.initialDialogContent,
 				closeButtonText: 'Close',
 				closeButtonCallback: null,
 				disableCloseButton: false,
@@ -61,33 +50,87 @@ class Game extends React.Component {
 				actionButtonText: '',
 				actionButtonCallback:  null,
 				dialogClasses: ''
-			}
-		}
-	}
-
-	/**
-	 *
-	 * @param callback
-	 */
-	resetDataForNewLevel = (callback) => {
-		this.setState({
+			},
+			// these need resetting on level change
 			mapCreatures: {},
+			mapObjects: {},
 			unitsTurnOrder: [],
 			currentTurn: 0,
 			activeCharacter: this.startingPlayerCharacters[0],
 			activePlayerMovesCompleted: 0,
 			activePlayerActionsCompleted: 0,
 			characterIsSelected: false,
-			characterInfoText: '',
 			creatureIsSelected: false,
-			creatureInfoText: '',
 			creatureCoordsUpdate: null,
 			selectedCharacter: '',
 			selectedCreature: '',
-			weaponButtonSelected: {},
-			isInCombat: true, // start in tactical mode any time entering a new area
+			actionButtonSelected: null,
+			objectSelected: null,
+			objHasBeenDropped: false,
+			inTacticalMode: true, // start in tactical mode any time entering a new area
 			threatList: [],
 			partyIsNearby: true,
+			contextMenuChoice: null,
+			logText: []
+		}
+
+		this.notEnoughSpaceDialogProps = {
+			dialogContent: "That character's inventory space is full. Drop or trade out something first.",
+			closeButtonText: 'Ok',
+			closeButtonCallback: null,
+			disableCloseButton: false,
+			actionButtonVisible: false,
+			actionButtonText: '',
+			actionButtonCallback: null,
+			dialogClasses: ''
+		};
+		this.noMoreActionsDialogProps = {
+			dialogContent: 'That character has no more actions this turn',
+			closeButtonText: 'Ok',
+			closeButtonCallback: null,
+			disableCloseButton: false,
+			actionButtonVisible: false,
+			actionButtonText: '',
+			actionButtonCallback: null,
+			dialogClasses: ''
+		};
+		this.noMoreMovesDialogProps = {
+			dialogContent: 'That character has no more moves this turn',
+			closeButtonText: 'Ok',
+			closeButtonCallback: null,
+			disableCloseButton: false,
+			actionButtonVisible: false,
+			actionButtonText: '',
+			actionButtonCallback: null,
+			dialogClasses: ''
+		};
+	}
+
+	/**
+	 * Resets level related data in state back to defaults when changing levels
+	 * @param callback: function
+	 */
+	resetDataForNewLevel = (callback) => {
+		this.setState({
+			mapCreatures: {},
+			mapObjects: {},
+			unitsTurnOrder: [],
+			currentTurn: 0,
+			activeCharacter: this.startingPlayerCharacters[0],
+			activePlayerMovesCompleted: 0,
+			activePlayerActionsCompleted: 0,
+			characterIsSelected: false,
+			creatureIsSelected: false,
+			creatureCoordsUpdate: null,
+			selectedCharacter: '',
+			selectedCreature: '',
+			actionButtonSelected: null,
+			objectSelected: null,
+			objHasBeenDropped: false,
+			inTacticalMode: true, // start in tactical mode any time entering a new area
+			threatList: [],
+			partyIsNearby: true,
+			contextMenuChoice: null,
 			logText: []
 		}, () => {
 			if (callback) callback();
@@ -107,9 +150,9 @@ class Game extends React.Component {
 	/**
 	 * Updates either creature or player character data collection to state
 	 * If id is passed in, updating only one creature; otherwise updating all
-	 * @param type: String
-	 * @param updateData: Object
-	 * @param id: String
+	 * @param type: String ('player' or 'creature')
+	 * @param updateData: Object (can be any number of data objects unless updating all characters of a type, then must be all data)
+	 * @param id: String (char/creature Id)
 	 * @param isInitialCreatureSetup: Boolean
 	 * @param isInitialCharacterSetup: Boolean
 	 * @param callback: Function
@@ -124,10 +167,8 @@ class Game extends React.Component {
 				}
 			}), () => {
 				if (this.state.selectedCreature === id) {
-					if (this.state[collection][id].currentHP <= 0 && type === 'creature') {
+					if (this.state[collection][id].currentHealth <= 0 && type === 'creature') {
 						this.updateUnitSelectionStatus(id, 'creature');
-					} else {
-						this._updateInfoText('creatureInfoText', id);
 					}
 				}
 				if (callback) callback();
@@ -145,6 +186,12 @@ class Game extends React.Component {
 		}
 	}
 
+	updateMapObjects = (mapObjects, callback) => {
+		this.setState({mapObjects}, () => {
+			if (callback) callback();
+		});
+	}
+
 	/**
 	 * Gets the positions for each LIVING character of a genre, player, creature, or all
 	 * @param type: String ('player', 'creature' or 'all')
@@ -158,7 +205,7 @@ class Game extends React.Component {
 			type === 'creature' ? this.state.mapCreatures :
 			Object.assign({}, this.state.playerCharacters, this.state.mapCreatures); // copy all to empty object to avoid modifying originals
 		for (const [id, characterData] of Object.entries(collection)) {
-			if (characterData.currentHP > 0) {
+			if (characterData.currentHealth > 0) {
 				let coords = format === 'pos' ? `${characterData.coords.xPos}-${characterData.coords.yPos}` : characterData.coords;
 				allCharactersPos.push({id, [format]: coords});
 			}
@@ -190,12 +237,12 @@ class Game extends React.Component {
 	/**
 	 * Saves to state whether game is in combat/tactical mode or not,
 	 * then if not, calls resetCounters
-	 * @param isInCombat: boolean
+	 * @param inTacticalMode: boolean
 	 * @param callback: function
 	 */
-	toggleCombatState = (isInCombat, callback) => {
-		this.setState({isInCombat}, () => {
-			if (!isInCombat) {
+	toggleTacticalMode = (inTacticalMode, callback) => {
+		this.setState({inTacticalMode}, () => {
+			if (!inTacticalMode) {
 				this._resetCounters(callback);
 			} else {
 				this.updateCurrentTurn(true, callback);
@@ -215,8 +262,8 @@ class Game extends React.Component {
 			const mainPcPos = allPcPositions[0].pos;
 			const secPcPos = allPcPositions[1].pos;
 			const thirdPcPos = allPcPositions[2].pos;
-			if (!checkLineOfSightToParty(mainPcPos, secPcPos) || (thirdPcPos &&
-				(!checkLineOfSightToParty(mainPcPos, thirdPcPos) || !checkLineOfSightToParty(secPcPos, thirdPcPos)) ) )
+			if (!checkLineOfSightToParty(mainPcPos, secPcPos, false) || (thirdPcPos &&
+				(!checkLineOfSightToParty(mainPcPos, thirdPcPos, false) || !checkLineOfSightToParty(secPcPos, thirdPcPos, false)) ) )
 			{
 				partyIsNearby = false;
 			}
@@ -230,7 +277,7 @@ class Game extends React.Component {
 
 	/**
 	 * Adds IDs to or removes IDs from threat list and saves list to state,
-	 * then if there's a change in the list, calls toggleCombatState
+	 * then if there's a change in the list, calls toggleTacticalMode
 	 * This is the primary entry point for changing/determining whether game is in Follow mode or Tactical mode
 	 * @param threatIdsToAdd: Array (of strings - IDs of creatures attacking player)
 	 * @param threatIdsToRemove: Array (of strings - IDs of creatures no longer a threat)
@@ -258,83 +305,188 @@ class Game extends React.Component {
 
 		this.setState({threatList: updatedList}, () => {
 			const isInCombat = updatedList.length > 0;
-			const updatePartyProximityCallback = () => {
-				if (!this.state.isInCombat) {
-					this.updateIfPartyIsNearby(checkLineOfSightToParty, callback);
-				} else if (callback) {
-					callback();
-				}
-			}
-			// if combat state is changing...
-			if (previousListSize !== updatedList.length && (previousListSize === 0 || updatedList.length === 0)) {
-				this.toggleCombatState(isInCombat, updatePartyProximityCallback);
-			} else {
-				updatePartyProximityCallback();
+
+			// if entering combat...
+			if (isInCombat && previousListSize === 0 ) {
+				this.toggleTacticalMode(isInCombat, callback);
+			// leaving combat...
+			} else if (!isInCombat) {
+				this.updateIfPartyIsNearby(checkLineOfSightToParty, callback);
+			// already/still in combat
+			} else if (callback) {
+				callback();
 			}
 		});
 	}
 
 	/**
-	 * Updates to state what PC weapon is selected in the UI
+	 * Updates to state what PC weapon or item button is selected in the UI
+	 * Data stored in actionButtonSelected: {characterId, itemId, itemName, stats: WeaponTypes[itemName] or ItemTypes[itemName]}
 	 * @param characterId: String
-	 * @param weaponName: String
+	 * @param itemId: String
+	 * @param itemName: String
+	 * @param buttonType: String ('weapon' or 'item')
 	 * @param callback: Function
 	 */
-	toggleWeapon = (characterId, weaponName, callback) => {
-		let buttonState = {};
-		// if no weapon selected or weapon selected doesn't match new weapon selected, set weapon state to new weapon
-		if (Object.keys(this.state.weaponButtonSelected).length === 0 ||
-			(this.state.weaponButtonSelected.characterId !== characterId || this.state.weaponButtonSelected.weaponName !== weaponName)) {
-			buttonState = {characterId, weaponName, stats: WeaponTypes[weaponName]};
+	toggleActionButton = (characterId, itemId, itemName, buttonType, callback) => {
+		let buttonState = null;
+		// if no weapon/item selected or weapon/item selected doesn't match new weapon/item selected, set weapon/item state to new weapon/item
+		if (characterId && (!this.state.actionButtonSelected ||
+			(this.state.actionButtonSelected.characterId !== characterId || this.state.actionButtonSelected.itemId !== itemId)))
+		{
+			buttonState = {characterId, itemId, itemName, stats: buttonType === 'weapon' ? WeaponTypes[itemName] : ItemTypes[itemName]};
 		}
-		this.setState({weaponButtonSelected: buttonState}, () => {
+		this.setState({actionButtonSelected: buttonState}, () => {
 			if (callback) callback();
 		});
 	}
 
 	/**
-	 * User click handler for clicking on units to determine if it's being selected or acted upon (ie. attacked)
-	 * @param id
-	 * @param type
-	 * @param isInRange
+	 * Reloading active character's gun using ammo in inv we already know we have, as determined by CharacterControls in UIElements
+	 * @param weaponId: string
 	 */
-	handleUnitClick = (id, type, isInRange) => {
-		if (Object.keys(this.state.weaponButtonSelected).length > 0 && isInRange) {
-			// clicked unit is getting attacked
-			const proceedWithAttack = () => {
-				const selectedWeaponInfo = this.state.weaponButtonSelected;
-				this.state.playerCharacters[this.state.activeCharacter].attack(selectedWeaponInfo.stats, id, this.state.mapCreatures[id], this.updateCharacters, this.updateLog);
-				this.toggleWeapon(selectedWeaponInfo.characterId, selectedWeaponInfo.weaponName);
-				if (this.state.mapCreatures[id].currentHP <= 0) {
-					this._removeDeadFromTurnOrder(id, this._updateActivePlayerActions);
-				} else {
-					this._updateActivePlayerActions();
+	reloadGun = (weaponId) => {
+		const updatedPCdata = deepCopy(this.state.playerCharacters[this.state.activeCharacter]);
+		const gunInfo = updatedPCdata.weapons[weaponId];
+		const gunType = gunInfo.gunType;
+		const availAmmo = updatedPCdata.items[gunType + 'Ammo0'].amount;
+		const resupplyAmmo = gunInfo.rounds <= availAmmo ? gunInfo.rounds : availAmmo;
+		updatedPCdata.weapons[weaponId].currentRounds = resupplyAmmo;
+		updatedPCdata.items[gunType + 'Ammo0'].amount = availAmmo - resupplyAmmo;
+		if (updatedPCdata.items[gunType + 'Ammo0'].amount === 0) {
+			delete updatedPCdata.items[gunType + 'Ammo0'];
+		}
+		this.updateCharacters('player', updatedPCdata, this.state.activeCharacter, false, false, () => {
+			this._updateActivePlayerActions();
+		});
+	}
+
+	refillLight = () => {
+		const activePcData = deepCopy(this.state.playerCharacters[this.state.activeCharacter]);
+		const equippedLight = activePcData.items[activePcData.equippedLight];
+		const oil = activePcData.items.oil0;
+		const oilNeeded = equippedLight.maxTime - activePcData.lightTime;
+		equippedLight.time = oil.amount < oilNeeded ? activePcData.lightTime + oil.amount : equippedLight.maxTime;
+		activePcData.lightTime = equippedLight.time;
+		oil.amount -= oil.amount < oilNeeded ? oil.amount : oilNeeded;
+		if (oil.amount <= 0) {
+			delete activePcData.items.oil0;
+		}
+		this.updateCharacters('player', activePcData, this.state.activeCharacter, false, false, () => {
+			this._updateActivePlayerActions();
+		});
+	}
+
+	/**
+	 * User click handler for clicking on units to determine if it's being selected or acted upon (ie. attacked, healed, etc.)
+	 * @param id: string (target ID)
+	 * @param target: string ('player' or 'creature')
+	 * @param isInRange: boolean
+	 * @param checkLineOfSightToParty: function (from Map)
+	 */
+	handleUnitClick = (id, target, isInRange, checkLineOfSightToParty) => {
+		if (this.state.actionButtonSelected && isInRange) {
+			// clicked unit is getting acted upon
+			const selectedItemInfo = this.state.actionButtonSelected;
+			const activePC = this.state.playerCharacters[this.state.activeCharacter];
+			const actionProps = {
+				itemId: selectedItemInfo.itemId,
+				itemStats: selectedItemInfo.stats,
+				targetData: target === 'creature' ? this.state.mapCreatures[id] : this.state.playerCharacters[id],
+				pcData: activePC,
+				updateCharacter: this.updateCharacters,
+				updateLog: this.updateLog,
+				callback: () => {
+					this.toggleActionButton(selectedItemInfo.characterId, selectedItemInfo.itemId, selectedItemInfo.itemName, target === 'creature' ? 'weapon': 'item', () => {
+						if (target === 'creature' && this.state.mapCreatures[id].currentHealth <= 0) {
+							this._removeDeadFromTurnOrder(id, this._updateActivePlayerActions, checkLineOfSightToParty);
+						} else {
+							this._updateActivePlayerActions();
+						}
+					});
+				}
+			};
+			target === 'creature' ? activePC.attack(actionProps) : activePC.heal(actionProps);
+		} else {
+			// clicked unit is just being selected/deselected
+			this.updateUnitSelectionStatus(id, target);
+		}
+	}
+
+	/**
+	 * Updates to state the status of what PC or NPC (or both) is selected in the UI
+	 * @param id: String
+	 * @param type: String ('player' or 'creature')
+	 */
+	updateUnitSelectionStatus = (id, type) => {
+		let unitTypeObjectName = '';
+		let unitTypeSelected = '';
+		let unitNameForSelectionStateChg = '';
+		let unitToDeselect = '';
+
+		if (type === 'player') {
+			unitTypeObjectName = 'playerCharacters';
+			unitTypeSelected = 'selectedCharacter';
+		} else if (type === 'creature') {
+			unitTypeObjectName = 'mapCreatures';
+			unitTypeSelected = 'selectedCreature';
+		}
+
+		// clicked unit is being selected/deselected
+		if (this.state.selectedCharacter === id || this.state.selectedCreature === id) {
+			// selected character was just clicked to deselect
+			unitNameForSelectionStateChg = '';
+		} else {
+			// no unit previously selected or different unit previously selected
+			unitNameForSelectionStateChg = id;
+			if (this.state[unitTypeSelected] !== '') {
+				unitToDeselect = this.state[unitTypeSelected];
+			}
+		}
+
+		// toggle selected state of clicked unit
+		this.setState(prevState => ({
+			[unitTypeSelected]: unitNameForSelectionStateChg,
+			[unitTypeObjectName]: {
+				...prevState[unitTypeObjectName],
+				[id]: {
+					...prevState[unitTypeObjectName][id],
+					isSelected: !prevState[unitTypeObjectName][id].isSelected
 				}
 			}
-			if (!this.state.isInCombat) {
-				// not currently necessary to update list as must see creature to attack it, so would already be in list/in combat
-				// but if we add some way later of attacking creature not seen (like an area of effect spell), and it somehow
-				// discovers where player is, then it becomes a threat and will need to call this
-				this.updateThreatList([id], [], proceedWithAttack);
-			} else {
-				proceedWithAttack();
+		}), () => {
+			if (unitToDeselect !== '') {
+				this.setState(prevState => ({
+					[unitTypeObjectName]: {
+						...prevState[unitTypeObjectName],
+						[unitToDeselect]: {
+							...prevState[unitTypeObjectName][unitToDeselect],
+							isSelected: !prevState[unitTypeObjectName][unitToDeselect].isSelected
+						}
+					}
+				}));
 			}
-		} else {
-			this.updateUnitSelectionStatus(id, type);
-		}
+			this.toggleCharIsSelected(type, this.state[unitTypeObjectName][id].isSelected);
+		});
 	}
 
 	/**
 	 * Increments and sets to state the current turn number (or resets if on last turn of unitTurnOrder),
 	 * as well as resets number of moves and actions taken by the active PC
-	 * then calls function to update what is the active character
+	 * then calls functions to clear any action button from previous char and then update which is the active character
 	 * @param startTurns: boolean (true if starting turns, ie. combat just started)
 	 * @param callback: function
 	 */
 	updateCurrentTurn = (startTurns = false, callback) => {
 		const currentTurn = startTurns || this.state.currentTurn === this.state.unitsTurnOrder.length - 1 ? 0 : this.state.currentTurn + 1;
 		this.setState({currentTurn, activePlayerActionsCompleted: 0, activePlayerMovesCompleted: 0}, () => {
-			this.updateActiveCharacter(callback);
+			if (this.state.playerCharacters[this.state.activeCharacter] && this.state.actionButtonSelected) {
+				this.toggleActionButton('', '', '', '', () => {
+					this.updateActiveCharacter(callback);
+				});
+			} else {
+				this.updateActiveCharacter(callback);
+			}
 		});
 	}
 
@@ -366,6 +518,88 @@ class Game extends React.Component {
 	}
 
 	/**
+	 * Determines which buttons to add to context menu
+	 * Possibilities:
+	 * creature and item
+	 * player and item
+	 * item and move
+	 * @param actionType: string
+	 * @param tilePos: string
+	 * @param evt: event object
+	 * @param actionInfo: object (props for appropriate function called upon clicking menu button)
+	 */
+	updateContextMenu = (actionType, tilePos = null, evt = null, actionInfo = null) => {
+		// if already have a context menu showing, user has clicked out of it, so close it
+		if (!actionType) {
+			this.setState({contextMenu: null});
+			return;
+		}
+
+		// if clicked obj is a creature/player, check if at least one object is on that tile
+		let objectOnTile = null;
+		if (actionType === 'creature' || actionType === 'player') {
+			const objects = Object.values(this.state.mapObjects);
+			let i = 0;
+			while (!objectOnTile && i < objects.length) {
+				if (convertCoordsToPos(objects[i].coords) === tilePos) {
+					// objectInfo needs to be in array for setMapObjectSelected
+					objectOnTile = {objectInfo: [objects[i]], selectionEvt: evt, isPickUpAction: false};
+				} else {
+					i++;
+				}
+			}
+		}
+
+		// bypass setting up context menu if clicked target is a pc or creature with nothing else on the tile...
+		if (!objectOnTile && (actionType === 'player' || (actionType === 'creature' && !this.state.actionButtonSelected))) {
+			this.handleUnitClick(actionInfo.id, actionType);
+		// ...or if action is being used
+		} else if (this.state.actionButtonSelected) {
+			this.handleUnitClick(actionInfo.id, actionInfo.target, actionInfo.isInRange, actionInfo.checkLineOfSightToParty);
+		// ...or if clicked target is a torch
+		} else if (actionType === 'look' && actionInfo.objectInfo[0].name === 'Torch') {
+			this.setMapObjectSelected(actionInfo.objectInfo, actionInfo.selectionEvt, actionInfo.isPickUpAction);
+		// otherwise, set up context menu
+		} else {
+			const contextMenu = {
+				actionsAvailable: {[actionType]: actionInfo},
+				creatureId: actionInfo.id || null,
+				tilePos,
+				evt
+			};
+			if (actionType !== 'player' && actionType !== 'creature') {
+				contextMenu.actionsAvailable.move = true;
+			}
+			if (objectOnTile) {
+				contextMenu.actionsAvailable.look = objectOnTile;
+			}
+			this.setState({contextMenu, contextMenuChoice: null});
+		}
+	}
+
+	/**
+	 * Calls appropriate function based on menu button clicked
+	 * For 'look' (item): setMapObjectSelected
+	 * For 'player'/'creature': handleUnitClick
+	 * For 'move': handled by checkIfTileOrObject in Map
+	 * @param actionType: string
+	 */
+	handleContextMenuSelection = (actionType) => {
+		const storedActionInfo = this.state.contextMenu.actionsAvailable[actionType];
+		if (actionType === 'look') {
+			this.setMapObjectSelected(storedActionInfo.objectInfo, storedActionInfo.selectionEvt, storedActionInfo.isPickUpAction);
+			this.setState({contextMenu: null});
+		} else if (actionType === 'creature' || actionType === 'player') {
+			this.handleUnitClick(storedActionInfo.id, storedActionInfo.target, storedActionInfo.isInRange, storedActionInfo.checkLineOfSightToParty);
+			this.setState({contextMenu: null});
+		} else if (actionType === 'move') {
+			this.setState({contextMenuChoice: {actionType, tilePos: this.state.contextMenu.tilePos}}, () => {
+				this.setState({contextMenu: null});
+			});
+		}
+	}
+
+	/**
 	 * Updates to state what character is active (PC or NPC)
 	 * @param callback: function (optional - at start, sets flag that chars are placed, then for PCs moves map to center)
 	 * @param id: String (optional)
@@ -373,12 +607,90 @@ class Game extends React.Component {
 	updateActiveCharacter = (callback = null, id = null) => {
 		const currentTurnUnitInfo = Object.values(this.state.unitsTurnOrder[this.state.currentTurn])[0];
 		let playerFollowOrder = [...this.state.playerFollowOrder];
-		if (!this.state.isInCombat) {
+		if (!this.state.inTacticalMode) {
 			let newLeader = playerFollowOrder.splice(playerFollowOrder.indexOf(id), 1)[0];
 			playerFollowOrder.unshift(newLeader);
 		}
 		this.setState({activeCharacter: id || currentTurnUnitInfo.id, playerFollowOrder}, () => {
 			if (callback) callback();
+		});
+	}
+
+	/**
+	 * Updates list of PC positions for follow mode
+	 * @param updatedList: array (of strings - positions of PCs, updated in moveCharacter in Map)
+	 * @param callback
+	 */
+	updateFollowModeMoves = (updatedList, callback) => {
+		this.setState({followModeMoves: updatedList}, () => {
+			if (callback) callback();
+		});
+	}
+
+	/**
+	 * UIElements calls this to send id(s) of object(s) that player clicked on in map or using action, so object info panel can be displayed in UI
+	 * Single id passed in if clicked on map (even if multiple objects, UI will handle checking for others)
+	 * Single OR multiple ids if examined using action
+	 * @param objectInfo: array (of objects: {objId: objInfo})
+	 * @param selectionEvt: event object
+	 * @param isPickUpAction: boolean (true if action button clicked to inspect/pickup object)
+	 */
+	setMapObjectSelected = (objectInfo, selectionEvt, isPickUpAction) => {
+		const objectSelected = objectInfo && !this.state.objectSelected ? {objectList: objectInfo, evt: selectionEvt, isPickUpAction} : null;
+		this.setState({objectSelected});
+	}
+
+	/**
+	 * Called from Map when player drags object to tile
+	 * @param props: {objHasBeenDropped (boolean), evt (event object)}
+	 */
+	setHasObjBeenDropped = (props) => {
+		this.setState({objHasBeenDropped: {dropped: props.objHasBeenDropped, evt: props.evt}});
+	}
+
+	/**
+	 * Add picked up item or weapon to char's inventory
+	 * @param itemData: object
+	 * @param objId: string
+	 * @param isPickUpAction: boolean (item was picked up using action button)
+	 */
+	addItemToPlayerInventory = (itemData, objId, isPickUpAction) => {
+		const player = this.state.playerCharacters[this.state.activeCharacter];
+		const objectType = itemData.itemType ? itemData.itemType : 'Weapon';
+		const invObjectCategory = objectType === 'Weapon' ? 'weapons' : 'items';
+		let inventoryList = deepCopy(player[invObjectCategory]);
+		let invId = '';
+
+		if (objectType === 'Ammo') {
+			invId = itemData.gunType + 'Ammo0';
+			const currentAmmoCount = inventoryList[invId] ? inventoryList[invId].amount : 0;
+			inventoryList[invId] = {...itemData};
+			inventoryList[invId].id  = invId; // replace original id with inventory specific id for stackable items
+			inventoryList[invId].amount = currentAmmoCount + itemData.amount;
+		} else if (objectType === 'Light') {
+			inventoryList[objId] = {...itemData};
+			inventoryList[objId].time = itemData.maxTime;
+		} else if (itemData.stackable) {
+			invId = objId.replace(/\d+$/, '0');
+			if (!inventoryList[invId]) {
+				inventoryList[invId] = {...itemData};
+				inventoryList[invId].id  = invId; // replace original id with inventory specific id for stackable items
+				inventoryList[invId].currentRounds = itemData.currentRounds;
+			} else if (objectType === 'Weapon') {
+				inventoryList[invId].currentRounds += itemData.currentRounds;
+			} else {
+				inventoryList[invId].amount += itemData.amount;
+			}
+		} else {
+			inventoryList[objId] = {...itemData};
+		}
+
+		let updatedData = {[invObjectCategory]: inventoryList};
+		this.updateCharacters('player', updatedData, this.state.activeCharacter, false, false, () => {
+			this._removeItemFromMap(objId);
+			if (isPickUpAction) {
+				this._updateActivePlayerActions();
+			}
 		});
 	}
 
@@ -408,9 +720,9 @@ class Game extends React.Component {
 	_setupPlayerCharacters() {
 		let playerCharacters = {};
 		let playerFollowOrder = [];
-		this.startingPlayerCharacters.forEach(character => {
-			playerCharacters[character] = new Character(PlayerCharacterTypes[character]);
-			playerFollowOrder.push(character);
+		this.startingPlayerCharacters.forEach(characterId => {
+			playerCharacters[characterId] = new Character(PlayerCharacterTypes[characterId]);
+			playerFollowOrder.push(characterId);
 		});
 		this.setState({playerCharacters, playerFollowOrder});
 	}
@@ -492,7 +804,11 @@ class Game extends React.Component {
 		}
 
 		this.setState({unitsTurnOrder}, () => {
-			this.updateActiveCharacter(callback);
+			if (unitType === 'mapCreatures') {
+				this.updateActiveCharacter(callback);
+			} else {
+				callback();
+			}
 		});
 	}
 
@@ -508,99 +824,24 @@ class Game extends React.Component {
 	}
 
 	/**
-	 * Updates character info panels contents to state
-	 * @param type: String
-	 * @param id: String
-	 * @private
-	 */
-	_updateInfoText(type, id) {
-		const updatedText = type === 'characterInfoText' ? this.state.playerCharacters[id] : this.state.mapCreatures[id];
-		updatedText.id = id;
-		this.setState({[type]: updatedText});
-	}
-
-	/**
-	 * Updates to state the status of what PC or NPC (or both) is selected in the UI,
-	 * then calls function to update info panel text for that character
-	 * @param id: String
-	 * @param type: String ('player' or 'creature')
-	 */
-	updateUnitSelectionStatus = (id, type) => {
-		let unitTypeObjectName = '';
-		let unitTypeSelected = '';
-		let unitNameForSelectionStateChg = '';
-		let unitToDeselect = '';
-		let infoTextToUpdate = '';
-
-		if (type === 'player') {
-			unitTypeObjectName = 'playerCharacters';
-			unitTypeSelected = 'selectedCharacter';
-		} else if (type === 'creature') {
-			unitTypeObjectName = 'mapCreatures';
-			unitTypeSelected = 'selectedCreature';
-		}
-
-		// clicked unit is being selected/deselected
-		if (this.state.selectedCharacter === id || this.state.selectedCreature === id) {
-			// selected character was just clicked to deselect
-			unitNameForSelectionStateChg = '';
-		} else {
-			// no unit previously selected or different unit previously selected
-			unitNameForSelectionStateChg = id;
-
-			infoTextToUpdate = type === 'player' ? 'characterInfoText' : 'creatureInfoText';
-
-			if (this.state[unitTypeSelected] !== '') {
-				unitToDeselect = this.state[unitTypeSelected];
-			}
-		}
-
-		// toggle selected state of clicked unit
-		this.setState(prevState => ({
-			[unitTypeSelected]: unitNameForSelectionStateChg,
-			[unitTypeObjectName]: {
-				...prevState[unitTypeObjectName],
-				[id]: {
-					...prevState[unitTypeObjectName][id],
-					isSelected: !prevState[unitTypeObjectName][id].isSelected
-				}
-			}
-		}), () => {
-			if (unitToDeselect !== '') {
-				this.setState(prevState => ({
-					[unitTypeObjectName]: {
-						...prevState[unitTypeObjectName],
-						[unitToDeselect]: {
-							...prevState[unitTypeObjectName][unitToDeselect],
-							isSelected: !prevState[unitTypeObjectName][unitToDeselect].isSelected
-						}
-					}
-				}));
-			}
-			this.toggleCharIsSelected(type, this.state[unitTypeObjectName][id].isSelected);
-			if (this.state[unitTypeObjectName][id].isSelected) {
-				this._updateInfoText(infoTextToUpdate, id);
-			}
-		});
-	}
-
-	/**
 	 * Increments and updates to state number of actions the active PC has done
 	 * @private
 	 */
 	_updateActivePlayerActions = () => {
-		const activePlayerActionsCompleted = this.state.activePlayerActionsCompleted + 1;
-		this.setState({activePlayerActionsCompleted});
+		if (this.state.inTacticalMode) {
+			const activePlayerActionsCompleted = this.state.activePlayerActionsCompleted + 1;
+			this.setState({activePlayerActionsCompleted});
+		}
 	}
 
 	/**
-	 * Updates to state the turn order with the dead unit removed and
-	 * a flag used for indicating if there's an update to creature coords (in Map), such as creature dying
+	 * Updates to state the turn order with the dead unit removed
 	 * @param id: String
 	 * @param callback: function
+	 * @param checkLineOfSightToParty: function (from Map)
 	 * @private
 	 */
-	_removeDeadFromTurnOrder(id, callback) {
+	_removeDeadFromTurnOrder(id, callback, checkLineOfSightToParty) {
 		let unitsTurnOrder = this.state.unitsTurnOrder;
 		let unitNotFound = true;
 		let index = 0;
@@ -612,10 +853,16 @@ class Game extends React.Component {
 			}
 			index++;
 		}
-		this.updateLog(`${id} is dead!`);
+		this.updateLog(`The ${this.state.mapCreatures[id].name} is dead!`);
 		this.setState({unitsTurnOrder}, () => {
-			this.updateThreatList([], [id], callback);
+			this.updateThreatList([], [id], callback, checkLineOfSightToParty);
 		});
+	}
+
+	_removeItemFromMap(id) {
+		const updatedObjects = deepCopy(this.state.mapObjects);
+		delete updatedObjects[id];
+		this.updateMapObjects(updatedObjects);
 	}
 
 
@@ -645,31 +892,58 @@ class Game extends React.Component {
 						showDialog={this.state.showDialog}
 						setShowDialogProps={this.setShowDialogProps}
 						dialogProps={this.state.dialogProps}
+						notEnoughSpaceDialogProps={this.notEnoughSpaceDialogProps}
+						noMoreActionsDialogProps={this.noMoreActionsDialogProps}
+
 						logText={this.state.logText}
-						characterInfoText={this.state.characterInfoText}
-						creatureInfoText={this.state.creatureInfoText}
+
+						selectedCharacterInfo={this.state.playerCharacters[this.state.selectedCharacter]}
+						selectedCreatureInfo={this.state.mapCreatures[this.state.selectedCreature]}
 						characterIsSelected={this.state.characterIsSelected}
 						creatureIsSelected={this.state.creatureIsSelected}
 						updateUnitSelectionStatus={this.updateUnitSelectionStatus}
-						weaponButtonSelected={this.state.weaponButtonSelected}
-						toggleWeapon={this.toggleWeapon}
+						updateCharacters={this.updateCharacters}
+						getAllCharactersPos={this.getAllCharactersPos}
+
+						setMapObjectSelected={this.setMapObjectSelected}
+						objectSelected={this.state.objectSelected}
+						objHasBeenDropped={this.state.objHasBeenDropped}
+						setHasObjBeenDropped={this.setHasObjBeenDropped}
+						addItemToPlayerInventory={this.addItemToPlayerInventory}
+
+						updateMapObjects={this.updateMapObjects}
+						mapObjects={this.state.mapObjects}
+
+						actionButtonSelected={this.state.actionButtonSelected}
+						toggleActionButton={this.toggleActionButton}
+						reloadGun={this.reloadGun}
+						refillLight={this.refillLight}
+						handleContextMenuSelection={this.handleContextMenuSelection}
+						contextMenu={this.state.contextMenu}
+
+						currentLocation={this.state.currentLocation}
 						updateCurrentTurn={this.updateCurrentTurn}
 						activeCharacter={this.state.activeCharacter}
 						playerCharacters={this.state.playerCharacters}
 						actionsCompleted={{moves: this.state.activePlayerMovesCompleted, actions: this.state.activePlayerActionsCompleted}}
 						playerLimits={{moves: this.playerMovesLimit, actions: this.playerActionsLimit}}
 						threatList={this.state.threatList}
-						isInCombat={this.state.isInCombat}
-						toggleCombatState={this.toggleCombatState}
+						inTacticalMode={this.state.inTacticalMode}
+						toggleTacticalMode={this.toggleTacticalMode}
 						isPartyNearby={this.state.partyIsNearby}
-						modeInfo={{isInCombat: this.state.isInCombat, turn: this.state.currentTurn + 1}}
+						modeInfo={{inTacticalMode: this.state.inTacticalMode, turn: this.state.currentTurn + 1}}
 						updateActiveCharacter={this.updateActiveCharacter}
+						updateFollowModeMoves={this.updateFollowModeMoves}
 					/>
 				}
 
 				{this.state.isLoggedIn && this.state.gameSetupComplete &&
 					<Map
 						setShowDialogProps={this.setShowDialogProps}
+						notEnoughSpaceDialogProps={this.notEnoughSpaceDialogProps}
+						noMoreActionsDialogProps={this.noMoreActionsDialogProps}
+						noMoreMovesDialogProps={this.noMoreMovesDialogProps}
+
 						pcTypes={this.state.pcTypes}
 						playerCharacters={this.state.playerCharacters}
 						activeCharacter={this.state.activeCharacter}
@@ -679,20 +953,34 @@ class Game extends React.Component {
 						updateActivePlayerMoves={this.updateActivePlayerMoves}
 						mapCreatures={this.state.mapCreatures}
 						updateCharacters={this.updateCharacters}
+
+						updateMapObjects={this.updateMapObjects}
+						mapObjects={this.state.mapObjects}
+						setHasObjBeenDropped={this.setHasObjBeenDropped}
+						addItemToPlayerInventory={this.addItemToPlayerInventory}
+
 						currentTurn={this.state.currentTurn}
 						updateCurrentTurn={this.updateCurrentTurn}
-						unitsTurnOrder={this.state.unitsTurnOrder}
+
 						currentLocation={this.state.currentLocation}
+						currentLevel={this.state.currentLevel}
+						resetDataForNewLevel={this.resetDataForNewLevel}
+
 						updateLog={this.updateLog}
-						handleUnitClick={this.handleUnitClick}
-						weaponButtonSelected={this.state.weaponButtonSelected}
+						actionButtonSelected={this.state.actionButtonSelected}
+						updateContextMenu={this.updateContextMenu}
+						contextMenu={this.state.contextMenu}
+						contextMenuChoice={this.state.contextMenuChoice}
+
 						updateThreatList={this.updateThreatList}
 						threatList={this.state.threatList}
-						isInCombat={this.state.isInCombat}
+						toggleTacticalMode={this.toggleTacticalMode}
+						inTacticalMode={this.state.inTacticalMode}
 						isPartyNearby={this.state.partyIsNearby}
 						updateIfPartyIsNearby={this.updateIfPartyIsNearby}
 						playerFollowOrder={this.state.playerFollowOrder}
-						resetDataForNewLevel={this.resetDataForNewLevel}
+						updateFollowModeMoves={this.updateFollowModeMoves}
+						followModeMoves={this.state.followModeMoves}
 					/>
 				}
 

@@ -1,31 +1,36 @@
+:root {
+	--tile-size: -64px;
+}
+
 .catacombs {
 	background-image: url('../assets/tilesets/Catacombs/catacombs.png');
+	background-size: calc(var(--tile-size) * -8) calc(var(--tile-size) * -9) /* 512px 576px at 64px tile size */
 }
 
 /* FLOORS */
 
 .floor-one {
-	background-position: -256px -320px;
+	background-position: 0 calc(var(--tile-size) * 5); /* 0 -320px at 64px tile size */
 }
 
 .floor-two {
-	background-position: -320px -320px;
+	background-position: var(--tile-size) calc(var(--tile-size) * 5); /* -64px -320px at 64px tile size */
 }
 
 .floor-three {
-	background-position: -256px -386px;
+	background-position: 0 calc(var(--tile-size) * 6); /* 0 -384px at 64px tile size */
 }
 
 .floor-four {
-	background-position: -320px -386px;
+	background-position: var(--tile-size) calc(var(--tile-size) * 6); /* -64px -384px at 64px tile size */
 }
 
 .floor-five {
-	background-position: -256px -224px;
+	background-position: 0 calc(var(--tile-size) * 3.5); /* 0 -224px at 64px tile size */
 }
 
 .floor-six {
-	background-position: -320px -224px;
+	background-position: var(--tile-size) calc(var(--tile-size) * 3.5); /* -64px -224px at 64px tile size */
 }
 
 /* WALLS */
@@ -35,144 +40,121 @@
 }
 
 .top-wall-one {
-	background-position: -64px 0;
+	background-position: var(--tile-size) 0; /* -64px 0 at 64px tile size */
 }
 
 .top-wall-two {
-	background-position: -128px 0;
+	background-position: calc(var(--tile-size) * 2) 0; /* -128px 0 at 64px tile size */
 }
 
 .top-wall-three {
-	background-position: -192px 0;
+	background-position: calc(var(--tile-size) * 3) 0; /* -192px 0 at 64px tile size */
 }
 
 .top-wall-four {
-	background-position: -256px 0;
+	background-position: calc(var(--tile-size) * 4) 0; /* -256px 0 at 64px tile size */
 }
 
 .top-right-wall {
-	background-position: -320px 0;
+	background-position: calc(var(--tile-size) * 5) 0; /* -320px 0 at 64px tile size */
 }
 
 .left-wall {
-	background-position: 0 -64px;
+	background-position: 0 var(--tile-size); /* 0 -64px at 64px tile size */
 }
 
 .right-wall {
-	background-position: -320px -64px;
+	background-position: calc(var(--tile-size) * 5) var(--tile-size); /* -320px -64px at 64px tile size */
 }
 
 .bottom-left-wall {
-	background-position: 0 -128px;
+	background-position: 0 calc(var(--tile-size) * 2); /* 0 -128px at 64px tile size */
 }
 
 .bottom-wall-one {
-	background-position: -64px -128px;
+	background-position: var(--tile-size) calc(var(--tile-size) * 2); /* -64px -128px at 64px tile size */
 }
 
 .bottom-wall-two {
-	background-position: -128px -128px;
+	background-position: calc(var(--tile-size) * 2) calc(var(--tile-size) * 2); /* -128px -128px at 64px tile size */
 }
 
 .bottom-wall-three {
-	background-position: -192px -128px;
+	background-position: calc(var(--tile-size) * 3) calc(var(--tile-size) * 2); /* -192px -128px at 64px tile size */
 }
 
 .bottom-wall-four {
-	background-position: -256px -128px;
+	background-position: calc(var(--tile-size) * 4) calc(var(--tile-size) * 2); /* -256px -128px at 64px tile size */
 }
 
 .bottom-right-wall {
-	background-position: -320px -128px;
+	background-position: calc(var(--tile-size) * 5) calc(var(--tile-size) * 2); /* -320px -128px at 64px tile size */
 }
 
 .bottom-left-inverse-wall {
-	background-position: 0 -192px;
+	background-position: 0 calc(var(--tile-size) * 3); /* 0 -192px at 64px tile size */
 }
 
 .bottom-right-inverse-wall {
-	background-position: -64px -192px;
+	background-position: var(--tile-size) calc(var(--tile-size) * 3); /* -64px -192px at 64px tile size */
 }
 
 .top-left-inverse-wall {
-	background-position: -128px -192px;
+	background-position: calc(var(--tile-size) * 2) calc(var(--tile-size) * 3); /* -128px -192px at 64px tile size */
 }
 
 .top-right-inverse-wall {
-	background-position: -192px -192px;
+	background-position: calc(var(--tile-size) * 3) calc(var(--tile-size) * 3); /* -192px -192px at 64px tile size */
 }
 
 .T-shaped-wall {
-	background-position: -256px -192px;
+	background-position: calc(var(--tile-size) * 4) calc(var(--tile-size) * 3); /* -256px -192px at 64px tile size */
 }
 
 
-/* DOORS */
+/* DOORWAYS */
 
 .left-doorway {
-	background-position: -386px 0;
+	background-position: calc(var(--tile-size) * 6) 0; /* -384px 0 at 64px tile size */
 }
 
 .right-doorway {
-	background-position: -448px 0;
+	background-position: calc(var(--tile-size) * 7) 0; /* -448px 0 at 64px tile size */
 }
 
 .top-bottom-doorway {
-	background-position: -386px -64px;
+	background-position: calc(var(--tile-size) * 6) var(--tile-size); /* -384px -64px at 64px tile size */
 }
 
 
 /* OBJECTS */
 
-.object {
-	position: absolute;
-}
-
 .front-door {
-	width: 64px;
-	height: 64px;
-	background-position: -386px -128px;
-	z-index: 1;
+	background-position: calc(var(--tile-size) * 6) calc(var(--tile-size) * 2); /* -384px -128px at 64px tile size */
 }
 
 .front-door-open {
-	width: 64px;
-	height: 64px;
-	top: 32px;
-	left: -32px;
-	background-position: -448px -128px;
-	z-index: 1;
+	background-position: calc(var(--tile-size) * 7) calc(var(--tile-size) * 2); /* -448px -128px at 64px tile size */
 }
 
 .side-door {
-	width: 64px;
-	height: 64px;
-	background-position: -448px -128px;
-	z-index: 1;
+	background-position: calc(var(--tile-size) * 7) calc(var(--tile-size) * 2); /* -448px -128px at 64px tile size */
 }
 
 .left-side-door-open {
-	width: 64px;
-	height: 64px;
-	top: -32px;
-	left: -32px;
-	background-position: -386px -128px;
-	z-index: 1;
+	background-position: calc(var(--tile-size) * 6) calc(var(--tile-size) * 2); /* -384px -128px at 64px tile size */
 }
 
 .right-side-door-open {
-	width: 64px;
-	height: 64px;
-	top: -32px;
-	left: 32px;
-	background-position: -386px -128px;
-	z-index: 1;
+	background-position: calc(var(--tile-size) * 6) calc(var(--tile-size) * 2); /* -384px -128px at 64px tile size */
 }
 
 .exit {
 	position: absolute;
 	content: url('../assets/tilesets/Catacombs/catacombs.png');
 	object-fit: none;
-	object-position: -448px -386px;
+	object-position: calc(var(--tile-size) * 7) calc(var(--tile-size) * 6); /* -448px -384px at 64px tile size */
 	z-index: 0;
+	pointer-events: none;
+	cursor: pointer;
 }

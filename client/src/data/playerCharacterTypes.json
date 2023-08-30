@@ -1,47 +1,108 @@
 {
   "privateEye": {
+    "id": "privateEye",
     "name": "Joseph Hide",
     "type": "player",
     "profession": "Private Investigator",
     "strength": 5,
     "agility": 5,
     "mentalAcuity": 4,
-    "startingHP": 100,
+    "startingHealth": 100,
     "startingSanity": 8,
     "skills": {
-
     },
-    "weapons": ["Revolver", "Baseball Bat"],
-    "items": {"Ammo": ["Handgun"], "Light": ["Electric Torch"]}
+    "weapons": {
+      "coltRevolver0": {
+        "id": "coltRevolver0",
+        "name": "Colt Revolver",
+        "currentRounds": 0
+      }
+    },
+    "equippedItems": {"right": "coltRevolver0", "left": "electricTorch0", "armor": "leatherJacket0"},
+    "items": {
+      "electricTorch0": {
+        "id": "electricTorch0",
+        "name": "Electric Torch",
+        "itemType": "Light",
+        "time": 500
+      },
+      "handgunAmmo0": {
+        "id": "handgunAmmo0",
+        "name": "Handgun Ammo",
+        "itemType": "Ammo",
+        "amount": 6
+      },
+      "leatherJacket0": {
+        "id": "leatherJacket0",
+        "name": "Leather Jacket",
+        "itemType": "Armor"
+      }
+    },
+    "equippedLight": "electricTorch0"
   },
   "archaeologist": {
+    "id": "archaeologist",
     "name": "Mary Simpleton",
     "type": "player",
     "profession": "Archaeologist",
     "strength": 3,
     "agility": 5,
     "mentalAcuity": 6,
-    "startingHP": 80,
+    "startingHealth": 80,
     "startingSanity": 10,
     "skills": {
-
     },
-    "weapons": ["Pickaxe"],
-    "items": {"Light": ["Torch"]}
+    "weapons": {
+      "pickaxe0": {
+        "id": "pickaxe0",
+        "name": "Pickaxe"
+      }
+    },
+    "equippedItems": {"right": "pickaxe0", "left": "", "armor": ""},
+    "items": {
+      "torch0": {
+        "id": "torch0",
+        "name": "Torch",
+        "itemType": "Light",
+        "time": 100
+      }
+    },
+    "equippedLight": ""
   },
   "chemist": {
+    "id": "chemist",
     "name": "Helen Abernathy",
     "type": "player",
     "profession": "Chemist",
     "strength": 2,
     "agility": 3,
     "mentalAcuity": 7,
-    "startingHP": 60,
+    "startingHealth": 60,
     "startingSanity": 10,
     "skills": {
-
     },
-    "weapons": ["Acid concoction"],
-    "items": {"Medicine": ["Pharmaceuticals"], "Light": ["Lantern"]}
+    "weapons": {
+      "acidConcoction0": {
+        "id": "acidConcoction0",
+        "name": "Acid Concoction",
+        "currentRounds": 2
+      }
+    },
+    "equippedItems": {"right": "acidConcoction0", "left": "lantern0", "armor": ""},
+    "items": {
+      "pharmaceuticals0": {
+        "id": "pharmaceuticals0",
+        "name": "Pharmaceuticals",
+        "itemType": "Medicine",
+        "amount": 1
+      },
+      "lantern0": {
+        "id": "lantern0",
+        "name": "Lantern",
+        "itemType": "Light",
+        "time": 300
+      }
+    },
+    "equippedLight": "lantern0"
   }
 }

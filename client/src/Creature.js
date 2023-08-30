@@ -5,6 +5,7 @@ class Creature extends React.Component {
 	constructor(props) {
 		super(props);
 
+		this.id = props.creatureId;
 		this.name = props.name;
 		this.type = props.type;
 		this.level = props.level;
@@ -14,8 +15,9 @@ class Creature extends React.Component {
 		this.initiative = props.mentalAcuity + props.agility;
 		this.damage = props.damage;
 		this.defense = props.defense;
-		this.startingHP = props.startingHP;
-		this.currentHP = props.startingHP;
+		this.damageReduction = props.damageReduction;
+		this.startingHealth = props.startingHealth;
+		this.currentHealth = props.startingHealth;
 		this.range = props.range;
 		this.attackType = props.attackType;
 		this.moveSpeed = props.moveSpeed;
@@ -24,7 +26,7 @@ class Creature extends React.Component {
 		this.coords = props.coords;
 	}
 
-	attack = (targetID, targetData, updateTarget, updateLog, updateTurnCallback = null) => {
+	attack = (targetData, updateTarget, updateLog, updateTurnCallback = null) => {
 		let isHit, damage, hitRoll, defenseRoll;
 		let halfStr = Math.round(this.strength / 2);
 		let halfAgility = Math.round(this.agility / 2);
@@ -42,13 +44,14 @@ class Creature extends React.Component {
 			defenseRoll = targetData.mentalAcuity + diceRoll(6);
 			damage = this.mentalAcuity + diceRoll(6) - defenseRoll;
 		}
+		damage = damage < 0 ? 0 : damage;
 		isHit = hitRoll >= defenseRoll;
 
-		updateLog(`${this.name} attacks with ${hitRoll} to hit vs ${defenseRoll} defense`);
-		updateLog(isHit ? `${this.name} hits ${targetData.name} for ${damage} damage` : this.name + ' misses');
+		updateLog(`A ${this.name} attacks ${targetData.name} with ${hitRoll} to hit vs ${defenseRoll} defense`);
+		updateLog(isHit ? `The ${this.name} hits for ${damage} damage` : `The ${this.name} misses`);
 		if (isHit) {
-			targetData.currentHP -= damage;
-			updateTarget('player', targetData, targetID, false, false, updateTurnCallback);
+			targetData.currentHealth -= damage;
+			updateTarget('player', targetData, targetData.id, false, false, updateTurnCallback);
 		} else if (updateTurnCallback) {
 			updateTurnCallback();
 		}
