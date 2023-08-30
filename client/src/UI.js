@@ -1,6 +1,7 @@
 import React from 'react';
-import {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, DialogWindow} from './UIElements';
+import {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, DialogWindow, ContextMenu} from './UIElements';
 import {convertCoordsToPos, notEnoughSpaceInInventory, deepCopy} from './Utils';
+import {Music} from './Audio';
 import './css/ui.css';
 
 class UI extends React.Component {
@@ -11,11 +12,15 @@ class UI extends React.Component {
 		this.objectPanelWidth = 300;
 		this.objectPanelHeight = 250;
 		this.inventoryLength = 12;
+		this.initialUiLoad = true;
 
 		this.uiRefs = {
 			controlBar: React.createRef(),
 			turnInfo: React.createRef(),
 			log: React.createRef()
+		};
+		this.musicSelectors = {
+			catacombs: {}
 		};
 
 		this.state = {
@@ -71,21 +76,17 @@ class UI extends React.Component {
 
 	showControlBar = () => {
 		let controlPanels = [];
-		const allPcPos = this.props.getAllCharactersPos('player', 'coords');
-		let mapObjectsOnPcTiles = {};
-
-		allPcPos.forEach(pc => mapObjectsOnPcTiles[pc.id] = []);
-		for (const [objId, objInfo] of Object.entries(this.props.mapObjects)) {
-			allPcPos.forEach(pc => {
-				const xDelta = Math.abs(pc.coords.xPos - objInfo.coords.xPos);
-				const yDelta = Math.abs(pc.coords.yPos - objInfo.coords.yPos);
-				if (xDelta <= 1 && yDelta <= 1) {
-					mapObjectsOnPcTiles[pc.id].push({...objInfo, id: objId});
-				}
-			});
-		}
 
 		for (const [id, playerInfo] of Object.entries(this.props.playerCharacters)) {
+			let mapObjectsOnPcTiles = [];
+			for (const [objId, objInfo] of Object.entries(this.props.mapObjects)) {
+				const xDelta = Math.abs(playerInfo.coords.xPos - objInfo.coords.xPos);
+				const yDelta = Math.abs(playerInfo.coords.yPos - objInfo.coords.yPos);
+				if (xDelta <= 1 && yDelta <= 1) {
+					mapObjectsOnPcTiles.push({...objInfo, id: objId});
+				}
+			}
+
 			controlPanels.push(
 				<CharacterControls
 					key={id}
@@ -499,6 +500,13 @@ class UI extends React.Component {
 		});
 	}
 
+	calculatePanelCoords(x, y, panelWidth, panelHeight) {
+		const buffer = 30;
+		const leftMod = x > (window.innerWidth - panelWidth) ? -(panelWidth + buffer) : 0;
+		const topMod = y < (window.screenTop + panelHeight) ? buffer : -panelHeight;
+		return {left: x + leftMod, top: y + topMod};
+	}
+
 	/**
 	 * Sets whether to show object info panel
 	 * @param needToShowObjectPanel: boolean
@@ -506,10 +514,7 @@ class UI extends React.Component {
 	 * @param draggedObjRecipient: string (ID - used for addObjToOtherPc)
 	 */
 	setObjectPanelDisplayOption = (needToShowObjectPanel, evt, draggedObjRecipient) => {
-		const buffer = 30;
-		const leftMod = evt && evt.clientX > (window.innerWidth - this.objectPanelWidth) ? -(this.objectPanelWidth + buffer) : 0;
-		const topMod = evt && evt.clientY < (window.screenTop + this.objectPanelHeight) ? buffer : -this.objectPanelHeight;
-		const selectedObjPos = evt ? {left: evt.clientX + leftMod, top: evt.clientY + topMod} : this.state.selectedObjPos ? this.state.selectedObjPos : null;
+		const selectedObjPos = evt ? this.calculatePanelCoords(evt.clientX, evt.clientY, this.objectPanelWidth, this.objectPanelHeight) : this.state.selectedObjPos ? this.state.selectedObjPos : null;
 		this.setState({needToShowObjectPanel, selectedObjPos, draggedObjRecipient});
 	}
 
@@ -615,6 +620,36 @@ class UI extends React.Component {
 		});
 	}
 
+	toggleAudio = (selectorName) => {
+		const audio = this.musicSelectors[this.props.currentLocation][selectorName];
+		if (audio.paused) {
+			audio.play().catch(e => console.log(e));
+		} else {
+			audio.pause();
+		}
+
+	}
+
+	/**
+	 * Called by render() to set up array of music elements
+	 * @returns {*[]}
+	 */
+	setUpMusic = () => {
+		const music = [];
+
+		music.push(<Music key={`music-${this.props.currentLocation}`} idProp={`music-${this.props.currentLocation}-theme`} sourceName={this.props.currentLocation} />);
+
+		return music;
+	}
+
+	/**
+	 * Sets up selectors for music elements
+	 * @private
+	 */
+	_populateSfxSelectors() {
+		this.musicSelectors[this.props.currentLocation]['music'] = document.getElementById(`music-${this.props.currentLocation}-theme`);
+	}
+
 	/**
 	 * For setting up/updating player inventory (not the stored inventory from App) shown in the char info panel
 	 * @param charId: string
@@ -649,11 +684,35 @@ class UI extends React.Component {
 		this.updateInventory(charId, updatedInventory);
 	}
 
+	processTileClick = (clickedObjPos) => {
+		// if object was clicked on on the map, check if any other objects are on the same tile
+		let clickedObjects = [];
+		if (!this.props.objectSelected.isPickUpAction) {
+			for (const [objId, objInfo] of Object.entries(this.props.mapObjects)) {
+				const objPos = convertCoordsToPos(objInfo.coords);
+				if (clickedObjPos === objPos) {
+					clickedObjects.push({...objInfo, id: objId});
+				}
+			}
+		} else {
+			//todo: not sure deepcopy is needed, as currently nothing is modifying this.state.selectedObject outside of setObjectSelected for clicked objects
+			clickedObjects = deepCopy(this.props.objectSelected.objectList);
+		}
+		this.setObjectSelected(clickedObjects, null, true, this.props.objectSelected.isPickUpAction, () => {
+			this.setObjectPanelDisplayOption(true, this.props.objectSelected.evt, null);
+		});
+	}
+
 	componentDidMount() {
 		if (Object.keys(this.state.entireInventory).length === 0) {
 			for (const id of Object.keys(this.props.playerCharacters)) {
 				this._parseInvItems(id, []);
 			}
+		}
+		if (this.initialUiLoad) {
+			this._populateSfxSelectors();
+			this.toggleAudio('music');
+			this.initialUiLoad = false;
 		}
 	}
 
@@ -669,22 +728,7 @@ class UI extends React.Component {
 			const clickedObjPos = convertCoordsToPos(this.props.objectSelected.objectList[0].coords);
 			// if no object selected before or different object selected than before
 			if (!prevProps.objectSelected || convertCoordsToPos(prevProps.objectSelected.objectList[0].coords) !== clickedObjPos) {
-				// if object was clicked on on the map, check if any other objects are on the same tile
-				let clickedObjects = [];
-				if (!this.props.objectSelected.isPickUpAction) {
-					for (const [objId, objInfo] of Object.entries(this.props.mapObjects)) {
-						const objPos = convertCoordsToPos(objInfo.coords);
-						if (clickedObjPos === objPos) {
-							clickedObjects.push({...objInfo, id: objId});
-						}
-					}
-				} else {
-					//todo: not sure deepcopy is needed, as currently nothing is modifying this.state.selectedObject outside of setObjectSelected for clicked objects
-					clickedObjects = deepCopy(this.props.objectSelected.objectList);
-				}
-				this.setObjectSelected(clickedObjects, null, true, this.props.objectSelected.isPickUpAction, () => {
-					this.setObjectPanelDisplayOption(true, this.props.objectSelected.evt, null);
-				});
+				this.processTileClick(clickedObjPos);
 			} else {
 				this.setObjectSelected(null, null, false, false, () => {
 					this.setObjectPanelDisplayOption(false, null, null);
@@ -707,38 +751,51 @@ class UI extends React.Component {
 			<div className='ui-container'>
 				{this.props.showDialog && this.props.dialogProps && <this.showDialog />}
 
-				{this.state.objectIsSelected && this.state.needToShowObjectPanel && <this.showObjectPanel />}
+				{this.state.needToShowObjectPanel && <this.showObjectPanel />}
+
+				{this.props.contextMenu &&
+				<ContextMenu
+					actionsAvailable={this.props.contextMenu.actionsAvailable}
+					creatureId={this.props.contextMenu.creatureId}
+					processTileClick={this.processTileClick}
+					handleUnitClick={this.props.handleUnitClick}
+					setUserInteraction={this.props.setUserInteraction}
+					setUserMove={this.props.setUserMove}
+					handleContextMenuSelection={this.props.handleContextMenuSelection}
+					menuPosStyle={this.calculatePanelCoords(this.props.contextMenu.evt.clientX, this.props.contextMenu.evt.clientY, 128, 32)}
+					buttonStyle={{width: '32px', height: '32px', backgroundPosition: 'center'}}
+				/>}
 
 				<div ref={this.uiRefs.turnInfo} className='turn-info-container ui-panel'>
 					<div ref={this.uiRefs.log} className='log-container'>
 						{this.state.logText &&
-							<div className='log-lines'>
-								<this.addLogLines />
-							</div>
+						<div className='log-lines'>
+							<this.addLogLines />
+						</div>
 						}
 					</div>
 
 					<div className='mode-info-container'>
 						{this.props.modeInfo &&
-							<ModeInfoPanel
-								inTacticalMode={this.props.modeInfo.inTacticalMode}
-								toggleTacticalMode={this.props.toggleTacticalMode}
-								threatList={this.props.threatList}
-								isPartyNearby={this.props.isPartyNearby}
-								setShowDialogProps={this.props.setShowDialogProps}
-								players={this.props.playerCharacters}
-								activeCharacter={this.props.activeCharacter}
-								updateActiveCharacter={this.props.updateActiveCharacter}
-								updateFollowModeMoves={this.props.updateFollowModeMoves}
-								endTurnCallback={this.props.updateCurrentTurn}
-								toggleActionButton={this.props.toggleActionButton}
-								updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
-								characterIsSelected={this.props.characterIsSelected}
-								characterInfo={this.props.selectedCharacterInfo}
-								creatureIsSelected={this.props.creatureIsSelected}
-								creatureInfo={this.props.selectedCreatureInfo}
-							/>
-						}
+						<ModeInfoPanel
+							inTacticalMode={this.props.modeInfo.inTacticalMode}
+							toggleTacticalMode={this.props.toggleTacticalMode}
+							threatList={this.props.threatList}
+							isPartyNearby={this.props.isPartyNearby}
+							setShowDialogProps={this.props.setShowDialogProps}
+							players={this.props.playerCharacters}
+							activeCharacter={this.props.activeCharacter}
+							updateActiveCharacter={this.props.updateActiveCharacter}
+							updateFollowModeMoves={this.props.updateFollowModeMoves}
+							endTurnCallback={this.props.updateCurrentTurn}
+							toggleActionButton={this.props.toggleActionButton}
+							updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
+							characterIsSelected={this.props.characterIsSelected}
+							characterInfo={this.props.selectedCharacterInfo}
+							creatureIsSelected={this.props.creatureIsSelected}
+							creatureInfo={this.props.selectedCreatureInfo}
+						/>}
+						<div className='music-controls'>{ <this.setUpMusic /> }</div>
 					</div>
 					{/*<div className='minimize-button general-button' onClick={() => {*/}
 					{/*	this.minimizePanel('turnInfo');*/}
@@ -746,30 +803,28 @@ class UI extends React.Component {
 				</div>
 
 				{this.props.selectedCharacterInfo && this.state.entireInventory &&
-					<CharacterInfoPanel
-						characterIsSelected={this.props.characterIsSelected}
-						updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
-						characterInfo={this.props.selectedCharacterInfo}
-						switchEquipment={this.switchEquipment}
-						updateCharacters={this.props.updateCharacters}
-						entireInventory={this.state.entireInventory}
-						updateInventory={this.updateInventory}
-						setShowDialogProps={this.props.setShowDialogProps}
-						setObjectSelected={this.setObjectSelected}
-						setObjectPanelDisplayOption={this.setObjectPanelDisplayOption}
-						dropItemToInv={this.dropItemToInv}
-						dropItemToEquipped={this.dropItemToEquipped}
-						notEnoughSpaceDialogProps={this.props.notEnoughSpaceDialogProps}
-					/>
-				}
+				<CharacterInfoPanel
+					characterIsSelected={this.props.characterIsSelected}
+					updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
+					characterInfo={this.props.selectedCharacterInfo}
+					switchEquipment={this.switchEquipment}
+					updateCharacters={this.props.updateCharacters}
+					entireInventory={this.state.entireInventory}
+					updateInventory={this.updateInventory}
+					setShowDialogProps={this.props.setShowDialogProps}
+					setObjectSelected={this.setObjectSelected}
+					setObjectPanelDisplayOption={this.setObjectPanelDisplayOption}
+					dropItemToInv={this.dropItemToInv}
+					dropItemToEquipped={this.dropItemToEquipped}
+					notEnoughSpaceDialogProps={this.props.notEnoughSpaceDialogProps}
+				/>}
 
 				{this.props.selectedCreatureInfo &&
-					<CreatureInfoPanel
-						creatureIsSelected={this.props.creatureIsSelected}
-						updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
-						creatureInfo={this.props.selectedCreatureInfo}
-					/>
-				}
+				<CreatureInfoPanel
+					creatureIsSelected={this.props.creatureIsSelected}
+					updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
+					creatureInfo={this.props.selectedCreatureInfo}
+				/>}
 
 				<div ref={this.uiRefs.controlBar} className='control-bar-container ui-panel'>
 					{/*<div className='minimize-button general-button' onClick={() => {*/}

@@ -193,9 +193,9 @@
 
 .mode-info-container {
 	display: flex;
-	flex-direction: column;
+	flex-direction: row;
 	justify-content: space-between;
-	flex-basis: 250px;
+	flex-basis: 340px;
 	height: 128px;
 	padding: 10px;
 	border-left: 1px solid seagreen;
@@ -344,6 +344,16 @@
 	padding: 3px;
 	font-size: 16px;
 	border-bottom: 1px solid #225555;
+}
+
+.context-manu-container {
+	position: absolute;
+	display: flex;
+	gap: 5px;
+	padding: 5px;
+	border-left: 1px solid seagreen;
+	border-right: 1px solid seagreen;
+	box-sizing: border-box;
 }
 
 .weapon-buttons-container {
@@ -566,38 +576,79 @@ select {
 	background-repeat: no-repeat;
 }
 
-.first-aid-kit-act {
+.first-aid-kit-action {
 	background-image: url('../assets/ui/firstaidkit_sml.png');
 }
 
-.pharmaceuticals-act {
+.pharmaceuticals-action {
 	background-image: url('../assets/ui/pharmaceuticals_sml.png');
 }
 
-.oil-act {
+.oil-action {
 	background-image: url('../assets/ui/oil_sml.png');
 }
 
-.acid-concoction-act {
+.acid-concoction-action {
 	background-image: url('../assets/ui/acid_sml.png');
 }
 
-.pickaxe-act {
+.pickaxe-action {
 	background-image: url('../assets/ui/pickaxe_sml.png');
 }
 
-.colt-revolver-act {
+.colt-revolver-action {
 	background-image: url('../assets/ui/coltRevolver_sml.png');
 }
 
-.s-and-w-revolver-act {
+.s-and-w-revolver-action {
 	background-image: url('../assets/ui/SandWrevolver_sml.png');
 }
 
-.examine-button {
+.refill-action {
+	background-image: url('../assets/ui/refillLight_sml.png');
+}
+
+.examine-action {
 	background-image: url('../assets/ui/magnifyingGlass_sml.png');
 }
 
-.refill-button {
-	background-image: url('../assets/ui/refillLight_sml.png');
+.look-action {
+	background-image: url('../assets/ui/eyes_sml.png');
+}
+
+.player-action {
+	background-image: url('../assets/ui/player-icon_sml.png');
+}
+
+.creature-action {
+	background-image: url('../assets/ui/creature-icon_sml.png');
+}
+
+.move-action {
+	background-image: url('../assets/ui/move-icon_sml.png');
+}
+
+/* Audio */
+
+/* Specifies the size of the audio container */
+.audio-music  {
+	width: 125px;
+	height: 25px;
+	margin: 5px;
+	border: 1px solid #CC9933;
+	border-radius: 25px;
+}
+.audio-music::-webkit-media-controls-panel {
+	-webkit-justify-content: center;
+	height: 25px;
+	background-color: seagreen;
+}
+.audio-music::-webkit-media-controls-timeline {
+	display: none !important;
+}
+.audio-music::-webkit-media-controls-current-time-display {
+	display: none;
+}
+.audio-music::-webkit-media-controls-time-remaining-display {
+	display: none;
 }

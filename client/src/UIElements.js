@@ -32,7 +32,6 @@ function CharacterControls(props) {
 		}
 	};
 	const hasExtraAmmo = props.checkForExtraAmmo(currentPCdata);
-	const objAvailableToPickup = props.mapObjectsOnPcTiles[props.characterId];
 	const actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0) ? 'button-inactive' : '';
 
 	for (const itemId of Object.values(equippedItems)) {
@@ -75,7 +74,7 @@ function CharacterControls(props) {
 					(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === weapon.weaponId) ? 'button-selected': '';
 				return (
 					<div
-						className={`action-button ${convertObjIdToClassId(weapon.weaponId)}-act ${actionButtonState} ${weapon.ammo === 0 ? 'gun-reload-icon' : ''}`}
+						className={`action-button ${convertObjIdToClassId(weapon.weaponId)}-action ${actionButtonState} ${weapon.ammo === 0 ? 'gun-reload-icon' : ''}`}
 						key={weapon.weaponId}
 						onClick={() => {
 							handleWeaponClick(weapon);
@@ -95,7 +94,7 @@ function CharacterControls(props) {
 					const actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0) ? 'button-inactive' :
 						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === item.itemId) ? 'button-selected': '';
 					button = (
-						<div className={`action-button ${convertObjIdToClassId(item.itemId)}-act ${actionButtonState}`} key={item.itemId} onClick={() => {
+						<div className={`action-button ${convertObjIdToClassId(item.itemId)}-action ${actionButtonState}`} key={item.itemId} onClick={() => {
 							props.toggleActionButton(props.characterId, item.itemId, item.name, 'item');
 						}}>{itemCount}</div>
 					);
@@ -120,10 +119,10 @@ function CharacterControls(props) {
 			{medicineButtons}
 			{((currentPCdata.equippedLight && (currentPCdata.equippedLight.includes('lantern') || currentPCdata.equippedLight.includes('torch'))) &&
 			currentPCdata.lightTime < currentPCdata.items[currentPCdata.equippedLight].maxTime && currentPCdata.items.oil0) &&
-			<div className={`action-button refill-button ${actionButtonState}`} onClick={() => props.refillLight()}></div>
+			<div className={`action-button refill-action ${actionButtonState}`} onClick={() => props.refillLight()}></div>
 			}
-			{(objAvailableToPickup.length > 0) &&
-				<div className={`action-button examine-button ${actionButtonState}`} onClick={(evt) => props.setMapObjectSelected(objAvailableToPickup, evt, true)}></div>
+			{(props.mapObjectsOnPcTiles.length > 0) &&
+				<div className={`action-button examine-action ${actionButtonState}`} onClick={(evt) => props.setMapObjectSelected(props.mapObjectsOnPcTiles, evt, true)}></div>
 			}
 		</div>
 	);
@@ -414,7 +413,7 @@ function ObjectInfoPanel(props) {
 					{isMapObj &&
 						<span className='general-button' onClick={() => updateObjToShow(null)}>Back</span>
 					}
-					{/* MAY ADD THESE IN LATER IF NEEDED */}
+					{/* MAY ADD THESE BUTTONS FOR MOVING ITEMS (INSTEAD OF DRAG AND DROP) IN LATER IF NEEDED */}
 
 					{/*{!isMapObj && !isDraggedObject &&*/}
 					{/*	<div className='object-panel-buttons'>*/}
@@ -571,6 +570,27 @@ function DialogWindow(props) {
 	);
 }
 
+function ContextMenu(props) {
+	const listActions = [];
+
+	for (const actionType of Object.keys(props.actionsAvailable)) {
+		listActions.push(
+			<div
+				key={`context-manu-${actionType}`}
+				className={`general-button ${actionType}-action`}
+				style={props.buttonStyle}
+				onClick={() => props.handleContextMenuSelection(actionType)}
+			></div>
+		)
+	}
+
+	return (
+		<div className='ui-panel context-manu-container' style={props.menuPosStyle}>
+			{listActions}
+		</div>
+	)
+}
+
 function HelpPopUp(props) {
 	return (
 		<div className='help-popup ui-panel'>
@@ -579,4 +599,4 @@ function HelpPopUp(props) {
 	);
 }
 
-export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, DialogWindow};
+export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, DialogWindow, ContextMenu};

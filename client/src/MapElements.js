@@ -13,16 +13,16 @@ function Character(props) {
 			 alt={props.classes}
 		     className={props.characterType + ' ' + props.idClassName + isHiddenClass + isSelectedClass + isDeadClass + isInRangeClass}
 		     style={props.styles}
-		     data-location={`${props.dataLoc.xPos}-${props.dataLoc.yPos}`}
-			 onClick={() => {
-				 props.clickUnit(props.id, props.dataCharType, props.isInRange, props.isLineOfSight);
+		     data-location={props.dataLoc}
+			 onClick={(evt) => {
+				 props.updateContextMenu(props.characterType, props.dataLoc, evt, {id: props.id, target: props.dataCharType, isInRange: props.isInRange, checkLineOfSightToParty: props.isLineOfSight});
 			 }} />
 	)
 }
 
 function Exit(props) {
 	return (
-		<img alt="exit"
+		<img alt='exit'
 		     className='object exit'
 		     style={props.styleProp} />
 	)
@@ -55,7 +55,7 @@ function Item(props) {
 			alt={props.name}
 			className={`object ${props.name}`}
 			style={props.styles}
-			onClick={(evt) => props.setMapObjectSelected([props.objectInfo], evt, false)}
+			onClick={(evt) => props.updateContextMenu('look', props.tilePos, evt, {objectInfo: [props.objectInfo], selectionEvt: evt, isPickUpAction: false})}
 		/>
 	)
 }

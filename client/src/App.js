@@ -7,7 +7,7 @@ import WeaponTypes from './data/weaponTypes.json';
 import ItemTypes from './data/itemTypes.json';
 import UI from './UI';
 import './css/app.css';
-import {diceRoll, deepCopy} from './Utils';
+import {diceRoll, deepCopy, convertCoordsToPos} from './Utils';
 
 class Game extends React.Component {
 	constructor(props) {
@@ -50,7 +50,7 @@ class Game extends React.Component {
 				actionButtonText: '',
 				actionButtonCallback:  null,
 				dialogClasses: ''
-		},
+			},
 			// these need resetting on level change
 			mapCreatures: {},
 			mapObjects: {},
@@ -70,6 +70,7 @@ class Game extends React.Component {
 			inTacticalMode: true, // start in tactical mode any time entering a new area
 			threatList: [],
 			partyIsNearby: true,
+			contextMenuChoice: null,
 			logText: []
 		}
 
@@ -129,6 +130,7 @@ class Game extends React.Component {
 			inTacticalMode: true, // start in tactical mode any time entering a new area
 			threatList: [],
 			partyIsNearby: true,
+			contextMenuChoice: null,
 			logText: []
 		}, () => {
 			if (callback) callback();
@@ -516,6 +518,88 @@ class Game extends React.Component {
 	}
 
 	/**
+	 * Determines which buttons to add to context menu
+	 * Possibilities:
+	 * creature and item
+	 * player and item
+	 * item and move
+	 * @param actionType: string
+	 * @param tilePos: string
+	 * @param evt: event object
+	 * @param actionInfo: object (props for appropriate function called upon clicking menu button)
+	 */
+	updateContextMenu = (actionType, tilePos = null, evt = null, actionInfo = null) => {
+		// if already have a context menu showing, user has clicked out of it, so close it
+		if (!actionType) {
+			this.setState({contextMenu: null});
+			return;
+		}
+
+		// if clicked obj is a creature/player, check if at least one object is on that tile
+		let objectOnTile = null;
+		if (actionType === 'creature' || actionType === 'player') {
+			const objects = Object.values(this.state.mapObjects);
+			let i = 0;
+			while (!objectOnTile && i < objects.length) {
+				if (convertCoordsToPos(objects[i].coords) === tilePos) {
+					// objectInfo needs to be in array for setMapObjectSelected
+					objectOnTile = {objectInfo: [objects[i]], selectionEvt: evt, isPickUpAction: false};
+				} else {
+					i++;
+				}
+			}
+		}
+
+		// bypass setting up context menu if clicked target is a pc or creature with nothing else on the tile...
+		if (!objectOnTile && (actionType === 'player' || (actionType === 'creature' && !this.state.actionButtonSelected))) {
+			this.handleUnitClick(actionInfo.id, actionType);
+		// ...or if action is being used
+		} else if (this.state.actionButtonSelected) {
+			this.handleUnitClick(actionInfo.id, actionInfo.target, actionInfo.isInRange, actionInfo.checkLineOfSightToParty);
+		// ...or if clicked target is a torch
+		} else if (actionType === 'look' && actionInfo.objectInfo[0].name === 'Torch') {
+			this.setMapObjectSelected(actionInfo.objectInfo, actionInfo.selectionEvt, actionInfo.isPickUpAction);
+		// otherwise, set up context menu
+		} else {
+			const contextMenu = {
+				actionsAvailable: {[actionType]: actionInfo},
+				creatureId: actionInfo.id || null,
+				tilePos,
+				evt
+			};
+			if (actionType !== 'player' && actionType !== 'creature') {
+				contextMenu.actionsAvailable.move = true;
+			}
+			if (objectOnTile) {
+				contextMenu.actionsAvailable.look = objectOnTile;
+			}
+			this.setState({contextMenu, contextMenuChoice: null});
+		}
+	}
+
+	/**
+	 * Calls appropriate function based on menu button clicked
+	 * For 'look' (item): setMapObjectSelected
+	 * For 'player'/'creature': handleUnitClick
+	 * For 'move': handled by checkIfTileOrObject in Map
+	 * @param actionType: string
+	 */
+	handleContextMenuSelection = (actionType) => {
+		const storedActionInfo = this.state.contextMenu.actionsAvailable[actionType];
+		if (actionType === 'look') {
+			this.setMapObjectSelected(storedActionInfo.objectInfo, storedActionInfo.selectionEvt, storedActionInfo.isPickUpAction);
+			this.setState({contextMenu: null});
+		} else if (actionType === 'creature' || actionType === 'player') {
+			this.handleUnitClick(storedActionInfo.id, storedActionInfo.target, storedActionInfo.isInRange, storedActionInfo.checkLineOfSightToParty);
+			this.setState({contextMenu: null});
+		} else if (actionType === 'move') {
+			this.setState({contextMenuChoice: {actionType, tilePos: this.state.contextMenu.tilePos}}, () => {
+				this.setState({contextMenu: null});
+			});
+		}
+	}
+
+	/**
 	 * Updates to state what character is active (PC or NPC)
 	 * @param callback: function (optional - at start, sets flag that chars are placed, then for PCs moves map to center)
 	 * @param id: String (optional)
@@ -544,7 +628,9 @@ class Game extends React.Component {
 	}
 
 	/**
-	 * UIElements calls this to send id(s) of object(s) that player clicked on in map so object info panel can be displayed in UI
+	 * UIElements calls this to send id(s) of object(s) that player clicked on in map or using action, so object info panel can be displayed in UI
+	 * Single id passed in if clicked on map (even if multiple objects, UI will handle checking for others)
+	 * Single OR multiple ids if examined using action
 	 * @param objectInfo: array (of objects: {objId: objInfo})
 	 * @param selectionEvt: event object
 	 * @param isPickUpAction: boolean (true if action button clicked to inspect/pickup object)
@@ -832,7 +918,10 @@ class Game extends React.Component {
 						toggleActionButton={this.toggleActionButton}
 						reloadGun={this.reloadGun}
 						refillLight={this.refillLight}
+						handleContextMenuSelection={this.handleContextMenuSelection}
+						contextMenu={this.state.contextMenu}
 
+						currentLocation={this.state.currentLocation}
 						updateCurrentTurn={this.updateCurrentTurn}
 						activeCharacter={this.state.activeCharacter}
 						playerCharacters={this.state.playerCharacters}
@@ -867,7 +956,6 @@ class Game extends React.Component {
 
 						updateMapObjects={this.updateMapObjects}
 						mapObjects={this.state.mapObjects}
-						setMapObjectSelected={this.setMapObjectSelected}
 						setHasObjBeenDropped={this.setHasObjBeenDropped}
 						addItemToPlayerInventory={this.addItemToPlayerInventory}
 
@@ -879,8 +967,10 @@ class Game extends React.Component {
 						resetDataForNewLevel={this.resetDataForNewLevel}
 
 						updateLog={this.updateLog}
-						handleUnitClick={this.handleUnitClick}
 						actionButtonSelected={this.state.actionButtonSelected}
+						updateContextMenu={this.updateContextMenu}
+						contextMenu={this.state.contextMenu}
+						contextMenuChoice={this.state.contextMenuChoice}
 
 						updateThreatList={this.updateThreatList}
 						threatList={this.state.threatList}

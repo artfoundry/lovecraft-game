@@ -7,7 +7,7 @@ import Creature from './Creature';
 import ItemTypes from './data/itemTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
 import {Exit, LightElement, Character, Tile, Item, Door, MapCover} from './MapElements';
-import {StoneDoor} from './Audio';
+import {SoundEffect} from './Audio';
 import {
 	convertObjIdToClassId,
 	randomTileMovementValue,
@@ -35,7 +35,7 @@ class Map extends React.Component {
 		// Constants
 		this.tileSize = 64;
 		this.mapTileLimit = 500;
-		this.uiPadding = 128; // extra space above/below map so top/bottom of map aren't under UI
+		this.uiPadding = 150; // extra space above/below map so top/bottom of map aren't under UI
 		this.firstMapPieceCoords = {xPos: 10, yPos: 10}; //arbitrary but shifted from 0,0 to allow space for pieces on all sides
 		this.characterSizePercentage = 0.7;
 		this.OPPOSITE_SIDE = {
@@ -51,16 +51,16 @@ class Map extends React.Component {
 			'Lantern': ItemTypes['Lantern'].range,
 			'Electric Torch': ItemTypes['Electric Torch'].range
 		};
+		this.numMapPieceTwoDoorHalls = 6;
 
+		this.currentMapData = GameLocations[this.props.currentLocation];
 		this.pageFirstLoaded = true;
 		this.initialMapLoad = true;
 		this.mapLayoutTemp = {};
+		// total number of map pieces in currentMapData: 17;
 		this.sfxSelectors = {
 			catacombs: {}
 		};
-		this.currentMapData = GameLocations[this.props.currentLocation];
-		// total number of map pieces in currentMapData: 17;
-		this.numMapPieceTwoDoorHalls = 6;
 		this.charRefs = {};
 
 		this.state = {
@@ -667,7 +667,7 @@ class Map extends React.Component {
 	 * @private
 	 */
 	_createMapTile(tilePos) {
-		let allClasses = this.currentMapData.name;
+		let allClasses = this.props.currentLocation;
 		const tileData = this.state.mapLayout[tilePos];
 		const xPos = (tileData.xPos * this.tileSize) + 'px';
 		const yPos = (tileData.yPos * this.tileSize) + 'px';
@@ -690,7 +690,13 @@ class Map extends React.Component {
 			styleProp={tileStyle}
 			tileName={convertCoordsToPos(tileData)}
 			classStr={allClasses}
-			moveCharacter={(tilePos) => {this.checkIfTileOrObject(tilePos, null)}} />);
+			moveCharacter={(tilePos) => {
+				if (this.props.contextMenu) {
+					this.props.updateContextMenu(null);
+				} else {
+					this.checkIfTileOrObject(tilePos, null);
+				}
+			}} />);
 	}
 
 	/**
@@ -770,9 +776,9 @@ class Map extends React.Component {
 					isDead={characters[id].currentHealth <= 0}
 					isInRange={actionButtonIsSelected && targetIsInRange}
 					isLineOfSight={this.isInLineOfSight}
-					dataLoc={characterCoords}
+					dataLoc={characterPos}
 					dataCharType={props.characterType}
-					clickUnit={this.props.handleUnitClick}
+					updateContextMenu={this.props.updateContextMenu}
 					styles={{
 						transform: `translate(${characterTransform})`,
 						width: Math.round(this.tileSize * this.characterSizePercentage) + 'px',
@@ -824,10 +830,11 @@ class Map extends React.Component {
 				key={id}
 				objectInfo={{id, ...info}}
 				name={idConvertedToClassName}
+				tilePos={convertCoordsToPos(info.coords)}
 				isActivePlayerNearObject={this.isActivePlayerNearObject}
 				isActivePlayerInvFull={isActivePlayerInvFull}
 				addItemToPlayerInventory={this.props.addItemToPlayerInventory}
-				setMapObjectSelected={this.props.setMapObjectSelected}
+				updateContextMenu={this.props.updateContextMenu}
 				invFullDialogProps={this.props.notEnoughSpaceDialogProps}
 				setShowDialogProps={this.props.setShowDialogProps}
 				styles={{
@@ -868,7 +875,7 @@ class Map extends React.Component {
 		for (const [tilePos, tileData] of Object.entries(this.state.mapLayout)) {
 			const tileCoords = convertPosToCoords(tilePos);
 			if (tileData.type === 'door') {
-				let doorClass = this.currentMapData.name + ' object door';
+				let doorClass = this.props.currentLocation + ' object door';
 				let topStyle = '';
 				let leftStyle = '';
 				if (tileData.classes.includes('top-bottom-door')) {
@@ -1154,7 +1161,7 @@ class Map extends React.Component {
 		const newCoords = convertPosToCoords(newPos);
 		const path = this.pathFromAtoB(this.props.playerCharacters[this.props.activeCharacter].coords, newCoords);
 		// check if player is trying to move where a character exists
-		const validAction = this._tileIsFreeToMove(newCoords, 'player');
+		const validAction = this._tileIsFreeToMove(newCoords, 'player', activePCCoords);
 
 		// check if tile is door or floor
 		if (validAction) {
@@ -1321,16 +1328,6 @@ class Map extends React.Component {
 		const startRating = startXDelta + startYDelta;
 		let foundClosedDoor = false;
 		let checkedTiles = {[startingPos]: {rating: startRating}};
-		const modifierPairs = [
-			{x: -1, y: -1},
-			{x: 0, y: -1},
-			{x: 1, y: -1},
-			{x: 1, y: 0},
-			{x: 1, y: 1},
-			{x: 0, y: 1},
-			{x: -1, y: 1},
-			{x: -1, y: 0}
-		];
 		let noPathAvail = false;
 
 		const checkForCleanPath = (currentPos, coords, rating) => {
@@ -1344,6 +1341,7 @@ class Map extends React.Component {
 			if (this.state.mapLayout[testPos].type === 'wall' || foundClosedDoor ||
 				allPcPos.find(pc => pc.pos === testPos) || allCreaturePos.find(creature => creature.pos === testPos))
 			{
+				// rated 0 for blocked tile
 				checkedTiles[testPos] = {rating: 0};
 				if (checkedTiles[currentPos]) {
 					checkedTiles[currentPos][testPos] = 0;
@@ -1370,15 +1368,28 @@ class Map extends React.Component {
 			const rating = Math.abs(xDelta) + Math.abs(yDelta);
 			const initialXmod = xDelta < 0 ? -1 : xDelta > 0 ? 1 : 0;
 			const initialYmod = yDelta < 0 ? -1 : yDelta > 0 ? 1 : 0;
+			const modifierPairs = [
+				{x: -1, y: -1}, // 0
+				{x: 0, y: -1}, // 1
+				{x: 1, y: -1}, // 2
+				{x: 1, y: 0}, // 3
+				{x: 1, y: 1}, // 4
+				{x: 0, y: 1}, // 5
+				{x: -1, y: 1}, // 6
+				{x: -1, y: 0} // 7
+			];
+			// find index in modifierPairs for which x,y values match initial x,y mods
 			const modifiersIndex = modifierPairs.findIndex(pair => pair.x === initialXmod && pair.y === initialYmod);
+			// setting up indexes for modifierPairs to provide mods (coordsToCheck) for 6 other directions besides directly toward destination - opposite direction is not included
+			// with those other directions ordered from nearest to farthest from mod going directly toward destination
 			const secondaryMods = {
 				2: modifiersIndex === 0 ? 7 : modifiersIndex - 1,
 				3: modifiersIndex === 7 ? 0 : modifiersIndex + 1,
 				4: modifiersIndex === 0 ? 6 : modifiersIndex === 1 ? 7 : modifiersIndex - 2,
 				5: modifiersIndex === 7 ? 1 : modifiersIndex === 6 ? 0 : modifiersIndex + 2,
 				6: modifiersIndex === 0 ? 5 : modifiersIndex === 1 ? 6 : modifiersIndex === 2 ? 7 : modifiersIndex - 3,
-				7: modifiersIndex === 7 ? 2 : modifiersIndex === 6 ? 1 : modifiersIndex === 5 ? 0 : modifiersIndex + 3,
-				8: modifiersIndex === 7 ? 3 : modifiersIndex === 6 ? 2 : modifiersIndex === 5 ? 1 : modifiersIndex === 4 ? 0 : modifiersIndex + 4
+				7: modifiersIndex === 7 ? 2 : modifiersIndex === 6 ? 1 : modifiersIndex === 5 ? 0 : modifiersIndex + 3
+				// 8: modifiersIndex === 7 ? 3 : modifiersIndex === 6 ? 2 : modifiersIndex === 5 ? 1 : modifiersIndex === 4 ? 0 : modifiersIndex + 4
 			};
 			const coordsToCheck = [
 				{xPos: currentX + initialXmod, yPos: currentY + initialYmod},
@@ -1387,12 +1398,13 @@ class Map extends React.Component {
 				{xPos: currentX + modifierPairs[secondaryMods[4]].x, yPos: currentY + modifierPairs[secondaryMods[4]].y},
 				{xPos: currentX + modifierPairs[secondaryMods[5]].x, yPos: currentY + modifierPairs[secondaryMods[5]].y},
 				{xPos: currentX + modifierPairs[secondaryMods[6]].x, yPos: currentY + modifierPairs[secondaryMods[6]].y},
-				{xPos: currentX + modifierPairs[secondaryMods[7]].x, yPos: currentY + modifierPairs[secondaryMods[7]].y},
-				{xPos: currentX + modifierPairs[secondaryMods[8]].x, yPos: currentY + modifierPairs[secondaryMods[8]].y}
+				{xPos: currentX + modifierPairs[secondaryMods[7]].x, yPos: currentY + modifierPairs[secondaryMods[7]].y}
+				// {xPos: currentX + modifierPairs[secondaryMods[8]].x, yPos: currentY + modifierPairs[secondaryMods[8]].y}
 			];
 			let tileIndex = 0;
 			let newPos = null;
-			while (tileIndex < 8 && !newPos && !foundClosedDoor) {
+			// loop through coordsToCheck to find first one that's not blocked
+			while (tileIndex < coordsToCheck.length && !newPos && !foundClosedDoor) {
 				startingPos = `${currentX}-${currentY}`;
 				newPos = convertCoordsToPos(coordsToCheck[tileIndex]);
 				// should never revisit checked tile (except through backtracking 12 lines below)
@@ -1407,7 +1419,7 @@ class Map extends React.Component {
 			} else if (tilePath.length === 0) {
 				noPathAvail = true;
 			} else if (!foundClosedDoor) {
-				// if current startingPos is a dead end, then we didn't find a lower rated pos and need to back up
+				// backtracking: if current startingPos is a dead end, then we didn't find a lower rated pos and need to back up
 				tilePath.pop();
 				if (tilePath.length > 0) {
 					const lastTileIndex = tilePath.length-1;
@@ -1900,21 +1912,24 @@ class Map extends React.Component {
 	 * Used to determine if player/creature can move to specified tile (ie. not already occupied, not wall, not closed door)
 	 * @param tileCoords: Object
 	 * @param characterType: String (type that is trying to move - 'player' or 'creature')
+	 * @param activePCCoords: Object (coords of pc trying to move)
 	 * @returns {boolean}
 	 * @private
 	 */
-	_tileIsFreeToMove(tileCoords, characterType = 'creature') {
+	_tileIsFreeToMove(tileCoords, characterType = 'creature', activePCCoords = null) {
 		let tileIsAvail = true;
 		const tilePos = convertCoordsToPos(tileCoords);
 		const tile = this.state.mapLayout[tilePos];
 		const allCharCoords = [...this.props.getAllCharactersPos('creature', 'coords'), ...this.props.getAllCharactersPos('player', 'coords')];
 
 		let i = 0;
-		if (!tile || tile.type === 'wall' || (characterType === 'creature' &&  tile.type === 'door' && !tile.doorIsOpen)) {
+		if (!tile || tile.type === 'wall' || (characterType === 'creature' && tile.type === 'door' && !tile.doorIsOpen)) {
 			tileIsAvail = false;
 		} else {
 			while (tileIsAvail && i < allCharCoords.length) {
-				if (allCharCoords[i].coords.xPos === tileCoords.xPos && allCharCoords[i].coords.yPos === tileCoords.yPos) {
+				if (allCharCoords[i].coords.xPos === tileCoords.xPos && allCharCoords[i].coords.yPos === tileCoords.yPos &&
+					Math.abs(activePCCoords.xPos - tileCoords.xPos) <= 1 && Math.abs(activePCCoords.yPos - tileCoords.yPos) <= 1)
+				{
 					tileIsAvail = false;
 				}
 				i++;
@@ -2202,9 +2217,7 @@ class Map extends React.Component {
 	 * Toggles door opens/closed (and plays the sound effect for it)
 	 */
 	toggleDoor = (doorTilePos) => {
-
-	//todo: move play into separate sfx function
-		this.sfxSelectors[this.currentMapData.name].door.play();
+		this.toggleAudio('door');
 		this.setState(prevState => ({
 			mapLayout: {
 				...prevState.mapLayout,
@@ -2229,6 +2242,16 @@ class Map extends React.Component {
 		});
 	}
 
+	toggleAudio = (selectorName) => {
+		const audio = this.sfxSelectors[this.props.currentLocation][selectorName];
+		if (audio.paused) {
+			audio.play().catch(e => console.log(e));
+		} else {
+			audio.pause().catch(e => console.log(e));
+		}
+
+	}
+
 
 	/***********************
 	 * ELEMENTS AND EVENTS
@@ -2241,7 +2264,7 @@ class Map extends React.Component {
 	setupSoundEffects = () => {
 		let effects = [];
 
-		effects.push(<StoneDoor key='sfx-stonedoor' idProp='sfx-stonedoor' />);
+		effects.push(<SoundEffect key='sfx-stoneDoor' idProp='sfx-stoneDoor' sourceName='stoneDoor' />);
 
 		return effects;
 	}
@@ -2251,7 +2274,7 @@ class Map extends React.Component {
 	 * @private
 	 */
 	_populateSfxSelectors() {
-		this.sfxSelectors.catacombs['door'] = document.getElementById('sfx-stonedoor');
+		this.sfxSelectors[this.props.currentLocation]['door'] = document.getElementById('sfx-stoneDoor');
 	}
 
 	/**
@@ -2320,6 +2343,9 @@ class Map extends React.Component {
 			} else if (this.props.playerCharacters[this.props.activeCharacter]) {
 				this._moveMap();
 			}
+		}
+		if (this.props.contextMenuChoice && prevProps.contextMenuChoice !== this.props.contextMenuChoice) {
+			this.checkIfTileOrObject(this.props.contextMenuChoice.tilePos);
 		}
 	}
 
