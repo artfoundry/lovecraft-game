@@ -265,6 +265,7 @@ class Game extends React.Component {
 			if (!checkLineOfSightToParty(mainPcPos, secPcPos, false) || (thirdPcPos &&
 				(!checkLineOfSightToParty(mainPcPos, thirdPcPos, false) || !checkLineOfSightToParty(secPcPos, thirdPcPos, false)) ) )
 			{
+				this.updateLog('The party members are no longer in sight of each other.');
 				partyIsNearby = false;
 			}
 			this.setState({partyIsNearby}, () => {
@@ -308,9 +309,11 @@ class Game extends React.Component {
 
 			// if entering combat...
 			if (isInCombat && previousListSize === 0 ) {
+				this.updateLog('Something horrific has been spotted nearby!');
 				this.toggleTacticalMode(isInCombat, callback);
 			// leaving combat...
 			} else if (!isInCombat) {
+				this.updateLog('No terrors in sight...');
 				this.updateIfPartyIsNearby(checkLineOfSightToParty, callback);
 			// already/still in combat
 			} else if (callback) {

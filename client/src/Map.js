@@ -10,7 +10,6 @@ import {Exit, LightElement, Character, Tile, Item, Door, MapCover} from './MapEl
 import {SoundEffect} from './Audio';
 import {
 	convertObjIdToClassId,
-	randomTileMovementValue,
 	convertPosToCoords,
 	convertCoordsToPos,
 	roundTowardZero,
@@ -1755,6 +1754,11 @@ class Map extends React.Component {
 		return Math.abs(playerCoords.xPos - objCoords.xPos) <= 1 && Math.abs(playerCoords.yPos - objCoords.yPos) <= 1;
 	}
 
+	isActivePlayerNearWindowEdge() {
+		const activePcEl = this.charRefs[this.props.activeCharacter].current.getBoundingClientRect();
+		return activePcEl.top < this.uiPadding || activePcEl.left < this.uiPadding || activePcEl.bottom > (window.innerHeight - this.uiPadding) || activePcEl.right > (window.innerWidth - this.uiPadding);
+	}
+
 	/**
 	 * Determines if user's key/tap/click movement command is valid, and if so, updates coords for the active PC,
 	 * then calls _moveMap to keep the active PC centered on screen,
@@ -1821,7 +1825,7 @@ class Map extends React.Component {
 				playerVisited: playerVisitedUpdatedState || {...prevState.playerVisited},
 				playerPlaced: true
 			}), () => {
-				if (activePC === this.props.activeCharacter) {
+				if (activePC === this.props.activeCharacter && this.isActivePlayerNearWindowEdge()) {
 					this._moveMap();
 				}
 				if (tilePath.length === 0) {
@@ -2162,26 +2166,26 @@ class Map extends React.Component {
 	 * Currently not in use (but may use in daylight areas where all creatures are visible)
 	 * @private
 	 */
-	_moveRandomly() {
-		const creatureID = this.props.activeCharacter;
-		const creatureData = this.props.mapCreatures[creatureID];
-		const creatureCoords = creatureData.coords;
-		let allCreatureMoves = [];
-		let newRandX = 0;
-		let newRandY = 0;
-		for (let i=1; i <= creatureData.moveSpeed; i++) {
-			newRandX = creatureCoords.xPos + randomTileMovementValue();
-			newRandY = creatureCoords.yPos + randomTileMovementValue();
-			if (this._tileIsFreeToMove({xPos: newRandX, yPos: newRandY})) {
-				allCreatureMoves.push({xPos: newRandX, yPos: newRandY});
-
-				// this.props.updateLog(`Moving ${creatureID} randomly to ${newRandX}, ${newRandY}`);
-			}
-		}
-		if (allCreatureMoves.length > 0) {
-			this._storeNewCreatureCoords(creatureID, allCreatureMoves);
-		}
-	}
+	// _moveRandomly() {
+	// 	const creatureID = this.props.activeCharacter;
+	// 	const creatureData = this.props.mapCreatures[creatureID];
+	// 	const creatureCoords = creatureData.coords;
+	// 	let allCreatureMoves = [];
+	// 	let newRandX = 0;
+	// 	let newRandY = 0;
+	// 	for (let i=1; i <= creatureData.moveSpeed; i++) {
+	// 		newRandX = creatureCoords.xPos + randomTileMovementValue();
+	// 		newRandY = creatureCoords.yPos + randomTileMovementValue();
+	// 		if (this._tileIsFreeToMove({xPos: newRandX, yPos: newRandY})) {
+	// 			allCreatureMoves.push({xPos: newRandX, yPos: newRandY});
+	//
+	// 			// this.props.updateLog(`Moving ${creatureID} randomly to ${newRandX}, ${newRandY}`);
+	// 		}
+	// 	}
+	// 	if (allCreatureMoves.length > 0) {
+	// 		this._storeNewCreatureCoords(creatureID, allCreatureMoves);
+	// 	}
+	// }
 
 	// todo: No longer needed? Was being used in moveCharacter, but from old map paradigm using tile sides to determine valid moves
 	//
