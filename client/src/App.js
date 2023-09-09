@@ -67,6 +67,7 @@ class Game extends React.Component {
 			actionButtonSelected: null,
 			objectSelected: null,
 			objHasBeenDropped: false,
+			lightingHasChanged: false,
 			inTacticalMode: true, // start in tactical mode any time entering a new area
 			threatList: [],
 			partyIsNearby: true,
@@ -127,6 +128,7 @@ class Game extends React.Component {
 			actionButtonSelected: null,
 			objectSelected: null,
 			objHasBeenDropped: false,
+			lightingHasChanged: false,
 			inTacticalMode: true, // start in tactical mode any time entering a new area
 			threatList: [],
 			partyIsNearby: true,
@@ -153,11 +155,12 @@ class Game extends React.Component {
 	 * @param type: String ('player' or 'creature')
 	 * @param updateData: Object (can be any number of data objects unless updating all characters of a type, then must be all data)
 	 * @param id: String (char/creature Id)
+	 * @param lightingHasChanged: boolean
 	 * @param isInitialCreatureSetup: Boolean
 	 * @param isInitialCharacterSetup: Boolean
 	 * @param callback: Function
 	 */
-	updateCharacters = (type, updateData, id, isInitialCreatureSetup = false, isInitialCharacterSetup = false, callback) => {
+	updateCharacters = (type, updateData, id, lightingHasChanged, isInitialCreatureSetup = false, isInitialCharacterSetup = false, callback) => {
 		const collection = type === 'player' ? 'playerCharacters' : 'mapCreatures';
 		if (id) {
 			this.setState(prevState => ({
@@ -171,7 +174,11 @@ class Game extends React.Component {
 						this.updateUnitSelectionStatus(id, 'creature');
 					}
 				}
-				if (callback) callback();
+				if (lightingHasChanged) {
+					this.toggleLightingHasChanged(callback);
+				} else if (callback) {
+					callback();
+				}
 			});
 		} else {
 			this.setState({[collection]: updateData}, () => {
@@ -179,6 +186,8 @@ class Game extends React.Component {
 					this._setAllUnitsTurnOrder('playerCharacters', callback);
 				} else if (isInitialCreatureSetup) {
 					this._setAllUnitsTurnOrder('mapCreatures', callback);
+				} else if (lightingHasChanged) {
+					this.toggleLightingHasChanged(callback);
 				} else if (callback) {
 					callback();
 				}
@@ -186,9 +195,19 @@ class Game extends React.Component {
 		}
 	}
 
-	updateMapObjects = (mapObjects, callback) => {
+	/**
+	 * Updates collection of mapObjects in state for when object is picked up or dropped or during map init
+	 * @param mapObjects: object (modified copy of this.state.mapObjects)
+	 * @param lightingHasChanged: boolean
+	 * @param callback
+	 */
+	updateMapObjects = (mapObjects, lightingHasChanged, callback) => {
 		this.setState({mapObjects}, () => {
-			if (callback) callback();
+			if (lightingHasChanged) {
+				this.toggleLightingHasChanged(callback);
+			} else if (callback) {
+				callback();
+			}
 		});
 	}
 
@@ -359,7 +378,7 @@ class Game extends React.Component {
 		if (updatedPCdata.items[gunType + 'Ammo0'].amount === 0) {
 			delete updatedPCdata.items[gunType + 'Ammo0'];
 		}
-		this.updateCharacters('player', updatedPCdata, this.state.activeCharacter, false, false, () => {
+		this.updateCharacters('player', updatedPCdata, this.state.activeCharacter, false, false, false, () => {
 			this._updateActivePlayerActions();
 		});
 	}
@@ -375,7 +394,7 @@ class Game extends React.Component {
 		if (oil.amount <= 0) {
 			delete activePcData.items.oil0;
 		}
-		this.updateCharacters('player', activePcData, this.state.activeCharacter, false, false, () => {
+		this.updateCharacters('player', activePcData, this.state.activeCharacter, true, false, false, () => {
 			this._updateActivePlayerActions();
 		});
 	}
@@ -557,7 +576,7 @@ class Game extends React.Component {
 		if (!objectOnTile && (actionType === 'player' || (actionType === 'creature' && !this.state.actionButtonSelected))) {
 			this.handleUnitClick(actionInfo.id, actionType);
 		// ...or if action is being used
-		} else if (this.state.actionButtonSelected) {
+		} else if (this.state.actionButtonSelected && (actionType === 'creature' || actionType === 'player')) {
 			this.handleUnitClick(actionInfo.id, actionInfo.target, actionInfo.isInRange, actionInfo.checkLineOfSightToParty);
 		// ...or if clicked target is a torch
 		} else if (actionType === 'look' && actionInfo.objectInfo[0].name === 'Torch') {
@@ -652,6 +671,16 @@ class Game extends React.Component {
 	}
 
 	/**
+	 * Set by UI when a light source has been equipped/unequipped/dropped to tell Map to recalculate lighting
+	 * @param callback
+	 */
+	toggleLightingHasChanged = (callback) => {
+		this.setState(prevState => ({lightingHasChanged: !prevState.lightingHasChanged}), () => {
+			if (callback) callback();
+		});
+	}
+
+	/**
 	 * Add picked up item or weapon to char's inventory
 	 * @param itemData: object
 	 * @param objId: string
@@ -689,7 +718,7 @@ class Game extends React.Component {
 		}
 
 		let updatedData = {[invObjectCategory]: inventoryList};
-		this.updateCharacters('player', updatedData, this.state.activeCharacter, false, false, () => {
+		this.updateCharacters('player', updatedData, this.state.activeCharacter, false, false, false, () => {
 			this._removeItemFromMap(objId);
 			if (isPickUpAction) {
 				this._updateActivePlayerActions();
@@ -864,8 +893,9 @@ class Game extends React.Component {
 
 	_removeItemFromMap(id) {
 		const updatedObjects = deepCopy(this.state.mapObjects);
+		const lightingHasChanged = updatedObjects[id].itemType && updatedObjects[id].itemType === 'Light';
 		delete updatedObjects[id];
-		this.updateMapObjects(updatedObjects);
+		this.updateMapObjects(updatedObjects, lightingHasChanged);
 	}
 
 
@@ -913,6 +943,7 @@ class Game extends React.Component {
 						objHasBeenDropped={this.state.objHasBeenDropped}
 						setHasObjBeenDropped={this.setHasObjBeenDropped}
 						addItemToPlayerInventory={this.addItemToPlayerInventory}
+						toggleLightingHasChanged={this.toggleLightingHasChanged}
 
 						updateMapObjects={this.updateMapObjects}
 						mapObjects={this.state.mapObjects}
@@ -961,6 +992,8 @@ class Game extends React.Component {
 						mapObjects={this.state.mapObjects}
 						setHasObjBeenDropped={this.setHasObjBeenDropped}
 						addItemToPlayerInventory={this.addItemToPlayerInventory}
+						lightingHasChanged={this.state.lightingHasChanged}
+						toggleLightingHasChanged={this.toggleLightingHasChanged}
 
 						currentTurn={this.state.currentTurn}
 						updateCurrentTurn={this.updateCurrentTurn}

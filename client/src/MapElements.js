@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {randomTileVariant} from './Utils';
+import {randomTileVariant, convertPosToCoords} from './Utils';
 import './css/mapPieceElements.css';
 
 function Character(props) {
@@ -13,9 +13,17 @@ function Character(props) {
 			 alt={props.classes}
 		     className={props.characterType + ' ' + props.idClassName + isHiddenClass + isSelectedClass + isDeadClass + isInRangeClass}
 		     style={props.styles}
-		     data-location={props.dataLoc}
+		     data-location={props.charPos}
 			 onClick={(evt) => {
-				 props.updateContextMenu(props.characterType, props.dataLoc, evt, {id: props.id, target: props.dataCharType, isInRange: props.isInRange, checkLineOfSightToParty: props.isLineOfSight});
+				 if (props.tileIsVisible) {
+					 const actionInfo = {
+						 id: props.id,
+						 target: props.dataCharType,
+						 isInRange: props.isInRange,
+						 checkLineOfSightToParty: props.isLineOfSight
+					 };
+					 props.updateContextMenu(props.characterType, props.dataLoc, evt, actionInfo);
+				 }
 			 }} />
 	)
 }
@@ -38,8 +46,9 @@ function Tile(props) {
 		<div className={`tile ${props.classStr}${randomizedVariantSuffix}`}
 		     style={{...props.styleProp, fontSize: '18px'}}
 		     data-tile-num={props.tileName}
+		     data-light-strength={props.dataLightStr}
 		     onClick={e => {
-			     props.moveCharacter(props.tileName, e);
+				 props.moveCharacter(props.tileName, e);
 		     }}>
 		</div>
 	);
@@ -50,12 +59,17 @@ function Door(props) {
 }
 
 function Item(props) {
+	const isHiddenClass = !props.tileIsVisible ? ' hidden' : '';
 	return (
 		<img
 			alt={props.name}
-			className={`object ${props.name}`}
+			className={`object ${props.name}${isHiddenClass}`}
 			style={props.styles}
-			onClick={(evt) => props.updateContextMenu('look', props.tilePos, evt, {objectInfo: [props.objectInfo], selectionEvt: evt, isPickUpAction: false})}
+			onClick={(evt) => {
+				if (props.tileIsVisible) {
+					props.updateContextMenu('look', props.tilePos, evt, {objectInfo: [props.objectInfo], selectionEvt: evt, isPickUpAction: false});
+				}
+			}}
 		/>
 	)
 }

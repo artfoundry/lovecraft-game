@@ -97,10 +97,10 @@ class Character extends React.Component {
 		defenseRoll = targetData.defense + diceRoll(6);
 		isHit = hitRoll >= defenseRoll;
 		updateLog(`${this.name} attacks with ${hitRoll} to hit vs ${defenseRoll} defense`);
-		updateCharacter('player', updatedPcData, pcData.id, false, false, () => {
+		updateCharacter('player', updatedPcData, pcData.id, false, false, false, () => {
 			if (isHit) {
 				updatedCreatureData.currentHealth -= damage;
-				updateCharacter('creature', updatedCreatureData, targetData.id, false, false, callback);
+				updateCharacter('creature', updatedCreatureData, targetData.id, false, false, false, callback);
 			} else if (callback) {
 				callback();
 			}
@@ -131,9 +131,9 @@ class Character extends React.Component {
 		updatedTargetData[targetStat] = healedStatValue > startingStatValue ? startingStatValue : healedStatValue;
 		let updatedHealerData = deepCopy(pcData);
 		delete updatedHealerData.items[itemId];
-		updateCharacter('player', updatedTargetData, targetData.id, false, false, () => {
+		updateCharacter('player', updatedTargetData, targetData.id, false, false, false, () => {
 			updateLog(`${pcData.name} uses ${healItem} to increase ${targetData.name}'s ${targetStat.substring(7)}`);
-			updateCharacter('player', updatedHealerData, pcData.id, false, false, callback);
+			updateCharacter('player', updatedHealerData, pcData.id, false, false, false, callback);
 		});
 	}
 

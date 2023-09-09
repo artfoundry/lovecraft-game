@@ -142,7 +142,7 @@ class UI extends React.Component {
 	 * @param allPlayersInv
 	 * @param callback
 	 */
-	updateSourcePcInvAfterTransfer = (invObjectCategory, sourceItemCount, sourcePCdata, allPlayersInv, callback = null) => {
+	updateSourcePcInvAfterTransfer = (invObjectCategory, sourceItemCount, sourcePCdata, allPlayersInv, lightingChanged, callback = null) => {
 		const draggedItem = this.state.objectSelected;
 		const draggedObjectMetaData = this.state.draggedObjectMetaData;
 		const sourceBoxIndex = draggedObjectMetaData.sourceLoc.match(/\d+/);
@@ -179,7 +179,7 @@ class UI extends React.Component {
 		}
 
 		this.updateInventory(null, allPlayersInv, () => {
-			this.props.updateCharacters('player', sourcePCdata, draggedObjectMetaData.sourcePC, false, false, callback);
+			this.props.updateCharacters('player', sourcePCdata, draggedObjectMetaData.sourcePC, lightingChanged, false, false, callback);
 		});
 	}
 
@@ -211,6 +211,7 @@ class UI extends React.Component {
 			const firstOpenInvSlot = allPlayersInv[recipientId].indexOf(null);
 			const invObjectCategory = draggedItem.itemType ? 'items' : 'weapons';
 			const invId = draggedItem.id;
+			const lightingChanged = draggedItem.itemType && draggedItem.itemType === 'Light' && sourcePCdata.equippedLight === invId;
 
 			// add dragged item to current pc inv
 			if (draggedItem.stackable) {
@@ -222,7 +223,7 @@ class UI extends React.Component {
 					allPlayersInv[recipientId].splice(firstOpenInvSlot, 1, invId);
 				}
 
-				this.updateSourcePcInvAfterTransfer(invObjectCategory, null, sourcePCdata, allPlayersInv, () => {
+				this.updateSourcePcInvAfterTransfer(invObjectCategory, null, sourcePCdata, allPlayersInv, lightingChanged, () => {
 					this.props.updateCharacters('player', currentPCdata, recipientId);
 				});
 			}
@@ -241,6 +242,7 @@ class UI extends React.Component {
 		const parentClasses = evt.target.parentElement.className;
 		// don't know which hand dragged to and don't know if that hand already has an item equipped (if it doesn't, target class would include the "box" class)
 		const destination = targetClasses.includes('-arm') ? 'hand-swap' : parentClasses.includes('-arm') ? 'hand' : 'body';
+		let lightingChanged = false;
 
 		// if item is dragged and released on its own box, dragged to a hand and is a non-light item (not including weapons), or dragged to body and isn't armor, exit out
 		if (parentClasses === draggedObjectMetaData.sourceClasses ||
@@ -289,6 +291,7 @@ class UI extends React.Component {
 			updateData.equippedLight = draggedItem.id;
 			updateData.lightRange = draggedItem.range;
 			updateData.lightTime = draggedItem.time;
+			lightingChanged = true;
 		// or if an equipped light is being unequipped (and not by a light)
 		} else if (hand && sourceBoxIndex && (loadout1[hand] === updateData.equippedLight ||
 			(draggedItem.twoHanded && loadout1[oppositeHand] === updateData.equippedLight)))
@@ -296,6 +299,7 @@ class UI extends React.Component {
 			updateData.equippedLight = null;
 			updateData.lightRange = 0;
 			updateData.lightTime = 0;
+			lightingChanged = true;
 		}
 
 		// if dragged item is two-handed
@@ -346,7 +350,7 @@ class UI extends React.Component {
 		}
 
 		this.updateInventory(this.props.selectedCharacterInfo.id, tempAllItemsList, () => {
-			this.props.updateCharacters('player', updateData, this.props.selectedCharacterInfo.id, false, false);
+			this.props.updateCharacters('player', updateData, this.props.selectedCharacterInfo.id, lightingChanged, false, false);
 		});
 	}
 
@@ -362,6 +366,7 @@ class UI extends React.Component {
 		const updateData = deepCopy(this.props.selectedCharacterInfo);
 		const equippedItems = updateData.equippedItems;
 		const inventoryItems = this.state.entireInventory[this.props.selectedCharacterInfo.id];
+		let lightingChanged = false;
 
 		let draggingEquippedItem = false;
 		if (equippedItems.armor === draggedItem.id) {
@@ -384,10 +389,11 @@ class UI extends React.Component {
 			updateData.equippedLight = null;
 			updateData.lightRange = 0;
 			draggingEquippedItem = true;
+			lightingChanged = true;
 		}
 
 		if (draggingEquippedItem) {
-			this.props.updateCharacters('player', updateData, this.props.selectedCharacterInfo.id, false, false);
+			this.props.updateCharacters('player', updateData, this.props.selectedCharacterInfo.id, lightingChanged, false, false);
 		} else {
 			let tempAllItemsList = [...inventoryItems];
 			const targetIsBox = evt.target.id.includes('invBox');
@@ -448,7 +454,7 @@ class UI extends React.Component {
 			allPlayersInv[recipientId].splice(firstOpenInvSlot, 1, invId);
 		}
 
-		this.updateSourcePcInvAfterTransfer(invObjectCategory, sourceItemCount, sourcePCdata, allPlayersInv, () => {
+		this.updateSourcePcInvAfterTransfer(invObjectCategory, sourceItemCount, sourcePCdata, allPlayersInv, false, () => {
 			this.props.updateCharacters('player', currentPCdata, recipientId);
 		});
 	}
@@ -463,6 +469,7 @@ class UI extends React.Component {
 		const allPlayersInv = deepCopy(this.state.entireInventory);
 		const invObjectCategory = this.state.objectSelected.itemType ? 'items' : 'weapons';
 		const draggedObject = deepCopy(this.state.objectSelected);
+		const lightingChanged = draggedObject.itemType && draggedObject.itemType === 'Light';
 
 		// for stackable items, need to update count from object panel split
 		if (draggedObject.amount) {
@@ -470,13 +477,13 @@ class UI extends React.Component {
 		} else if (draggedObject.currentRounds) {
 			draggedObject.currentRounds = draggedItemCount;
 		}
-		this.updateSourcePcInvAfterTransfer(invObjectCategory, sourceItemCount, sourcePcData, allPlayersInv, () => {
+		this.updateSourcePcInvAfterTransfer(invObjectCategory, sourceItemCount, sourcePcData, allPlayersInv, false, () => {
 			const mapObjects = deepCopy(this.props.mapObjects);
 			mapObjects[draggedObject.id] = {
 				...draggedObject,
 				coords: sourcePcData.coords
 			}
-			this.props.updateMapObjects(mapObjects, () => this.props.setHasObjBeenDropped(false));
+			this.props.updateMapObjects(mapObjects, lightingChanged, () => this.props.setHasObjBeenDropped(false));
 		});
 	}
 
@@ -556,10 +563,12 @@ class UI extends React.Component {
 		const leftHandHasLight = updateData.items[loadout2.left] && updateData.items[loadout2.left].itemType === 'Light';
 		const rightHandHasLight = updateData.items[loadout2.right] && updateData.items[loadout2.right].itemType === 'Light';
 		let tempAllItemsList = [...this.state.entireInventory[id]];
+		let lightingChanged = false;
 
 		if (updateData.equippedLight || leftHandHasLight || rightHandHasLight) {
 			updateData.equippedLight = leftHandHasLight ? loadout2.left : rightHandHasLight ? loadout2.right : null;
 			updateData.lightRange = updateData.equippedLight ? updateData.items[updateData.equippedLight].range : 0;
+			lightingChanged = true;
 		}
 		updateData.equippedItems.loadout2 = {...updateData.equippedItems.loadout1};
 		updateData.equippedItems.loadout1 = {...loadout2};
@@ -574,7 +583,7 @@ class UI extends React.Component {
 				equippedLight: updateData.equippedLight,
 				lightRange: updateData.lightRange
 			};
-			this.props.updateCharacters('player', updatedData, id, false, false);
+			this.props.updateCharacters('player', updatedData, id, lightingChanged, false, false);
 		})
 	}
 
@@ -603,7 +612,7 @@ class UI extends React.Component {
 	}
 
 	/**
-	 *
+	 * Update UI's list of inv items in state
 	 * @param id: string (pc ID)
 	 * @param updatedList: array (of item/weapon IDs)
 	 * @param callback
@@ -616,7 +625,9 @@ class UI extends React.Component {
 			updatedInv = updatedList;
 		}
 		this.setState({entireInventory: updatedInv}, () => {
-			if (callback) callback();
+			if (callback) {
+				callback();
+			}
 		});
 	}
 
