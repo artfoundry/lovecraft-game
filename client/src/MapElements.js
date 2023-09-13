@@ -22,7 +22,7 @@ function Character(props) {
 						 isInRange: props.isInRange,
 						 checkLineOfSightToParty: props.isLineOfSight
 					 };
-					 props.updateContextMenu(props.characterType, props.dataLoc, evt, actionInfo);
+					 props.updateContextMenu(props.characterType, props.charPos, evt, actionInfo);
 				 }
 			 }} />
 	)
