@@ -39,7 +39,7 @@ class Game extends React.Component {
 			currentLocation: '',
 			currentLevel: 1,
 			playerFollowOrder: [],
-			followModeMoves: [],
+			followModePositions: [],
 			showDialog: false,
 			dialogProps: {
 			dialogContent: this.initialDialogContent,
@@ -643,8 +643,8 @@ class Game extends React.Component {
 	 * @param updatedList: array (of strings - positions of PCs, updated in moveCharacter in Map)
 	 * @param callback
 	 */
-	updateFollowModeMoves = (updatedList, callback) => {
-		this.setState({followModeMoves: updatedList}, () => {
+	updateFollowModePositions = (updatedList, callback) => {
+		this.setState({followModePositions: updatedList}, () => {
 			if (callback) callback();
 		});
 	}
@@ -967,7 +967,7 @@ class Game extends React.Component {
 						isPartyNearby={this.state.partyIsNearby}
 						modeInfo={{inTacticalMode: this.state.inTacticalMode, turn: this.state.currentTurn + 1}}
 						updateActiveCharacter={this.updateActiveCharacter}
-						updateFollowModeMoves={this.updateFollowModeMoves}
+						updateFollowModePositions={this.updateFollowModePositions}
 					/>
 				}
 
@@ -1015,8 +1015,8 @@ class Game extends React.Component {
 						isPartyNearby={this.state.partyIsNearby}
 						updateIfPartyIsNearby={this.updateIfPartyIsNearby}
 						playerFollowOrder={this.state.playerFollowOrder}
-						updateFollowModeMoves={this.updateFollowModeMoves}
-						followModeMoves={this.state.followModeMoves}
+						updateFollowModePositions={this.updateFollowModePositions}
+						followModePositions={this.state.followModePositions}
 					/>
 				}
 

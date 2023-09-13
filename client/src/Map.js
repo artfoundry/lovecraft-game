@@ -1851,13 +1851,13 @@ class Map extends React.Component {
 		const activePC = this.props.inTacticalMode || !followerId ? this.props.activeCharacter : followerId;
 		let inFollowMode = !this.props.inTacticalMode && this.props.isPartyNearby;
 
-		const followModeMoves = inFollowMode ? [...this.props.followModeMoves] : [];
-		// only update followModeMoves if we're moving the leader
+		const followModePositions = inFollowMode ? [...this.props.followModePositions] : [];
+		// only update followModePositions if we're moving the leader
 		// newest pos at end, oldest pos at beginning of array
 		if (inFollowMode && activePC === this.props.activeCharacter) {
-			followModeMoves.unshift(newTilePos);
-			if (followModeMoves.length === 6) {
-				followModeMoves.pop();
+			followModePositions.unshift(newTilePos);
+			if (followModePositions.length === 6) {
+				followModePositions.pop();
 			}
 		}
 
@@ -1907,7 +1907,7 @@ class Map extends React.Component {
 						}
 					}, this.isInLineOfSight)
 				} else {
-					this.props.updateFollowModeMoves(followModeMoves, () => {
+					this.props.updateFollowModePositions(followModePositions, () => {
 						// If either in combat or not in combat but party not nearby
 						if (this.props.inTacticalMode) {
 							updatePlayerMovesAndPartyStatus();
@@ -1915,21 +1915,21 @@ class Map extends React.Component {
 						} else {
 							// strip out the ids to make finding available pos easier
 							const listOfPlayerPos = playerPositions.map(player => player.pos);
-							let newFollowerPos = this.props.followModeMoves.find(pos => !listOfPlayerPos.includes(pos));
+							let newFollowerPos = this.props.followModePositions.find(pos => !listOfPlayerPos.includes(pos));
 
 							// todo: find temp path using pathAtoB to get follower to pos behind leader in order to prevent followers jumping tiles
 
 							// if leader has moved at least 2x, there is at least 1 follower, and pc just moved was the leader,
-							// then call moveCharacter to update first follower next avail pos in followModeMoves array
-							if (this.props.followModeMoves.length >= 2 && this.props.playerFollowOrder.length >= 2 && !followerId) {
+							// then call moveCharacter to update first follower next avail pos in followModePositions array
+							if (this.props.followModePositions.length >= 2 && this.props.playerFollowOrder.length >= 2 && !followerId) {
 								// to force characters to move one space at a time
 								setTimeout(() => {
 									this.moveCharacter(tilePath, newFollowerPos, this.props.playerFollowOrder[1]);
 								}, this.movementDelay);
 
 							// if leader has moved 3x, there are 2 followers, and 1st follower was just moved,
-							// then call moveCharacter to update second follower to next avail pos in followModeMoves array
-							} else if (this.props.followModeMoves.length >= 3 && this.props.playerFollowOrder.length === 3 && followerId === this.props.playerFollowOrder[1]) {
+							// then call moveCharacter to update second follower to next avail pos in followModePositions array
+							} else if (this.props.followModePositions.length >= 3 && this.props.playerFollowOrder.length === 3 && followerId === this.props.playerFollowOrder[1]) {
 								// to force characters to move one space at a time
 								setTimeout(() => {
 									this.moveCharacter(tilePath, newFollowerPos, this.props.playerFollowOrder[2]);
