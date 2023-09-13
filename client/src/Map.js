@@ -1855,7 +1855,7 @@ class Map extends React.Component {
 		// only update followModePositions if we're moving the leader
 		// newest pos at end, oldest pos at beginning of array
 		if (inFollowMode && activePC === this.props.activeCharacter) {
-			followModePositions.unshift(newTilePos);
+			followModePositions.unshift(convertCoordsToPos(this.props.playerCharacters[activePC].coords));
 			if (followModePositions.length === 6) {
 				followModePositions.pop();
 			}
@@ -1919,17 +1919,17 @@ class Map extends React.Component {
 
 							// todo: find temp path using pathAtoB to get follower to pos behind leader in order to prevent followers jumping tiles
 
-							// if leader has moved at least 2x, there is at least 1 follower, and pc just moved was the leader,
-							// then call moveCharacter to update first follower next avail pos in followModePositions array
-							if (this.props.followModePositions.length >= 2 && this.props.playerFollowOrder.length >= 2 && !followerId) {
+							// if leader has moved, there is at least 1 follower, and pc just moved was the leader,
+							// then call moveCharacter to update first follower to next avail pos in followModePositions array
+							if (this.props.followModePositions.length >= 1 && this.props.playerFollowOrder.length >= 2 && !followerId) {
 								// to force characters to move one space at a time
 								setTimeout(() => {
 									this.moveCharacter(tilePath, newFollowerPos, this.props.playerFollowOrder[1]);
 								}, this.movementDelay);
 
-							// if leader has moved 3x, there are 2 followers, and 1st follower was just moved,
+							// if leader has moved 2x, there are 2 followers, and 1st follower was just moved,
 							// then call moveCharacter to update second follower to next avail pos in followModePositions array
-							} else if (this.props.followModePositions.length >= 3 && this.props.playerFollowOrder.length === 3 && followerId === this.props.playerFollowOrder[1]) {
+							} else if (this.props.followModePositions.length >= 2 && this.props.playerFollowOrder.length === 3 && followerId === this.props.playerFollowOrder[1]) {
 								// to force characters to move one space at a time
 								setTimeout(() => {
 									this.moveCharacter(tilePath, newFollowerPos, this.props.playerFollowOrder[2]);
