@@ -1358,8 +1358,8 @@ class Map extends React.Component {
 	pathFromAtoB(startTileCoords, endTileCoords) {
 		const allPcPos = this.props.getAllCharactersPos('player', 'pos');
 		const allCreaturePos = this.props.getAllCharactersPos('creature', 'pos');
-//todo: need allObjectPos for env objects (not for picking up)
-		const allObjectPos = [];
+//todo: need allEnvObjectPos for env objects (not objs to be picked up)
+		const allEnvObjectPos = [];
 
 		let tilePath = [];
 		let startingPos = '';
@@ -2215,14 +2215,12 @@ class Map extends React.Component {
 	//
 	// 	if (mainTile.xPos - adjTile.xPos === -1) {
 	// 		sides.push('rightSide');
-	// 	}
-	// 	if (mainTile.xPos - adjTile.xPos === 1) {
+	// 	} else if (mainTile.xPos - adjTile.xPos === 1) {
 	// 		sides.push('leftSide');
 	// 	}
 	// 	if (mainTile.yPos - adjTile.yPos === -1) {
 	// 		sides.push('bottomSide');
-	// 	}
-	// 	if (mainTile.yPos - adjTile.yPos === 1) {
+	// 	} else if (mainTile.yPos - adjTile.yPos === 1) {
 	// 		sides.push('topSide');
 	// 	}
 	//
