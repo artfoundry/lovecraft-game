@@ -1234,7 +1234,7 @@ class Map extends React.Component {
 			const playerYMovementAmount = Math.abs(newCoords.yPos - activePCCoords.yPos);
 			if (playerXMovementAmount <= 1 && playerYMovementAmount <= 1) {
 				if (tileData.type === 'floor') {
-					this.moveCharacter([newPos]);
+					this.moveCharacter({tilePath: [newPos]});
 				} else if (tileData.type === 'door') {
 					if (tileData.doorIsOpen) {
 						const showDialog = true;
@@ -1245,7 +1245,7 @@ class Map extends React.Component {
 							disableCloseButton: false,
 							actionButtonVisible: true,
 							actionButtonText: 'Move',
-							actionButtonCallback: () => {this.moveCharacter([newPos])},
+							actionButtonCallback: () => {this.moveCharacter({tilePath: [newPos]})},
 							dialogClasses: ''
 						};
 						this.props.setShowDialogProps(showDialog, dialogProps);
@@ -1256,24 +1256,8 @@ class Map extends React.Component {
 			} else if (tileData.type !== 'wall') {
 				// Can only click on a previously visited tile
 				if (this.state.playerVisited[newPos]) {
-					const path = this.pathFromAtoB(this.props.playerCharacters[this.props.activeCharacter].coords, newCoords);
-
-					if (path.length >= 1) {
-						this.moveCharacter(path);
-					} else {
-						const showDialog = true;
-						const dialogProps = {
-							dialogContent: 'The path is blocked.',
-							closeButtonText: 'Ok',
-							closeButtonCallback: null,
-							disableCloseButton: false,
-							actionButtonVisible: false,
-							actionButtonText: '',
-							actionButtonCallback: null,
-							dialogClasses: ''
-						};
-						this.props.setShowDialogProps(showDialog, dialogProps);
-					}
+					const pathData = this.pathFromAtoB(this.props.playerCharacters[this.props.activeCharacter].coords, newCoords);
+					this.moveCharacter(pathData);
 				}
 			}
 		}
@@ -1361,10 +1345,17 @@ class Map extends React.Component {
 //todo: need allEnvObjectPos for env objects (not objs to be picked up)
 		const allEnvObjectPos = [];
 
+		let pathData = {
+			tilePath: [],
+			blockerType: ''
+		}
 		let tilePath = [];
+		let pathBlocker = '';
 		let startingPos = '';
 		let currentX = startTileCoords.xPos;
 		let currentY = startTileCoords.yPos;
+		let closestDistanceToEnd = Math.abs(endTileCoords.xPos - currentX) + Math.abs(endTileCoords.yPos - currentY);
+		let currentDistanceToEnd = closestDistanceToEnd;
 		const startXDelta = Math.abs(endTileCoords.xPos - startTileCoords.xPos);
 		const startYDelta = Math.abs(endTileCoords.yPos - startTileCoords.yPos);
 		const startRating = startXDelta + startYDelta;
@@ -1374,10 +1365,21 @@ class Map extends React.Component {
 		const checkForCleanPath = (currentPos, coords, rating) => {
 			let testPos = convertCoordsToPos(coords);
 			let isTestPosOk = true;
+			currentDistanceToEnd = Math.abs(endTileCoords.xPos - coords.xPos) + Math.abs(endTileCoords.yPos - coords.yPos);
+			if (currentDistanceToEnd < closestDistanceToEnd) {
+				closestDistanceToEnd = currentDistanceToEnd;
+			}
+			pathBlocker =
+				this.state.mapLayout[testPos].type === 'wall' ? 'wall' :
+				(this.state.mapLayout[testPos].type === 'door' && !this.state.mapLayout[testPos].doorIsOpen) ? 'door' :
+				allPcPos.find(pc => pc.pos === testPos) ? 'player' :
+				allCreaturePos.find(creature => creature.pos === testPos) ? 'creature' : null;
 
-			if (this.state.mapLayout[testPos].type === 'wall' ||
-				allPcPos.find(pc => pc.pos === testPos) || allCreaturePos.find(creature => creature.pos === testPos))
-			{
+			if (pathBlocker) {
+				// if this is the closest we've gotten to the end (it's the bestPath), remember this blocker
+				if (currentDistanceToEnd === closestDistanceToEnd) {
+					pathData.blockerType = pathBlocker;
+				}
 				// rated 0 for blocked tile
 				checkedTiles[testPos] = {rating: 0};
 				if (checkedTiles[currentPos]) {
@@ -1393,8 +1395,6 @@ class Map extends React.Component {
 					checkedTiles[currentPos] = {[testPos]: rating};
 				}
 				checkedTiles[testPos] = {rating};
-				currentX = coords.xPos;
-				currentY = coords.yPos;
 			}
 			return isTestPosOk;
 		}
@@ -1440,15 +1440,20 @@ class Map extends React.Component {
 			];
 			let tileIndex = 0;
 			let newPos = null;
+			let newCoords = {};
 			let backwardMoves = 0;
 			// loop through coordsToCheck to find first one that's not blocked
 			while (tileIndex < coordsToCheck.length && !newPos) {
 				startingPos = `${currentX}-${currentY}`;
-				newPos = convertCoordsToPos(coordsToCheck[tileIndex]);
+				newCoords = coordsToCheck[tileIndex];
+				newPos = convertCoordsToPos(newCoords);
 				// should never revisit checked tile (except through backtracking 12 lines below)
-				if (checkedTiles[newPos] || !checkForCleanPath(startingPos, coordsToCheck[tileIndex], rating)) {
+				if (checkedTiles[newPos] || !checkForCleanPath(startingPos, newCoords, rating)) {
 					newPos = null;
 					tileIndex++;
+				} else {
+					currentX = newCoords.xPos;
+					currentY = newCoords.yPos;
 				}
 			}
 			// shouldn't need more than 2 backward moves
@@ -1459,6 +1464,11 @@ class Map extends React.Component {
 				}
 				startingPos = newPos;
 				tilePath.push(newPos);
+
+				// closestDistanceToEnd is updated to equal currentDistanceToEnd (for newPos) in checkForCleanPath if currentDistanceToEnd is less
+				if (currentDistanceToEnd <= closestDistanceToEnd) {
+					pathData.tilePath = [...tilePath];
+				}
 			} else if (tilePath.length === 0) {
 				noPathAvail = true;
 			} else {
@@ -1507,7 +1517,11 @@ class Map extends React.Component {
 			}
 		}
 
-		return tilePath;
+		if (pathData.tilePath[tilePath.length - 1] === convertCoordsToPos(endTileCoords)) {
+			pathData.blockerType = null;
+		}
+
+		return pathData;
 	}
 
 	/**
@@ -1820,32 +1834,50 @@ class Map extends React.Component {
 	 * Determines if user's key/tap/click movement command is valid, and if so, updates coords for the active PC,
 	 * then calls _moveMap to keep the active PC centered on screen,
 	 * then if in combat, updates the threatList, and if not, calls moveCharacter again to move followers
-	 * @param tilePath: Array (of pos (String) - optional - only passed in follow mode)
-	 * @param newPos: String (optional - for either one move during combat or when moving followers)
+	 * @param pathData: object ({
+	 * 		tilePath: [] (of pos (String) - only used for leader/active pc),
+	 * 		blockerType: '' ('wall', 'door', 'creature', 'player', or null if no blockers)
+	 * 	})
+	 * @param newPos: String (optional - for moving followers)
 	 * @param followerId: String (optional - ID of follower to move)
 	 */
-	moveCharacter = (tilePath, newPos = null, followerId = null) => {
-		const newTilePos = newPos || tilePath[0];
+	moveCharacter = (pathData, newPos = null, followerId = null) => {
+		const newTilePos = newPos || pathData.tilePath[0];
 		if (this.props.inTacticalMode && this.props.activePlayerMovesCompleted >= this.props.playerMovesLimit) {
 			this.props.setShowDialogProps(true, this.props.noMoreMovesDialogProps);
 			return;
 		}
-		if (this.state.mapLayout[newTilePos].type === 'door' && !this.state.mapLayout[newTilePos].doorIsOpen) {
-			const dialogProps = {
-				dialogContent: 'The door is closed. Open the door first.',
-				closeButtonText: 'Ok',
-				closeButtonCallback: null,
-				disableCloseButton: false,
-				actionButtonVisible: false,
-				actionButtonText: '',
-				actionButtonCallback: null,
-				dialogClasses: ''
-			};
-			this.props.setShowDialogProps(true, dialogProps);
+		if (pathData.blockerType && pathData.tilePath.length === 0 && !followerId) {
+			if (pathData.blockerType === 'door') {
+				const dialogProps = {
+					dialogContent: 'The door is closed. Open the door first.',
+					closeButtonText: 'Ok',
+					closeButtonCallback: null,
+					disableCloseButton: false,
+					actionButtonVisible: false,
+					actionButtonText: '',
+					actionButtonCallback: null,
+					dialogClasses: ''
+				};
+				this.props.setShowDialogProps(true, dialogProps);
+			} else {
+				const showDialog = true;
+				const dialogProps = {
+					dialogContent: 'The path is blocked.',
+					closeButtonText: 'Ok',
+					closeButtonCallback: null,
+					disableCloseButton: false,
+					actionButtonVisible: false,
+					actionButtonText: '',
+					actionButtonCallback: null,
+					dialogClasses: ''
+				};
+				this.props.setShowDialogProps(showDialog, dialogProps);
+			}
 			return;
 		}
-		if (!followerId) {
-			tilePath.shift();
+		if (!followerId && pathData.tilePath.length > 0) {
+			pathData.tilePath.shift();
 		}
 		let newCoords = convertPosToCoords(newTilePos);
 		let playerPositions = this.props.getAllCharactersPos('player', 'pos');
@@ -1883,7 +1915,7 @@ class Map extends React.Component {
 				if (activePC === this.props.activeCharacter && this.isActivePlayerNearWindowEdge()) {
 					this._moveMap();
 				}
-				if (tilePath.length === 0) {
+				if (pathData.tilePath.length === 0) {
 					this._checkForExit();
 				}
 
@@ -1925,7 +1957,7 @@ class Map extends React.Component {
 							if (this.props.followModePositions.length >= 1 && this.props.playerFollowOrder.length >= 2 && !followerId) {
 								// to force characters to move one space at a time
 								setTimeout(() => {
-									this.moveCharacter(tilePath, newFollowerPos, this.props.playerFollowOrder[1]);
+									this.moveCharacter(pathData, newFollowerPos, this.props.playerFollowOrder[1]);
 								}, this.movementDelay);
 
 							// if leader has moved 2x, there are 2 followers, and 1st follower was just moved,
@@ -1933,13 +1965,13 @@ class Map extends React.Component {
 							} else if (this.props.followModePositions.length >= 2 && this.props.playerFollowOrder.length === 3 && followerId === this.props.playerFollowOrder[1]) {
 								// to force characters to move one space at a time
 								setTimeout(() => {
-									this.moveCharacter(tilePath, newFollowerPos, this.props.playerFollowOrder[2]);
+									this.moveCharacter(pathData, newFollowerPos, this.props.playerFollowOrder[2]);
 								}, this.movementDelay);
-							// otherwise, moving to next tile in path
-							} else if (tilePath.length > 0) {
+							// otherwise, moving to next tile in path or alert user to blocker
+							} else if (pathData.tilePath.length > 0 || pathData.blockerType) {
 								// to force characters to move one space at a time
 								setTimeout(() => {
-									this.moveCharacter(tilePath);
+									this.moveCharacter(pathData);
 								}, this.movementDelay);
 							}
 						}
