@@ -1225,7 +1225,6 @@ class Map extends React.Component {
 		}
 
 		const newCoords = convertPosToCoords(newPos);
-		const path = this.pathFromAtoB(this.props.playerCharacters[this.props.activeCharacter].coords, newCoords);
 		// check if player is trying to move where a character exists
 		const validAction = this._tileIsFreeToMove(newCoords, 'player');
 
@@ -1257,6 +1256,8 @@ class Map extends React.Component {
 			} else if (tileData.type !== 'wall') {
 				// Can only click on a previously visited tile
 				if (this.state.playerVisited[newPos]) {
+					const path = this.pathFromAtoB(this.props.playerCharacters[this.props.activeCharacter].coords, newCoords);
+
 					if (path.length >= 1) {
 						this.moveCharacter(path);
 					} else {
