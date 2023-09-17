@@ -52,15 +52,19 @@ class Map extends React.Component {
 		};
 		this.numMapPieceTwoDoorHalls = 6;
 
+		// total number of map pieces in currentMapData: 17;
 		this.currentMapData = GameLocations[this.props.currentLocation];
 		this.pageFirstLoaded = true;
 		this.initialMapLoad = true;
 		this.mapLayoutTemp = {};
-		// total number of map pieces in currentMapData: 17;
+
 		this.sfxSelectors = {
 			catacombs: {}
 		};
 		this.charRefs = {};
+		this.isDraggingWorld = false;
+		this.worldRef = React.createRef();
+		this.worldTrans = {x: 0, y: 0};
 
 		this.state = {
 			pcTypes: this.props.pcTypes,
@@ -75,6 +79,7 @@ class Map extends React.Component {
 			exitPlaced: false,
 			lighting: {},
 			mapMoved: false,
+			worldWidth: 0,
 			worldHeight: 0
 		};
 	}
@@ -98,6 +103,7 @@ class Map extends React.Component {
 			exitPlaced: false,
 			lighting: {},
 			mapMoved: false,
+			worldWidth: 0,
 			worldHeight: 0
 		}, () => {
 			this.props.resetDataForNewLevel(this.layoutPieces);
@@ -290,6 +296,7 @@ class Map extends React.Component {
 		let pieceOpeningsCounter = 0;
 		const numOfTilesInPiece = Object.keys(piece).length;
 		let worldHeight = 0;
+		let worldWidth = 0;
 
 		// look through each opening in the map
 		while (mapTilesAvailableForPiece < numOfTilesInPiece && mapOpeningsCounter < mapOpenings.length) {
@@ -351,6 +358,7 @@ class Map extends React.Component {
 							}
 						}
 						tilePosIndex++;
+						worldWidth = newXPos > this.state.worldWidth ? newXPos : this.state.worldWidth;
 						worldHeight = newYPos > this.state.worldHeight ? newYPos : this.state.worldHeight;
 					}
 				}
@@ -363,7 +371,7 @@ class Map extends React.Component {
 		if (mapTilesAvailableForPiece === numOfTilesInPiece) {
 			positionFound = true;
 			updatedPiece = {...pieceAdjustedTilePositions};
-			this.setState({worldHeight});
+			this.setState({worldWidth, worldHeight});
 		}
 
 		pieceOpening = adjustedPieceOpening;
@@ -1226,7 +1234,7 @@ class Map extends React.Component {
 
 		const newCoords = convertPosToCoords(newPos);
 		// check if player is trying to move where a character exists
-		const validAction = this._tileIsFreeToMove(newCoords, 'player');
+		const validAction = this._tileIsFreeToMove(newCoords, 'player') && !this.isDraggingWorld;
 
 		// check if tile is door or floor
 		if (validAction) {
@@ -2260,20 +2268,14 @@ class Map extends React.Component {
 	// }
 
 	/**
-	 * For keeping active character in center of screen while moving
+	 * For moving world element to put active character in center of screen
 	 * @private
 	 */
 	_moveMap(initialSetupCallback) {
-		const playerID = this.props.activeCharacter;
-		const activePlayerCoords = this.props.playerCharacters[playerID].coords;
-		const windowCenter = {xPos: Math.round(window.innerWidth/2), yPos: Math.round(window.innerHeight/2)};
-		const scrollOptions = {
-			left: (activePlayerCoords.xPos * this.tileSize) - windowCenter.xPos,
-			top: (activePlayerCoords.yPos * this.tileSize) - windowCenter.yPos + this.uiPadding,
-			behavior: "smooth"
-		};
-
-		window.scroll(scrollOptions);
+		const pcCoords = this.props.playerCharacters[this.props.activeCharacter].coords;
+		this.worldTrans.x = (-pcCoords.xPos * this.tileSize) + Math.round(window.innerWidth / 2);
+		this.worldTrans.y = (-pcCoords.yPos * this.tileSize) + Math.round(window.innerHeight / 2);
+		this.worldRef.current.style.transform = `translate(${this.worldTrans.x}px, ${this.worldTrans.y}px)`;
 
 		if (initialSetupCallback) {
 			setTimeout(() => {
@@ -2322,6 +2324,17 @@ class Map extends React.Component {
 			audio.pause().catch(e => console.log(e));
 		}
 
+	}
+
+	dragWorld = (evt) => {
+		if (this.isDraggingWorld) {
+			// const offset = this.worldRef.current.getBoundingClientRect();
+			evt.preventDefault();
+			evt.stopPropagation();
+			this.worldTrans.x += evt.movementX;
+			this.worldTrans.y += evt.movementY;
+			this.worldRef.current.style.transform = `translate(${this.worldTrans.x}px, ${this.worldTrans.y}px)`;
+		}
 	}
 
 
@@ -2409,9 +2422,9 @@ class Map extends React.Component {
 		if (prevProps.activeCharacter !== this.props.activeCharacter) {
 			if (this.props.mapCreatures[this.props.activeCharacter]) {
 				// timeout to allow UI to provide visible updates to player, like creatures moving in turn and turn indicator to show 'enemies moving'
-				// setTimeout(() => {
+				setTimeout(() => {
 					this._moveCreature();
-				// }, this.movementDelay);
+				}, this.movementDelay);
 			} else if (this.props.playerCharacters[this.props.activeCharacter]) {
 				this._moveMap();
 			}
@@ -2423,6 +2436,10 @@ class Map extends React.Component {
 			this._calculateLighting(() => {
 				this.props.toggleLightingHasChanged();
 			});
+		}
+		if (this.props.centerOnPlayer && !prevProps.centerOnPlayer) {
+			this._moveMap();
+			this.props.toggleCenterOnPlayer();
 		}
 	}
 
@@ -2440,24 +2457,28 @@ class Map extends React.Component {
 	// Add below for testing: <button onClick={this.resetMap}>Reset</button>
 	render() {
 		return (
-			<div className="world"
-			     style={{height: `${(this.state.worldHeight * this.tileSize)}px`, padding: `${this.uiPadding}px`}}
+			<div className='world'
+			     ref={this.worldRef}
+			     style={{width: `${this.state.worldWidth * this.tileSize + this.uiPadding}px`, height: `${this.state.worldHeight * this.tileSize + this.uiPadding}px`}}
+			     onMouseDown={() => this.isDraggingWorld = true}
+			     onMouseMove={evt => this.dragWorld(evt)}
+			     onMouseUp={() => setTimeout(() => {this.isDraggingWorld = false}, 200)}
 			     onDragOver={(evt) => {handleItemOverDropZone(evt)}}
 			     onDrop={(evt) => {this.props.setHasObjBeenDropped({objHasBeenDropped: true, evt})}}
 			>
-				<div className="map">
+				<div className='map'>
 					{ this.state.mapLayoutDone && this.state.lightingCalculated && <this.createAllMapPieces /> }
 				</div>
-				<div className="objects">
+				<div className='objects'>
 					{ this.state.exitPlaced && this.state.objectsPlaced && <this.addObjects /> }
 				</div>
-				<div className="lighting">
+				<div className='lighting'>
 					{ this.state.exitPlaced && this.state.objectsPlaced && this.state.lightingCalculated && <this.addLighting />}
 				</div>
-				<div className="creatures">
+				<div className='creatures'>
 					{ this.state.mapLayoutDone && this.state.playerPlaced && this.state.creaturesPlaced && <this.addCharacters characterType='creature' /> }
 				</div>
-				<div className="player-characters">
+				<div className='player-characters'>
 					{ this.state.mapLayoutDone && this.state.playerPlaced && <this.addCharacters characterType='player' /> }
 				</div>
 				{ <this.setupSoundEffects /> }

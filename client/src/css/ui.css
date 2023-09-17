@@ -426,6 +426,18 @@
 	background-color: darkred;
 }
 
+.button-center-on-player {
+	position: absolute;
+	width: 32px;
+	height: 32px;
+	left: 20px;
+	bottom: 100px;
+	background-image: url('../assets/ui/center-on-player.png');
+	background-size: 32px 32px;
+	pointer-events: all;
+	cursor: pointer;
+}
+
 select {
 	margin-top: 5px;
 	margin-bottom: 5px;

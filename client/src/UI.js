@@ -837,6 +837,8 @@ class UI extends React.Component {
 					creatureInfo={this.props.selectedCreatureInfo}
 				/>}
 
+				<div className='button-center-on-player' onClick={() => this.props.toggleCenterOnPlayer()}></div>
+
 				<div ref={this.uiRefs.controlBar} className='control-bar-container ui-panel'>
 					{/*<div className='minimize-button general-button' onClick={() => {*/}
 					{/*	this.minimizePanel('controlBar');*/}

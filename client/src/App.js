@@ -72,6 +72,7 @@ class Game extends React.Component {
 			threatList: [],
 			partyIsNearby: true,
 			contextMenuChoice: null,
+			centerOnPlayer: false,
 			logText: []
 		}
 
@@ -133,6 +134,7 @@ class Game extends React.Component {
 			threatList: [],
 			partyIsNearby: true,
 			contextMenuChoice: null,
+			centerOnPlayer: false,
 			logText: []
 		}, () => {
 			if (callback) callback();
@@ -726,6 +728,10 @@ class Game extends React.Component {
 		});
 	}
 
+	toggleCenterOnPlayer = () => {
+		this.setState(prevState => ({centerOnPlayer: !prevState.centerOnPlayer}));
+	}
+
 
 
 	/*********************
@@ -915,7 +921,7 @@ class Game extends React.Component {
 
 	render() {
 		return (
-			<div className="game">
+			<div className="game" style={{width: `${window.innerWidth}px`, height: `${window.innerHeight}px`, overflow: 'hidden'}}>
 				<Firebase
 					updateLoggedIn={this.updateLoggedIn}
 				/>
@@ -954,6 +960,7 @@ class Game extends React.Component {
 						refillLight={this.refillLight}
 						handleContextMenuSelection={this.handleContextMenuSelection}
 						contextMenu={this.state.contextMenu}
+						toggleCenterOnPlayer={this.toggleCenterOnPlayer}
 
 						currentLocation={this.state.currentLocation}
 						updateCurrentTurn={this.updateCurrentTurn}
@@ -1007,6 +1014,8 @@ class Game extends React.Component {
 						updateContextMenu={this.updateContextMenu}
 						contextMenu={this.state.contextMenu}
 						contextMenuChoice={this.state.contextMenuChoice}
+						centerOnPlayer={this.state.centerOnPlayer}
+						toggleCenterOnPlayer={this.toggleCenterOnPlayer}
 
 						updateThreatList={this.updateThreatList}
 						threatList={this.state.threatList}
