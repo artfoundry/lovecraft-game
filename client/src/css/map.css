@@ -3,6 +3,7 @@
 	margin: auto;
 	background-color: black;
 	transition: transform 0.5s;
+	touch-action: pan-x pan-y;
 }
 
 .lighting {

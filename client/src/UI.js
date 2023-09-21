@@ -143,6 +143,9 @@ class UI extends React.Component {
 	 * @param callback
 	 */
 	updateSourcePcInvAfterTransfer = (invObjectCategory, sourceItemCount, sourcePCdata, allPlayersInv, lightingChanged, callback = null) => {
+		if (Object.keys(this.state.objectSelected).length === 0) {
+			return;
+		}
 		const draggedItem = this.state.objectSelected;
 		const draggedObjectMetaData = this.state.draggedObjectMetaData;
 		const sourceBoxIndex = draggedObjectMetaData.sourceLoc.match(/\d+/);
@@ -184,6 +187,9 @@ class UI extends React.Component {
 	}
 
 	dropItemToPC = (evt, recipientId) => {
+		if (Object.keys(this.state.objectSelected).length === 0) {
+			return;
+		}
 		const draggedItem = this.state.objectSelected;
 		const draggedObjectMetaData = this.state.draggedObjectMetaData;
 		if (!draggedItem) return;
@@ -235,6 +241,9 @@ class UI extends React.Component {
 	}
 
 	dropItemToEquipped = (evt) => {
+		if (Object.keys(this.state.objectSelected).length === 0) {
+			return;
+		}
 		const draggedItem = this.state.objectSelected;
 		const draggedObjectMetaData = this.state.draggedObjectMetaData;
 		if (!draggedItem) return;
@@ -355,6 +364,9 @@ class UI extends React.Component {
 	}
 
 	dropItemToInv = (evt) => {
+		if (Object.keys(this.state.objectSelected).length === 0) {
+			return;
+		}
 		const draggedItem = this.state.objectSelected;
 		const draggedObjectMetaData = this.state.draggedObjectMetaData;
 		if (!draggedItem) return;
@@ -412,6 +424,9 @@ class UI extends React.Component {
 	}
 
 	addObjToOtherPc = (draggedItemCount, sourceItemCount) => {
+		if (Object.keys(this.state.objectSelected).length === 0) {
+			return;
+		}
 		const draggedItem = this.state.objectSelected;
 		const draggedObjectMetaData = this.state.draggedObjectMetaData;
 		if (!draggedItem) return;
@@ -465,6 +480,9 @@ class UI extends React.Component {
 	 * @param sourceItemCount: number (comes from callback from ObjectInfoPanel - only used for stackable items)
 	 */
 	addObjectToMap = (draggedItemCount, sourceItemCount) => {
+		if (Object.keys(this.state.objectSelected).length === 0) {
+			return;
+		}
 		const sourcePcData = deepCopy(this.props.playerCharacters[this.state.draggedObjectMetaData.sourcePC]);
 		const allPlayersInv = deepCopy(this.state.entireInventory);
 		const invObjectCategory = this.state.objectSelected.itemType ? 'items' : 'weapons';

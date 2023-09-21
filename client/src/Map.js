@@ -62,9 +62,16 @@ class Map extends React.Component {
 			catacombs: {}
 		};
 		this.charRefs = {};
+		this.clickedOnWorld = false;
 		this.isDraggingWorld = false;
+		this.animFrameStartTime = 0;
+		this.animFrameTimeLimit = 0;
+		this.animFrameCallback = null;
+
+		this.worldFarthestX = 0;
+		this.worldFarthestY = 0;
 		this.worldRef = React.createRef();
-		this.worldTrans = {x: 0, y: 0};
+		this.worldTransform = {x: 0, y: 0};
 
 		this.state = {
 			pcTypes: this.props.pcTypes,
@@ -143,9 +150,13 @@ class Map extends React.Component {
 
 		if (this.initialMapLoad) {
 			this.initialMapLoad = false;
+			const worldWidth = (this.worldFarthestX * this.tileSize) + this.uiPadding;
+			const worldHeight = (this.worldFarthestY * this.tileSize) + this.uiPadding;
 			this.setState({
 				mapLayoutDone: true,
-				mapLayout: {...this.mapLayoutTemp}
+				mapLayout: {...this.mapLayoutTemp},
+				worldWidth,
+				worldHeight
 			}, () => {
 				this._setInitialCharacterCoords(() => {
 					this._setExitPosition();
@@ -295,8 +306,6 @@ class Map extends React.Component {
 		let mapOpeningsCounter = 0;
 		let pieceOpeningsCounter = 0;
 		const numOfTilesInPiece = Object.keys(piece).length;
-		let worldHeight = 0;
-		let worldWidth = 0;
 
 		// look through each opening in the map
 		while (mapTilesAvailableForPiece < numOfTilesInPiece && mapOpeningsCounter < mapOpenings.length) {
@@ -358,8 +367,8 @@ class Map extends React.Component {
 							}
 						}
 						tilePosIndex++;
-						worldWidth = newXPos > this.state.worldWidth ? newXPos : this.state.worldWidth;
-						worldHeight = newYPos > this.state.worldHeight ? newYPos : this.state.worldHeight;
+						this.worldFarthestX = newXPos > this.worldFarthestX ? newXPos : this.worldFarthestX;
+						this.worldFarthestY = newYPos > this.worldFarthestY ? newYPos : this.worldFarthestY;
 					}
 				}
 				pieceOpeningsCounter++;
@@ -371,7 +380,6 @@ class Map extends React.Component {
 		if (mapTilesAvailableForPiece === numOfTilesInPiece) {
 			positionFound = true;
 			updatedPiece = {...pieceAdjustedTilePositions};
-			this.setState({worldWidth, worldHeight});
 		}
 
 		pieceOpening = adjustedPieceOpening;
@@ -871,7 +879,7 @@ class Map extends React.Component {
 			moveCharacter={(tilePos) => {
 				if (this.props.contextMenu) {
 					this.props.updateContextMenu(null);
-				} else {
+				} else if (!this.isDraggingWorld) {
 					this.checkIfTileOrObject(tilePos, null);
 				}
 			}} />);
@@ -943,7 +951,7 @@ class Map extends React.Component {
 					charPos={characterPos}
 					dataCharType={props.characterType}
 					tileIsVisible={tileIsVisible}
-					updateContextMenu={this.props.updateContextMenu}
+					updateContextMenu={this.checkForDragging}
 					styles={{
 						transform: `translate(${characterTransform})`,
 						width: Math.round(this.tileSize * this.characterSizePercentage) + 'px',
@@ -1006,7 +1014,7 @@ class Map extends React.Component {
 				isActivePlayerInvFull={isActivePlayerInvFull}
 				addItemToPlayerInventory={this.props.addItemToPlayerInventory}
 				tileIsVisible={tileIsVisible}
-				updateContextMenu={this.props.updateContextMenu}
+				updateContextMenu={this.checkForDragging}
 				invFullDialogProps={this.props.notEnoughSpaceDialogProps}
 				setShowDialogProps={this.props.setShowDialogProps}
 				styles={{
@@ -1234,7 +1242,7 @@ class Map extends React.Component {
 
 		const newCoords = convertPosToCoords(newPos);
 		// check if player is trying to move where a character exists
-		const validAction = this._tileIsFreeToMove(newCoords, 'player') && !this.isDraggingWorld;
+		const validAction = this._tileIsFreeToMove(newCoords, 'player');
 
 		// check if tile is door or floor
 		if (validAction) {
@@ -2272,10 +2280,12 @@ class Map extends React.Component {
 	 * @private
 	 */
 	_moveMap(initialSetupCallback) {
+		this.clickedOnWorld = false;
+		this.isDraggingWorld = false;
 		const pcCoords = this.props.playerCharacters[this.props.activeCharacter].coords;
-		this.worldTrans.x = (-pcCoords.xPos * this.tileSize) + Math.round(window.innerWidth / 2);
-		this.worldTrans.y = (-pcCoords.yPos * this.tileSize) + Math.round(window.innerHeight / 2);
-		this.worldRef.current.style.transform = `translate(${this.worldTrans.x}px, ${this.worldTrans.y}px)`;
+		this.worldTransform.x = (-pcCoords.xPos * this.tileSize) + Math.round(window.innerWidth / 2);
+		this.worldTransform.y = (-pcCoords.yPos * this.tileSize) + Math.round(window.innerHeight / 2);
+		this.worldRef.current.style.transform = `translate(${this.worldTransform.x}px, ${this.worldTransform.y}px)`;
 
 		if (initialSetupCallback) {
 			setTimeout(() => {
@@ -2327,13 +2337,64 @@ class Map extends React.Component {
 	}
 
 	dragWorld = (evt) => {
-		if (this.isDraggingWorld) {
-			// const offset = this.worldRef.current.getBoundingClientRect();
-			evt.preventDefault();
-			evt.stopPropagation();
-			this.worldTrans.x += evt.movementX;
-			this.worldTrans.y += evt.movementY;
-			this.worldRef.current.style.transform = `translate(${this.worldTrans.x}px, ${this.worldTrans.y}px)`;
+		if (this.clickedOnWorld) {
+			if (this.props.contextMenu) {
+				this.props.updateContextMenu(null);
+			}
+			const worldEdges = this.worldRef.current.getBoundingClientRect();
+			// already dragged world as far left as it can go (right edge is at right edge of screen)
+			const atLeftLimit = worldEdges.right <= window.innerWidth && evt.movementX < 0;
+			// already dragged world as far right as it can go (left edge is at left edge of screen)
+			const atRightLimit = worldEdges.left >= 0 && evt.movementX > 0;
+			// already dragged world as far up as it can go (bottom edge is at bottom edge of screen)
+			const atTopLimit = worldEdges.bottom <= window.innerHeight && evt.movementY < 0;
+			// already dragged world as far down as it can go (top edge is at top edge of screen)
+			const atBottomLimit = worldEdges.top >= 0 && evt.movementY > 0;
+
+			// to prevent this from being set just from clicking without dragging
+			if (evt.movementX > 0 || evt.movementY > 0) {
+				this.isDraggingWorld = true;
+			}
+			this.worldTransform.x += atLeftLimit || atRightLimit ? 0 : evt.movementX;
+			this.worldTransform.y += atTopLimit || atBottomLimit ? 0 : evt.movementY;
+			this.worldRef.current.style.transform = `translate(${this.worldTransform.x}px, ${this.worldTransform.y}px)`;
+		}
+	}
+
+	endDragging = () => {
+		this.clickedOnWorld = false;
+		// need slight pause so if pointerup event is picked up by handler for objects/characters/tiles, check will
+		this.animFrameTimeLimit = 2;
+		this.animFrameCallback = () => {
+			this.isDraggingWorld = false;
+			this.animFrameTimeLimit = 0;
+			this.animFrameStartTime = 0;
+		}
+		window.requestAnimationFrame(this.stepByAnimFrame);
+	}
+
+	/**
+	 * Intercepting handler to ensure click is valid and not a result from 'pointerUp' handling from dragging
+	 * @param actionType
+	 * @param tilePos
+	 * @param evt
+	 * @param actionInfo
+	 */
+	checkForDragging = (actionType, tilePos, evt, actionInfo) => {
+		if (!this.isDraggingWorld) {
+			this.props.updateContextMenu(actionType, tilePos, evt, actionInfo);
+		}
+	}
+
+	stepByAnimFrame = (timestamp) => {
+		if (this.animFrameStartTime === 0) {
+			this.animFrameStartTime = timestamp;
+		}
+		const timeElapsed = timestamp - this.animFrameStartTime;
+		if (timeElapsed < this.animFrameTimeLimit) {
+			window.requestAnimationFrame(this.stepByAnimFrame);
+		} else {
+			this.animFrameCallback();
 		}
 	}
 
@@ -2456,17 +2517,19 @@ class Map extends React.Component {
 
 	// Add below for testing: <button onClick={this.resetMap}>Reset</button>
 	render() {
+		window.addEventListener('pointerup', this.endDragging);
+
 		return (
 			<div className='world'
 			     ref={this.worldRef}
-			     style={{width: `${this.state.worldWidth * this.tileSize + this.uiPadding}px`, height: `${this.state.worldHeight * this.tileSize + this.uiPadding}px`}}
-			     onMouseDown={() => this.isDraggingWorld = true}
-			     onMouseMove={evt => this.dragWorld(evt)}
-			     onMouseUp={() => setTimeout(() => {this.isDraggingWorld = false}, 200)}
-			     onDragOver={(evt) => {handleItemOverDropZone(evt)}}
-			     onDrop={(evt) => {this.props.setHasObjBeenDropped({objHasBeenDropped: true, evt})}}
+			     style={{width: `${this.state.worldWidth}px`, height: `${this.state.worldHeight}px`}}
+			     onPointerDown={() => this.clickedOnWorld = true}
+			     onPointerMove={evt => this.dragWorld(evt)}
 			>
-				<div className='map'>
+				<div className='map'
+			        onDragOver={(evt) => {handleItemOverDropZone(evt)}}
+			        onDrop={(evt) => {this.props.setHasObjBeenDropped({objHasBeenDropped: true, evt})}}
+				>
 					{ this.state.mapLayoutDone && this.state.lightingCalculated && <this.createAllMapPieces /> }
 				</div>
 				<div className='objects'>

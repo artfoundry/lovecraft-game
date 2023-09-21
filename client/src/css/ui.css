@@ -9,6 +9,7 @@
 	pointer-events: all;
 	border-radius: 5px;
 	transition: transform 0.5s;
+	user-select: none;
 }
 
 .ui-container {
