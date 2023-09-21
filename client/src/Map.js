@@ -2336,27 +2336,29 @@ class Map extends React.Component {
 
 	}
 
-	dragWorld = (evt) => {
+	dragWorld = (evt, previousEvt) => {
 		if (this.clickedOnWorld) {
 			if (this.props.contextMenu) {
 				this.props.updateContextMenu(null);
 			}
+			const movementX = evt.clientX - previousEvt.clientX;
+			const movementY = evt.clientY - previousEvt.clientY;
 			const worldEdges = this.worldRef.current.getBoundingClientRect();
 			// already dragged world as far left as it can go (right edge is at right edge of screen)
-			const atLeftLimit = worldEdges.right <= window.innerWidth && evt.movementX < 0;
+			const atLeftLimit = worldEdges.right <= window.innerWidth && movementX < 0;
 			// already dragged world as far right as it can go (left edge is at left edge of screen)
-			const atRightLimit = worldEdges.left >= 0 && evt.movementX > 0;
+			const atRightLimit = worldEdges.left >= 0 && movementX > 0;
 			// already dragged world as far up as it can go (bottom edge is at bottom edge of screen)
-			const atTopLimit = worldEdges.bottom <= window.innerHeight && evt.movementY < 0;
+			const atTopLimit = worldEdges.bottom <= window.innerHeight && movementY < 0;
 			// already dragged world as far down as it can go (top edge is at top edge of screen)
-			const atBottomLimit = worldEdges.top >= 0 && evt.movementY > 0;
+			const atBottomLimit = worldEdges.top >= 0 && movementY > 0;
 
 			// to prevent this from being set just from clicking without dragging
-			if (evt.movementX > 0 || evt.movementY > 0) {
+			if (movementX > 0 || movementY > 0) {
 				this.isDraggingWorld = true;
 			}
-			this.worldTransform.x += atLeftLimit || atRightLimit ? 0 : evt.movementX;
-			this.worldTransform.y += atTopLimit || atBottomLimit ? 0 : evt.movementY;
+			this.worldTransform.x += atLeftLimit || atRightLimit ? 0 : movementX;
+			this.worldTransform.y += atTopLimit || atBottomLimit ? 0 : movementY;
 			this.worldRef.current.style.transform = `translate(${this.worldTransform.x}px, ${this.worldTransform.y}px)`;
 		}
 	}
@@ -2517,14 +2519,24 @@ class Map extends React.Component {
 
 	// Add below for testing: <button onClick={this.resetMap}>Reset</button>
 	render() {
-		window.addEventListener('pointerup', this.endDragging);
+		let previousPointerEvt = null;
+		window.addEventListener('pointerup', () => {
+			previousPointerEvt = null;
+			this.endDragging();
+		});
 
 		return (
 			<div className='world'
 			     ref={this.worldRef}
 			     style={{width: `${this.state.worldWidth}px`, height: `${this.state.worldHeight}px`}}
 			     onPointerDown={() => this.clickedOnWorld = true}
-			     onPointerMove={evt => this.dragWorld(evt)}
+			     onPointerMove={evt => {
+					 if (!previousPointerEvt) {
+						 previousPointerEvt = evt;
+					 }
+					 this.dragWorld(evt, previousPointerEvt);
+					 previousPointerEvt = evt;
+				 }}
 			>
 				<div className='map'
 			        onDragOver={(evt) => {handleItemOverDropZone(evt)}}
