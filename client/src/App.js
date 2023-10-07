@@ -31,6 +31,13 @@ class Game extends React.Component {
 		 **/
 
 		this.state = {
+			gameOptions: {
+				audioVolume: 100,
+				musicVolume: 100,
+				playMusic: false,
+				songName: ''
+			},
+			screenSize: {isNarrow: window.innerWidth < 768, isShort: window.innerHeight < 768},
 			userData: {},
 			isLoggedIn: false,
 			gameSetupComplete: false,
@@ -732,6 +739,10 @@ class Game extends React.Component {
 		this.setState(prevState => ({centerOnPlayer: !prevState.centerOnPlayer}));
 	}
 
+	updateGameOptions = (gameOptions) => {
+		this.setState({gameOptions});
+	}
+
 
 
 	/*********************
@@ -771,8 +782,10 @@ class Game extends React.Component {
 	 * @private
 	 */
 	_setLocation(gameReadyCallback) {
+		const gameOptions = {...this.state.gameOptions};
+		gameOptions.songName = this.startingLocation;
 		if (this.startingLocation) {
-			this.setState({currentLocation: this.startingLocation}, gameReadyCallback);
+			this.setState({currentLocation: this.startingLocation, gameOptions}, gameReadyCallback);
 		} else {
 			// handle location change
 		}
@@ -921,13 +934,17 @@ class Game extends React.Component {
 
 	render() {
 		return (
-			<div className="game" style={{width: `${window.innerWidth}px`, height: `${window.innerHeight}px`, overflow: 'hidden'}}>
+			<div className="game" style={{width: `${window.innerWidth}px`, height: `${window.innerHeight}px`}}>
 				<Firebase
 					updateLoggedIn={this.updateLoggedIn}
 				/>
 
 				{this.state.isLoggedIn &&
 					<UI
+						screenSize={this.state.screenSize}
+						updateGameOptions={this.updateGameOptions}
+						gameOptions={this.state.gameOptions}
+
 						showDialog={this.state.showDialog}
 						setShowDialogProps={this.setShowDialogProps}
 						dialogProps={this.state.dialogProps}

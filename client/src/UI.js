@@ -1,7 +1,6 @@
 import React from 'react';
-import {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, DialogWindow, ContextMenu} from './UIElements';
+import {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, DialogWindow, ContextMenu, GameOptions} from './UIElements';
 import {convertCoordsToPos, notEnoughSpaceInInventory, deepCopy} from './Utils';
-import {Music} from './Audio';
 import './css/ui.css';
 
 class UI extends React.Component {
@@ -19,11 +18,14 @@ class UI extends React.Component {
 			turnInfo: React.createRef(),
 			log: React.createRef()
 		};
-		this.musicSelectors = {
-			catacombs: {}
+		this.audioSelectors = {
+			music: {
+				catacombs: {}
+			}
 		};
 
 		this.state = {
+			showGameOptions: false,
 			logText: this.props.logText,
 			controlBarMinimized: false,
 			logMinimized: false,
@@ -78,41 +80,43 @@ class UI extends React.Component {
 		let controlPanels = [];
 
 		for (const [id, playerInfo] of Object.entries(this.props.playerCharacters)) {
-			let mapObjectsOnPcTiles = [];
-			for (const [objId, objInfo] of Object.entries(this.props.mapObjects)) {
-				const xDelta = Math.abs(playerInfo.coords.xPos - objInfo.coords.xPos);
-				const yDelta = Math.abs(playerInfo.coords.yPos - objInfo.coords.yPos);
-				if (xDelta <= 1 && yDelta <= 1) {
-					mapObjectsOnPcTiles.push({...objInfo, id: objId});
+			if ((this.props.screenSize.isNarrow && id === this.props.activeCharacter) || !this.props.screenSize.isNarrow) {
+				let mapObjectsOnPcTiles = [];
+				for (const [objId, objInfo] of Object.entries(this.props.mapObjects)) {
+					const xDelta = Math.abs(playerInfo.coords.xPos - objInfo.coords.xPos);
+					const yDelta = Math.abs(playerInfo.coords.yPos - objInfo.coords.yPos);
+					if (xDelta <= 1 && yDelta <= 1) {
+						mapObjectsOnPcTiles.push({...objInfo, id: objId});
+					}
 				}
-			}
 
-			controlPanels.push(
-				<CharacterControls
-					key={id}
-					playerCharacters={this.props.playerCharacters}
-					characterId={id}
-					characterName={playerInfo.name}
-					equippedItems={playerInfo.equippedItems}
-					invItems={playerInfo.items}
-					toggleActionButton={this.props.toggleActionButton}
-					actionButtonSelected={this.props.actionButtonSelected}
-					isActiveCharacter={id === this.props.activeCharacter}
-					movesRemaining={this.props.playerLimits.moves - this.props.actionsCompleted.moves}
-					actionsRemaining={this.props.playerLimits.actions - this.props.actionsCompleted.actions}
-					inTacticalMode={this.props.inTacticalMode}
-					updateCharacters={this.props.updateCharacters}
-					entireInventory={this.state.entireInventory}
-					updateInventory={this.updateInventory}
-					checkForExtraAmmo={this.checkForExtraAmmo}
-					reloadGun={this.props.reloadGun}
-					refillLight={this.props.refillLight}
-					setShowDialogProps={this.props.setShowDialogProps}
-					dropItemToPC={this.dropItemToPC}
-					setMapObjectSelected={this.props.setMapObjectSelected}
-					mapObjectsOnPcTiles={mapObjectsOnPcTiles}
-				/>
-			)
+				controlPanels.push(
+					<CharacterControls
+						key={id}
+						playerCharacters={this.props.playerCharacters}
+						characterId={id}
+						characterName={playerInfo.name}
+						equippedItems={playerInfo.equippedItems}
+						invItems={playerInfo.items}
+						toggleActionButton={this.props.toggleActionButton}
+						actionButtonSelected={this.props.actionButtonSelected}
+						isActiveCharacter={id === this.props.activeCharacter}
+						movesRemaining={this.props.playerLimits.moves - this.props.actionsCompleted.moves}
+						actionsRemaining={this.props.playerLimits.actions - this.props.actionsCompleted.actions}
+						inTacticalMode={this.props.inTacticalMode}
+						updateCharacters={this.props.updateCharacters}
+						entireInventory={this.state.entireInventory}
+						updateInventory={this.updateInventory}
+						checkForExtraAmmo={this.checkForExtraAmmo}
+						reloadGun={this.props.reloadGun}
+						refillLight={this.props.refillLight}
+						setShowDialogProps={this.props.setShowDialogProps}
+						dropItemToPC={this.dropItemToPC}
+						setMapObjectSelected={this.props.setMapObjectSelected}
+						mapObjectsOnPcTiles={mapObjectsOnPcTiles}
+					/>
+				)
+			}
 		}
 		return controlPanels;
 	}
@@ -649,26 +653,13 @@ class UI extends React.Component {
 		});
 	}
 
-	toggleAudio = (selectorName) => {
-		const audio = this.musicSelectors[this.props.currentLocation][selectorName];
-		if (audio.paused) {
-			audio.play().catch(e => console.log(e));
+	toggleMusic = () => {
+		const music = this.audioSelectors.music[this.props.gameOptions.songName];
+		if (this.props.gameOptions.playMusic) {
+			music.play().catch(e => console.log(e));
 		} else {
-			audio.pause();
+			music.pause();
 		}
-
-	}
-
-	/**
-	 * Called by render() to set up array of music elements
-	 * @returns {*[]}
-	 */
-	setUpMusic = () => {
-		const music = [];
-
-		music.push(<Music key={`music-${this.props.currentLocation}`} idProp={`music-${this.props.currentLocation}-theme`} sourceName={this.props.currentLocation} />);
-
-		return music;
 	}
 
 	/**
@@ -676,7 +667,7 @@ class UI extends React.Component {
 	 * @private
 	 */
 	_populateSfxSelectors() {
-		this.musicSelectors[this.props.currentLocation]['music'] = document.getElementById(`music-${this.props.currentLocation}-theme`);
+		this.audioSelectors.music[this.props.gameOptions.songName] = document.getElementById(`music-${this.props.gameOptions.songName}-theme`);
 	}
 
 	/**
@@ -713,6 +704,14 @@ class UI extends React.Component {
 		this.updateInventory(charId, updatedInventory);
 	}
 
+	toggleOptionsPanel = () => {
+		this.setState(prevState => ({showGameOptions: !prevState.showGameOptions}));
+	}
+
+	/**
+	 *
+	 * @param clickedObjPos
+	 */
 	processTileClick = (clickedObjPos) => {
 		// if object was clicked on on the map, check if any other objects are on the same tile
 		let clickedObjects = [];
@@ -740,7 +739,7 @@ class UI extends React.Component {
 		}
 		if (this.initialUiLoad) {
 			this._populateSfxSelectors();
-			this.toggleAudio('music');
+			this.toggleMusic();
 			this.initialUiLoad = false;
 		}
 	}
@@ -772,6 +771,9 @@ class UI extends React.Component {
 				// don't need to pass in dropped and source counts, as it's not a stackable object
 				this.addObjectToMap();
 			}
+		}
+		if (prevProps.gameOptions.playMusic !== this.props.gameOptions.playMusic) {
+			this.toggleMusic();
 		}
 	}
 
@@ -824,7 +826,6 @@ class UI extends React.Component {
 							creatureIsSelected={this.props.creatureIsSelected}
 							creatureInfo={this.props.selectedCreatureInfo}
 						/>}
-						<div className='music-controls'>{ <this.setUpMusic /> }</div>
 					</div>
 					{/*<div className='minimize-button general-button' onClick={() => {*/}
 					{/*	this.minimizePanel('turnInfo');*/}
@@ -855,7 +856,10 @@ class UI extends React.Component {
 					creatureInfo={this.props.selectedCreatureInfo}
 				/>}
 
-				<div className='button-center-on-player' onClick={() => this.props.toggleCenterOnPlayer()}></div>
+				<div className='system-buttons-container'>
+					<div className='system-button button-center-on-player' onClick={() => this.props.toggleCenterOnPlayer()}></div>
+					<div className='system-button button-game-options' onClick={() => this.toggleOptionsPanel()}></div>
+				</div>
 
 				<div ref={this.uiRefs.controlBar} className='control-bar-container ui-panel'>
 					{/*<div className='minimize-button general-button' onClick={() => {*/}
@@ -863,6 +867,13 @@ class UI extends React.Component {
 					{/*}}>_</div>*/}
 					{this.props.playerCharacters && <this.showControlBar />}
 				</div>
+
+				<GameOptions
+					gameOptions={this.props.gameOptions}
+					toggleOptionsPanel={this.toggleOptionsPanel}
+					showGameOptions={this.state.showGameOptions}
+					updateGameOptions={this.props.updateGameOptions}
+				/>
 			</div>
 		);
 	}

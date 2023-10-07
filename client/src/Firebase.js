@@ -69,57 +69,65 @@ export default class Firebase extends React.Component {
 		const dialogContent = (
 			<>
 				<h2 className='font-fancy'>War of the Old Ones</h2>
-				<h3>Choose a method to login:</h3>
-				<form className='login-method' onSubmit={this.authByEmailLink}>
-					<div>Email: <input type='email' name='email'></input></div>
-					<button className='login-button' type='submit'>Send me a login link!</button>
-					<div className={this.state.emailSent ? '' : 'login-email-message-hidden'}>Email sent!</div>
-				</form>
+				<h3>Choose a method to login</h3>
 
-				<div className='login-email-pw-container'>
-					<div className={`create-tab email-pw-tab ${this.state.createTabIsActive ? 'active-tab' : ''}`} onClick={toggleTabs}>Create account</div>
-					<div className={`login-tab email-pw-tab ${this.state.createTabIsActive ? '' : 'active-tab'}`} onClick={toggleTabs}>Login</div>
-					<form
-						className={`login-method active-tab-content ${this.state.createTabIsActive ? '' : 'hide'}`}
-						onSubmit={(e) => {this.authByPassword(e, 'create');}}>
-						<div>Create an account</div>
-						<div>Email: <input type='email' name='email'></input></div>
-						<div>Password: <input type='password' name='password'></input></div>
-						<button className='login-button' type='submit'>Create account</button>
-					</form>
-					<form
-						className={`login-method active-tab-content ${this.state.createTabIsActive ? 'hide' : ''}`}
-						onSubmit={(e) => {this.authByPassword(e, 'login');}}>
-						<div>Login to your account</div>
-						<div>Email: <input type='email' name='email'></input></div>
-						<div>Password: <input type='password' name='password'></input></div>
-						<button className='login-button' type='submit'>Login</button>
-					</form>
+				<div className='login-methods-container'>
+
+					<div className='login-email-pw-container'>
+						<div className='login-method-title'>Create an account</div>
+						<div className={`create-tab email-pw-tab ${this.state.createTabIsActive ? 'active-tab' : ''}`} onClick={toggleTabs}>Create account</div>
+						<div className={`login-tab email-pw-tab ${this.state.createTabIsActive ? '' : 'active-tab'}`} onClick={toggleTabs}>Login</div>
+						<form
+							className={`login-method active-tab-content ${this.state.createTabIsActive ? '' : 'hide'}`}
+							onSubmit={(e) => {this.authByPassword(e, 'create');}}>
+							<div className='login-account-entry-row'><label>Email:</label><input type='email' name='email'></input></div>
+							<div className='login-account-entry-row'><label>Password:</label><input type='password' name='password'></input></div>
+							<button className='login-button' type='submit'>Create account</button>
+						</form>
+						<form
+							className={`login-method active-tab-content ${this.state.createTabIsActive ? 'hide' : ''}`}
+							onSubmit={(e) => {this.authByPassword(e, 'login');}}>
+							<div className='login-account-entry-row'><label>Email:</label><input type='email' name='email'></input></div>
+							<div className='login-account-entry-row'><label>Password:</label><input type='password' name='password'></input></div>
+							<button className='login-button' type='submit'>Login</button>
+						</form>
+					</div>
+
+					<div className='login-email-only-container'>
+						<div className='login-method-title'>Send a link via email</div>
+						<form className='login-method' onSubmit={this.authByEmailLink}>
+							<div className='login-account-entry-row'><label>Email:</label><input type='email' name='email'></input></div>
+							<button className='login-button' type='submit'>Send me a login link!</button>
+							<div className={this.state.emailSent ? '' : 'login-email-message-hidden'}>Email sent!</div>
+						</form>
+					</div>
+
+					{/*<div className='login-google-container'>*/}
+					{/*	<button onClick={this.authByGoogle}>Sign in with Google</button>*/}
+					{/*	<span style={{fontSize:16}}>Not currently working</span>*/}
+					{/*</div>*/}
+
+					{/*<div id="g_id_onload"*/}
+					{/*     data-client_id={process.env.REACT_APP_GOOGLE_CLIENT_ID}*/}
+					{/*     data-login_url={process.env.REACT_APP_GOOGLE_LOGIN_ENDPOINT}*/}
+					{/*     data-auto_prompt="false">*/}
+					{/*</div>*/}
+					{/*<div className="g_id_signin"*/}
+					{/*     data-type="standard"*/}
+					{/*     data-size="medium"*/}
+					{/*     data-theme="outline"*/}
+					{/*     data-text="sign_in_with"*/}
+					{/*     data-shape="rectangular"*/}
+					{/*     data-width="200"*/}
+					{/*     data-logo_alignment="center">*/}
+					{/*</div>*/}
 				</div>
-
-				<button onClick={this.authByGoogle}>Sign in with Google</button>
-				<span style={{fontSize:16}}>Not currently working</span>
-
-				{/*<div id="g_id_onload"*/}
-				{/*     data-client_id={process.env.REACT_APP_GOOGLE_CLIENT_ID}*/}
-				{/*     data-login_url={process.env.REACT_APP_GOOGLE_LOGIN_ENDPOINT}*/}
-				{/*     data-auto_prompt="false">*/}
-				{/*</div>*/}
-				{/*<div className="g_id_signin"*/}
-				{/*     data-type="standard"*/}
-				{/*     data-size="medium"*/}
-				{/*     data-theme="outline"*/}
-				{/*     data-text="sign_in_with"*/}
-				{/*     data-shape="rectangular"*/}
-				{/*     data-width="200"*/}
-				{/*     data-logo_alignment="center">*/}
-				{/*</div>*/}
 			</>
 		);
 
 		return (
 			<DialogWindow
-				classes='login'
+				classes='dialog-login'
 				dialogContent={dialogContent}
 				closeButtonText=''
 				actionButtonVisible={false}

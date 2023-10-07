@@ -10,17 +10,18 @@
 	border-radius: 5px;
 	transition: transform 0.5s;
 	user-select: none;
+	z-index: 2;
 }
 
 .ui-container {
 	position: fixed;
 	display: grid;
-	grid-template-columns: 500px 1fr 300px;
-	grid-template-rows: 1.5fr 580px 1.5fr;
+	grid-template-columns: 500px 1fr 1fr 50px;
+	grid-template-rows: 150px 580px 1.5fr;
 	grid-template-areas:
-	"turnInfo turnInfo turnInfo"
-	"characterInfo . creatureInfo"
-	"controlBar controlBar controlBar";
+	"turnInfo turnInfo turnInfo turnInfo"
+	"characterInfo . creatureInfo creatureInfo"
+	"controlBar controlBar controlBar systemButtons";
 	width: 100%;
 	height: 100%;
 	top: 0;
@@ -81,24 +82,75 @@
 	height: 200px;
 }
 
-.login {
+
+/* LOGIN WINDOW */
+
+.dialog-login {
 	position: absolute;
 	width: 100%;
-	height: 100%;
+	min-height: 100%;
 	top: 0;
 	left: 0;
 	justify-content: center;
 	background-color: #225555;
 	border: none;
 	border-radius: unset;
+	box-sizing: border-box;
+}
+
+.login-methods-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	width: 400px;
+	border-top: 1px solid;
+	padding-top: 20px;
 }
 
 .login-method {
 	margin-bottom: 30px;
 }
 
+.login-method-title {
+	grid-area: title;
+	width: 100%;
+	margin-top: 20px;
+	margin-bottom: 10px;
+	color: #225555;
+	background-color: lightgray;
+}
+
+.login-email-pw-container {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	grid-template-rows: 1fr 50px 150px;
+	grid-template-areas:
+	"title title"
+	"createtab logintab"
+	"content content";
+	width: 100%;
+	padding: 10px;
+}
+
+.login-email-only-container {
+	width: 100%;
+	padding: 10px;
+}
+
+.login-google-container {
+	display: flex;
+	flex-direction: column;
+}
+
+.login-account-entry-row {
+	display: flex;
+	justify-content: space-between;
+	width: 80%;
+	margin: auto;
+}
+
 .login-button {
-	margin: 0 0 20px 20px;
+	margin: 10px;
 	padding: 5px 10px;
 	background-color: burlywood;
 	cursor: pointer;
@@ -106,16 +158,6 @@
 
 .login-email-message-hidden {
 	visibility: hidden;
-}
-
-.login-email-pw-container {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	grid-template-rows: 50px 200px;
-	grid-template-areas:
-	"createtab logintab"
-	"content content";
-	width: 400px;
 }
 
 .email-pw-tab {
@@ -154,9 +196,21 @@
 	border-top: 2px solid burlywood;
 }
 
+
+/* GAME UI */
+
+.game-options-container {
+	display: flex;
+	flex-direction: column;
+	align-items: start;
+	gap: 10px;
+	width: 80%;
+	margin: 10px;
+	font-size: 20px;
+}
+
 .turn-info-container {
 	grid-area: turnInfo;
-	align-items: end;
 	display: flex;
 	justify-self: center;
 	width: 100%;
@@ -172,7 +226,7 @@
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
-	height: 128px;
+	height: 100%;
 	padding: 10px;
 	border-left: 1px solid seagreen;
 	border-right: 1px solid seagreen;
@@ -184,7 +238,6 @@
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
-	max-height: 140px;
 	overflow-y: scroll;
 }
 
@@ -196,8 +249,6 @@
 	display: flex;
 	flex-direction: row;
 	justify-content: space-between;
-	flex-basis: 340px;
-	height: 128px;
 	padding: 10px;
 	border-left: 1px solid seagreen;
 	border-right: 1px solid seagreen;
@@ -320,12 +371,20 @@
 	display: flex;
 	justify-self: center;
 	align-self: end;
-	width: 100%;
 	max-height: 128px;
 	border: 2px solid seagreen;
 	border-bottom: 0;
 	border-radius: 5px 5px 0 0;
 	box-sizing: border-box;
+}
+
+.control-bar-tab-container {
+	padding: 5px;
+	border-right: 1px solid seagreen;
+}
+
+.control-bar-tab-container:last-child {
+	border: 0;
 }
 
 .character-control-container {
@@ -334,10 +393,13 @@
 	justify-content: space-evenly;
 	align-items: center;
 	flex-basis: 100%;
+	gap: 2px;
 	padding: 5px;
-	border-left: 1px solid seagreen;
-	border-right: 1px solid seagreen;
 	text-align: center;
+}
+
+.character-control-container:last-child {
+	border: 0;
 }
 
 .character-name {
@@ -355,10 +417,6 @@
 	border-left: 1px solid seagreen;
 	border-right: 1px solid seagreen;
 	box-sizing: border-box;
-}
-
-.weapon-buttons-container {
-	display: flex;
 }
 
 .general-button {
@@ -418,25 +476,38 @@
 	background-color: darkred;
 }
 
-.action-button:hover {
-	border-color: red;
-	cursor: pointer;
+.weapon-buttons-container, .item-buttons-container {
+	display: flex;
 }
 
 .button-tactical-mode-on {
 	background-color: darkred;
 }
 
-.button-center-on-player {
+.system-buttons-container {
+	grid-area: systemButtons;
 	position: absolute;
+	display: flex;
+	flex-direction: column;
+	margin: 0 10px;
+	right: 0;
+	bottom: 20px;
+}
+
+.system-button {
 	width: 32px;
 	height: 32px;
-	left: 20px;
-	bottom: 100px;
-	background-image: url('../assets/ui/center-on-player.png');
 	background-size: 32px 32px;
 	pointer-events: all;
 	cursor: pointer;
+}
+
+.button-center-on-player {
+	background-image: url('../assets/ui/center-on-player.png');
+}
+
+.button-game-options {
+	background-image: url('../assets/ui/game-options.png');
 }
 
 select {
@@ -516,6 +587,7 @@ select {
 	display: none;
 }
 
+
 /* INV OBJECTS */
 
 .inv-object {
@@ -525,6 +597,8 @@ select {
 	background-position: center;
 	background-repeat: no-repeat;
 	text-align: left;
+	touch-action: none;
+	user-select: none;
 }
 
 .torch-inv {
@@ -587,6 +661,11 @@ select {
 	height: 32px;
 	background-position: center;
 	background-repeat: no-repeat;
+}
+
+.action-button:hover {
+	border-color: red;
+	cursor: pointer;
 }
 
 .first-aid-kit-action {
@@ -664,4 +743,161 @@ select {
 }
 .audio-music::-webkit-media-controls-time-remaining-display {
 	display: none;
+}
+
+
+/* MEDIA QUERIES */
+
+/* Narrow or short screens */
+@media (width < 768px) or (height < 768px) {
+	h2, h3 {
+		margin: 10px;
+	}
+
+	.ui-panel, .log-container {
+		font-size: 16px;
+	}
+
+	.dialog {
+		padding: 5px;
+	}
+
+	.mode-info-container, .log-container {
+		flex-direction: column;
+		padding: 5px;
+	}
+
+	.character-info-container {
+		padding: 10px;
+	}
+
+	.char-info-inv-container {
+		margin-bottom: 10px;
+	}
+
+	.char-info-doll-container {
+		margin-right: 10px;
+	}
+
+	.creature-info-container {
+		grid-area: characterInfo;
+	}
+
+	.control-bar-container {
+		width: 100%;
+	}
+
+	.control-bar-tab {
+		height: 30px;
+	}
+
+	.character-control-container {
+		width: 100%;
+		border: none;
+	}
+}
+
+/* Narrow/tall screens */
+@media (width < 768px) and (height > 500px) {
+	h2 { font-size: 26px; }
+	h3 { font-size: 20px; }
+
+	.login-methods-container {
+		flex-direction: column;
+		align-items: start;
+		padding-top: 10px;
+		width: 300px;
+	}
+
+	.login-email-pw-container, .login-email-only-container {
+		padding: 0;
+	}
+
+	.dialog {
+		width: 100%;
+		left: 0;
+		box-sizing: border-box;
+	}
+
+	.ui-container {
+		grid-template-columns: 1fr 300px;
+		grid-template-rows: 1fr 1fr 1fr;
+		grid-template-areas:
+		"turnInfo turnInfo"
+		"characterInfo characterInfo"
+		"controlBar controlBar";
+	}
+
+	.turn-info-container {
+		max-height: 180px;
+		border: 0;
+		border-bottom: 2px solid seagreen;
+		border-radius: 0;
+	}
+
+	.mode-info-container {
+		border: 0;
+	}
+
+	.log-container {
+		border-left: 0;
+	}
+
+	.control-bar-container {
+		border: 0;
+		border-top: 2px solid seagreen;
+		border-radius: 0;
+	}
+
+	.button-center-on-player {
+		bottom: 170px;
+	}
+
+	.button-game-options {
+		bottom: 130px;
+	}
+}
+
+/* Wide/short screens */
+@media (height < 768px) and (width > 600px) {
+	.login-methods-container {
+		flex-direction: row;
+		align-items: start;
+		padding-top: 10px;
+		width: 600px;
+	}
+
+	.login-method-title {
+		margin-top: 5px;
+	}
+
+	.ui-container {
+		grid-template-columns: 300px 1fr;
+		grid-template-rows: 250px 1fr;
+		grid-template-areas:
+		"turnInfo characterInfo"
+		"controlBar characterInfo";
+	}
+
+	.turn-info-container {
+		flex-direction: column;
+		max-height: unset;
+		border-left: 0;
+		border-bottom-left-radius: 0;
+	}
+
+	.log-container {
+		height: 100px;
+		border: 0;
+		border-bottom: 1px solid seagreen;
+	}
+
+	.mode-info-container {
+		border: 0;
+	}
+
+	.control-bar-container {
+		border-left: 0;
+		border-top-left-radius: 0;
+	}
 }

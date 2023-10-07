@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {convertObjIdToClassId, notEnoughSpaceInInventory, deepCopy, handleItemOverDropZone} from './Utils';
-
+import {Music} from './Audio';
 
 function CharacterControls(props) {
 	const currentPCdata = props.playerCharacters[props.characterId];
@@ -105,25 +105,28 @@ function CharacterControls(props) {
 	);
 
 	return (
-		<div
-			className='character-control-container'
-			onDragOver={(evt) => handleItemOverDropZone(evt)}
-			onDrop={(evt) => props.dropItemToPC(evt, props.characterId)}
-		>
-			<div>
-				<div className='character-name font-fancy'>{props.characterName}</div>
-				<div>Moves remaining: {props.isActiveCharacter ? props.movesRemaining : ''}</div>
-				<div>Actions remaining: {props.isActiveCharacter ? props.actionsRemaining : ''}</div>
+		<div className='control-bar-tab-container'>
+			<div className='control-bar-tab character-name font-fancy'>{props.characterName}</div>
+			<div
+				id={`char-control-${props.characterId}`}
+				className='character-control-container'
+				onDragOver={(evt) => handleItemOverDropZone(evt)}
+				onDrop={(evt) => props.dropItemToPC(evt, props.characterId)}
+			>
+				<div>
+					<div>Moves remaining: {props.isActiveCharacter ? props.movesRemaining : ''}</div>
+					<div>Actions remaining: {props.isActiveCharacter ? props.actionsRemaining : ''}</div>
+				</div>
+				{weaponButtons}
+				{medicineButtons}
+				{((currentPCdata.equippedLight && (currentPCdata.equippedLight.includes('lantern') || currentPCdata.equippedLight.includes('torch'))) &&
+				currentPCdata.lightTime < currentPCdata.items[currentPCdata.equippedLight].maxTime && currentPCdata.items.oil0) &&
+				<div className={`action-button refill-action ${actionButtonState}`} onClick={() => props.refillLight()}></div>
+				}
+				{(props.mapObjectsOnPcTiles.length > 0) &&
+					<div className={`action-button examine-action ${actionButtonState}`} onClick={(evt) => props.setMapObjectSelected(props.mapObjectsOnPcTiles, evt, true)}></div>
+				}
 			</div>
-			{weaponButtons}
-			{medicineButtons}
-			{((currentPCdata.equippedLight && (currentPCdata.equippedLight.includes('lantern') || currentPCdata.equippedLight.includes('torch'))) &&
-			currentPCdata.lightTime < currentPCdata.items[currentPCdata.equippedLight].maxTime && currentPCdata.items.oil0) &&
-			<div className={`action-button refill-action ${actionButtonState}`} onClick={() => props.refillLight()}></div>
-			}
-			{(props.mapObjectsOnPcTiles.length > 0) &&
-				<div className={`action-button examine-action ${actionButtonState}`} onClick={(evt) => props.setMapObjectSelected(props.mapObjectsOnPcTiles, evt, true)}></div>
-			}
 		</div>
 	);
 }
@@ -599,4 +602,44 @@ function HelpPopUp(props) {
 	);
 }
 
-export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, DialogWindow, ContextMenu};
+function GameOptions(props) {
+	return (
+		<div className={`dialog ui-panel ${props.showGameOptions ? '' : 'hide'}`}>
+			<div className='font-fancy'>Game Options</div>
+			<div className='game-options-container'>
+				<div>
+					<label>Overall volume: </label>
+					<input type='range' />
+				</div>
+				<div>
+					<label>Play music: </label>
+					<button
+						className='general-button'
+						onClick={() => {
+							const gameOptions = {...props.gameOptions};
+							gameOptions.playMusic = !gameOptions.playMusic;
+							props.updateGameOptions(gameOptions);
+						}}>
+						{props.gameOptions.playMusic ? 'Off' : 'On'}
+					</button>
+				</div>
+				<div>
+					<label>Music volume: </label>
+					<input type='range' />
+				</div>
+				<Music
+					key={`music-${props.gameOptions.songName}`}
+					idProp={`music-${props.gameOptions.songName}-theme`}
+					sourceName={props.gameOptions.songName}
+				/>
+			</div>
+			<button
+				className='dialog-button'
+				onClick={() => props.toggleOptionsPanel()}>
+				Close
+			</button>
+		</div>
+	);
+}
+
+export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, DialogWindow, ContextMenu, GameOptions};
