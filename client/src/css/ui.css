@@ -534,7 +534,7 @@ select {
 	border-radius: 5px;
 	transition: transform 0.5s;
 	box-shadow: 5px 5px 10px black;
-	z-index: 1;
+	z-index: 3;
 }
 
 .object-panel-container {
@@ -779,6 +779,12 @@ select {
 		margin-right: 10px;
 	}
 
+	.character-info-container, .creature-info-container {
+		justify-content: start;
+		border-radius: 0;
+		border: 0;
+	}
+
 	.creature-info-container {
 		grid-area: characterInfo;
 	}
@@ -821,7 +827,7 @@ select {
 
 	.ui-container {
 		grid-template-columns: 1fr 300px;
-		grid-template-rows: 1fr 1fr 1fr;
+		grid-template-rows: 150px 1fr 100px;
 		grid-template-areas:
 		"turnInfo turnInfo"
 		"characterInfo characterInfo"
@@ -843,17 +849,18 @@ select {
 		border-left: 0;
 	}
 
+	.character-info-container, .creature-info-container {
+		border-top: 2px solid seagreen;
+		border-bottom: 2px solid seagreen;
+	}
+
 	.control-bar-container {
 		border: 0;
 		border-top: 2px solid seagreen;
 		border-radius: 0;
 	}
 
-	.button-center-on-player {
-		bottom: 170px;
-	}
-
-	.button-game-options {
+	.system-buttons-container {
 		bottom: 130px;
 	}
 }
@@ -894,6 +901,10 @@ select {
 
 	.mode-info-container {
 		border: 0;
+	}
+
+	.character-info-container, .creature-info-container {
+		border-left: 2px solid seagreen;
 	}
 
 	.control-bar-container {
