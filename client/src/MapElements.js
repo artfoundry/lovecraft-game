@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {randomTileVariant, convertPosToCoords} from './Utils';
+import {randomTileVariant} from './Utils';
 import './css/mapPieceElements.css';
 
 function Character(props) {
