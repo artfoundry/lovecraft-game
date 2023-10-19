@@ -581,10 +581,10 @@ class Game extends React.Component {
 			}
 		}
 
-		// bypass setting up context menu if clicked target is a pc or creature with nothing else on the tile...
-		if (!objectOnTile && (actionType === 'player' || (actionType === 'creature' && !this.state.actionButtonSelected))) {
+		// bypass setting up context menu if clicked target is a pc or creature with nothing else on the tile and no action cued up...
+		if (!objectOnTile && !this.state.actionButtonSelected && (actionType === 'player' || actionType === 'creature')) {
 			this.handleUnitClick(actionInfo.id, actionType);
-		// ...or if action is being used
+		// ...or if action is being used (regardless of whether object is also there)
 		} else if (this.state.actionButtonSelected && (actionType === 'creature' || actionType === 'player')) {
 			this.handleUnitClick(actionInfo.id, actionInfo.target, actionInfo.isInRange, actionInfo.checkLineOfSightToParty);
 		// ...or if clicked target is a torch
