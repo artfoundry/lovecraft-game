@@ -32,8 +32,8 @@ class Game extends React.Component {
 
 		this.state = {
 			gameOptions: {
-				audioVolume: 100,
-				musicVolume: 100,
+				fxVolume: 1,
+				musicVolume: 1,
 				playMusic: false,
 				songName: ''
 			},
@@ -997,6 +997,8 @@ class Game extends React.Component {
 
 				{this.state.isLoggedIn && this.state.gameSetupComplete &&
 					<Map
+						gameOptions={this.state.gameOptions}
+
 						setShowDialogProps={this.setShowDialogProps}
 						notEnoughSpaceDialogProps={this.notEnoughSpaceDialogProps}
 						noMoreActionsDialogProps={this.noMoreActionsDialogProps}

@@ -603,32 +603,39 @@ function HelpPopUp(props) {
 }
 
 function GameOptions(props) {
+	const gameOptions = {...props.gameOptions};
+
 	return (
 		<div className={`dialog ui-panel ${props.showGameOptions ? '' : 'hide'}`}>
 			<div className='font-fancy'>Game Options</div>
 			<div className='game-options-container'>
-				<div>
-					<label>Overall volume: </label>
-					<input type='range' />
+				<div className='game-options-row'>
+					<label>Sound effects volume: </label>
+					<input className='audio-volume' type='range' min='0' max='1' step='0.1' value={gameOptions.fxVolume} onInput={evt => {
+						gameOptions.fxVolume = evt.target.value;
+						props.updateGameOptions(gameOptions);
+					}} />
 				</div>
-				<div>
+				<div className='game-options-row'>
 					<label>Play music: </label>
 					<button
 						className='general-button'
 						onClick={() => {
-							const gameOptions = {...props.gameOptions};
 							gameOptions.playMusic = !gameOptions.playMusic;
 							props.updateGameOptions(gameOptions);
 						}}>
 						{props.gameOptions.playMusic ? 'Off' : 'On'}
 					</button>
 				</div>
-				<div>
+				<div className='game-options-row'>
 					<label>Music volume: </label>
-					<input type='range' />
+					<input className='audio-volume' type='range' min='0' max='1' step='0.1' value={gameOptions.musicVolume} onInput={evt => {
+						props.musicComponent.volume = evt.target.value;
+						gameOptions.musicVolume = evt.target.value;
+						props.updateGameOptions(gameOptions);
+					}} />
 				</div>
 				<Music
-					key={`music-${props.gameOptions.songName}`}
 					idProp={`music-${props.gameOptions.songName}-theme`}
 					sourceName={props.gameOptions.songName}
 				/>

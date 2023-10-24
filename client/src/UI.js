@@ -656,6 +656,7 @@ class UI extends React.Component {
 	toggleMusic = () => {
 		const music = this.audioSelectors.music[this.props.gameOptions.songName];
 		if (this.props.gameOptions.playMusic) {
+			music.volume = this.props.gameOptions.musicVolume;
 			music.play().catch(e => console.log(e));
 		} else {
 			music.pause();
@@ -873,6 +874,7 @@ class UI extends React.Component {
 					toggleOptionsPanel={this.toggleOptionsPanel}
 					showGameOptions={this.state.showGameOptions}
 					updateGameOptions={this.props.updateGameOptions}
+					musicComponent={this.audioSelectors.music[this.props.gameOptions.songName]}
 				/>
 			</div>
 		);
