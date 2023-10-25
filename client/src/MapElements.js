@@ -11,6 +11,7 @@ function Character(props) {
 		<img id={props.id}
 		     ref={props.charRef}
 			 alt={props.classes}
+		     draggable={false}
 		     className={props.characterType + ' ' + props.idClassName + isHiddenClass + isSelectedClass + isDeadClass + isInRangeClass}
 		     style={props.styles}
 		     data-location={props.charPos}
@@ -31,6 +32,7 @@ function Character(props) {
 function Exit(props) {
 	return (
 		<img alt='exit'
+		     draggable={false}
 		     className='object exit'
 		     style={props.styleProp} />
 	)
@@ -44,6 +46,7 @@ function Tile(props) {
 
 	return (
 		<div className={`tile ${props.classStr}${randomizedVariantSuffix}`}
+		     draggable={false}
 		     style={{...props.styleProp, fontSize: '18px'}}
 		     data-tile-num={props.tileName}
 		     data-light-strength={props.dataLightStr}
@@ -55,7 +58,7 @@ function Tile(props) {
 }
 
 function Door(props) {
-	return <div className={props.classProp} style={props.styleProp} />;
+	return <div className={props.classProp} style={props.styleProp} draggable={false} />;
 }
 
 function Item(props) {
@@ -65,6 +68,7 @@ function Item(props) {
 			alt={props.name}
 			className={`object ${props.name}${isHiddenClass}`}
 			style={props.styles}
+			draggable={false}
 			onClick={(evt) => {
 				if (props.tileIsVisible) {
 					props.updateContextMenu('look', props.tilePos, evt, {objectInfo: [props.objectInfo], selectionEvt: evt, isPickUpAction: false});
@@ -78,13 +82,14 @@ function LightElement(props) {
 	return (
 		<div className={props.classes}
 		     style={props.styles}
+		     draggable={false}
 		     data-tile-num={props.tileName} />
 	);
 }
 
 function MapCover(props) {
 	return (
-		<div className='map-cover' style={props.styleProp}></div>
+		<div className='map-cover' style={props.styleProp} draggable={false}></div>
 	)
 }
 

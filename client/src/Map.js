@@ -2504,6 +2504,9 @@ class Map extends React.Component {
 			this._moveMap();
 			this.props.toggleCenterOnPlayer();
 		}
+		if (prevProps.screenSize.width !== this.props.screenSize.width || prevProps.screenSize.height !== this.props.screenSize.height) {
+			this._moveMap();
+		}
 	}
 
 	// shouldComponentUpdate(nextProps, nextState, nextContext) {

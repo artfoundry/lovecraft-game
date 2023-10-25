@@ -539,6 +539,7 @@ select {
 	transition: transform 0.5s;
 	box-shadow: 5px 5px 10px black;
 	z-index: 3;
+	box-sizing: border-box;
 }
 
 .object-panel-container {
@@ -862,6 +863,19 @@ select {
 		border-bottom: 2px solid seagreen;
 	}
 
+	.char-info-inv-container {
+		flex-direction: column;
+	}
+
+	.char-info-inv-items {
+		width: calc(66px * 4);
+		margin-bottom: 10px;
+	}
+
+	.object-info-panel {
+		width: 100%;
+	}
+
 	.control-bar-container {
 		border: 0;
 		border-top: 2px solid seagreen;
@@ -894,6 +908,10 @@ select {
 		"controlBar characterInfo";
 	}
 
+	.ui-container .dialog {
+		top: 25%;
+	}
+
 	.turn-info-container {
 		flex-direction: column;
 		max-height: unset;
@@ -913,6 +931,10 @@ select {
 
 	.character-info-container, .creature-info-container {
 		border-left: 2px solid seagreen;
+	}
+
+	.object-panel-container {
+		margin-bottom: 0;
 	}
 
 	.control-bar-container {

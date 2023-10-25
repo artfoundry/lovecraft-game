@@ -37,7 +37,12 @@ class Game extends React.Component {
 				playMusic: false,
 				songName: ''
 			},
-			screenSize: {isNarrow: window.innerWidth < 768, isShort: window.innerHeight < 768},
+			screenSize: {
+				width: window.innerWidth,
+				height: window.innerHeight,
+				isNarrow: window.innerWidth < 768,
+				isShort: window.innerHeight < 768
+			},
 			userData: {},
 			isLoggedIn: false,
 			gameSetupComplete: false,
@@ -146,6 +151,15 @@ class Game extends React.Component {
 		}, () => {
 			if (callback) callback();
 		})
+	}
+
+	getScreenDimensions = () => {
+		const screenSize = {...this.state.screenSize};
+		screenSize.width = window.innerWidth;
+		screenSize.height = window.innerHeight;
+		screenSize.isNarrow = screenSize.width < 768;
+		screenSize.isShort = screenSize.height < 768;
+		this.setState({screenSize});
 	}
 
 	/**
@@ -925,7 +939,14 @@ class Game extends React.Component {
 
 	componentDidMount() {
 		if (!this.state.gameSetupComplete) {
+			let resizeTimeout = null;
+			const resizeDelay = 250;
+
 			this._setupGameState();
+			window.addEventListener('resize', () => {
+				clearTimeout(resizeTimeout);
+				resizeTimeout = setTimeout(this.getScreenDimensions, resizeDelay);
+			});
 		}
 
 		// todo: uncomment below and comment Firebase component in render() for testing, remove for prod
@@ -997,6 +1018,7 @@ class Game extends React.Component {
 
 				{this.state.isLoggedIn && this.state.gameSetupComplete &&
 					<Map
+						screenSize={this.state.screenSize}
 						gameOptions={this.state.gameOptions}
 
 						setShowDialogProps={this.setShowDialogProps}

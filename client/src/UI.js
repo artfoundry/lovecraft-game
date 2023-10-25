@@ -10,6 +10,8 @@ class UI extends React.Component {
 		this.uiPanelHeight = 95;
 		this.objectPanelWidth = 300;
 		this.objectPanelHeight = 250;
+		this.contextMenuWidth = 128;
+		this.contextMenuHeight = 32;
 		this.inventoryLength = 12;
 		this.initialUiLoad = true;
 
@@ -80,7 +82,9 @@ class UI extends React.Component {
 		let controlPanels = [];
 
 		for (const [id, playerInfo] of Object.entries(this.props.playerCharacters)) {
-			if ((this.props.screenSize.isNarrow && id === this.props.activeCharacter) || !this.props.screenSize.isNarrow) {
+			if (((this.props.screenSize.isNarrow || this.props.screenSize.isShort) && id === this.props.activeCharacter) ||
+				(!this.props.screenSize.isNarrow && !this.props.screenSize.isShort))
+			{
 				let mapObjectsOnPcTiles = [];
 				for (const [objId, objInfo] of Object.entries(this.props.mapObjects)) {
 					const xDelta = Math.abs(playerInfo.coords.xPos - objInfo.coords.xPos);
@@ -529,11 +533,23 @@ class UI extends React.Component {
 		});
 	}
 
-	calculatePanelCoords(x, y, panelWidth, panelHeight) {
-		const buffer = 30;
-		const leftMod = x > (window.innerWidth - panelWidth) ? -(panelWidth + buffer) : 0;
-		const topMod = y < (window.screenTop + panelHeight) ? buffer : -panelHeight;
-		return {left: x + leftMod, top: y + topMod};
+	calculatePanelCoords(x, y, panelType) {
+		let coords = {};
+		const panelWidth = panelType === 'object' ? this.objectPanelWidth : this.contextMenuWidth;
+		const panelHeight = panelType === 'object' ? this.objectPanelHeight : this.contextMenuHeight;
+
+		// use this version for object panels on mobile
+		if (panelType === 'object' && (this.props.screenSize.isNarrow || this.props.screenSize.isShort)) {
+			const left = this.props.screenSize.isNarrow ? 0 : (window.innerWidth - panelWidth) / 2;
+			coords = {left, top: (window.innerHeight - panelHeight) / 2};
+		// use this version for full screen or mobile context menu
+		} else {
+			const buffer = 30;
+			const leftMod = x > (window.innerWidth - panelWidth) ? -(panelWidth + buffer) : 0;
+			const topMod = y < (window.screenTop + panelHeight) ? 0 : -panelHeight;
+			coords = {left: x + leftMod, top: y + topMod};
+		}
+		return coords;
 	}
 
 	/**
@@ -543,7 +559,7 @@ class UI extends React.Component {
 	 * @param draggedObjRecipient: string (ID - used for addObjToOtherPc)
 	 */
 	setObjectPanelDisplayOption = (needToShowObjectPanel, evt, draggedObjRecipient) => {
-		const selectedObjPos = evt ? this.calculatePanelCoords(evt.clientX, evt.clientY, this.objectPanelWidth, this.objectPanelHeight) : this.state.selectedObjPos ? this.state.selectedObjPos : null;
+		const selectedObjPos = evt ? this.calculatePanelCoords(evt.clientX, evt.clientY, 'object') : this.state.selectedObjPos ? this.state.selectedObjPos : null;
 		this.setState({needToShowObjectPanel, selectedObjPos, draggedObjRecipient});
 	}
 
@@ -794,7 +810,7 @@ class UI extends React.Component {
 					setUserInteraction={this.props.setUserInteraction}
 					setUserMove={this.props.setUserMove}
 					handleContextMenuSelection={this.props.handleContextMenuSelection}
-					menuPosStyle={this.calculatePanelCoords(this.props.contextMenu.evt.clientX, this.props.contextMenu.evt.clientY, 128, 32)}
+					menuPosStyle={this.calculatePanelCoords(this.props.contextMenu.evt.clientX, this.props.contextMenu.evt.clientY, 'menu')}
 					buttonStyle={{width: '32px', height: '32px', backgroundPosition: 'center'}}
 				/>}
 
