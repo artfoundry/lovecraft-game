@@ -563,47 +563,73 @@ class Game extends React.Component {
 	}
 
 	/**
+	 * Checks if context menu should be shown or other action processed
+	 * Other action possibilities:
+	 * -close menu
+	 * -handle unit click to show unit info
+	 * -handle unit click to take action on it
+	 * -handle object click to set object selected
+	 * @param actionType: string (possibilities: 'look', 'creature', 'player', null)
+	 * @param tilePos: string
+	 * @param evt: event object
+	 * @param actionInfo: object (props for appropriate function called upon clicking menu button)
+	 * @returns {{actionToProcess: function, menuNeeded: boolean}} (if menuNeeded, actionToProcess is null)
+	 */
+	isContextMenuNeeded = (actionType, tilePos = null, evt = null, actionInfo = null) => {
+		let contextMenuNeeded = {menuNeeded: true, actionToProcess: null};
+
+		// if clicked obj is a creature/player, check if at least one object is on that tile
+		let objectOnTile = null;
+		if (actionType === 'creature' || actionType === 'player') {
+			objectOnTile = this._isObjectOnTile(tilePos, evt);
+		}
+
+		// bypass setting up context menu if clicked target is a pc or creature with nothing else on the tile and no action cued up...
+		if (!objectOnTile && !this.state.actionButtonSelected && (actionType === 'player' || actionType === 'creature')) {
+			contextMenuNeeded = {
+				menuNeeded: false,
+				actionToProcess: () => this.handleUnitClick(actionInfo.id, actionType)
+			};
+		// ...or if action is being used (regardless of whether object is also there)
+		} else if (this.state.actionButtonSelected && (actionType === 'creature' || actionType === 'player')) {
+			contextMenuNeeded = {
+				menuNeeded: false,
+				actionToProcess: () => this.handleUnitClick(actionInfo.id, actionInfo.target, actionInfo.isInRange, actionInfo.checkLineOfSightToParty)
+			};
+		// ...or if clicked target is a torch
+		} else if (actionType === 'look' && actionInfo.objectInfo[0].name === 'Torch') {
+			contextMenuNeeded = {
+				menuNeeded: false,
+				actionToProcess: () => this.setMapObjectSelected(actionInfo.objectInfo, actionInfo.selectionEvt, actionInfo.isPickUpAction)
+			};
+		}
+
+		return contextMenuNeeded;
+	}
+
+	/**
 	 * Determines which buttons to add to context menu
 	 * Possibilities:
 	 * creature and item
 	 * player and item
 	 * item and move
-	 * @param actionType: string
+	 * action (shoot) and reload
+	 * @param actionType: string (possibilities: 'look', 'creature', 'player', null)
 	 * @param tilePos: string
 	 * @param evt: event object
 	 * @param actionInfo: object (props for appropriate function called upon clicking menu button)
+	 * @param contextMenuInfo: object ({actionToProcess: function, menuNeeded: boolean} - passed in only if isContextMenuNeeded was previously called in Map (checkForDragging))
 	 */
-	updateContextMenu = (actionType, tilePos = null, evt = null, actionInfo = null) => {
-		// if already have a context menu showing, user has clicked out of it, so close it
+	updateContextMenu = (actionType, tilePos = null, evt = null, actionInfo = null, contextMenuInfo = null) => {
+		const isContextMenuNeeded = contextMenuInfo || this.isContextMenuNeeded(actionType, tilePos, evt, actionInfo);
+
+		// if no action is being done (action being clicked on item or character) there's already a menu, so close menu
+		// no actionType should indicate menu already exists (as clicking on item, char, or tile is already checking), but just in case...
 		if (!actionType) {
 			this.setState({contextMenu: null});
-			return;
-		}
-
-		// if clicked obj is a creature/player, check if at least one object is on that tile
-		let objectOnTile = null;
-		if (actionType === 'creature' || actionType === 'player') {
-			const objects = Object.values(this.state.mapObjects);
-			let i = 0;
-			while (!objectOnTile && i < objects.length) {
-				if (convertCoordsToPos(objects[i].coords) === tilePos) {
-					// objectInfo needs to be in array for setMapObjectSelected
-					objectOnTile = {objectInfo: [objects[i]], selectionEvt: evt, isPickUpAction: false};
-				} else {
-					i++;
-				}
-			}
-		}
-
-		// bypass setting up context menu if clicked target is a pc or creature with nothing else on the tile and no action cued up...
-		if (!objectOnTile && !this.state.actionButtonSelected && (actionType === 'player' || actionType === 'creature')) {
-			this.handleUnitClick(actionInfo.id, actionType);
-		// ...or if action is being used (regardless of whether object is also there)
-		} else if (this.state.actionButtonSelected && (actionType === 'creature' || actionType === 'player')) {
-			this.handleUnitClick(actionInfo.id, actionInfo.target, actionInfo.isInRange, actionInfo.checkLineOfSightToParty);
-		// ...or if clicked target is a torch
-		} else if (actionType === 'look' && actionInfo.objectInfo[0].name === 'Torch') {
-			this.setMapObjectSelected(actionInfo.objectInfo, actionInfo.selectionEvt, actionInfo.isPickUpAction);
+		// Don't need menu, so do action instead
+		} else if (!isContextMenuNeeded.menuNeeded) {
+			isContextMenuNeeded.actionToProcess();
 		// otherwise, set up context menu
 		} else {
 			const contextMenu = {
@@ -614,9 +640,11 @@ class Game extends React.Component {
 			};
 			if (actionType !== 'player' && actionType !== 'creature') {
 				contextMenu.actionsAvailable.move = true;
-			}
-			if (objectOnTile) {
-				contextMenu.actionsAvailable.look = objectOnTile;
+			} else {
+				const objectOnTile = this._isObjectOnTile(tilePos, evt);
+				if (objectOnTile) {
+					contextMenu.actionsAvailable.look = objectOnTile;
+				}
 			}
 			this.setState({contextMenu, contextMenuChoice: null});
 		}
@@ -763,6 +791,28 @@ class Game extends React.Component {
 	 * PRIVATE FUNCTIONS
 	 *********************/
 
+
+	/**
+	 * Determines if object is on a clicked tile (checking for context menu)
+	 * @param tilePos
+	 * @param evt
+	 * @returns null or object ({objectInfo, selectionEvt, isPickUpAction})
+	 * @private
+	 */
+	_isObjectOnTile(tilePos, evt) {
+		let objectOnTile = null;
+		const objects = Object.values(this.state.mapObjects);
+		let i = 0;
+		while (!objectOnTile && i < objects.length) {
+			if (convertCoordsToPos(objects[i].coords) === tilePos) {
+				// objectInfo needs to be in array for setMapObjectSelected
+				objectOnTile = {objectInfo: [objects[i]], selectionEvt: evt, isPickUpAction: false};
+			} else {
+				i++;
+			}
+		}
+		return objectOnTile;
+	}
 
 	/**
 	 * Initialization function. gameSetupComplete in callback indicates Map component can render
@@ -1052,6 +1102,7 @@ class Game extends React.Component {
 
 						updateLog={this.updateLog}
 						actionButtonSelected={this.state.actionButtonSelected}
+						isContextMenuNeeded={this.isContextMenuNeeded}
 						updateContextMenu={this.updateContextMenu}
 						contextMenu={this.state.contextMenu}
 						contextMenuChoice={this.state.contextMenuChoice}

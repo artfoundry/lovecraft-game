@@ -64,6 +64,7 @@ class Map extends React.Component {
 		this.charRefs = {};
 		this.clickedOnWorld = false;
 		this.isDraggingWorld = false;
+		this.contextMenuOpen = false;
 		this.animFrameStartTime = 0;
 		this.animFrameTimeLimit = 0;
 		this.animFrameCallback = null;
@@ -877,7 +878,8 @@ class Map extends React.Component {
 			classStr={allClasses}
 			dataLightStr={tileLightStr}
 			moveCharacter={(tilePos) => {
-				if (this.props.contextMenu) {
+				if (this.contextMenuOpen) {
+					this.contextMenuOpen = false;
 					this.props.updateContextMenu(null);
 				} else if (!this.isDraggingWorld) {
 					this.checkIfTileOrObject(tilePos, null);
@@ -2384,7 +2386,16 @@ class Map extends React.Component {
 	 */
 	checkForDragging = (actionType, tilePos, evt, actionInfo) => {
 		if (!this.isDraggingWorld) {
-			this.props.updateContextMenu(actionType, tilePos, evt, actionInfo);
+			if (this.contextMenuOpen) {
+				this.contextMenuOpen = false;
+				this.props.updateContextMenu(null);
+			} else {
+				const contextMenuNeeded = this.props.isContextMenuNeeded(actionType, tilePos, evt, actionInfo);
+				if (contextMenuNeeded.menuNeeded) {
+					this.contextMenuOpen = true;
+				}
+				this.props.updateContextMenu(actionType, tilePos, evt, actionInfo, contextMenuNeeded);
+			}
 		}
 	}
 
