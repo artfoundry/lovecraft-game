@@ -395,8 +395,9 @@ class Game extends React.Component {
 		const gunInfo = updatedPCdata.weapons[weaponId];
 		const gunType = gunInfo.gunType;
 		const availAmmo = updatedPCdata.items[gunType + 'Ammo0'].amount;
-		const resupplyAmmo = gunInfo.rounds <= availAmmo ? gunInfo.rounds : availAmmo;
-		updatedPCdata.weapons[weaponId].currentRounds = resupplyAmmo;
+		const emptyRounds = gunInfo.rounds - gunInfo.currentRounds;
+		const resupplyAmmo = emptyRounds <= availAmmo ? emptyRounds : availAmmo;
+		gunInfo.currentRounds += resupplyAmmo;
 		updatedPCdata.items[gunType + 'Ammo0'].amount = availAmmo - resupplyAmmo;
 		if (updatedPCdata.items[gunType + 'Ammo0'].amount === 0) {
 			delete updatedPCdata.items[gunType + 'Ammo0'];

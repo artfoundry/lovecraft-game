@@ -444,6 +444,11 @@
 	text-align: center;
 }
 
+.action-button-pair {
+	display: flex;
+	margin: 5px;
+}
+
 .action-button {
 	width: 32px;
 	height: 32px;
@@ -454,11 +459,30 @@
 	background-color: limegreen;
 	background-position: center;
 	background-repeat: no-repeat;
+	line-height: 32px;
+}
+
+.action-button:hover {
+	border-color: red;
+	cursor: pointer;
+}
+
+.action-button-pair .action-button {
+	margin: 0;
+}
+
+.action-button-pair .action-button:first-child {
+	border-radius: 5px 0 0 5px;
+}
+
+.action-button-pair .action-button:last-child {
+	border-radius: 0 5px 5px 0;
+	border-left: none;
 }
 
 .gun-reload-icon {
 	font-size: 30px;
-	line-height: 30px;
+	line-height: 26px;
 }
 
 .gun-reload-icon::after {
@@ -661,18 +685,6 @@ select {
 
 /* ACTION BUTTON ICONS */
 
-.action-button {
-	width: 32px;
-	height: 32px;
-	background-position: center;
-	background-repeat: no-repeat;
-}
-
-.action-button:hover {
-	border-color: red;
-	cursor: pointer;
-}
-
 .first-aid-kit-action {
 	background-image: url('../assets/ui/firstaidkit_sml.png');
 }
@@ -804,6 +816,14 @@ select {
 
 	.control-bar-tab {
 		height: 30px;
+	}
+
+	.action-button:hover {
+		border-color: seagreen;
+	}
+
+	.action-button.button-selected {
+		border-color: red;
 	}
 
 	.character-control-container {
