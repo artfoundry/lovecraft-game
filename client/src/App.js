@@ -577,7 +577,7 @@ class Game extends React.Component {
 	 * -handle unit click to show unit info
 	 * -handle unit click to take action on it
 	 * -handle object click to set object selected
-	 * @param actionType: string (possibilities: 'look', 'creature', 'player', null)
+	 * @param actionType: string (possibilities: 'examine', 'creature', 'player', null)
 	 * @param tilePos: string
 	 * @param evt: event object
 	 * @param actionInfo: object (props for appropriate function called upon clicking menu button)
@@ -605,7 +605,7 @@ class Game extends React.Component {
 				actionToProcess: () => this.handleUnitClick(actionInfo.id, actionInfo.target, actionInfo.isInRange, actionInfo.checkLineOfSightToParty)
 			};
 		// ...or if clicked target is a torch
-		} else if (actionType === 'look' && actionInfo.objectInfo[0].name === 'Torch') {
+		} else if (actionType === 'examine' && actionInfo.objectInfo[0].name === 'Torch') {
 			contextMenuNeeded = {
 				menuNeeded: false,
 				actionToProcess: () => this.setMapObjectSelected(actionInfo.objectInfo, actionInfo.selectionEvt, actionInfo.isPickUpAction)
@@ -622,7 +622,7 @@ class Game extends React.Component {
 	 * player and item
 	 * item and move
 	 * action (shoot) and reload
-	 * @param actionType: string (possibilities: 'look', 'creature', 'player', null)
+	 * @param actionType: string (possibilities: 'examine', 'creature', 'player', null)
 	 * @param tilePos: string
 	 * @param evt: event object
 	 * @param actionInfo: object (props for appropriate function called upon clicking menu button)
@@ -651,7 +651,7 @@ class Game extends React.Component {
 			} else {
 				const objectOnTile = this._isObjectOnTile(tilePos, evt);
 				if (objectOnTile) {
-					contextMenu.actionsAvailable.look = objectOnTile;
+					contextMenu.actionsAvailable.examine = objectOnTile;
 				}
 			}
 			this.setState({contextMenu, contextMenuChoice: null});
@@ -660,14 +660,14 @@ class Game extends React.Component {
 
 	/**
 	 * Calls appropriate function based on menu button clicked
-	 * For 'look' (item): setMapObjectSelected
+	 * For 'examine' (item): setMapObjectSelected
 	 * For 'player'/'creature': handleUnitClick
 	 * For 'move': handled by checkIfTileOrObject in Map
 	 * @param actionType: string
 	 */
 	handleContextMenuSelection = (actionType) => {
 		const storedActionInfo = this.state.contextMenu.actionsAvailable[actionType];
-		if (actionType === 'look') {
+		if (actionType === 'examine') {
 			this.setMapObjectSelected(storedActionInfo.objectInfo, storedActionInfo.selectionEvt, storedActionInfo.isPickUpAction);
 			this.setState({contextMenu: null});
 		} else if (actionType === 'creature' || actionType === 'player') {

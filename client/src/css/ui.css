@@ -739,12 +739,12 @@ select {
 	background-image: url('../assets/ui/refillLight_sml.png');
 }
 
-.examine-action {
-	background-image: url('../assets/ui/magnifyingGlass_sml.png');
+.pickup-action {
+	background-image: url('../assets/ui/pickup_sml.png');
 }
 
-.look-action {
-	background-image: url('../assets/ui/eyes_sml.png');
+.examine-action {
+	background-image: url('../assets/ui/magnifyingGlass_sml.png');
 }
 
 .player-action {

@@ -2570,21 +2570,22 @@ class Map extends React.Component {
 				 }}
 			>
 				<div className='map'
-			        onDragOver={(evt) => {handleItemOverDropZone(evt)}}
-			        onDrop={(evt) => {this.props.setHasObjBeenDropped({objHasBeenDropped: true, evt})}}
+				     draggable={false}
+				     onDragOver={(evt) => {handleItemOverDropZone(evt)}}
+				     onDrop={(evt) => {this.props.setHasObjBeenDropped({objHasBeenDropped: true, evt})}}
 				>
 					{ this.state.mapLayoutDone && this.state.lightingCalculated && <this.createAllMapPieces /> }
 				</div>
-				<div className='objects'>
+				<div className='objects' draggable={false}>
 					{ this.state.exitPlaced && this.state.objectsPlaced && <this.addObjects /> }
 				</div>
-				<div className='lighting'>
+				<div className='lighting' draggable={false}>
 					{ this.state.exitPlaced && this.state.objectsPlaced && this.state.lightingCalculated && <this.addLighting />}
 				</div>
-				<div className='creatures'>
+				<div className='creatures' draggable={false}>
 					{ this.state.mapLayoutDone && this.state.playerPlaced && this.state.creaturesPlaced && <this.addCharacters characterType='creature' /> }
 				</div>
-				<div className='player-characters'>
+				<div className='player-characters' draggable={false}>
 					{ this.state.mapLayoutDone && this.state.playerPlaced && <this.addCharacters characterType='player' /> }
 				</div>
 				{ <this.setupSoundEffects /> }

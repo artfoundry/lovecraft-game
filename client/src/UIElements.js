@@ -149,7 +149,7 @@ function CharacterControls(props) {
 				<div className={`action-button refill-action ${actionButtonState}`} onClick={() => props.refillLight()}></div>
 				}
 				{(props.mapObjectsOnPcTiles.length > 0) &&
-					<div className={`action-button examine-action ${actionButtonState}`} onClick={(evt) => props.setMapObjectSelected(props.mapObjectsOnPcTiles, evt, true)}></div>
+					<div className={`action-button pickup-action ${actionButtonState}`} onClick={(evt) => props.setMapObjectSelected(props.mapObjectsOnPcTiles, evt, true)}></div>
 				}
 			</div>
 		</div>

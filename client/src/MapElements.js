@@ -71,7 +71,7 @@ function Item(props) {
 			draggable={false}
 			onClick={(evt) => {
 				if (props.tileIsVisible) {
-					props.updateContextMenu('look', props.tilePos, evt, {objectInfo: [props.objectInfo], selectionEvt: evt, isPickUpAction: false});
+					props.updateContextMenu('examine', props.tilePos, evt, {objectInfo: [props.objectInfo], selectionEvt: evt, isPickUpAction: false});
 				}
 			}}
 		/>
