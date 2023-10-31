@@ -15,7 +15,7 @@
       "coltRevolver0": {
         "id": "coltRevolver0",
         "name": "Colt Revolver",
-        "currentRounds": 0
+        "currentRounds": 6
       }
     },
     "equippedItems": {"right": "coltRevolver0", "left": "electricTorch0", "armor": "leatherJacket0"},

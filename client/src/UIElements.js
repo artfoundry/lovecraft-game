@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {convertObjIdToClassId, notEnoughSpaceInInventory, deepCopy, handleItemOverDropZone} from './Utils';
-
+import {Music} from './Audio';
 
 function CharacterControls(props) {
 	const currentPCdata = props.playerCharacters[props.characterId];
@@ -11,13 +11,12 @@ function CharacterControls(props) {
 		medicine: []
 	};
 
-	const handleWeaponClick = (weapon) => {
+	const handleWeaponClick = (weapon, reloading = false) => {
 		const ammoId = currentPCdata.weapons[weapon.weaponId].gunType + 'Ammo0';
-		if (weapon.ammo === 0) {
+		if (reloading) {
+			const availAmmo = currentPCdata.items[weapon.gunType + 'Ammo0'].amount;
 			// if reloading gun uses up remaining ammo in inv, remove ammo item in inv and update inventory in UI
-			const gunInfo = currentPCdata.weapons[weapon.weaponId];
-			const availAmmo = currentPCdata.items[gunInfo.gunType + 'Ammo0'].amount;
-			if (availAmmo <= gunInfo.rounds) {
+			if (availAmmo <= (weapon.fullyLoaded - weapon.ammo)) {
 				let updatedInventory = props.entireInventory[props.characterId];
 				const ammoInvIndex = updatedInventory.indexOf(ammoId);
 				updatedInventory.splice(ammoInvIndex, 1);
@@ -42,7 +41,7 @@ function CharacterControls(props) {
 			if (weaponInfo.ranged) {
 				const weaponButtonIndex = actionableItems.weapons.findIndex(listItem => listItem.weaponName === weaponInfo.name);
 				if (weaponInfo.gunType) {
-					actionableItems.weapons.push({weaponId: itemId, weaponName: weaponInfo.name, isGun: true, ammo: weaponInfo.currentRounds});
+					actionableItems.weapons.push({weaponId: itemId, gunType: weaponInfo.gunType, weaponName: weaponInfo.name, isGun: true, ammo: weaponInfo.currentRounds, fullyLoaded: weaponInfo.rounds});
 				// check to make sure this stackable weapon isn't already in the controls and has some ammo
 				} else if (weaponButtonIndex === -1 && weaponInfo.stackable && weaponInfo.currentRounds > 0) {
 					actionableItems.weapons.push({weaponId: itemId, weaponName: weaponInfo.name, ammo: weaponInfo.currentRounds});
@@ -70,17 +69,43 @@ function CharacterControls(props) {
 	const weaponButtons = (
 		<div className='weapon-buttons-container'>
 			{actionableItems.weapons.map((weapon, index) => {
-				const actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || (weapon.ammo === 0 && !hasExtraAmmo)) ? 'button-inactive' :
-					(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === weapon.weaponId) ? 'button-selected': '';
-				return (
-					<div
-						className={`action-button ${convertObjIdToClassId(weapon.weaponId)}-action ${actionButtonState} ${weapon.ammo === 0 ? 'gun-reload-icon' : ''}`}
-						key={weapon.weaponId}
-						onClick={() => {
-							handleWeaponClick(weapon);
-						}}
-					>{weapon.ammo || ''}</div>
-				);
+				let actionButtonState = '';
+				let buttonType;
+				if (weapon.isGun) {
+					actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || weapon.ammo === 0) ? 'button-inactive' :
+						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === weapon.weaponId) ? 'button-selected': '';
+					const reloadButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || props.actionButtonSelected || weapon.ammo === weapon.fullyLoaded || !hasExtraAmmo) ? 'button-inactive' :
+						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === weapon.weaponId) ? 'button-selected': '';
+					buttonType = (
+						<div className='action-button-pair' key={weapon.weaponId}>
+							<div
+								className={`action-button ${convertObjIdToClassId(weapon.weaponId)}-action ${actionButtonState}`}
+								onClick={() => {
+									handleWeaponClick(weapon);
+								}}
+							>{weapon.ammo}</div>
+							<div
+								className={`action-button gun-reload-icon ${convertObjIdToClassId(weapon.weaponId)}-action ${reloadButtonState}`}
+								onClick={() => {
+									handleWeaponClick(weapon, true);
+								}}
+							></div>
+						</div>
+					);
+				} else {
+					actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || (weapon.ammo === 0 && !hasExtraAmmo)) ? 'button-inactive' :
+						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === weapon.weaponId) ? 'button-selected': '';
+					buttonType = (
+						<div
+							className={`action-button ${convertObjIdToClassId(weapon.weaponId)}-action ${actionButtonState} ${weapon.ammo === 0 ? 'gun-reload-icon' : ''}`}
+							key={weapon.weaponId}
+							onClick={() => {
+								handleWeaponClick(weapon);
+							}}
+						>{weapon.ammo || ''}</div>
+					);
+				}
+				return buttonType;
 			})}
 		</div>
 	);
@@ -105,25 +130,28 @@ function CharacterControls(props) {
 	);
 
 	return (
-		<div
-			className='character-control-container'
-			onDragOver={(evt) => handleItemOverDropZone(evt)}
-			onDrop={(evt) => props.dropItemToPC(evt, props.characterId)}
-		>
-			<div>
-				<div className='character-name font-fancy'>{props.characterName}</div>
-				<div>Moves remaining: {props.isActiveCharacter ? props.movesRemaining : ''}</div>
-				<div>Actions remaining: {props.isActiveCharacter ? props.actionsRemaining : ''}</div>
+		<div className='control-bar-tab-container'>
+			<div className='control-bar-tab character-name font-fancy'>{props.characterName}</div>
+			<div
+				id={`char-control-${props.characterId}`}
+				className='character-control-container'
+				onDragOver={(evt) => handleItemOverDropZone(evt)}
+				onDrop={(evt) => props.dropItemToPC(evt, props.characterId)}
+			>
+				<div>
+					<div>Moves remaining: {props.isActiveCharacter ? props.movesRemaining : ''}</div>
+					<div>Actions remaining: {props.isActiveCharacter ? props.actionsRemaining : ''}</div>
+				</div>
+				{weaponButtons}
+				{medicineButtons}
+				{((currentPCdata.equippedLight && (currentPCdata.equippedLight.includes('lantern') || currentPCdata.equippedLight.includes('torch'))) &&
+				currentPCdata.lightTime < currentPCdata.items[currentPCdata.equippedLight].maxTime && currentPCdata.items.oil0) &&
+				<div className={`action-button refill-action ${actionButtonState}`} onClick={() => props.refillLight()}></div>
+				}
+				{(props.mapObjectsOnPcTiles.length > 0) &&
+					<div className={`action-button examine-action ${actionButtonState}`} onClick={(evt) => props.setMapObjectSelected(props.mapObjectsOnPcTiles, evt, true)}></div>
+				}
 			</div>
-			{weaponButtons}
-			{medicineButtons}
-			{((currentPCdata.equippedLight && (currentPCdata.equippedLight.includes('lantern') || currentPCdata.equippedLight.includes('torch'))) &&
-			currentPCdata.lightTime < currentPCdata.items[currentPCdata.equippedLight].maxTime && currentPCdata.items.oil0) &&
-			<div className={`action-button refill-action ${actionButtonState}`} onClick={() => props.refillLight()}></div>
-			}
-			{(props.mapObjectsOnPcTiles.length > 0) &&
-				<div className={`action-button examine-action ${actionButtonState}`} onClick={(evt) => props.setMapObjectSelected(props.mapObjectsOnPcTiles, evt, true)}></div>
-			}
 		</div>
 	);
 }
@@ -599,4 +627,51 @@ function HelpPopUp(props) {
 	);
 }
 
-export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, DialogWindow, ContextMenu};
+function GameOptions(props) {
+	const gameOptions = {...props.gameOptions};
+
+	return (
+		<div className={`dialog ui-panel ${props.showGameOptions ? '' : 'hide'}`}>
+			<div className='font-fancy'>Game Options</div>
+			<div className='game-options-container'>
+				<div className='game-options-row'>
+					<label>Sound effects volume: </label>
+					<input className='audio-volume' type='range' min='0' max='1' step='0.1' value={gameOptions.fxVolume} onInput={evt => {
+						gameOptions.fxVolume = evt.target.value;
+						props.updateGameOptions(gameOptions);
+					}} />
+				</div>
+				<div className='game-options-row'>
+					<label>Play music: </label>
+					<button
+						className='general-button'
+						onClick={() => {
+							gameOptions.playMusic = !gameOptions.playMusic;
+							props.updateGameOptions(gameOptions);
+						}}>
+						{props.gameOptions.playMusic ? 'Off' : 'On'}
+					</button>
+				</div>
+				<div className='game-options-row'>
+					<label>Music volume: </label>
+					<input className='audio-volume' type='range' min='0' max='1' step='0.1' value={gameOptions.musicVolume} onInput={evt => {
+						props.musicComponent.volume = evt.target.value;
+						gameOptions.musicVolume = evt.target.value;
+						props.updateGameOptions(gameOptions);
+					}} />
+				</div>
+				<Music
+					idProp={`music-${props.gameOptions.songName}-theme`}
+					sourceName={props.gameOptions.songName}
+				/>
+			</div>
+			<button
+				className='dialog-button'
+				onClick={() => props.toggleOptionsPanel()}>
+				Close
+			</button>
+		</div>
+	);
+}
+
+export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, DialogWindow, ContextMenu, GameOptions};

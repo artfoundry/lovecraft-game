@@ -1,16 +1,12 @@
 import React from 'react';
-import {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, DialogWindow, ContextMenu} from './UIElements';
+import {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, DialogWindow, ContextMenu, GameOptions} from './UIElements';
 import {convertCoordsToPos, notEnoughSpaceInInventory, deepCopy} from './Utils';
-import {Music} from './Audio';
 import './css/ui.css';
 
 class UI extends React.Component {
 	constructor(props) {
 		super(props);
 
-		this.uiPanelHeight = 95;
-		this.objectPanelWidth = 300;
-		this.objectPanelHeight = 250;
 		this.inventoryLength = 12;
 		this.initialUiLoad = true;
 
@@ -19,11 +15,14 @@ class UI extends React.Component {
 			turnInfo: React.createRef(),
 			log: React.createRef()
 		};
-		this.musicSelectors = {
-			catacombs: {}
+		this.audioSelectors = {
+			music: {
+				catacombs: {}
+			}
 		};
 
 		this.state = {
+			showGameOptions: false,
 			logText: this.props.logText,
 			controlBarMinimized: false,
 			logMinimized: false,
@@ -78,41 +77,45 @@ class UI extends React.Component {
 		let controlPanels = [];
 
 		for (const [id, playerInfo] of Object.entries(this.props.playerCharacters)) {
-			let mapObjectsOnPcTiles = [];
-			for (const [objId, objInfo] of Object.entries(this.props.mapObjects)) {
-				const xDelta = Math.abs(playerInfo.coords.xPos - objInfo.coords.xPos);
-				const yDelta = Math.abs(playerInfo.coords.yPos - objInfo.coords.yPos);
-				if (xDelta <= 1 && yDelta <= 1) {
-					mapObjectsOnPcTiles.push({...objInfo, id: objId});
+			if (((this.props.screenSize.isNarrow || this.props.screenSize.isShort) && id === this.props.activeCharacter) ||
+				(!this.props.screenSize.isNarrow && !this.props.screenSize.isShort))
+			{
+				let mapObjectsOnPcTiles = [];
+				for (const [objId, objInfo] of Object.entries(this.props.mapObjects)) {
+					const xDelta = Math.abs(playerInfo.coords.xPos - objInfo.coords.xPos);
+					const yDelta = Math.abs(playerInfo.coords.yPos - objInfo.coords.yPos);
+					if (xDelta <= 1 && yDelta <= 1) {
+						mapObjectsOnPcTiles.push({...objInfo, id: objId});
+					}
 				}
-			}
 
-			controlPanels.push(
-				<CharacterControls
-					key={id}
-					playerCharacters={this.props.playerCharacters}
-					characterId={id}
-					characterName={playerInfo.name}
-					equippedItems={playerInfo.equippedItems}
-					invItems={playerInfo.items}
-					toggleActionButton={this.props.toggleActionButton}
-					actionButtonSelected={this.props.actionButtonSelected}
-					isActiveCharacter={id === this.props.activeCharacter}
-					movesRemaining={this.props.playerLimits.moves - this.props.actionsCompleted.moves}
-					actionsRemaining={this.props.playerLimits.actions - this.props.actionsCompleted.actions}
-					inTacticalMode={this.props.inTacticalMode}
-					updateCharacters={this.props.updateCharacters}
-					entireInventory={this.state.entireInventory}
-					updateInventory={this.updateInventory}
-					checkForExtraAmmo={this.checkForExtraAmmo}
-					reloadGun={this.props.reloadGun}
-					refillLight={this.props.refillLight}
-					setShowDialogProps={this.props.setShowDialogProps}
-					dropItemToPC={this.dropItemToPC}
-					setMapObjectSelected={this.props.setMapObjectSelected}
-					mapObjectsOnPcTiles={mapObjectsOnPcTiles}
-				/>
-			)
+				controlPanels.push(
+					<CharacterControls
+						key={id}
+						playerCharacters={this.props.playerCharacters}
+						characterId={id}
+						characterName={playerInfo.name}
+						equippedItems={playerInfo.equippedItems}
+						invItems={playerInfo.items}
+						toggleActionButton={this.props.toggleActionButton}
+						actionButtonSelected={this.props.actionButtonSelected}
+						isActiveCharacter={id === this.props.activeCharacter}
+						movesRemaining={this.props.playerLimits.moves - this.props.actionsCompleted.moves}
+						actionsRemaining={this.props.playerLimits.actions - this.props.actionsCompleted.actions}
+						inTacticalMode={this.props.inTacticalMode}
+						updateCharacters={this.props.updateCharacters}
+						entireInventory={this.state.entireInventory}
+						updateInventory={this.updateInventory}
+						checkForExtraAmmo={this.checkForExtraAmmo}
+						reloadGun={this.props.reloadGun}
+						refillLight={this.props.refillLight}
+						setShowDialogProps={this.props.setShowDialogProps}
+						dropItemToPC={this.dropItemToPC}
+						setMapObjectSelected={this.props.setMapObjectSelected}
+						mapObjectsOnPcTiles={mapObjectsOnPcTiles}
+					/>
+				)
+			}
 		}
 		return controlPanels;
 	}
@@ -525,11 +528,23 @@ class UI extends React.Component {
 		});
 	}
 
-	calculatePanelCoords(x, y, panelWidth, panelHeight) {
-		const buffer = 30;
-		const leftMod = x > (window.innerWidth - panelWidth) ? -(panelWidth + buffer) : 0;
-		const topMod = y < (window.screenTop + panelHeight) ? buffer : -panelHeight;
-		return {left: x + leftMod, top: y + topMod};
+	calculatePanelCoords(x, y, panelType) {
+		let coords = {};
+		const panelWidth = panelType === 'object' ? this.props.objectPanelWidth : this.props.contextMenuWidth;
+		const panelHeight = panelType === 'object' ? this.props.objectPanelHeight : this.props.contextMenuHeight;
+
+		// use this version for object panels on mobile
+		if (panelType === 'object' && (this.props.screenSize.isNarrow || this.props.screenSize.isShort)) {
+			const left = this.props.screenSize.isNarrow ? 0 : (window.innerWidth - panelWidth) / 2;
+			coords = {left, top: (window.innerHeight - panelHeight) / 2};
+		// use this version for full screen or mobile context menu
+		} else {
+			const buffer = 30;
+			const leftMod = x > (window.innerWidth - panelWidth) ? -(panelWidth + buffer) : 0;
+			const topMod = y < (window.screenTop + panelHeight) ? 0 : -panelHeight;
+			coords = {left: x + leftMod, top: y + topMod};
+		}
+		return coords;
 	}
 
 	/**
@@ -539,7 +554,7 @@ class UI extends React.Component {
 	 * @param draggedObjRecipient: string (ID - used for addObjToOtherPc)
 	 */
 	setObjectPanelDisplayOption = (needToShowObjectPanel, evt, draggedObjRecipient) => {
-		const selectedObjPos = evt ? this.calculatePanelCoords(evt.clientX, evt.clientY, this.objectPanelWidth, this.objectPanelHeight) : this.state.selectedObjPos ? this.state.selectedObjPos : null;
+		const selectedObjPos = evt ? this.calculatePanelCoords(evt.clientX, evt.clientY, 'object') : this.state.selectedObjPos ? this.state.selectedObjPos : null;
 		this.setState({needToShowObjectPanel, selectedObjPos, draggedObjRecipient});
 	}
 
@@ -649,26 +664,14 @@ class UI extends React.Component {
 		});
 	}
 
-	toggleAudio = (selectorName) => {
-		const audio = this.musicSelectors[this.props.currentLocation][selectorName];
-		if (audio.paused) {
-			audio.play().catch(e => console.log(e));
+	toggleMusic = () => {
+		const music = this.audioSelectors.music[this.props.gameOptions.songName];
+		if (this.props.gameOptions.playMusic) {
+			music.volume = this.props.gameOptions.musicVolume;
+			music.play().catch(e => console.log(e));
 		} else {
-			audio.pause();
+			music.pause();
 		}
-
-	}
-
-	/**
-	 * Called by render() to set up array of music elements
-	 * @returns {*[]}
-	 */
-	setUpMusic = () => {
-		const music = [];
-
-		music.push(<Music key={`music-${this.props.currentLocation}`} idProp={`music-${this.props.currentLocation}-theme`} sourceName={this.props.currentLocation} />);
-
-		return music;
 	}
 
 	/**
@@ -676,7 +679,7 @@ class UI extends React.Component {
 	 * @private
 	 */
 	_populateSfxSelectors() {
-		this.musicSelectors[this.props.currentLocation]['music'] = document.getElementById(`music-${this.props.currentLocation}-theme`);
+		this.audioSelectors.music[this.props.gameOptions.songName] = document.getElementById(`music-${this.props.gameOptions.songName}-theme`);
 	}
 
 	/**
@@ -713,6 +716,14 @@ class UI extends React.Component {
 		this.updateInventory(charId, updatedInventory);
 	}
 
+	toggleOptionsPanel = () => {
+		this.setState(prevState => ({showGameOptions: !prevState.showGameOptions}));
+	}
+
+	/**
+	 *
+	 * @param clickedObjPos
+	 */
 	processTileClick = (clickedObjPos) => {
 		// if object was clicked on on the map, check if any other objects are on the same tile
 		let clickedObjects = [];
@@ -740,7 +751,7 @@ class UI extends React.Component {
 		}
 		if (this.initialUiLoad) {
 			this._populateSfxSelectors();
-			this.toggleAudio('music');
+			this.toggleMusic();
 			this.initialUiLoad = false;
 		}
 	}
@@ -773,6 +784,9 @@ class UI extends React.Component {
 				this.addObjectToMap();
 			}
 		}
+		if (prevProps.gameOptions.playMusic !== this.props.gameOptions.playMusic) {
+			this.toggleMusic();
+		}
 	}
 
 	render() {
@@ -791,7 +805,7 @@ class UI extends React.Component {
 					setUserInteraction={this.props.setUserInteraction}
 					setUserMove={this.props.setUserMove}
 					handleContextMenuSelection={this.props.handleContextMenuSelection}
-					menuPosStyle={this.calculatePanelCoords(this.props.contextMenu.evt.clientX, this.props.contextMenu.evt.clientY, 128, 32)}
+					menuPosStyle={this.calculatePanelCoords(this.props.contextMenu.evt.clientX, this.props.contextMenu.evt.clientY, 'menu')}
 					buttonStyle={{width: '32px', height: '32px', backgroundPosition: 'center'}}
 				/>}
 
@@ -824,7 +838,6 @@ class UI extends React.Component {
 							creatureIsSelected={this.props.creatureIsSelected}
 							creatureInfo={this.props.selectedCreatureInfo}
 						/>}
-						<div className='music-controls'>{ <this.setUpMusic /> }</div>
 					</div>
 					{/*<div className='minimize-button general-button' onClick={() => {*/}
 					{/*	this.minimizePanel('turnInfo');*/}
@@ -855,7 +868,19 @@ class UI extends React.Component {
 					creatureInfo={this.props.selectedCreatureInfo}
 				/>}
 
-				<div className='button-center-on-player' onClick={() => this.props.toggleCenterOnPlayer()}></div>
+				<div id='system-buttons-container'>
+					<div id='screen-zoom-container'>
+						<div className='screen-zoom-icon'>+</div>
+						<input id='screen-zoom-slider' type='range' min='0.5' max='1.5' step='0.1' value={this.props.gameOptions.screenZoom} onInput={evt => {
+							const gameOptions = {...this.props.gameOptions};
+							gameOptions.screenZoom = +evt.target.value;
+							this.props.updateGameOptions(gameOptions);
+						}} />
+						<div className='screen-zoom-icon'>&ndash;</div>
+					</div>
+					<div className='system-button button-center-on-player' onClick={() => this.props.toggleCenterOnPlayer()}></div>
+					<div className='system-button button-game-options' onClick={() => this.toggleOptionsPanel()}></div>
+				</div>
 
 				<div ref={this.uiRefs.controlBar} className='control-bar-container ui-panel'>
 					{/*<div className='minimize-button general-button' onClick={() => {*/}
@@ -863,6 +888,14 @@ class UI extends React.Component {
 					{/*}}>_</div>*/}
 					{this.props.playerCharacters && <this.showControlBar />}
 				</div>
+
+				<GameOptions
+					gameOptions={this.props.gameOptions}
+					toggleOptionsPanel={this.toggleOptionsPanel}
+					showGameOptions={this.state.showGameOptions}
+					updateGameOptions={this.props.updateGameOptions}
+					musicComponent={this.audioSelectors.music[this.props.gameOptions.songName]}
+				/>
 			</div>
 		);
 	}

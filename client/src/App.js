@@ -19,6 +19,12 @@ class Game extends React.Component {
 		this.playerMovesLimit = 3;
 		this.playerActionsLimit = 2;
 
+		// this.uiPanelHeight = 95; only used for minimize function which isn't in use
+		this.objectPanelWidth = 300;
+		this.objectPanelHeight = 250;
+		this.contextMenuWidth = 128;
+		this.contextMenuHeight = 32;
+
 		this.firebase = new Firebase();
 
 		/**
@@ -31,6 +37,19 @@ class Game extends React.Component {
 		 **/
 
 		this.state = {
+			gameOptions: {
+				fxVolume: 1,
+				musicVolume: 1,
+				playMusic: false,
+				songName: '',
+				screenZoom: 1.0
+			},
+			screenSize: {
+				width: window.innerWidth,
+				height: window.innerHeight,
+				isNarrow: window.innerWidth < 768,
+				isShort: window.innerHeight < 768
+			},
 			userData: {},
 			isLoggedIn: false,
 			gameSetupComplete: false,
@@ -139,6 +158,15 @@ class Game extends React.Component {
 		}, () => {
 			if (callback) callback();
 		})
+	}
+
+	getScreenDimensions = () => {
+		const screenSize = {...this.state.screenSize};
+		screenSize.width = window.innerWidth;
+		screenSize.height = window.innerHeight;
+		screenSize.isNarrow = screenSize.width < 768;
+		screenSize.isShort = screenSize.height < 768;
+		this.setState({screenSize});
 	}
 
 	/**
@@ -374,8 +402,9 @@ class Game extends React.Component {
 		const gunInfo = updatedPCdata.weapons[weaponId];
 		const gunType = gunInfo.gunType;
 		const availAmmo = updatedPCdata.items[gunType + 'Ammo0'].amount;
-		const resupplyAmmo = gunInfo.rounds <= availAmmo ? gunInfo.rounds : availAmmo;
-		updatedPCdata.weapons[weaponId].currentRounds = resupplyAmmo;
+		const emptyRounds = gunInfo.rounds - gunInfo.currentRounds;
+		const resupplyAmmo = emptyRounds <= availAmmo ? emptyRounds : availAmmo;
+		gunInfo.currentRounds += resupplyAmmo;
 		updatedPCdata.items[gunType + 'Ammo0'].amount = availAmmo - resupplyAmmo;
 		if (updatedPCdata.items[gunType + 'Ammo0'].amount === 0) {
 			delete updatedPCdata.items[gunType + 'Ammo0'];
@@ -542,47 +571,73 @@ class Game extends React.Component {
 	}
 
 	/**
+	 * Checks if context menu should be shown or other action processed
+	 * Other action possibilities:
+	 * -close menu
+	 * -handle unit click to show unit info
+	 * -handle unit click to take action on it
+	 * -handle object click to set object selected
+	 * @param actionType: string (possibilities: 'look', 'creature', 'player', null)
+	 * @param tilePos: string
+	 * @param evt: event object
+	 * @param actionInfo: object (props for appropriate function called upon clicking menu button)
+	 * @returns {{actionToProcess: function, menuNeeded: boolean}} (if menuNeeded, actionToProcess is null)
+	 */
+	isContextMenuNeeded = (actionType, tilePos = null, evt = null, actionInfo = null) => {
+		let contextMenuNeeded = {menuNeeded: true, actionToProcess: null};
+
+		// if clicked obj is a creature/player, check if at least one object is on that tile
+		let objectOnTile = null;
+		if (actionType === 'creature' || actionType === 'player') {
+			objectOnTile = this._isObjectOnTile(tilePos, evt);
+		}
+
+		// bypass setting up context menu if clicked target is a pc or creature with nothing else on the tile and no action cued up...
+		if (!objectOnTile && !this.state.actionButtonSelected && (actionType === 'player' || actionType === 'creature')) {
+			contextMenuNeeded = {
+				menuNeeded: false,
+				actionToProcess: () => this.handleUnitClick(actionInfo.id, actionType)
+			};
+		// ...or if action is being used (regardless of whether object is also there)
+		} else if (this.state.actionButtonSelected && (actionType === 'creature' || actionType === 'player')) {
+			contextMenuNeeded = {
+				menuNeeded: false,
+				actionToProcess: () => this.handleUnitClick(actionInfo.id, actionInfo.target, actionInfo.isInRange, actionInfo.checkLineOfSightToParty)
+			};
+		// ...or if clicked target is a torch
+		} else if (actionType === 'look' && actionInfo.objectInfo[0].name === 'Torch') {
+			contextMenuNeeded = {
+				menuNeeded: false,
+				actionToProcess: () => this.setMapObjectSelected(actionInfo.objectInfo, actionInfo.selectionEvt, actionInfo.isPickUpAction)
+			};
+		}
+
+		return contextMenuNeeded;
+	}
+
+	/**
 	 * Determines which buttons to add to context menu
 	 * Possibilities:
 	 * creature and item
 	 * player and item
 	 * item and move
-	 * @param actionType: string
+	 * action (shoot) and reload
+	 * @param actionType: string (possibilities: 'look', 'creature', 'player', null)
 	 * @param tilePos: string
 	 * @param evt: event object
 	 * @param actionInfo: object (props for appropriate function called upon clicking menu button)
+	 * @param contextMenuInfo: object ({actionToProcess: function, menuNeeded: boolean} - passed in only if isContextMenuNeeded was previously called in Map (checkForDragging))
 	 */
-	updateContextMenu = (actionType, tilePos = null, evt = null, actionInfo = null) => {
-		// if already have a context menu showing, user has clicked out of it, so close it
+	updateContextMenu = (actionType, tilePos = null, evt = null, actionInfo = null, contextMenuInfo = null) => {
+		const isContextMenuNeeded = contextMenuInfo || this.isContextMenuNeeded(actionType, tilePos, evt, actionInfo);
+
+		// if no action is being done (action being clicked on item or character) there's already a menu, so close menu
+		// no actionType should indicate menu already exists (as clicking on item, char, or tile is already checking), but just in case...
 		if (!actionType) {
 			this.setState({contextMenu: null});
-			return;
-		}
-
-		// if clicked obj is a creature/player, check if at least one object is on that tile
-		let objectOnTile = null;
-		if (actionType === 'creature' || actionType === 'player') {
-			const objects = Object.values(this.state.mapObjects);
-			let i = 0;
-			while (!objectOnTile && i < objects.length) {
-				if (convertCoordsToPos(objects[i].coords) === tilePos) {
-					// objectInfo needs to be in array for setMapObjectSelected
-					objectOnTile = {objectInfo: [objects[i]], selectionEvt: evt, isPickUpAction: false};
-				} else {
-					i++;
-				}
-			}
-		}
-
-		// bypass setting up context menu if clicked target is a pc or creature with nothing else on the tile...
-		if (!objectOnTile && (actionType === 'player' || (actionType === 'creature' && !this.state.actionButtonSelected))) {
-			this.handleUnitClick(actionInfo.id, actionType);
-		// ...or if action is being used
-		} else if (this.state.actionButtonSelected && (actionType === 'creature' || actionType === 'player')) {
-			this.handleUnitClick(actionInfo.id, actionInfo.target, actionInfo.isInRange, actionInfo.checkLineOfSightToParty);
-		// ...or if clicked target is a torch
-		} else if (actionType === 'look' && actionInfo.objectInfo[0].name === 'Torch') {
-			this.setMapObjectSelected(actionInfo.objectInfo, actionInfo.selectionEvt, actionInfo.isPickUpAction);
+		// Don't need menu, so do action instead
+		} else if (!isContextMenuNeeded.menuNeeded) {
+			isContextMenuNeeded.actionToProcess();
 		// otherwise, set up context menu
 		} else {
 			const contextMenu = {
@@ -593,9 +648,11 @@ class Game extends React.Component {
 			};
 			if (actionType !== 'player' && actionType !== 'creature') {
 				contextMenu.actionsAvailable.move = true;
-			}
-			if (objectOnTile) {
-				contextMenu.actionsAvailable.look = objectOnTile;
+			} else {
+				const objectOnTile = this._isObjectOnTile(tilePos, evt);
+				if (objectOnTile) {
+					contextMenu.actionsAvailable.look = objectOnTile;
+				}
 			}
 			this.setState({contextMenu, contextMenuChoice: null});
 		}
@@ -732,12 +789,38 @@ class Game extends React.Component {
 		this.setState(prevState => ({centerOnPlayer: !prevState.centerOnPlayer}));
 	}
 
+	updateGameOptions = (gameOptions) => {
+		this.setState({gameOptions});
+	}
+
 
 
 	/*********************
 	 * PRIVATE FUNCTIONS
 	 *********************/
 
+
+	/**
+	 * Determines if object is on a clicked tile (checking for context menu)
+	 * @param tilePos
+	 * @param evt
+	 * @returns null or object ({objectInfo, selectionEvt, isPickUpAction})
+	 * @private
+	 */
+	_isObjectOnTile(tilePos, evt) {
+		let objectOnTile = null;
+		const objects = Object.values(this.state.mapObjects);
+		let i = 0;
+		while (!objectOnTile && i < objects.length) {
+			if (convertCoordsToPos(objects[i].coords) === tilePos) {
+				// objectInfo needs to be in array for setMapObjectSelected
+				objectOnTile = {objectInfo: [objects[i]], selectionEvt: evt, isPickUpAction: false};
+			} else {
+				i++;
+			}
+		}
+		return objectOnTile;
+	}
 
 	/**
 	 * Initialization function. gameSetupComplete in callback indicates Map component can render
@@ -771,8 +854,10 @@ class Game extends React.Component {
 	 * @private
 	 */
 	_setLocation(gameReadyCallback) {
+		const gameOptions = {...this.state.gameOptions};
+		gameOptions.songName = this.startingLocation;
 		if (this.startingLocation) {
-			this.setState({currentLocation: this.startingLocation}, gameReadyCallback);
+			this.setState({currentLocation: this.startingLocation, gameOptions}, gameReadyCallback);
 		} else {
 			// handle location change
 		}
@@ -912,7 +997,14 @@ class Game extends React.Component {
 
 	componentDidMount() {
 		if (!this.state.gameSetupComplete) {
+			let resizeTimeout = null;
+			const resizeDelay = 250;
+
 			this._setupGameState();
+			window.addEventListener('resize', () => {
+				clearTimeout(resizeTimeout);
+				resizeTimeout = setTimeout(this.getScreenDimensions, resizeDelay);
+			});
 		}
 
 		// todo: uncomment below and comment Firebase component in render() for testing, remove for prod
@@ -921,13 +1013,21 @@ class Game extends React.Component {
 
 	render() {
 		return (
-			<div className="game" style={{width: `${window.innerWidth}px`, height: `${window.innerHeight}px`, overflow: 'hidden'}}>
+			<div className="game" style={{width: `${window.innerWidth}px`, height: `${window.innerHeight}px`}}>
 				<Firebase
 					updateLoggedIn={this.updateLoggedIn}
 				/>
 
 				{this.state.isLoggedIn &&
 					<UI
+						screenSize={this.state.screenSize}
+						updateGameOptions={this.updateGameOptions}
+						gameOptions={this.state.gameOptions}
+						objectPanelWidth={this.objectPanelWidth}
+						objectPanelHeight={this.objectPanelHeight}
+						contextMenuWidth={this.contextMenuWidth}
+						contextMenuHeight={this.contextMenuHeight}
+
 						showDialog={this.state.showDialog}
 						setShowDialogProps={this.setShowDialogProps}
 						dialogProps={this.state.dialogProps}
@@ -980,6 +1080,10 @@ class Game extends React.Component {
 
 				{this.state.isLoggedIn && this.state.gameSetupComplete &&
 					<Map
+						screenSize={this.state.screenSize}
+						gameOptions={this.state.gameOptions}
+						objectPanelWidth={this.objectPanelWidth}
+
 						setShowDialogProps={this.setShowDialogProps}
 						notEnoughSpaceDialogProps={this.notEnoughSpaceDialogProps}
 						noMoreActionsDialogProps={this.noMoreActionsDialogProps}
@@ -1011,6 +1115,7 @@ class Game extends React.Component {
 
 						updateLog={this.updateLog}
 						actionButtonSelected={this.state.actionButtonSelected}
+						isContextMenuNeeded={this.isContextMenuNeeded}
 						updateContextMenu={this.updateContextMenu}
 						contextMenu={this.state.contextMenu}
 						contextMenuChoice={this.state.contextMenuChoice}

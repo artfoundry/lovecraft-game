@@ -64,6 +64,7 @@ class Map extends React.Component {
 		this.charRefs = {};
 		this.clickedOnWorld = false;
 		this.isDraggingWorld = false;
+		this.contextMenuOpen = false;
 		this.animFrameStartTime = 0;
 		this.animFrameTimeLimit = 0;
 		this.animFrameCallback = null;
@@ -877,7 +878,8 @@ class Map extends React.Component {
 			classStr={allClasses}
 			dataLightStr={tileLightStr}
 			moveCharacter={(tilePos) => {
-				if (this.props.contextMenu) {
+				if (this.contextMenuOpen) {
+					this.contextMenuOpen = false;
 					this.props.updateContextMenu(null);
 				} else if (!this.isDraggingWorld) {
 					this.checkIfTileOrObject(tilePos, null);
@@ -2283,9 +2285,10 @@ class Map extends React.Component {
 		this.clickedOnWorld = false;
 		this.isDraggingWorld = false;
 		const pcCoords = this.props.playerCharacters[this.props.activeCharacter].coords;
-		this.worldTransform.x = (-pcCoords.xPos * this.tileSize) + Math.round(window.innerWidth / 2);
+		const mapXcenter = this.props.screenSize.isShort ? Math.round((window.innerWidth - this.props.objectPanelWidth) / 2) + this.props.objectPanelWidth : Math.round(window.innerWidth / 2);
+		this.worldTransform.x = (-pcCoords.xPos * this.tileSize) + mapXcenter - (this.tileSize / 4);
 		this.worldTransform.y = (-pcCoords.yPos * this.tileSize) + Math.round(window.innerHeight / 2);
-		this.worldRef.current.style.transform = `translate(${this.worldTransform.x}px, ${this.worldTransform.y}px)`;
+		this.worldRef.current.style.transform = `translate(${this.worldTransform.x}px, ${this.worldTransform.y}px) scale(${this.props.gameOptions.screenZoom})`;
 
 		if (initialSetupCallback) {
 			setTimeout(() => {
@@ -2329,43 +2332,46 @@ class Map extends React.Component {
 	toggleAudio = (selectorName) => {
 		const audio = this.sfxSelectors[this.props.currentLocation][selectorName];
 		if (audio.paused) {
+			audio.volume = this.props.gameOptions.fxVolume;
 			audio.play().catch(e => console.log(e));
 		} else {
 			audio.pause().catch(e => console.log(e));
 		}
-
 	}
 
 	dragWorld = (evt, previousEvt) => {
 		if (this.clickedOnWorld) {
-			if (this.props.contextMenu) {
+			if (this.contextMenuOpen) {
+				this.contextMenuOpen = false;
 				this.props.updateContextMenu(null);
 			}
+			let mapLeftEdge = this.props.screenSize.isShort ? this.props.objectPanelWidth : 0;
+
 			const movementX = evt.clientX - previousEvt.clientX;
 			const movementY = evt.clientY - previousEvt.clientY;
 			const worldEdges = this.worldRef.current.getBoundingClientRect();
 			// already dragged world as far left as it can go (right edge is at right edge of screen)
 			const atLeftLimit = worldEdges.right <= window.innerWidth && movementX < 0;
 			// already dragged world as far right as it can go (left edge is at left edge of screen)
-			const atRightLimit = worldEdges.left >= 0 && movementX > 0;
+			const atRightLimit = worldEdges.left >= mapLeftEdge && movementX > 0;
 			// already dragged world as far up as it can go (bottom edge is at bottom edge of screen)
 			const atTopLimit = worldEdges.bottom <= window.innerHeight && movementY < 0;
 			// already dragged world as far down as it can go (top edge is at top edge of screen)
 			const atBottomLimit = worldEdges.top >= 0 && movementY > 0;
 
-			// to prevent this from being set just from clicking without dragging
+			// to prevent isDraggingWorld from being set just from clicking without dragging
 			if (movementX > 0 || movementY > 0) {
 				this.isDraggingWorld = true;
 			}
 			this.worldTransform.x += atLeftLimit || atRightLimit ? 0 : movementX;
 			this.worldTransform.y += atTopLimit || atBottomLimit ? 0 : movementY;
-			this.worldRef.current.style.transform = `translate(${this.worldTransform.x}px, ${this.worldTransform.y}px)`;
+			this.worldRef.current.style.transform = `translate(${this.worldTransform.x}px, ${this.worldTransform.y}px) scale(${this.props.gameOptions.screenZoom})`;
 		}
 	}
 
 	endDragging = () => {
 		this.clickedOnWorld = false;
-		// need slight pause so if pointerup event is picked up by handler for objects/characters/tiles, check will
+		// need slight pause so if pointerup event is picked up by handler for objects/characters/tiles
 		this.animFrameTimeLimit = 2;
 		this.animFrameCallback = () => {
 			this.isDraggingWorld = false;
@@ -2384,7 +2390,16 @@ class Map extends React.Component {
 	 */
 	checkForDragging = (actionType, tilePos, evt, actionInfo) => {
 		if (!this.isDraggingWorld) {
-			this.props.updateContextMenu(actionType, tilePos, evt, actionInfo);
+			if (this.contextMenuOpen) {
+				this.contextMenuOpen = false;
+				this.props.updateContextMenu(null);
+			} else {
+				const contextMenuNeeded = this.props.isContextMenuNeeded(actionType, tilePos, evt, actionInfo);
+				if (contextMenuNeeded.menuNeeded) {
+					this.contextMenuOpen = true;
+				}
+				this.props.updateContextMenu(actionType, tilePos, evt, actionInfo, contextMenuNeeded);
+			}
 		}
 	}
 
@@ -2503,6 +2518,12 @@ class Map extends React.Component {
 		if (this.props.centerOnPlayer && !prevProps.centerOnPlayer) {
 			this._moveMap();
 			this.props.toggleCenterOnPlayer();
+		}
+		if (prevProps.screenSize.width !== this.props.screenSize.width ||
+			prevProps.screenSize.height !== this.props.screenSize.height ||
+			prevProps.gameOptions.screenZoom !== this.props.gameOptions.screenZoom)
+		{
+			this._moveMap();
 		}
 	}
 
