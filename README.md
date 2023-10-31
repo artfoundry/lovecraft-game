@@ -7,10 +7,12 @@ Current demo: https://lovecraft-oldones.web.app/
 
 *WIP*
 
-*CURRENT WORKING BRANCH: *
+*CURRENT WORKING BRANCH: bug-fixes*
 
 ---
 #### Current status:
+
+10/31/23: Fixed styling and functionality for mobile, so now everything should work on phone and tablet. Changing lighting to be smoothly blended between tiles! Moving game settings (music and audio for now) into settings panel. Adding zoom slider to zoom in/out on map.
 
 5/7/23: Added line of sight pathing for accurate ranged attacks and tracking party members. Improvements to UI for mobile. Map piece randomization weighting during layout.
 
