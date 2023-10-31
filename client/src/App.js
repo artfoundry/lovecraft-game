@@ -19,6 +19,12 @@ class Game extends React.Component {
 		this.playerMovesLimit = 3;
 		this.playerActionsLimit = 2;
 
+		// this.uiPanelHeight = 95; only used for minimize function which isn't in use
+		this.objectPanelWidth = 300;
+		this.objectPanelHeight = 250;
+		this.contextMenuWidth = 128;
+		this.contextMenuHeight = 32;
+
 		this.firebase = new Firebase();
 
 		/**
@@ -35,7 +41,8 @@ class Game extends React.Component {
 				fxVolume: 1,
 				musicVolume: 1,
 				playMusic: false,
-				songName: ''
+				songName: '',
+				screenZoom: 1.0
 			},
 			screenSize: {
 				width: window.innerWidth,
@@ -1016,6 +1023,10 @@ class Game extends React.Component {
 						screenSize={this.state.screenSize}
 						updateGameOptions={this.updateGameOptions}
 						gameOptions={this.state.gameOptions}
+						objectPanelWidth={this.objectPanelWidth}
+						objectPanelHeight={this.objectPanelHeight}
+						contextMenuWidth={this.contextMenuWidth}
+						contextMenuHeight={this.contextMenuHeight}
 
 						showDialog={this.state.showDialog}
 						setShowDialogProps={this.setShowDialogProps}
@@ -1071,6 +1082,7 @@ class Game extends React.Component {
 					<Map
 						screenSize={this.state.screenSize}
 						gameOptions={this.state.gameOptions}
+						objectPanelWidth={this.objectPanelWidth}
 
 						setShowDialogProps={this.setShowDialogProps}
 						notEnoughSpaceDialogProps={this.notEnoughSpaceDialogProps}

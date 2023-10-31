@@ -7,11 +7,6 @@ class UI extends React.Component {
 	constructor(props) {
 		super(props);
 
-		this.uiPanelHeight = 95;
-		this.objectPanelWidth = 300;
-		this.objectPanelHeight = 250;
-		this.contextMenuWidth = 128;
-		this.contextMenuHeight = 32;
 		this.inventoryLength = 12;
 		this.initialUiLoad = true;
 
@@ -535,8 +530,8 @@ class UI extends React.Component {
 
 	calculatePanelCoords(x, y, panelType) {
 		let coords = {};
-		const panelWidth = panelType === 'object' ? this.objectPanelWidth : this.contextMenuWidth;
-		const panelHeight = panelType === 'object' ? this.objectPanelHeight : this.contextMenuHeight;
+		const panelWidth = panelType === 'object' ? this.props.objectPanelWidth : this.props.contextMenuWidth;
+		const panelHeight = panelType === 'object' ? this.props.objectPanelHeight : this.props.contextMenuHeight;
 
 		// use this version for object panels on mobile
 		if (panelType === 'object' && (this.props.screenSize.isNarrow || this.props.screenSize.isShort)) {
@@ -873,7 +868,16 @@ class UI extends React.Component {
 					creatureInfo={this.props.selectedCreatureInfo}
 				/>}
 
-				<div className='system-buttons-container'>
+				<div id='system-buttons-container'>
+					<div id='screen-zoom-container'>
+						<div className='screen-zoom-icon'>+</div>
+						<input id='screen-zoom-slider' type='range' min='0.5' max='1.5' step='0.1' value={this.props.gameOptions.screenZoom} onInput={evt => {
+							const gameOptions = {...this.props.gameOptions};
+							gameOptions.screenZoom = +evt.target.value;
+							this.props.updateGameOptions(gameOptions);
+						}} />
+						<div className='screen-zoom-icon'>&ndash;</div>
+					</div>
 					<div className='system-button button-center-on-player' onClick={() => this.props.toggleCenterOnPlayer()}></div>
 					<div className='system-button button-game-options' onClick={() => this.toggleOptionsPanel()}></div>
 				</div>
