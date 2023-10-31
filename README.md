@@ -14,6 +14,8 @@ Current demo: https://lovecraft-oldones.web.app/
 
 10/31/23: Fixed styling and functionality for mobile, so now everything should work on phone and tablet. Changing lighting to be smoothly blended between tiles! Moving game settings (music and audio for now) into settings panel. Adding zoom slider to zoom in/out on map.
 
+8/29/23: Added objects to pick up (ammo, weapons, lights, health kits, etc.). Changed PC info panel to full inventory with paper doll. Added drag and drop to move items in inventory, trade between characters, and drop items.
+
 5/7/23: Added line of sight pathing for accurate ranged attacks and tracking party members. Improvements to UI for mobile. Map piece randomization weighting during layout.
 
 4/15/23: Finished initiative system.  Added mode switching for follow/tactical modes (with three PCs now playable as a party).  Added movement animation.
