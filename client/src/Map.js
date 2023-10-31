@@ -50,6 +50,7 @@ class Map extends React.Component {
 			'Lantern': ItemTypes['Lantern'].range,
 			'Electric Torch': ItemTypes['Electric Torch'].range
 		};
+		this.maxLightStrength = 5;
 		this.numMapPieceTwoDoorHalls = 6;
 
 		// total number of map pieces in currentMapData: 17;
@@ -730,8 +731,8 @@ class Map extends React.Component {
 		const lightStrengthByTile = {};
 		const mapLayout = deepCopy(this.state.mapLayout);
 		const capLightStrength = (pos) => {
-			if (lightStrengthByTile[pos] > 9) {
-				lightStrengthByTile[pos] = 9;
+			if (lightStrengthByTile[pos] > this.maxLightStrength) {
+				lightStrengthByTile[pos] = this.maxLightStrength;
 			}
 		}
 
@@ -1109,7 +1110,7 @@ class Map extends React.Component {
 			let allClasses = 'light-tile';
 			const tileLightStr = tileData.lightStrength;
 
-			if (tileLightStr <= 9 && tileLightStr >= 1) {
+			if (tileLightStr <= this.maxLightStrength && tileLightStr >= 1) {
 				allClasses += ` light-strength-${tileLightStr} black-light`;
 			} else if (this.state.playerVisited[tilePos]) {
 				allClasses += ' ambient-light black-light';
@@ -2279,16 +2280,20 @@ class Map extends React.Component {
 
 	/**
 	 * For moving world element to put active character in center of screen
+	 * @param initialSetupCallback: function
 	 * @private
 	 */
 	_moveMap(initialSetupCallback) {
 		this.clickedOnWorld = false;
 		this.isDraggingWorld = false;
+		const screenSize = this.props.screenSize;
+		const screenZoom = this.props.gameOptions.screenZoom;
+		const halfCharIconSize = Math.round((this.tileSize * screenZoom) / 2);
 		const pcCoords = this.props.playerCharacters[this.props.activeCharacter].coords;
-		const mapXcenter = this.props.screenSize.isShort ? Math.round((window.innerWidth - this.props.objectPanelWidth) / 2) + this.props.objectPanelWidth : Math.round(window.innerWidth / 2);
-		this.worldTransform.x = (-pcCoords.xPos * this.tileSize) + mapXcenter - (this.tileSize / 4);
-		this.worldTransform.y = (-pcCoords.yPos * this.tileSize) + Math.round(window.innerHeight / 2);
-		this.worldRef.current.style.transform = `translate(${this.worldTransform.x}px, ${this.worldTransform.y}px) scale(${this.props.gameOptions.screenZoom})`;
+		const mapViewXcenter = this.props.screenSize.isShort ? Math.round((screenSize.width - this.props.objectPanelWidth) / 2) + this.props.objectPanelWidth : Math.round(screenSize.width / 2);
+		this.worldTransform.x = Math.round(-pcCoords.xPos * this.tileSize * screenZoom) + mapViewXcenter - halfCharIconSize;
+		this.worldTransform.y = Math.round(-pcCoords.yPos * this.tileSize * screenZoom) + Math.round(screenSize.height / 2) - halfCharIconSize;
+		this.worldRef.current.style.transform = `translate(${this.worldTransform.x}px, ${this.worldTransform.y}px) scale(${screenZoom})`;
 
 		if (initialSetupCallback) {
 			setTimeout(() => {
@@ -2299,6 +2304,7 @@ class Map extends React.Component {
 
 	/**
 	 * Toggles door opens/closed (and plays the sound effect for it)
+	 * @param doorTilePos: string
 	 */
 	toggleDoor = (doorTilePos) => {
 		this.toggleAudio('door');
@@ -2345,22 +2351,23 @@ class Map extends React.Component {
 				this.contextMenuOpen = false;
 				this.props.updateContextMenu(null);
 			}
-			let mapLeftEdge = this.props.screenSize.isShort ? this.props.objectPanelWidth : 0;
+			const screenSize = this.props.screenSize;
+			let mapLeftEdge = screenSize.isShort ? this.props.objectPanelWidth : 0;
 
 			const movementX = evt.clientX - previousEvt.clientX;
 			const movementY = evt.clientY - previousEvt.clientY;
 			const worldEdges = this.worldRef.current.getBoundingClientRect();
 			// already dragged world as far left as it can go (right edge is at right edge of screen)
-			const atLeftLimit = worldEdges.right <= window.innerWidth && movementX < 0;
+			const atLeftLimit = worldEdges.right <= screenSize.width && movementX < 0;
 			// already dragged world as far right as it can go (left edge is at left edge of screen)
 			const atRightLimit = worldEdges.left >= mapLeftEdge && movementX > 0;
 			// already dragged world as far up as it can go (bottom edge is at bottom edge of screen)
-			const atTopLimit = worldEdges.bottom <= window.innerHeight && movementY < 0;
+			const atTopLimit = worldEdges.bottom <= screenSize.height && movementY < 0;
 			// already dragged world as far down as it can go (top edge is at top edge of screen)
 			const atBottomLimit = worldEdges.top >= 0 && movementY > 0;
 
-			// to prevent isDraggingWorld from being set just from clicking without dragging
-			if (movementX > 0 || movementY > 0) {
+			// to prevent isDraggingWorld from being set just from clicking without dragging (but possibly slight movement by accident)
+			if (movementX > 1 || movementY > 1) {
 				this.isDraggingWorld = true;
 			}
 			this.worldTransform.x += atLeftLimit || atRightLimit ? 0 : movementX;
@@ -2509,6 +2516,9 @@ class Map extends React.Component {
 		}
 		if (this.props.contextMenuChoice && prevProps.contextMenuChoice !== this.props.contextMenuChoice) {
 			this.checkIfTileOrObject(this.props.contextMenuChoice.tilePos);
+		}
+		if (prevProps.contextMenu && !this.props.contextMenu) {
+			this.contextMenuOpen = false;
 		}
 		if (this.props.lightingHasChanged && !prevProps.lightingHasChanged) {
 			this._calculateLighting(() => {

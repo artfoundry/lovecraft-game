@@ -47,8 +47,8 @@ class Game extends React.Component {
 			screenSize: {
 				width: window.innerWidth,
 				height: window.innerHeight,
-				isNarrow: window.innerWidth < 768,
-				isShort: window.innerHeight < 768
+				isNarrow: window.innerWidth < 768 && window.innerWidth < window.innerHeight,
+				isShort: window.innerHeight < 768 && window.innerHeight < window.innerWidth
 			},
 			userData: {},
 			isLoggedIn: false,
@@ -164,8 +164,8 @@ class Game extends React.Component {
 		const screenSize = {...this.state.screenSize};
 		screenSize.width = window.innerWidth;
 		screenSize.height = window.innerHeight;
-		screenSize.isNarrow = screenSize.width < 768;
-		screenSize.isShort = screenSize.height < 768;
+		screenSize.isNarrow = screenSize.width < 768 && screenSize.width < screenSize.height;
+		screenSize.isShort = screenSize.height < 768 && screenSize.height < screenSize.width;
 		this.setState({screenSize});
 	}
 

@@ -7,10 +7,14 @@ Current demo: https://lovecraft-oldones.web.app/
 
 *WIP*
 
-*CURRENT WORKING BRANCH: *
+*CURRENT WORKING BRANCH: bug-fixes*
 
 ---
 #### Current status:
+
+10/31/23: Fixed styling and functionality for mobile, so now everything should work on phone and tablet. Changing lighting to be smoothly blended between tiles! Moving game settings (music and audio for now) into settings panel. Adding zoom slider to zoom in/out on map.
+
+8/29/23: Added objects to pick up (ammo, weapons, lights, health kits, etc.). Changed PC info panel to full inventory with paper doll. Added drag and drop to move items in inventory, trade between characters, and drop items.
 
 5/7/23: Added line of sight pathing for accurate ranged attacks and tracking party members. Improvements to UI for mobile. Map piece randomization weighting during layout.
 
@@ -95,7 +99,7 @@ Alt class data indicates what a tile's class/texture should be changed to when a
 - You can then change selection mode and select tiles for that setting.
 - Rinse and repeat. Selecting each mode will show which tiles have been selected for that option.
 - Click the Select tiles button again to exit Neighbor settings.  Your settings will be stored in the tiles
-on the grid.
+  on the grid.
 
 Make sure to save the piece to keep your changes!
 
