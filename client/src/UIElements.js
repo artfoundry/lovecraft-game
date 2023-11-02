@@ -139,8 +139,8 @@ function CharacterControls(props) {
 				onDrop={(evt) => props.dropItemToPC(evt, props.characterId)}
 			>
 				<div>
-					<div>Moves remaining: {props.isActiveCharacter ? props.movesRemaining : ''}</div>
-					<div>Actions remaining: {props.isActiveCharacter ? props.actionsRemaining : ''}</div>
+					<div>Moves: {props.isActiveCharacter ? props.movesRemaining : ''}</div>
+					<div>Actions: {props.isActiveCharacter ? props.actionsRemaining : ''}</div>
 				</div>
 				{weaponButtons}
 				{medicineButtons}

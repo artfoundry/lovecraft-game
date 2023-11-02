@@ -12,6 +12,7 @@ import {
 	convertObjIdToClassId,
 	convertPosToCoords,
 	convertCoordsToPos,
+	randomTileMovementValue,
 	roundTowardZero,
 	notEnoughSpaceInInventory,
 	deepCopy,
@@ -2222,6 +2223,10 @@ class Map extends React.Component {
 					this.props.mapCreatures[creatureID].attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog, updateThreatAndCurrentTurn);
 				}
 				creatureDidAct = true;
+			} else {
+				this._moveRandomly();
+				creatureDidAct = true;
+				this.props.updateCurrentTurn();
 			}
 
 			// For creatures that don't act, still need to advance turn
@@ -2233,29 +2238,22 @@ class Map extends React.Component {
 
 	/**
 	 * Moves a creature in random directions.
-	 * Currently not in use (but may use in daylight areas where all creatures are visible)
 	 * @private
 	 */
-	// _moveRandomly() {
-	// 	const creatureID = this.props.activeCharacter;
-	// 	const creatureData = this.props.mapCreatures[creatureID];
-	// 	const creatureCoords = creatureData.coords;
-	// 	let allCreatureMoves = [];
-	// 	let newRandX = 0;
-	// 	let newRandY = 0;
-	// 	for (let i=1; i <= creatureData.moveSpeed; i++) {
-	// 		newRandX = creatureCoords.xPos + randomTileMovementValue();
-	// 		newRandY = creatureCoords.yPos + randomTileMovementValue();
-	// 		if (this._tileIsFreeToMove({xPos: newRandX, yPos: newRandY})) {
-	// 			allCreatureMoves.push({xPos: newRandX, yPos: newRandY});
-	//
-	// 			// this.props.updateLog(`Moving ${creatureID} randomly to ${newRandX}, ${newRandY}`);
-	// 		}
-	// 	}
-	// 	if (allCreatureMoves.length > 0) {
-	// 		this._storeNewCreatureCoords(creatureID, allCreatureMoves);
-	// 	}
-	// }
+	_moveRandomly() {
+		const creatureID = this.props.activeCharacter;
+		const creatureData = this.props.mapCreatures[creatureID];
+		const creatureCoords = creatureData.coords;
+		const newRandCoords = [{
+			xPos: creatureCoords.xPos + randomTileMovementValue(),
+			yPos: creatureCoords.yPos + randomTileMovementValue()
+		}];
+		if (this._tileIsFreeToMove(newRandCoords)) {
+			this._storeNewCreatureCoords(creatureID, newRandCoords);
+
+			// this.props.updateLog(`Moving ${creatureID} randomly to ${newRandX}, ${newRandY}`);
+		}
+	}
 
 	// todo: No longer needed? Was being used in moveCharacter, but from old map paradigm using tile sides to determine valid moves
 	//

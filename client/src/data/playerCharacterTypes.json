@@ -8,7 +8,7 @@
     "agility": 5,
     "mentalAcuity": 4,
     "startingHealth": 100,
-    "startingSanity": 8,
+    "startingSanity": 80,
     "skills": {
     },
     "weapons": {
@@ -49,7 +49,7 @@
     "agility": 5,
     "mentalAcuity": 6,
     "startingHealth": 80,
-    "startingSanity": 10,
+    "startingSanity": 100,
     "skills": {
     },
     "weapons": {
@@ -78,7 +78,7 @@
     "agility": 3,
     "mentalAcuity": 7,
     "startingHealth": 60,
-    "startingSanity": 10,
+    "startingSanity": 100,
     "skills": {
     },
     "weapons": {

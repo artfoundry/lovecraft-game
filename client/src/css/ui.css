@@ -407,7 +407,8 @@
 }
 
 .control-bar-tab-container {
-	padding: 5px;
+	min-width: 200px;
+	padding: 8px;
 	border-right: 1px solid seagreen;
 }
 
@@ -418,12 +419,11 @@
 .character-control-container {
 	display: flex;
 	flex-direction: row;
-	justify-content: space-evenly;
+	justify-content: left;
 	align-items: center;
 	flex-basis: 100%;
 	gap: 2px;
-	padding: 5px;
-	text-align: center;
+	text-align: left;
 }
 
 .character-control-container:last-child {
@@ -432,7 +432,7 @@
 
 .character-name {
 	display: inline-block;
-	padding: 3px;
+	margin-bottom: 3px;
 	font-size: 16px;
 	border-bottom: 1px solid #225555;
 }
@@ -528,8 +528,13 @@
 	background-color: darkred;
 }
 
+.weapon-buttons-container {
+	margin-left: 5px;
+}
+
 .weapon-buttons-container, .item-buttons-container {
 	display: flex;
+	text-align: center;
 }
 
 .button-tactical-mode-on {
