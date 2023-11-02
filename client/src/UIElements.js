@@ -619,13 +619,22 @@ function ContextMenu(props) {
 	)
 }
 
-function HelpPopUp(props) {
+function HelpScreen(props) {
 	return (
-		<div className='help-popup ui-panel'>
-
+		<div className={`help-screen ui-panel ${props.showHelpScreen ? '' : 'hide'}`}>
+			<div className='general-button help-screen-close' onClick={() => props.toggleHelpScreen()}>X</div>
+			<div className='help-screen-content'></div>
 		</div>
 	);
 }
+
+// function HelpPopUp(props) {
+// 	return (
+// 		<div className='help-popup ui-panel'>
+//
+// 		</div>
+// 	);
+// }
 
 function GameOptions(props) {
 	const gameOptions = {...props.gameOptions};
@@ -674,4 +683,4 @@ function GameOptions(props) {
 	);
 }
 
-export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, DialogWindow, ContextMenu, GameOptions};
+export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, DialogWindow, ContextMenu, HelpScreen, GameOptions};

@@ -2,6 +2,10 @@
 	font-family: Copperplate; src: url('Copperplate-Gothic-Light-Regular.ttf');
 }
 
+.font-fancy {
+	font-family: Copperplate, "Gill Sans", sans-serif;
+}
+
 .ui-panel {
 	background-color: #225555;
 	font-family: "Century Gothic", sans-serif;
@@ -28,10 +32,6 @@
 	left: 0;
 	z-index: 100;
 	pointer-events: none;
-}
-
-.font-fancy {
-	font-family: Copperplate, "Gill Sans", sans-serif;
 }
 
 .dialog {
@@ -76,12 +76,36 @@
 	cursor: pointer;
 }
 
-.help-popup {
-	position: absolute;
-	width: 300px;
-	height: 200px;
+/*.help-popup {*/
+/*	position: absolute;*/
+/*	width: 300px;*/
+/*	height: 200px;*/
+/*}*/
+
+.help-screen {
+	position: fixed;
+	top: 10%;
+	left: 10%;
+	width: 80%;
+	height: 80%;
+	padding: 8px;
+	border: 2px solid seagreen;
+	box-shadow: 0 0 10px black;
 }
 
+.help-screen-content {
+	width: 94%;
+	height: 100%;
+	margin: 0 3%;
+	background-image: url('../assets/ui/help_screen.jpg');
+	background-size: contain;
+	background-position: center;
+	background-repeat: no-repeat;
+}
+
+.help-screen-close {
+	position: absolute;
+}
 
 /* LOGIN WINDOW */
 
@@ -552,11 +576,18 @@
 	cursor: pointer;
 }
 
-.button-center-on-player {
+.help-button {
+	color: white;
+	font-size: 32px;
+	text-align: center;
+	line-height: 32px;
+}
+
+.center-on-player-button {
 	background-image: url('../assets/ui/center-on-player.png');
 }
 
-.button-game-options {
+.game-options-button {
 	background-image: url('../assets/ui/game-options.png');
 }
 

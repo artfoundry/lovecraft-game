@@ -1,5 +1,5 @@
 import React from 'react';
-import {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, DialogWindow, ContextMenu, GameOptions} from './UIElements';
+import {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, DialogWindow, ContextMenu, HelpScreen, GameOptions} from './UIElements';
 import {convertCoordsToPos, notEnoughSpaceInInventory, deepCopy} from './Utils';
 import './css/ui.css';
 
@@ -23,6 +23,7 @@ class UI extends React.Component {
 
 		this.state = {
 			showGameOptions: false,
+			showHelpScreen: false,
 			logText: this.props.logText,
 			controlBarMinimized: false,
 			logMinimized: false,
@@ -720,6 +721,10 @@ class UI extends React.Component {
 		this.setState(prevState => ({showGameOptions: !prevState.showGameOptions}));
 	}
 
+	toggleHelpScreen = () => {
+		this.setState(prevState => ({showHelpScreen: !prevState.showHelpScreen}));
+	}
+
 	/**
 	 *
 	 * @param clickedObjPos
@@ -869,6 +874,7 @@ class UI extends React.Component {
 				/>}
 
 				<div id='system-buttons-container'>
+					<div className='system-button help-button font-fancy' onClick={() => this.toggleHelpScreen()}>?</div>
 					<div id='screen-zoom-container'>
 						<div className='screen-zoom-icon'>+</div>
 						<input id='screen-zoom-slider' type='range' min='0.5' max='1.5' step='0.1' value={this.props.gameOptions.screenZoom} onInput={evt => {
@@ -878,8 +884,8 @@ class UI extends React.Component {
 						}} />
 						<div className='screen-zoom-icon'>&ndash;</div>
 					</div>
-					<div className='system-button button-center-on-player' onClick={() => this.props.toggleCenterOnPlayer()}></div>
-					<div className='system-button button-game-options' onClick={() => this.toggleOptionsPanel()}></div>
+					<div className='system-button center-on-player-button' onClick={() => this.props.toggleCenterOnPlayer()}></div>
+					<div className='system-button game-options-button' onClick={() => this.toggleOptionsPanel()}></div>
 				</div>
 
 				<div ref={this.uiRefs.controlBar} className='control-bar-container ui-panel'>
@@ -888,6 +894,11 @@ class UI extends React.Component {
 					{/*}}>_</div>*/}
 					{this.props.playerCharacters && <this.showControlBar />}
 				</div>
+
+				<HelpScreen
+					showHelpScreen={this.state.showHelpScreen}
+					toggleHelpScreen={this.toggleHelpScreen}
+				/>
 
 				<GameOptions
 					gameOptions={this.props.gameOptions}
