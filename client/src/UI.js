@@ -26,6 +26,7 @@ class UI extends React.Component {
 			showHelpScreen: false,
 			logText: this.props.logText,
 			controlBarMinimized: false,
+			selectedControlTab: '',
 			logMinimized: false,
 			modeMinimized: false,
 			entireInventory: {},
@@ -76,49 +77,55 @@ class UI extends React.Component {
 
 	showControlBar = () => {
 		let controlPanels = [];
+		let tabNumber = 1;
 
 		for (const [id, playerInfo] of Object.entries(this.props.playerCharacters)) {
-			if (((this.props.screenSize.isNarrow || this.props.screenSize.isShort) && id === this.props.activeCharacter) ||
-				(!this.props.screenSize.isNarrow && !this.props.screenSize.isShort))
-			{
-				let mapObjectsOnPcTiles = [];
-				for (const [objId, objInfo] of Object.entries(this.props.mapObjects)) {
-					const xDelta = Math.abs(playerInfo.coords.xPos - objInfo.coords.xPos);
-					const yDelta = Math.abs(playerInfo.coords.yPos - objInfo.coords.yPos);
-					if (xDelta <= 1 && yDelta <= 1) {
-						mapObjectsOnPcTiles.push({...objInfo, id: objId});
-					}
+			let mapObjectsOnPcTiles = [];
+			for (const [objId, objInfo] of Object.entries(this.props.mapObjects)) {
+				const xDelta = Math.abs(playerInfo.coords.xPos - objInfo.coords.xPos);
+				const yDelta = Math.abs(playerInfo.coords.yPos - objInfo.coords.yPos);
+				if (xDelta <= 1 && yDelta <= 1) {
+					mapObjectsOnPcTiles.push({...objInfo, id: objId});
 				}
-
-				controlPanels.push(
-					<CharacterControls
-						key={id}
-						playerCharacters={this.props.playerCharacters}
-						characterId={id}
-						characterName={playerInfo.name}
-						equippedItems={playerInfo.equippedItems}
-						invItems={playerInfo.items}
-						toggleActionButton={this.props.toggleActionButton}
-						actionButtonSelected={this.props.actionButtonSelected}
-						isActiveCharacter={id === this.props.activeCharacter}
-						movesRemaining={this.props.playerLimits.moves - this.props.actionsCompleted.moves}
-						actionsRemaining={this.props.playerLimits.actions - this.props.actionsCompleted.actions}
-						inTacticalMode={this.props.inTacticalMode}
-						updateCharacters={this.props.updateCharacters}
-						entireInventory={this.state.entireInventory}
-						updateInventory={this.updateInventory}
-						checkForExtraAmmo={this.checkForExtraAmmo}
-						reloadGun={this.props.reloadGun}
-						refillLight={this.props.refillLight}
-						setShowDialogProps={this.props.setShowDialogProps}
-						dropItemToPC={this.dropItemToPC}
-						setMapObjectSelected={this.props.setMapObjectSelected}
-						mapObjectsOnPcTiles={mapObjectsOnPcTiles}
-					/>
-				)
 			}
+
+			controlPanels.push(
+				<CharacterControls
+					key={id}
+					playerCharacters={this.props.playerCharacters}
+					characterId={id}
+					characterName={playerInfo.name}
+					equippedItems={playerInfo.equippedItems}
+					invItems={playerInfo.items}
+					toggleActionButton={this.props.toggleActionButton}
+					actionButtonSelected={this.props.actionButtonSelected}
+					isActiveCharacter={id === this.props.activeCharacter}
+					movesRemaining={this.props.playerLimits.moves - this.props.actionsCompleted.moves}
+					actionsRemaining={this.props.playerLimits.actions - this.props.actionsCompleted.actions}
+					inTacticalMode={this.props.inTacticalMode}
+					updateCharacters={this.props.updateCharacters}
+					entireInventory={this.state.entireInventory}
+					updateInventory={this.updateInventory}
+					checkForExtraAmmo={this.checkForExtraAmmo}
+					reloadGun={this.props.reloadGun}
+					refillLight={this.props.refillLight}
+					setShowDialogProps={this.props.setShowDialogProps}
+					dropItemToPC={this.dropItemToPC}
+					setMapObjectSelected={this.props.setMapObjectSelected}
+					mapObjectsOnPcTiles={mapObjectsOnPcTiles}
+					screenSize={this.props.screenSize}
+					selectedControlTab={this.state.selectedControlTab}
+					setSelectedControlTab={this.setSelectedControlTab}
+					tabNumber={tabNumber}
+				/>
+			)
+			tabNumber++;
 		}
 		return controlPanels;
+	}
+
+	setSelectedControlTab = (id) => {
+		this.setState({selectedControlTab: id});
 	}
 
 	/**
@@ -758,6 +765,7 @@ class UI extends React.Component {
 			this._populateSfxSelectors();
 			this.toggleMusic();
 			this.initialUiLoad = false;
+			this.setSelectedControlTab(this.props.activeCharacter);
 		}
 	}
 
@@ -767,6 +775,9 @@ class UI extends React.Component {
 		}
 		if (this.props.selectedCharacterInfo && prevProps.selectedCharacterInfo !== this.props.selectedCharacterInfo) {
 			this._parseInvItems(this.props.selectedCharacterInfo.id, this.state.entireInventory[this.props.selectedCharacterInfo.id]);
+		}
+		if (prevProps.activeCharacter !== this.props.activeCharacter && this.props.playerCharacters[this.props.activeCharacter]) {
+			this.setSelectedControlTab(this.props.activeCharacter);
 		}
 		// for handling object clicked/selected on map
 		if (this.props.objectSelected && prevProps.objectSelected !== this.props.objectSelected) {

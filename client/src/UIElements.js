@@ -129,28 +129,36 @@ function CharacterControls(props) {
 		</div>
 	);
 
+	const displayCharName = ((props.screenSize.isNarrow || props.screenSize.isShort) && props.characterId === props.selectedControlTab) || (!props.screenSize.isNarrow && !props.screenSize.isShort);
 	return (
-		<div className='control-bar-tab-container'>
-			<div className='control-bar-tab character-name font-fancy'>{props.characterName}</div>
+		<div id={`${((props.screenSize.isNarrow || props.screenSize.isShort) && props.characterId === props.selectedControlTab) ? 'control-bar-tab-1' : ''}`} className='control-bar-tab-container'>
+			<div className='control-bar-tab character-name font-fancy' onClick={() => props.setSelectedControlTab(props.characterId)}>
+				<span className={`control-bar-tab-icon ${convertObjIdToClassId(props.characterId)}`}></span>
+				{displayCharName ? props.characterName : ''}
+			</div>
 			<div
 				id={`char-control-${props.characterId}`}
-				className='character-control-container'
+				className={`character-control-container ${((props.screenSize.isNarrow || props.screenSize.isShort) && props.characterId !== props.selectedControlTab) ? 'hide' : ''}`}
 				onDragOver={(evt) => handleItemOverDropZone(evt)}
 				onDrop={(evt) => props.dropItemToPC(evt, props.characterId)}
 			>
-				<div>
-					<div>Moves: {props.isActiveCharacter ? props.movesRemaining : ''}</div>
-					<div>Actions: {props.isActiveCharacter ? props.actionsRemaining : ''}</div>
+				<div className='control-bar-actions-moves'>
+					<div className='control-bar-actions-moves-title'>Moves</div>
+					<div className='control-bar-actions-moves-value'>{props.isActiveCharacter ? props.movesRemaining : ''}</div>
+					<div className='control-bar-actions-moves-title'>Actions</div>
+					<div className='control-bar-actions-moves-value'>{props.isActiveCharacter ? props.actionsRemaining : ''}</div>
 				</div>
 				{weaponButtons}
 				{medicineButtons}
-				{((currentPCdata.equippedLight && (currentPCdata.equippedLight.includes('lantern') || currentPCdata.equippedLight.includes('torch'))) &&
-				currentPCdata.lightTime < currentPCdata.items[currentPCdata.equippedLight].maxTime && currentPCdata.items.oil0) &&
-				<div className={`action-button refill-action ${actionButtonState}`} onClick={() => props.refillLight()}></div>
-				}
-				{(props.mapObjectsOnPcTiles.length > 0) &&
-					<div className={`action-button pickup-action ${actionButtonState}`} onClick={(evt) => props.setMapObjectSelected(props.mapObjectsOnPcTiles, evt, true)}></div>
-				}
+				<div className='misc-action-buttons-container'>
+					{((currentPCdata.equippedLight && (currentPCdata.equippedLight.includes('lantern') || currentPCdata.equippedLight.includes('torch'))) &&
+					currentPCdata.lightTime < currentPCdata.items[currentPCdata.equippedLight].maxTime && currentPCdata.items.oil0) &&
+					<div className={`action-button refill-action ${actionButtonState}`} onClick={() => props.refillLight()}></div>
+					}
+					{(props.mapObjectsOnPcTiles.length > 0) &&
+						<div className={`action-button pickup-action ${actionButtonState}`} onClick={(evt) => props.setMapObjectSelected(props.mapObjectsOnPcTiles, evt, true)}></div>
+					}
+				</div>
 			</div>
 		</div>
 	);

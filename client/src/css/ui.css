@@ -223,6 +223,17 @@
 
 /* GAME UI */
 
+.general-button {
+	width: fit-content;
+	height: min-content;
+	margin: 5px 0;
+	padding: 5px;
+	border: 1px solid #CC9933;
+	border-radius: 5px;
+	color: white;
+	background-color: #996633;
+}
+
 .game-options-container {
 	display: flex;
 	flex-direction: column;
@@ -266,7 +277,7 @@
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
-	overflow-y: scroll;
+	overflow-y: auto;
 }
 
 .log-line {
@@ -277,6 +288,7 @@
 	display: flex;
 	flex-direction: row;
 	justify-content: space-between;
+	min-width: 160px;
 	padding: 10px;
 	border-left: 1px solid seagreen;
 	border-right: 1px solid seagreen;
@@ -394,19 +406,30 @@
 	overflow-y: auto;
 }
 
+/* CONTROL BAR */
+
 .control-bar-container {
 	grid-area: controlBar;
-	display: flex;
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr;
+	grid-template-areas: "controlBarTab1 . .";
 	justify-self: center;
 	align-self: end;
-	max-height: 128px;
+	height: 160px;
 	border: 2px solid seagreen;
 	border-bottom: 0;
 	border-radius: 5px 5px 0 0;
 	box-sizing: border-box;
 }
 
+#control-bar-tab-1 {
+	grid-area: controlBarTab1;
+	z-index: 1;
+}
+
 .control-bar-tab-container {
+	display: flex;
+	flex-direction: column;
 	min-width: 200px;
 	padding: 8px;
 	border-right: 1px solid seagreen;
@@ -416,13 +439,21 @@
 	border: 0;
 }
 
+.control-bar-tab-icon {
+	display: inline-block;
+	width: 24px;
+	height: 24px;
+	vertical-align: middle;
+	margin: 0 5px;
+}
+
 .character-control-container {
 	display: flex;
 	flex-direction: row;
 	justify-content: left;
 	align-items: center;
-	flex-basis: 100%;
 	gap: 2px;
+	height: 120px;
 	text-align: left;
 }
 
@@ -437,35 +468,15 @@
 	border-bottom: 1px solid #225555;
 }
 
-.context-manu-container {
-	position: absolute;
+.control-bar-actions-moves {
 	display: flex;
+	flex-direction: column;
 	gap: 5px;
-	padding: 5px;
-	border-left: 1px solid seagreen;
-	border-right: 1px solid seagreen;
-	box-sizing: border-box;
-}
-
-.general-button {
-	width: fit-content;
-	height: min-content;
-	margin: 5px 0;
-	padding: 5px;
-	border: 1px solid #CC9933;
-	border-radius: 5px;
-	color: white;
-	background-color: #996633;
-}
-
-.minimize-button {
-	width: 10px;
-	height: 10px;
-	padding: 3px;
-	margin: 5px;
-	font-size: 16px;
-	line-height: 2px;
 	text-align: center;
+}
+
+.control-bar-actions-moves-value {
+	height: 16px;
 }
 
 .action-button-pair {
@@ -529,6 +540,8 @@
 }
 
 .weapon-buttons-container {
+	flex-direction: column;
+	align-items: center;
 	margin-left: 5px;
 }
 
@@ -536,6 +549,33 @@
 	display: flex;
 	text-align: center;
 }
+
+.item-buttons-container, .misc-action-buttons-container {
+	flex-direction: column;
+}
+
+
+
+.context-manu-container {
+	position: absolute;
+	display: flex;
+	gap: 5px;
+	padding: 5px;
+	border-left: 1px solid seagreen;
+	border-right: 1px solid seagreen;
+	box-sizing: border-box;
+}
+
+
+/*.minimize-button {*/
+/*	width: 10px;*/
+/*	height: 10px;*/
+/*	padding: 3px;*/
+/*	margin: 5px;*/
+/*	font-size: 16px;*/
+/*	line-height: 2px;*/
+/*	text-align: center;*/
+/*}*/
 
 .button-tactical-mode-on {
 	background-color: darkred;
@@ -869,11 +909,30 @@ select {
 	}
 
 	.control-bar-container {
+		grid-template-columns: 180px 1fr 1fr;
 		width: 100%;
+	}
+
+	.control-bar-tab-container {
+		min-width: unset;
+		border: none;
+		font-size: 14px;
 	}
 
 	.control-bar-tab {
 		height: 30px;
+		padding: 0 5px;
+		border-left: 1px solid seagreen;
+		border-bottom: 1px solid seagreen;
+	}
+
+	#control-bar-tab-1 .control-bar-tab {
+		padding-left: 0;
+		border-left: none;
+	}
+
+	.character-name {
+		font-size: 12px;
 	}
 
 	.action-button:hover {
@@ -885,7 +944,7 @@ select {
 	}
 
 	.character-control-container {
-		width: 100%;
+		width: 280px;
 		border: none;
 	}
 }
@@ -955,13 +1014,18 @@ select {
 	}
 
 	.control-bar-container {
+		grid-template-columns: 250px 1fr 1fr;
 		border: 0;
 		border-top: 2px solid seagreen;
 		border-radius: 0;
 	}
 
+	.character-control-container {
+		width: 350px;
+	}
+
 	#system-buttons-container {
-		bottom: 130px;
+		bottom: 170px;
 	}
 }
 
