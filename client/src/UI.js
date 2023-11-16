@@ -909,6 +909,7 @@ class UI extends React.Component {
 				<HelpScreen
 					showHelpScreen={this.state.showHelpScreen}
 					toggleHelpScreen={this.toggleHelpScreen}
+					screenSize={this.props.screenSize}
 				/>
 
 				<GameOptions

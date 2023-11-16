@@ -628,10 +628,23 @@ function ContextMenu(props) {
 }
 
 function HelpScreen(props) {
+	const [contentNum, updateContentNum] = useState(1);
 	return (
 		<div className={`help-screen ui-panel ${props.showHelpScreen ? '' : 'hide'}`}>
 			<div className='general-button help-screen-close' onClick={() => props.toggleHelpScreen()}>X</div>
-			<div className='help-screen-content'></div>
+			<div id={`help-screen-content-${props.screenSize.isNarrow ? 'mobile-portrait-' : props.screenSize.isShort ? 'mobile-landscape-' : ''}${contentNum}`} className='help-screen-content'></div>
+			<div className='help-screen-nav-container'>
+				<div className={`general-button arrow-button-left${contentNum === 1 ? ' button-disabled' : ''}`} onClick={() => {
+					if (contentNum > 1) {
+						updateContentNum(contentNum - 1);
+					}
+				}}>&#x2B05;</div>
+				<div className={`general-button arrow-button-right${contentNum === 4 ? ' button-disabled' : ''}`} onClick={() => {
+					if (contentNum < 4) {
+						updateContentNum(contentNum + 1);
+					}
+				}}>&#x2B05;</div>
+			</div>
 		</div>
 	);
 }

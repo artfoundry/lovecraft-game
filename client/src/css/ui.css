@@ -83,6 +83,9 @@
 /*}*/
 
 .help-screen {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
 	position: fixed;
 	top: 10%;
 	left: 10%;
@@ -94,13 +97,69 @@
 }
 
 .help-screen-content {
-	width: 94%;
-	height: 100%;
-	margin: 0 3%;
-	background-image: url('../assets/ui/help_screen.jpg');
+	width: 92%;
+	height: 92%;
+	margin: auto;
 	background-size: contain;
 	background-position: center;
 	background-repeat: no-repeat;
+}
+
+#help-screen-content-1 {
+	background-image: url('../assets/ui/help_screen_1.jpg');
+}
+
+#help-screen-content-2 {
+	background-image: url('../assets/ui/help_screen_2.jpg');
+}
+
+#help-screen-content-3 {
+	background-image: url('../assets/ui/help_screen_3.jpg');
+}
+
+#help-screen-content-4 {
+	background-image: url('../assets/ui/help_screen_4.jpg');
+}
+
+#help-screen-content-mobile-landscape-1 {
+	background-image: url('../assets/ui/help_screen_mobile_landscape_1.jpg');
+}
+
+#help-screen-content-mobile-landscape-2 {
+	background-image: url('../assets/ui/help_screen_mobile_landscape_2.jpg');
+}
+
+#help-screen-content-mobile-landscape-3 {
+	background-image: url('../assets/ui/help_screen_mobile_landscape_3.jpg');
+}
+
+#help-screen-content-mobile-landscape-4 {
+	background-image: url('../assets/ui/help_screen_mobile_landscape_4.jpg');
+}
+
+#help-screen-content-mobile-portrait-1 {
+	background-image: url('../assets/ui/help_screen_mobile_portrait_1.jpg');
+}
+
+#help-screen-content-mobile-portrait-2 {
+	background-image: url('../assets/ui/help_screen_mobile_portrait_2.jpg');
+}
+
+#help-screen-content-mobile-portrait-3 {
+	background-image: url('../assets/ui/help_screen_mobile_portrait_3.jpg');
+}
+
+#help-screen-content-mobile-portrait-4 {
+	background-image: url('../assets/ui/help_screen_mobile_portrait_4.jpg');
+}
+
+.help-screen-nav-container {
+	display: flex;
+	justify-content: center;
+	gap: 20px;
+	width: 50%;
+	margin: 5px auto;
+	transform: scaleX(1.5);
 }
 
 .help-screen-close {
@@ -232,6 +291,20 @@
 	border-radius: 5px;
 	color: white;
 	background-color: #996633;
+}
+
+.button-disabled {
+	background-color: darkslategrey;
+	pointer-events: none;
+	cursor: default;
+}
+
+.button-disabled:hover {
+	outline: initial;
+}
+
+.arrow-button-right {
+	transform: rotate(180deg);
 }
 
 .game-options-container {
@@ -879,6 +952,11 @@ select {
 
 	.dialog {
 		padding: 5px;
+	}
+
+	.help-screen-content {
+		width: 90%;
+		height: 80%;
 	}
 
 	.mode-info-container, .log-container {
