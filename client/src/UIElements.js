@@ -129,10 +129,10 @@ function CharacterControls(props) {
 		</div>
 	);
 
-	const displayCharName = ((props.screenSize.isNarrow || props.screenSize.isShort) && props.characterId === props.selectedControlTab) || (!props.screenSize.isNarrow && !props.screenSize.isShort);
+	const displayCharName = ((props.screenData.isNarrow || props.screenData.isShort) && props.characterId === props.selectedControlTab) || (!props.screenData.isNarrow && !props.screenData.isShort);
 	return (
 		<div
-			id={`${((props.screenSize.isNarrow || props.screenSize.isShort) && props.characterId === props.selectedControlTab) ? 'control-bar-tab-1' : ''}`}
+			id={`${((props.screenData.isNarrow || props.screenData.isShort) && props.characterId === props.selectedControlTab) ? 'control-bar-tab-1' : ''}`}
 			className='control-bar-tab-container'
 			onDragOver={(evt) => handleItemOverDropZone(evt)}
 			onDrop={(evt) => props.dropItemToPC(evt, props.characterId)}>
@@ -142,7 +142,7 @@ function CharacterControls(props) {
 			</div>
 			<div
 				id={`char-control-${props.characterId}`}
-				className={`character-control-container ${((props.screenSize.isNarrow || props.screenSize.isShort) && props.characterId !== props.selectedControlTab) ? 'hide' : ''}`}
+				className={`character-control-container ${((props.screenData.isNarrow || props.screenData.isShort) && props.characterId !== props.selectedControlTab) ? 'hide' : ''}`}
 			>
 				<div className='control-bar-actions-moves'>
 					<div className='control-bar-actions-moves-title'>Moves</div>
@@ -634,7 +634,7 @@ function HelpScreen(props) {
 	return (
 		<div className={`help-screen ui-panel ${props.showHelpScreen ? '' : 'hide'}`}>
 			<div className='general-button help-screen-close' onClick={() => props.toggleHelpScreen()}>X</div>
-			<div id={`help-screen-content-${props.screenSize.isNarrow ? 'mobile-portrait-' : props.screenSize.isShort ? 'mobile-landscape-' : ''}${contentNum}`} className='help-screen-content'></div>
+			<div id={`help-screen-content-${props.screenData.isNarrow ? 'mobile-portrait-' : props.screenData.isShort ? 'mobile-landscape-' : ''}${contentNum}`} className='help-screen-content'></div>
 			<div className='help-screen-nav-container'>
 				<div className={`general-button arrow-button-left${contentNum === 1 ? ' button-disabled' : ''}`} onClick={() => {
 					if (contentNum > 1) {
@@ -666,7 +666,7 @@ function GameOptions(props) {
 		<div className={`dialog ui-panel ${props.showGameOptions ? '' : 'hide'}`}>
 			<div className='font-fancy'>Game Options</div>
 			<div className='game-options-container'>
-				<div className='game-options-row'>
+				<div className={`game-options-row ${props.screenData.isIOS ? 'hide': ''}`}>
 					<label>Sound effects volume: </label>
 					<input className='audio-volume' type='range' min='0' max='1' step='0.1' value={gameOptions.fxVolume} onInput={evt => {
 						gameOptions.fxVolume = evt.target.value;
@@ -681,13 +681,13 @@ function GameOptions(props) {
 							gameOptions.playMusic = !gameOptions.playMusic;
 							props.updateGameOptions(gameOptions);
 						}}>
-						{props.gameOptions.playMusic ? 'Off' : 'On'}
+						{props.gameOptions.playMusic ? 'On' : 'Off'}
 					</button>
 				</div>
-				<div className='game-options-row'>
+				<div className={`game-options-row ${props.screenData.isIOS ? 'hide': ''}`}>
 					<label>Music volume: </label>
 					<input className='audio-volume' type='range' min='0' max='1' step='0.1' value={gameOptions.musicVolume} onInput={evt => {
-						props.musicComponent.volume = evt.target.value;
+						props.adjustMusicComponentVolume(evt.target.value);
 						gameOptions.musicVolume = evt.target.value;
 						props.updateGameOptions(gameOptions);
 					}} />

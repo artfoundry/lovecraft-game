@@ -44,11 +44,12 @@ class Game extends React.Component {
 				songName: '',
 				screenZoom: 1.0
 			},
-			screenSize: {
+			screenData: {
 				width: window.innerWidth,
 				height: window.innerHeight,
 				isNarrow: window.innerWidth < 768 && window.innerWidth < window.innerHeight,
-				isShort: window.innerHeight < 768 && window.innerHeight < window.innerWidth
+				isShort: window.innerHeight < 768 && window.innerHeight < window.innerWidth,
+				isIOS: navigator.userAgent.includes('iPhone OS')
 			},
 			userData: {},
 			isLoggedIn: false,
@@ -161,12 +162,12 @@ class Game extends React.Component {
 	}
 
 	getScreenDimensions = () => {
-		const screenSize = {...this.state.screenSize};
-		screenSize.width = window.innerWidth;
-		screenSize.height = window.innerHeight;
-		screenSize.isNarrow = screenSize.width < 768 && screenSize.width < screenSize.height;
-		screenSize.isShort = screenSize.height < 768 && screenSize.height < screenSize.width;
-		this.setState({screenSize});
+		const screenData = {...this.state.screenData};
+		screenData.width = window.innerWidth;
+		screenData.height = window.innerHeight;
+		screenData.isNarrow = screenData.width < 768 && screenData.width < screenData.height;
+		screenData.isShort = screenData.height < 768 && screenData.height < screenData.width;
+		this.setState({screenData});
 	}
 
 	/**
@@ -1020,7 +1021,7 @@ class Game extends React.Component {
 
 				{this.state.isLoggedIn &&
 					<UI
-						screenSize={this.state.screenSize}
+						screenData={this.state.screenData}
 						updateGameOptions={this.updateGameOptions}
 						gameOptions={this.state.gameOptions}
 						objectPanelWidth={this.objectPanelWidth}
@@ -1080,7 +1081,7 @@ class Game extends React.Component {
 
 				{this.state.isLoggedIn && this.state.gameSetupComplete &&
 					<Map
-						screenSize={this.state.screenSize}
+						screenData={this.state.screenData}
 						gameOptions={this.state.gameOptions}
 						objectPanelWidth={this.objectPanelWidth}
 

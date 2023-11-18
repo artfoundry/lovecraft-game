@@ -113,7 +113,7 @@ class UI extends React.Component {
 					dropItemToPC={this.dropItemToPC}
 					setMapObjectSelected={this.props.setMapObjectSelected}
 					mapObjectsOnPcTiles={mapObjectsOnPcTiles}
-					screenSize={this.props.screenSize}
+					screenData={this.props.screenData}
 					selectedControlTab={this.state.selectedControlTab}
 					setSelectedControlTab={this.setSelectedControlTab}
 					tabNumber={tabNumber}
@@ -540,8 +540,8 @@ class UI extends React.Component {
 		const panelHeight = panelType === 'object' ? this.props.objectPanelHeight : this.props.contextMenuHeight;
 
 		// use this version for object panels on mobile
-		if (panelType === 'object' && (this.props.screenSize.isNarrow || this.props.screenSize.isShort)) {
-			const left = this.props.screenSize.isNarrow ? 0 : (window.innerWidth - panelWidth) / 2;
+		if (panelType === 'object' && (this.props.screenData.isNarrow || this.props.screenData.isShort)) {
+			const left = this.props.screenData.isNarrow ? 0 : (window.innerWidth - panelWidth) / 2;
 			coords = {left, top: (window.innerHeight - panelHeight) / 2};
 		// use this version for full screen or mobile context menu
 		} else {
@@ -678,6 +678,10 @@ class UI extends React.Component {
 		} else {
 			music.pause();
 		}
+	}
+
+	adjustMusicComponentVolume = (value) => {
+		this.audioSelectors.music[this.props.gameOptions.songName].volume = value;
 	}
 
 	/**
@@ -907,7 +911,7 @@ class UI extends React.Component {
 				<HelpScreen
 					showHelpScreen={this.state.showHelpScreen}
 					toggleHelpScreen={this.toggleHelpScreen}
-					screenSize={this.props.screenSize}
+					screenData={this.props.screenData}
 				/>
 
 				<GameOptions
@@ -915,7 +919,8 @@ class UI extends React.Component {
 					toggleOptionsPanel={this.toggleOptionsPanel}
 					showGameOptions={this.state.showGameOptions}
 					updateGameOptions={this.props.updateGameOptions}
-					musicComponent={this.audioSelectors.music[this.props.gameOptions.songName]}
+					adjustMusicComponentVolume={this.adjustMusicComponentVolume}
+					screenData={this.props.screenData}
 				/>
 			</div>
 		);

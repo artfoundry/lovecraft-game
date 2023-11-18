@@ -2284,13 +2284,13 @@ class Map extends React.Component {
 	_moveMap(initialSetupCallback) {
 		this.clickedOnWorld = false;
 		this.isDraggingWorld = false;
-		const screenSize = this.props.screenSize;
+		const screenData = this.props.screenData;
 		const screenZoom = this.props.gameOptions.screenZoom;
 		const halfCharIconSize = Math.round((this.tileSize * screenZoom) / 2);
 		const pcCoords = this.props.playerCharacters[this.props.activeCharacter].coords;
-		const mapViewXcenter = this.props.screenSize.isShort ? Math.round((screenSize.width - this.props.objectPanelWidth) / 2) + this.props.objectPanelWidth : Math.round(screenSize.width / 2);
+		const mapViewXcenter = this.props.screenData.isShort ? Math.round((screenData.width - this.props.objectPanelWidth) / 2) + this.props.objectPanelWidth : Math.round(screenData.width / 2);
 		this.worldTransform.x = Math.round(-pcCoords.xPos * this.tileSize * screenZoom) + mapViewXcenter - halfCharIconSize;
-		this.worldTransform.y = Math.round(-pcCoords.yPos * this.tileSize * screenZoom) + Math.round(screenSize.height / 2) - halfCharIconSize;
+		this.worldTransform.y = Math.round(-pcCoords.yPos * this.tileSize * screenZoom) + Math.round(screenData.height / 2) - halfCharIconSize;
 		this.worldRef.current.style.transform = `translate(${this.worldTransform.x}px, ${this.worldTransform.y}px) scale(${screenZoom})`;
 
 		if (initialSetupCallback) {
@@ -2349,18 +2349,18 @@ class Map extends React.Component {
 				this.contextMenuOpen = false;
 				this.props.updateContextMenu(null);
 			}
-			const screenSize = this.props.screenSize;
-			let mapLeftEdge = screenSize.isShort ? this.props.objectPanelWidth : 0;
+			const screenData = this.props.screenData;
+			let mapLeftEdge = screenData.isShort ? this.props.objectPanelWidth : 0;
 
 			const movementX = evt.clientX - previousEvt.clientX;
 			const movementY = evt.clientY - previousEvt.clientY;
 			const worldEdges = this.worldRef.current.getBoundingClientRect();
 			// already dragged world as far left as it can go (right edge is at right edge of screen)
-			const atLeftLimit = worldEdges.right <= screenSize.width && movementX < 0;
+			const atLeftLimit = worldEdges.right <= screenData.width && movementX < 0;
 			// already dragged world as far right as it can go (left edge is at left edge of screen)
 			const atRightLimit = worldEdges.left >= mapLeftEdge && movementX > 0;
 			// already dragged world as far up as it can go (bottom edge is at bottom edge of screen)
-			const atTopLimit = worldEdges.bottom <= screenSize.height && movementY < 0;
+			const atTopLimit = worldEdges.bottom <= screenData.height && movementY < 0;
 			// already dragged world as far down as it can go (top edge is at top edge of screen)
 			const atBottomLimit = worldEdges.top >= 0 && movementY > 0;
 
@@ -2527,8 +2527,8 @@ class Map extends React.Component {
 			this._moveMap();
 			this.props.toggleCenterOnPlayer();
 		}
-		if (prevProps.screenSize.width !== this.props.screenSize.width ||
-			prevProps.screenSize.height !== this.props.screenSize.height ||
+		if (prevProps.screenData.width !== this.props.screenData.width ||
+			prevProps.screenData.height !== this.props.screenData.height ||
 			prevProps.gameOptions.screenZoom !== this.props.gameOptions.screenZoom)
 		{
 			this._moveMap();
