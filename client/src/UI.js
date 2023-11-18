@@ -198,16 +198,14 @@ class UI extends React.Component {
 	}
 
 	dropItemToPC = (evt, recipientId) => {
-		if (Object.keys(this.state.objectSelected).length === 0) {
-			return;
-		}
 		const draggedItem = this.state.objectSelected;
 		const draggedObjectMetaData = this.state.draggedObjectMetaData;
-		if (!draggedItem) return;
-
 		const allPCdata = deepCopy(this.props.playerCharacters);
 		const sourcePCdata = allPCdata[draggedObjectMetaData.sourcePC];
 		const currentPCdata = allPCdata[recipientId];
+		if (!draggedItem || draggedObjectMetaData.sourcePC === recipientId) {
+			return;
+		}
 		const allPlayersInv = deepCopy(this.state.entireInventory);
 		let dialogProps = null;
 

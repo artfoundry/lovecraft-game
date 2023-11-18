@@ -131,7 +131,11 @@ function CharacterControls(props) {
 
 	const displayCharName = ((props.screenSize.isNarrow || props.screenSize.isShort) && props.characterId === props.selectedControlTab) || (!props.screenSize.isNarrow && !props.screenSize.isShort);
 	return (
-		<div id={`${((props.screenSize.isNarrow || props.screenSize.isShort) && props.characterId === props.selectedControlTab) ? 'control-bar-tab-1' : ''}`} className='control-bar-tab-container'>
+		<div
+			id={`${((props.screenSize.isNarrow || props.screenSize.isShort) && props.characterId === props.selectedControlTab) ? 'control-bar-tab-1' : ''}`}
+			className='control-bar-tab-container'
+			onDragOver={(evt) => handleItemOverDropZone(evt)}
+			onDrop={(evt) => props.dropItemToPC(evt, props.characterId)}>
 			<div className='control-bar-tab character-name font-fancy' onClick={() => props.setSelectedControlTab(props.characterId)}>
 				<span className={`control-bar-tab-icon ${convertObjIdToClassId(props.characterId)}`}></span>
 				{displayCharName ? props.characterName : ''}
@@ -139,8 +143,6 @@ function CharacterControls(props) {
 			<div
 				id={`char-control-${props.characterId}`}
 				className={`character-control-container ${((props.screenSize.isNarrow || props.screenSize.isShort) && props.characterId !== props.selectedControlTab) ? 'hide' : ''}`}
-				onDragOver={(evt) => handleItemOverDropZone(evt)}
-				onDrop={(evt) => props.dropItemToPC(evt, props.characterId)}
 			>
 				<div className='control-bar-actions-moves'>
 					<div className='control-bar-actions-moves-title'>Moves</div>
