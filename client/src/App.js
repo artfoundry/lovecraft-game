@@ -312,8 +312,8 @@ class Game extends React.Component {
 			const mainPcPos = allPcPositions[0].pos;
 			const secPcPos = allPcPositions[1].pos;
 			const thirdPcPos = allPcPositions[2].pos;
-			if (!checkLineOfSightToParty(mainPcPos, secPcPos, false) || (thirdPcPos &&
-				(!checkLineOfSightToParty(mainPcPos, thirdPcPos, false) || !checkLineOfSightToParty(secPcPos, thirdPcPos, false)) ) )
+			if (this.state.partyIsNearby && (!checkLineOfSightToParty(mainPcPos, secPcPos, false) ||
+				(thirdPcPos && (!checkLineOfSightToParty(mainPcPos, thirdPcPos, false) || !checkLineOfSightToParty(secPcPos, thirdPcPos, false))) ))
 			{
 				this.updateLog('The party members are no longer in sight of each other.');
 				partyIsNearby = false;
