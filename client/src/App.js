@@ -285,7 +285,7 @@ class Game extends React.Component {
 	}
 
 	/**
-	 * Saves to state whether game is in combat/tactical mode or not,
+	 * Saves to state whether game is in tactical (combat) mode or not,
 	 * then if not, calls resetCounters
 	 * @param inTacticalMode: boolean
 	 * @param callback: function
@@ -315,7 +315,7 @@ class Game extends React.Component {
 			if (this.state.partyIsNearby && (!checkLineOfSightToParty(mainPcPos, secPcPos, false) ||
 				(thirdPcPos && (!checkLineOfSightToParty(mainPcPos, thirdPcPos, false) || !checkLineOfSightToParty(secPcPos, thirdPcPos, false))) ))
 			{
-				this.updateLog('The party members are no longer in sight of each other.');
+				this.updateLog('All party members are not in sight of each other.');
 				partyIsNearby = false;
 			}
 			this.setState({partyIsNearby}, () => {
@@ -360,7 +360,11 @@ class Game extends React.Component {
 			// if entering combat...
 			if (isInCombat && previousListSize === 0 ) {
 				this.updateLog('Something horrific has been spotted nearby!');
-				this.toggleTacticalMode(isInCombat, callback);
+				if (!this.state.inTacticalMode) {
+					this.toggleTacticalMode(isInCombat, callback);
+				} else if (callback) {
+					callback();
+				}
 			// leaving combat...
 			} else if (!isInCombat) {
 				this.updateLog('No terrors in sight...');
@@ -532,7 +536,7 @@ class Game extends React.Component {
 	 * @param callback: function
 	 */
 	updateCurrentTurn = (startTurns = false, callback) => {
-		const currentTurn = startTurns || this.state.currentTurn === this.state.unitsTurnOrder.length - 1 ? 0 : this.state.currentTurn + 1;
+		const currentTurn = (startTurns || this.state.currentTurn === this.state.unitsTurnOrder.length - 1) ? 0 : this.state.currentTurn + 1;
 		this.setState({currentTurn, activePlayerActionsCompleted: 0, activePlayerMovesCompleted: 0}, () => {
 			if (this.state.playerCharacters[this.state.activeCharacter] && this.state.actionButtonSelected) {
 				this.toggleActionButton('', '', '', '', () => {

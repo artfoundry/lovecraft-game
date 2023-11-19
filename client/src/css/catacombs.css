@@ -126,6 +126,10 @@
 	background-position: calc(var(--tile-size) * 6) var(--tile-size); /* -384px -64px at 64px tile size */
 }
 
+.left-doorway:hover, .right-doorway:hover, .top-bottom-doorway:hover {
+	cursor: pointer;
+}
+
 
 /* OBJECTS */
 
