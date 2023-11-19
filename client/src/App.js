@@ -39,6 +39,7 @@ class Game extends React.Component {
 		this.state = {
 			gameOptions: {
 				fxVolume: 1,
+				playFx: true,
 				musicVolume: 1,
 				playMusic: false,
 				songName: '',

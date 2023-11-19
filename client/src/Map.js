@@ -2335,10 +2335,10 @@ class Map extends React.Component {
 
 	toggleAudio = (selectorName) => {
 		const audio = this.sfxSelectors[this.props.currentLocation][selectorName];
-		if (audio.paused) {
+		if (audio.paused && this.props.gameOptions.playFx) {
 			audio.volume = this.props.gameOptions.fxVolume;
 			audio.play().catch(e => console.log(e));
-		} else {
+		} else if (!audio.paused) {
 			audio.pause().catch(e => console.log(e));
 		}
 	}

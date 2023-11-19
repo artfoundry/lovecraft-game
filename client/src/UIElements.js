@@ -666,6 +666,17 @@ function GameOptions(props) {
 		<div className={`dialog ui-panel ${props.showGameOptions ? '' : 'hide'}`}>
 			<div className='font-fancy'>Game Options</div>
 			<div className='game-options-container'>
+				<div className='game-options-row'>
+					<label>Play sound effects: </label>
+					<button
+						className='general-button'
+						onClick={() => {
+							gameOptions.playFx = !gameOptions.playFx;
+							props.updateGameOptions(gameOptions);
+						}}>
+						{props.gameOptions.playFx ? 'On' : 'Off'}
+					</button>
+				</div>
 				<div className={`game-options-row ${props.screenData.isIOS ? 'hide': ''}`}>
 					<label>Sound effects volume: </label>
 					<input className='audio-volume' type='range' min='0' max='1' step='0.1' value={gameOptions.fxVolume} onInput={evt => {
