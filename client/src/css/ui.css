@@ -7,8 +7,7 @@
 }
 
 h3 {
-	margin-top: 0;
-	margin-bottom: 0.5em;
+	margin: 0 0 0.5em 0;
 }
 
 .ui-panel {
@@ -468,6 +467,16 @@ h3 {
 	width: 64px;
 	height: 64px;
 	border: 1px solid seagreen;
+	border-right: 0;
+	border-bottom: 0;
+}
+
+.char-info-inv-item-box:nth-child(6n) {
+	border-right: 1px solid seagreen;
+}
+
+.char-info-inv-item-box:nth-child(n + 7) {
+	border-bottom: 1px solid seagreen;
 }
 
 .char-info-equipped-light {
@@ -680,7 +689,6 @@ h3 {
 }
 
 .weapon-buttons-container {
-	flex-direction: column;
 	align-items: center;
 	margin-left: 5px;
 }
@@ -1003,7 +1011,7 @@ select {
 
 /* Narrow or short screens */
 @media (width < 768px) or (height < 768px) {
-	h2, h3 {
+	.dialog-login h2, .dialog-login h3 {
 		margin: 10px;
 	}
 
@@ -1022,10 +1030,6 @@ select {
 
 	.mode-info-container, .log-container {
 		padding: 5px;
-	}
-
-	.character-info-container {
-		padding: 10px;
 	}
 
 	.char-info-inv-container {
@@ -1138,13 +1142,28 @@ select {
 		border-bottom: 2px solid seagreen;
 	}
 
+	.character-info-container {
+		padding: 10px 10px 60px;
+	}
+
 	.char-info-inv-container {
 		flex-direction: column;
 	}
 
-	.char-info-inv-items {
-		width: calc(66px * 4);
-		margin-bottom: 10px;
+	.char-info-inv-item-box:nth-child(6n) {
+		border-right: 0;
+	}
+
+	.char-info-inv-item-box:nth-child(4n) {
+		border-right: 1px solid seagreen;
+	}
+
+	.char-info-inv-item-box:nth-child(n + 7) {
+		border-bottom: 0;
+	}
+
+	.char-info-inv-item-box:nth-child(n + 9) {
+		border-bottom: 1px solid seagreen;
 	}
 
 	.object-info-panel {
@@ -1181,7 +1200,7 @@ select {
 	}
 
 	.ui-container {
-		grid-template-columns: 350px 1fr;
+		grid-template-columns: 330px 1fr;
 		grid-template-rows: 220px 1fr;
 		grid-template-areas:
 		"turnInfo characterInfo"
@@ -1221,5 +1240,29 @@ select {
 		justify-self: left;
 		border-left: 0;
 		border-top-left-radius: 0;
+	}
+}
+
+/* Small screens */
+@media (height < 768px) and (width < 768px) {
+	.char-info-inv-item-box:nth-child(6n) {
+		border-right: 0;
+	}
+
+	.char-info-inv-item-box:nth-child(4n) {
+		border-right: 1px solid seagreen;
+	}
+
+	.char-info-inv-item-box:nth-child(n + 7) {
+		border-bottom: 0;
+	}
+
+	.char-info-inv-item-box:nth-child(n + 9) {
+		border-bottom: 1px solid seagreen;
+	}
+
+	.char-info-inv-items {
+		width: calc(66px * 4);
+		margin-bottom: 10px;
 	}
 }
