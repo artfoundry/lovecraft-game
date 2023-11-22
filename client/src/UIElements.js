@@ -343,7 +343,15 @@ function CharacterInfoPanel(props) {
 				</div>
 			</div>
 
-			<div className='char-info-equipped-light'>Equipped Light: {props.characterInfo.equippedLight ? `${equippedLight.name} (Time left: ${equippedLight.time})`: 'none'}</div>
+			<div>
+				<div className='char-info-equipped-light'>Equipped Light: {props.characterInfo.equippedLight ? `${equippedLight.name} (Time left: ${equippedLight.time})`: 'none'}</div>
+
+				<div className='char-info-item-drop-zone'
+				     onDragOver={(evt) => {handleItemOverDropZone(evt)}}
+				     onDrop={(evt) => {props.setHasObjBeenDropped({objHasBeenDropped: true, evt})}}
+				></div>
+				<span>Drag item here to drop</span>
+			</div>
 
 			{itemsIntoElements}
 		</div>

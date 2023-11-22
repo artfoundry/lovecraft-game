@@ -2582,11 +2582,7 @@ class Map extends React.Component {
 					 previousPointerEvt = evt;
 				 }}
 			>
-				<div className='map'
-				     draggable={false}
-				     onDragOver={(evt) => {handleItemOverDropZone(evt)}}
-				     onDrop={(evt) => {this.props.setHasObjBeenDropped({objHasBeenDropped: true, evt})}}
-				>
+				<div className='map' draggable={false}>
 					{ this.state.mapLayoutDone && this.state.lightingCalculated && <this.createAllMapPieces /> }
 				</div>
 				<div className='objects' draggable={false}>

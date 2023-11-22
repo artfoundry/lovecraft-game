@@ -887,6 +887,7 @@ class UI extends React.Component {
 					setObjectPanelDisplayOption={this.setObjectPanelDisplayOption}
 					dropItemToInv={this.dropItemToInv}
 					dropItemToEquipped={this.dropItemToEquipped}
+					setHasObjBeenDropped={this.props.setHasObjBeenDropped}
 					notEnoughSpaceDialogProps={this.props.notEnoughSpaceDialogProps}
 				/>}
 
