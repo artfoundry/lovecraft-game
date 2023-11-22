@@ -6,6 +6,11 @@
 	font-family: Copperplate, "Gill Sans", sans-serif;
 }
 
+h3 {
+	margin-top: 0;
+	margin-bottom: 0.5em;
+}
+
 .ui-panel {
 	background-color: #225555;
 	font-family: "Century Gothic", sans-serif;
@@ -481,13 +486,14 @@
 
 /* CONTROL BAR */
 
-.control-bar-container {
+#control-bar-container {
 	grid-area: controlBar;
 	display: grid;
 	grid-template-columns: 1fr 1fr 1fr;
 	grid-template-areas: "controlBarTab1 . .";
 	justify-self: center;
 	align-self: end;
+	min-width: 80%;
 	height: 160px;
 	border: 2px solid seagreen;
 	border-bottom: 0;
@@ -526,7 +532,7 @@
 	justify-content: left;
 	align-items: center;
 	gap: 2px;
-	height: 120px;
+	min-height: 64px;
 	text-align: left;
 }
 
@@ -539,6 +545,67 @@
 	margin-bottom: 3px;
 	font-size: 16px;
 	border-bottom: 1px solid #225555;
+}
+
+.control-bar-status-bars {
+	display: flex;
+	flex-direction: column;
+	margin-top: 5px;
+}
+
+.control-bar-status-row {
+	display: flex;
+	align-items: center;
+}
+
+.status-bar-container {
+	width: 100%;
+	height: 6px;
+	margin: 3px;
+	background-color: black;
+	border-radius: 3px;
+}
+
+.status-bar-level {
+	height: 6px;
+	border-radius: 3px;
+}
+
+#status-bar-health {
+	background-color: crimson;
+}
+
+#status-bar-sanity{
+	background-color: cornflowerblue;
+}
+
+#status-bar-spirit {
+	background-color: deeppink;
+}
+
+.status-bar-icon {
+	display: inline-block;
+	flex-basis: 30px;
+	width: 16px;
+	height: 16px;
+	background-size: 16px 16px;
+	background-repeat: no-repeat;
+}
+
+#control-bar-tab-1 .status-bar-icon {
+	flex-basis: 18px;
+}
+
+.heart-icon {
+	background-image: url('../assets/ui/heart.png');
+}
+
+.brain-icon {
+	background-image: url('../assets/ui/brain.png');
+}
+
+.spirit-icon {
+	background-image: url('../assets/ui/spirit.png');
 }
 
 .control-bar-actions-moves {
@@ -622,12 +689,6 @@
 	display: flex;
 	text-align: center;
 }
-
-.item-buttons-container, .misc-action-buttons-container {
-	flex-direction: column;
-}
-
-
 
 .context-manu-container {
 	position: absolute;
@@ -985,8 +1046,8 @@ select {
 		grid-area: characterInfo;
 	}
 
-	.control-bar-container {
-		grid-template-columns: 180px 1fr 1fr;
+	#control-bar-container {
+		grid-template-columns: 220px 1fr 1fr;
 		width: 100%;
 	}
 
@@ -1090,7 +1151,7 @@ select {
 		width: 100%;
 	}
 
-	.control-bar-container {
+	#control-bar-container {
 		grid-template-columns: 250px 1fr 1fr;
 		border: 0;
 		border-top: 2px solid seagreen;
@@ -1120,8 +1181,8 @@ select {
 	}
 
 	.ui-container {
-		grid-template-columns: 300px 1fr;
-		grid-template-rows: 250px 1fr;
+		grid-template-columns: 350px 1fr;
+		grid-template-rows: 220px 1fr;
 		grid-template-areas:
 		"turnInfo characterInfo"
 		"controlBar characterInfo";
@@ -1156,7 +1217,8 @@ select {
 		margin-bottom: 0;
 	}
 
-	.control-bar-container {
+	#control-bar-container {
+		justify-self: left;
 		border-left: 0;
 		border-top-left-radius: 0;
 	}

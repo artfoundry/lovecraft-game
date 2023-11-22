@@ -896,7 +896,7 @@ class UI extends React.Component {
 					<div className='system-button game-options-button' onClick={() => this.toggleOptionsPanel()}></div>
 				</div>
 
-				<div ref={this.uiRefs.controlBar} className='control-bar-container ui-panel'>
+				<div id='control-bar-container' ref={this.uiRefs.controlBar} className='ui-panel'>
 					{/*<div className='minimize-button general-button' onClick={() => {*/}
 					{/*	this.minimizePanel('controlBar');*/}
 					{/*}}>_</div>*/}

@@ -45,7 +45,7 @@ class Creature extends React.Component {
 		} else if (this.attackType === 'psychic') {
 			hitRoll = this.mentalAcuity + diceRoll(20);
 			defenseRoll = targetData.mentalAcuity + diceRoll(6);
-			damage = this.mentalAcuity + diceRoll(6) - defenseRoll;
+			damage = this.mentalAcuity + diceRoll(6);
 			logAttackMessage = `A ${this.name} reaches out psychically to ${targetData.name}...`;
 			logDamageMessage = `The ${this.name} fails to penetrate ${targetData.name}'s mind.`;
 		}

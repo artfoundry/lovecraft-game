@@ -130,6 +130,9 @@ function CharacterControls(props) {
 	);
 
 	const displayCharName = ((props.screenData.isNarrow || props.screenData.isShort) && props.characterId === props.selectedControlTab) || (!props.screenData.isNarrow && !props.screenData.isShort);
+	const healthLevel = (currentPCdata.currentHealth / currentPCdata.startingHealth) * 100;
+	const sanityLevel = (currentPCdata.currentSanity / currentPCdata.startingSanity) * 100;
+	const spiritLevel = (currentPCdata.currentSpirit / currentPCdata.startingSpirit) * 100;
 	return (
 		<div
 			id={`${((props.screenData.isNarrow || props.screenData.isShort) && props.characterId === props.selectedControlTab) ? 'control-bar-tab-1' : ''}`}
@@ -140,15 +143,33 @@ function CharacterControls(props) {
 				<span className={`control-bar-tab-icon ${convertObjIdToClassId(props.characterId)}`}></span>
 				{displayCharName ? props.characterName : ''}
 			</div>
+			<div className='control-bar-status-bars'>
+				<div className='control-bar-status-row'>
+					<div className='status-bar-icon heart-icon'></div>
+					<div className='status-bar-container'>
+						<div id='status-bar-health' className='status-bar-level' style={{width: healthLevel + '%'}}></div>
+					</div>
+				</div>
+				<div className='control-bar-status-row'>
+					<div className='status-bar-icon brain-icon'></div>
+					<div className='status-bar-container'>
+						<div id='status-bar-sanity' className='status-bar-level' style={{width: sanityLevel + '%'}}></div>
+					</div>
+				</div>
+				<div className='control-bar-status-row'>
+					<div className='status-bar-icon spirit-icon'></div>
+					<div className='status-bar-container'>
+						<div id='status-bar-spirit' className='status-bar-level' style={{width: spiritLevel  + '%'}}></div>
+					</div>
+				</div>
+			</div>
 			<div
 				id={`char-control-${props.characterId}`}
 				className={`character-control-container ${((props.screenData.isNarrow || props.screenData.isShort) && props.characterId !== props.selectedControlTab) ? 'hide' : ''}`}>
 				{props.inTacticalMode &&
 				<div className='control-bar-actions-moves'>
-					<div className='control-bar-actions-moves-title'>Moves</div>
-					<div className='control-bar-actions-moves-value'>{props.isActiveCharacter ? props.movesRemaining : ''}</div>
-					<div className='control-bar-actions-moves-title'>Actions</div>
-					<div className='control-bar-actions-moves-value'>{props.isActiveCharacter ? props.actionsRemaining : ''}</div>
+					<div className='control-bar-actions-moves-title'>Moves: <span className='control-bar-actions-moves-value'>{props.isActiveCharacter ? props.movesRemaining : ''}</span></div>
+					<div className='control-bar-actions-moves-title'>Actions: <span className='control-bar-actions-moves-value'>{props.isActiveCharacter ? props.actionsRemaining : ''}</span></div>
 				</div>}
 				{weaponButtons}
 				{medicineButtons}
@@ -228,12 +249,13 @@ function CharacterInfoPanel(props) {
 		<div className={`character-info-container ui-panel`}>
 			<div className='char-info-header'>
 				<div>
-					<div>Name: {props.characterInfo.name}</div>
-					<div>Profession: {props.characterInfo.profession}</div>
+					<h3 className='font-fancy'>{props.characterInfo.name}</h3>
+					<div>{props.characterInfo.profession}</div>
 				</div>
 				<div>
 					<div>Health: {props.characterInfo.currentHealth} / {props.characterInfo.startingHealth}</div>
 					<div>Sanity: {props.characterInfo.currentSanity} / {props.characterInfo.startingSanity}</div>
+					<div>Spirit: {props.characterInfo.currentSpirit} / {props.characterInfo.startingSpirit}</div>
 				</div>
 				<div className='general-button' onClick={() => props.updateUnitSelectionStatus(props.characterInfo.id, 'player')}>X</div>
 			</div>

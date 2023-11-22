@@ -9,6 +9,7 @@
     "mentalAcuity": 4,
     "startingHealth": 100,
     "startingSanity": 80,
+    "startingSpirit": 90,
     "skills": {
     },
     "weapons": {
@@ -50,6 +51,7 @@
     "mentalAcuity": 6,
     "startingHealth": 80,
     "startingSanity": 100,
+    "startingSpirit": 90,
     "skills": {
     },
     "weapons": {
@@ -79,6 +81,7 @@
     "mentalAcuity": 7,
     "startingHealth": 60,
     "startingSanity": 100,
+    "startingSpirit": 80,
     "skills": {
     },
     "weapons": {
