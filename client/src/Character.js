@@ -96,7 +96,7 @@ class Character extends React.Component {
 		damage = damage < 0 ? 0 : damage;
 		defenseRoll = targetData.defense + diceRoll(6);
 		isHit = hitRoll >= defenseRoll;
-		updateLog(`${this.name} attacks with ${hitRoll} to hit vs ${defenseRoll} defense`);
+		updateLog(`${this.name} attacks with a ${weaponInfo.name} and rolls ${hitRoll} to hit...`);
 		updateCharacter('player', updatedPcData, pcData.id, false, false, false, () => {
 			if (isHit) {
 				updatedCreatureData.currentHealth -= damage;
@@ -105,7 +105,7 @@ class Character extends React.Component {
 				callback();
 			}
 		});
-		updateLog(isHit ? `${this.name} hits for ${damage} damage` : this.name + ' misses');
+		updateLog(isHit ? `${this.name} hits for ${damage} damage!` : this.name + ' misses.');
 	}
 
 	/**

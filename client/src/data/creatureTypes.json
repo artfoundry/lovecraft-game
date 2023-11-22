@@ -62,7 +62,7 @@
     "damageReduction": 2,
     "startingHealth": 70,
     "range": 2,
-    "attackType": "melee",
+    "attackType": "ranged",
     "moveSpeed": 1,
     "perception": 5,
     "skills": {}
