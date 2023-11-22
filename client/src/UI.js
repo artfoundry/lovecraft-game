@@ -247,7 +247,7 @@ class UI extends React.Component {
 	}
 
 	dropItemToEquipped = (evt) => {
-		if (Object.keys(this.state.objectSelected).length === 0) {
+		if (!this.state.objectSelected || Object.keys(this.state.objectSelected).length === 0) {
 			return;
 		}
 		const draggedItem = this.state.objectSelected;
@@ -370,7 +370,7 @@ class UI extends React.Component {
 	}
 
 	dropItemToInv = (evt) => {
-		if (Object.keys(this.state.objectSelected).length === 0) {
+		if (!this.state.objectSelected || Object.keys(this.state.objectSelected).length === 0) {
 			return;
 		}
 		const draggedItem = this.state.objectSelected;
@@ -430,7 +430,7 @@ class UI extends React.Component {
 	}
 
 	addObjToOtherPc = (draggedItemCount, sourceItemCount) => {
-		if (Object.keys(this.state.objectSelected).length === 0) {
+		if (!this.state.objectSelected || Object.keys(this.state.objectSelected).length === 0) {
 			return;
 		}
 		const draggedItem = this.state.objectSelected;
@@ -486,7 +486,7 @@ class UI extends React.Component {
 	 * @param sourceItemCount: number (comes from callback from ObjectInfoPanel - only used for stackable items)
 	 */
 	addObjectToMap = (draggedItemCount, sourceItemCount) => {
-		if (Object.keys(this.state.objectSelected).length === 0) {
+		if (!this.state.objectSelected || Object.keys(this.state.objectSelected).length === 0) {
 			return;
 		}
 		const sourcePcData = deepCopy(this.props.playerCharacters[this.state.draggedObjectMetaData.sourcePC]);
@@ -549,9 +549,15 @@ class UI extends React.Component {
 			coords = {left, top: (window.innerHeight - panelHeight) / 2};
 		// use this version for full screen or mobile context menu
 		} else {
-			const buffer = 30;
-			const leftMod = x > (window.innerWidth - panelWidth) ? -(panelWidth + buffer) : 0;
-			const topMod = y < (window.screenTop + panelHeight) ? 0 : -panelHeight;
+			const xBuffer = 30;
+			const yBuffer = 80;
+			const leftMod = x > (window.innerWidth - panelWidth) ? -(panelWidth + xBuffer) : 0;
+			const halfScreenHeight = this.props.screenData.height / 2;
+			const controlBarTopPos = this.props.screenData.height - this.props.uiControlBarHeight;
+			// if context menu or clicked item is top half of screen, position at cursor;
+			// or if clicking pick up action button, push up 3x buffer;
+			// otherwise, clicked lower half of screen, push up 1x buffer
+			const topMod = (panelType === 'menu') || (y < halfScreenHeight) ? 0 : y > controlBarTopPos ? -(yBuffer * 3) : -yBuffer;
 			coords = {left: x + leftMod, top: y + topMod};
 		}
 		return coords;
@@ -562,7 +568,7 @@ class UI extends React.Component {
 	 * @param needToShowObjectPanel: boolean (false when closing panel)
 	 * @param evt: event object
 	 * @param draggedObjRecipient: string (ID - used for addObjToOtherPc)
-	 * @param callback
+	 * @param callback: function (mainly for opening new panel after closing current one)
 	 */
 	setObjectPanelDisplayOption = (needToShowObjectPanel, evt, draggedObjRecipient, callback) => {
 		const selectedObjPos = evt ? this.calculatePanelCoords(evt.clientX, evt.clientY, 'object') : null;

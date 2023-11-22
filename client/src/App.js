@@ -19,11 +19,11 @@ class Game extends React.Component {
 		this.playerMovesLimit = 3;
 		this.playerActionsLimit = 2;
 
-		// this.uiPanelHeight = 95; only used for minimize function which isn't in use
 		this.objectPanelWidth = 300;
 		this.objectPanelHeight = 250;
 		this.contextMenuWidth = 128;
 		this.contextMenuHeight = 32;
+		this.uiControlBarHeight = 160;
 
 		this.firebase = new Firebase();
 
@@ -1033,6 +1033,7 @@ class Game extends React.Component {
 						objectPanelHeight={this.objectPanelHeight}
 						contextMenuWidth={this.contextMenuWidth}
 						contextMenuHeight={this.contextMenuHeight}
+						uiControlBarHeight={this.uiControlBarHeight}
 
 						showDialog={this.state.showDialog}
 						setShowDialogProps={this.setShowDialogProps}

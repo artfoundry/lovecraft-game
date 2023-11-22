@@ -793,6 +793,7 @@ select {
 .object-info-panel {
 	position: fixed;
 	max-width: 400px;
+	max-height: 250px;
 	padding: 10px;
 	background-color: #225555;
 	font-family: "Century Gothic", sans-serif;
@@ -804,6 +805,7 @@ select {
 	box-shadow: 5px 5px 10px black;
 	z-index: 3;
 	box-sizing: border-box;
+	overflow: auto;
 }
 
 .object-panel-container {
