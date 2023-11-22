@@ -2015,6 +2015,7 @@ class Map extends React.Component {
 		const allCharCoords = [...this.props.getAllCharactersPos('creature', 'coords'), ...this.props.getAllCharactersPos('player', 'coords')];
 
 		let i = 0;
+		// if no tile, tile is a wall, or moving character is a creature, tile is a door, and door is closed, then tile is not available
 		if (!tile || tile.type === 'wall' || (characterType === 'creature' && tile.type === 'door' && !tile.doorIsOpen)) {
 			tileIsAvail = false;
 		} else {
@@ -2121,7 +2122,7 @@ class Map extends React.Component {
 			setTimeout(() => {
 				if (newCoordsArray.length > 0) {
 					this._storeNewCreatureCoords(creatureID, newCoordsArray, callback);
-				} else {
+				} else if (callback) {
 					callback();
 				}
 			}, this.movementDelay);
@@ -2237,22 +2238,36 @@ class Map extends React.Component {
 	}
 
 	/**
-	 * Moves a creature in random directions.
+	 * Moves a creature in random direction
+	 * (looking at all surrounding tiles, first choice to examine is random, then cycles through remaining options in order)
 	 * @private
 	 */
 	_moveRandomly() {
-		const creatureID = this.props.activeCharacter;
-		const creatureData = this.props.mapCreatures[creatureID];
+		const activeCreatureID = this.props.activeCharacter;
+		const creatureData = this.props.mapCreatures[activeCreatureID];
 		const creatureCoords = creatureData.coords;
-		const newRandCoords = [{
-			xPos: creatureCoords.xPos + randomTileMovementValue(),
-			yPos: creatureCoords.yPos + randomTileMovementValue()
-		}];
-		if (this._tileIsFreeToMove(newRandCoords)) {
-			this._storeNewCreatureCoords(creatureID, newRandCoords);
-
-			// this.props.updateLog(`Moving ${creatureID} randomly to ${newRandX}, ${newRandY}`);
+		let surroundingCoords = [
+			{xPos: creatureCoords.xPos + 1, yPos: creatureCoords.yPos},
+			{xPos: creatureCoords.xPos - 1, yPos: creatureCoords.yPos},
+			{xPos: creatureCoords.xPos + 1, yPos: creatureCoords.yPos + 1},
+			{xPos: creatureCoords.xPos - 1, yPos: creatureCoords.yPos + 1},
+			{xPos: creatureCoords.xPos + 1, yPos: creatureCoords.yPos - 1},
+			{xPos: creatureCoords.xPos - 1, yPos: creatureCoords.yPos - 1},
+			{xPos: creatureCoords.xPos + 1, yPos: creatureCoords.yPos + 1},
+			{xPos: creatureCoords.xPos + 1, yPos: creatureCoords.yPos - 1}
+		];
+		const numOptions = surroundingCoords.length;
+		let randomIndex = Math.floor(Math.random() * numOptions);
+		// check each surrounding tile; if not avail, set that tile to null in the array and look at the next one
+		while (surroundingCoords[randomIndex] && !this._tileIsFreeToMove(surroundingCoords[randomIndex])) {
+			surroundingCoords[randomIndex] = null;
+			randomIndex = randomIndex === (numOptions - 1) ? 0 : randomIndex + 1;
 		}
+		// if tile with current randomIndex value isn't null, then it's available to move
+		if (surroundingCoords[randomIndex]) {
+			this._storeNewCreatureCoords(activeCreatureID, [surroundingCoords[randomIndex]]);
+		}
+		// this.props.updateLog(`Moving ${creatureID} randomly to ${newRandX}, ${newRandY}`);
 	}
 
 	// todo: No longer needed? Was being used in moveCharacter, but from old map paradigm using tile sides to determine valid moves

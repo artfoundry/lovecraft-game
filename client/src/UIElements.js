@@ -532,10 +532,10 @@ function ModeInfoPanel(props) {
 	}
 	const activePlayerObject = props.players[props.activeCharacter];
 	const charactersTurn = activePlayerObject && (props.inTacticalMode || !props.isPartyNearby) ? activePlayerObject.name :
-		props.inTacticalMode && props.threatList.length > 0 ? 'Enemies moving...' : 'Something creeps deep in the darkness...';
+		props.inTacticalMode && props.threatList.length > 0 ? 'Enemies moving...' : 'Wait...';
 
 	return (
-		<div>
+		<div className='mode-info-container'>
 			<div
 				className={'general-button' + (props.inTacticalMode ? ' button-tactical-mode-on' : '')}
 				onClick={() => {
@@ -555,23 +555,25 @@ function ModeInfoPanel(props) {
 				}}>
 				{props.inTacticalMode ? 'In Tactical Mode' : 'In Follow Mode'}
 			</div>
+
 			{!props.inTacticalMode && props.isPartyNearby &&
-				<label>
-					<div>Leader</div>
-					<select name='leader' value={props.activeCharacter} onChange={evt => {
-						props.updateActiveCharacter(() => props.updateFollowModePositions([]), evt.target.value);
-					}}>
-						{props.players && <ListOptions />}
-					</select>
-				</label>
+			<label>
+				<div>Leader</div>
+				<select name='leader' value={props.activeCharacter} onChange={evt => {
+					props.updateActiveCharacter(() => props.updateFollowModePositions([]), evt.target.value);
+				}}>
+					{props.players && <ListOptions />}
+				</select>
+			</label>
 			}
+
 			{(props.inTacticalMode || !props.isPartyNearby) &&
-				<div>
-					<div>Turn: {charactersTurn}</div>
-					<div className='general-button' onClick={() => {
-						props.endTurnCallback();
-					}}>End Turn</div>
-				</div>
+			<div>
+				<div>Turn: {charactersTurn}</div>
+				<div className='general-button' onClick={() => {
+					props.endTurnCallback();
+				}}>End Turn</div>
+			</div>
 			}
 		</div>
 	);

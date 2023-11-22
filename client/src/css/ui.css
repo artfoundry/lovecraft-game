@@ -359,7 +359,7 @@
 
 .mode-info-container {
 	display: flex;
-	flex-direction: row;
+	flex-direction: column;
 	justify-content: space-between;
 	min-width: 160px;
 	padding: 10px;
@@ -960,7 +960,6 @@ select {
 	}
 
 	.mode-info-container, .log-container {
-		flex-direction: column;
 		padding: 5px;
 	}
 

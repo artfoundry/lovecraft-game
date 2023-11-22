@@ -77,7 +77,6 @@ class UI extends React.Component {
 
 	showControlBar = () => {
 		let controlPanels = [];
-		let tabNumber = 1;
 
 		for (const [id, playerInfo] of Object.entries(this.props.playerCharacters)) {
 			let mapObjectsOnPcTiles = [];
@@ -116,10 +115,8 @@ class UI extends React.Component {
 					screenData={this.props.screenData}
 					selectedControlTab={this.state.selectedControlTab}
 					setSelectedControlTab={this.setSelectedControlTab}
-					tabNumber={tabNumber}
 				/>
 			)
-			tabNumber++;
 		}
 		return controlPanels;
 	}
@@ -836,27 +833,25 @@ class UI extends React.Component {
 						}
 					</div>
 
-					<div className='mode-info-container'>
-						{this.props.modeInfo &&
-						<ModeInfoPanel
-							inTacticalMode={this.props.modeInfo.inTacticalMode}
-							toggleTacticalMode={this.props.toggleTacticalMode}
-							threatList={this.props.threatList}
-							isPartyNearby={this.props.isPartyNearby}
-							setShowDialogProps={this.props.setShowDialogProps}
-							players={this.props.playerCharacters}
-							activeCharacter={this.props.activeCharacter}
-							updateActiveCharacter={this.props.updateActiveCharacter}
-							updateFollowModePositions={this.props.updateFollowModePositions}
-							endTurnCallback={this.props.updateCurrentTurn}
-							toggleActionButton={this.props.toggleActionButton}
-							updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
-							characterIsSelected={this.props.characterIsSelected}
-							characterInfo={this.props.selectedCharacterInfo}
-							creatureIsSelected={this.props.creatureIsSelected}
-							creatureInfo={this.props.selectedCreatureInfo}
-						/>}
-					</div>
+					{this.props.modeInfo &&
+					<ModeInfoPanel
+						inTacticalMode={this.props.modeInfo.inTacticalMode}
+						toggleTacticalMode={this.props.toggleTacticalMode}
+						threatList={this.props.threatList}
+						isPartyNearby={this.props.isPartyNearby}
+						setShowDialogProps={this.props.setShowDialogProps}
+						players={this.props.playerCharacters}
+						activeCharacter={this.props.activeCharacter}
+						updateActiveCharacter={this.props.updateActiveCharacter}
+						updateFollowModePositions={this.props.updateFollowModePositions}
+						endTurnCallback={this.props.updateCurrentTurn}
+						toggleActionButton={this.props.toggleActionButton}
+						updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
+						characterIsSelected={this.props.characterIsSelected}
+						characterInfo={this.props.selectedCharacterInfo}
+						creatureIsSelected={this.props.creatureIsSelected}
+						creatureInfo={this.props.selectedCreatureInfo}
+					/>}
 					{/*<div className='minimize-button general-button' onClick={() => {*/}
 					{/*	this.minimizePanel('turnInfo');*/}
 					{/*}}>_</div>*/}
