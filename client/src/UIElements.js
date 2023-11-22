@@ -168,8 +168,8 @@ function CharacterControls(props) {
 				className={`character-control-container ${((props.screenData.isNarrow || props.screenData.isShort) && props.characterId !== props.selectedControlTab) ? 'hide' : ''}`}>
 				{props.inTacticalMode &&
 				<div className='control-bar-actions-moves'>
-					<div className='control-bar-actions-moves-title'>Moves: <span className='control-bar-actions-moves-value'>{props.isActiveCharacter ? props.movesRemaining : ''}</span></div>
-					<div className='control-bar-actions-moves-title'>Actions: <span className='control-bar-actions-moves-value'>{props.isActiveCharacter ? props.actionsRemaining : ''}</span></div>
+					<div className='control-bar-actions-moves-title'>Moves: <span className='control-bar-actions-moves-value'>{props.isActiveCharacter ? props.movesRemaining : '0'}</span></div>
+					<div className='control-bar-actions-moves-title'>Actions: <span className='control-bar-actions-moves-value'>{props.isActiveCharacter ? props.actionsRemaining : '0'}</span></div>
 				</div>}
 				{weaponButtons}
 				{medicineButtons}
