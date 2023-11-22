@@ -359,9 +359,9 @@ function ObjectInfoPanel(props) {
 		selectedObjPos,
 		objHasBeenDropped,
 		setHasObjBeenDropped,
-		dropItemToPC,
-		dropItemToEquipped,
-		dropItemToInv,
+		// dropItemToPC,  - to be used for buttons as alts for drag-and-drop if needed
+		// dropItemToEquipped,
+		// dropItemToInv,
 		addObjectToMap,
 		addObjToOtherPc,
 		addItemToPlayerInventory,

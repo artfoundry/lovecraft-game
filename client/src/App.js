@@ -723,7 +723,7 @@ class Game extends React.Component {
 	 * @param isPickUpAction: boolean (true if action button clicked to inspect/pickup object)
 	 */
 	setMapObjectSelected = (objectInfo, selectionEvt, isPickUpAction) => {
-		const objectSelected = objectInfo && !this.state.objectSelected ? {objectList: objectInfo, evt: selectionEvt, isPickUpAction} : null;
+		const objectSelected = objectInfo ? {objectList: objectInfo, evt: selectionEvt, isPickUpAction} : null;
 		this.setState({objectSelected});
 	}
 

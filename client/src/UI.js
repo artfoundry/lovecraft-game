@@ -531,6 +531,13 @@ class UI extends React.Component {
 		});
 	}
 
+	/**
+	 * Determines position for object info panel or contextual menu
+	 * @param x
+	 * @param y
+	 * @param panelType: string ('object' or 'menu')
+	 * @returns {{top: *, left: *}}
+	 */
 	calculatePanelCoords(x, y, panelType) {
 		let coords = {};
 		const panelWidth = panelType === 'object' ? this.props.objectPanelWidth : this.props.contextMenuWidth;
@@ -552,13 +559,16 @@ class UI extends React.Component {
 
 	/**
 	 * Sets whether to show object info panel
-	 * @param needToShowObjectPanel: boolean
+	 * @param needToShowObjectPanel: boolean (false when closing panel)
 	 * @param evt: event object
 	 * @param draggedObjRecipient: string (ID - used for addObjToOtherPc)
+	 * @param callback
 	 */
-	setObjectPanelDisplayOption = (needToShowObjectPanel, evt, draggedObjRecipient) => {
-		const selectedObjPos = evt ? this.calculatePanelCoords(evt.clientX, evt.clientY, 'object') : this.state.selectedObjPos ? this.state.selectedObjPos : null;
-		this.setState({needToShowObjectPanel, selectedObjPos, draggedObjRecipient});
+	setObjectPanelDisplayOption = (needToShowObjectPanel, evt, draggedObjRecipient, callback) => {
+		const selectedObjPos = evt ? this.calculatePanelCoords(evt.clientX, evt.clientY, 'object') : null;
+		this.setState({needToShowObjectPanel, selectedObjPos, draggedObjRecipient}, () => {
+			if (callback) callback();
+		});
 	}
 
 	showObjectPanel = () => {
@@ -749,8 +759,10 @@ class UI extends React.Component {
 			//todo: not sure deepcopy is needed, as currently nothing is modifying this.state.selectedObject outside of setObjectSelected for clicked objects
 			clickedObjects = deepCopy(this.props.objectSelected.objectList);
 		}
-		this.setObjectSelected(clickedObjects, null, true, this.props.objectSelected.isPickUpAction, () => {
-			this.setObjectPanelDisplayOption(true, this.props.objectSelected.evt, null);
+		this.setObjectPanelDisplayOption(false, null, null, () => {
+			this.setObjectSelected(clickedObjects, null, true, this.props.objectSelected.isPickUpAction, () => {
+				this.setObjectPanelDisplayOption(true, this.props.objectSelected.evt, null);
+			});
 		});
 	}
 
@@ -772,33 +784,31 @@ class UI extends React.Component {
 		if (prevProps.logText !== this.props.logText) {
 			this.setState({logText: [...this.props.logText]}, this.scrollLog);
 		}
+
 		if (this.props.selectedCharacterInfo && prevProps.selectedCharacterInfo !== this.props.selectedCharacterInfo) {
 			this._parseInvItems(this.props.selectedCharacterInfo.id, this.state.entireInventory[this.props.selectedCharacterInfo.id]);
 		}
+
 		if (prevProps.activeCharacter !== this.props.activeCharacter && this.props.playerCharacters[this.props.activeCharacter]) {
 			this.setSelectedControlTab(this.props.activeCharacter);
 		}
-		// for handling object clicked/selected on map
-		if (this.props.objectSelected && prevProps.objectSelected !== this.props.objectSelected) {
-			const clickedObjPos = convertCoordsToPos(this.props.objectSelected.objectList[0].coords);
-			// if no object selected before or different object selected than before
-			if (!prevProps.objectSelected || convertCoordsToPos(prevProps.objectSelected.objectList[0].coords) !== clickedObjPos) {
-				this.processTileClick(clickedObjPos);
-			} else {
-				this.setObjectSelected(null, null, false, false, () => {
-					this.setObjectPanelDisplayOption(false, null, null);
-				});
-			}
+
+		const clickedObjPos = this.props.objectSelected ? convertCoordsToPos(this.props.objectSelected.objectList[0].coords) : null;
+		// if no object selected before or different object selected than before (for handling object clicked/selected on map)
+		if (this.props.objectSelected && (!prevProps.objectSelected || clickedObjPos !== convertCoordsToPos(prevProps.objectSelected.objectList[0].coords))) {
+			this.processTileClick(clickedObjPos);
 		}
+
 		// for handling dropping object from inv to map
 		if (!prevProps.objHasBeenDropped.dropped && this.props.objHasBeenDropped.dropped) {
-			if (this.state.objectSelected.stackable) {
+			if (this.state.objectSelected && this.state.objectSelected.stackable) {
 				this.setObjectPanelDisplayOption(true, this.props.objHasBeenDropped.evt, null);
 			} else {
 				// don't need to pass in dropped and source counts, as it's not a stackable object
 				this.addObjectToMap();
 			}
 		}
+
 		if (prevProps.gameOptions.playMusic !== this.props.gameOptions.playMusic) {
 			this.toggleMusic();
 		}
