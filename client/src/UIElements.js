@@ -510,6 +510,7 @@ function CreatureInfoPanel(props) {
 			<div>Name: {props.creatureInfo.name}</div>
 			<div>Level: {props.creatureInfo.level}</div>
 			<div>Health: {props.creatureInfo.currentHealth} / {props.creatureInfo.startingHealth}</div>
+			<div>Spirit: {props.creatureInfo.currentSpirit} / {props.creatureInfo.startingSpirit}</div>
 			<div>Strength: {props.creatureInfo.strength}</div>
 			<div>Agility: {props.creatureInfo.agility}</div>
 			<div>Mental Acuity: {props.creatureInfo.mentalAcuity}</div>

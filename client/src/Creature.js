@@ -18,6 +18,8 @@ class Creature extends React.Component {
 		this.damageReduction = props.damageReduction;
 		this.startingHealth = props.startingHealth;
 		this.currentHealth = props.startingHealth;
+		this.startingSpirit = props.startingSpirit;
+		this.currentSpirit = props.startingSpirit;
 		this.range = props.range;
 		this.attackType = props.attackType;
 		this.moveSpeed = props.moveSpeed;
