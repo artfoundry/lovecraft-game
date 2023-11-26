@@ -246,81 +246,85 @@ function CharacterInfoPanel(props) {
 	const leftEquippedItemInfo = weaponsPossessed[equippedItems.loadout1.left] || itemsPossessed[equippedItems.loadout1.left];
 	const rightItemAmount = (rightEquippedItemInfo && rightEquippedItemInfo.amount) ? rightEquippedItemInfo.amount : (rightEquippedItemInfo && rightEquippedItemInfo.currentRounds) ? rightEquippedItemInfo.currentRounds : '';
 	const leftItemAmount = (leftEquippedItemInfo && leftEquippedItemInfo.amount) ? leftEquippedItemInfo.amount : (leftEquippedItemInfo && leftEquippedItemInfo.currentRounds) ? leftEquippedItemInfo.currentRounds : '';
+	const [activeTab, updateActiveTab] = useState('inv');
 
 	return (
-		<div className={`character-info-container ui-panel`}>
+		<div className='character-info-container ui-panel'>
 			<div className='char-info-header'>
-				<div>
-					<h3 className='font-fancy'>{props.characterInfo.name}</h3>
-					<div>{props.characterInfo.profession}</div>
-				</div>
-				<div>
-					<div>Health: {props.characterInfo.currentHealth} / {props.characterInfo.startingHealth}</div>
-					<div>Sanity: {props.characterInfo.currentSanity} / {props.characterInfo.startingSanity}</div>
-					<div>Spirit: {props.characterInfo.currentSpirit} / {props.characterInfo.startingSpirit}</div>
-				</div>
+				<h3 className='font-fancy'>{props.characterInfo.name}</h3>
 				<div className='general-button' onClick={() => props.updateUnitSelectionStatus(props.characterInfo.id, 'player')}>X</div>
 			</div>
 
-			<div className='char-info-inv-container'>
-				<div className='char-info-doll-container'>
-					<div className='char-info-paper-doll'></div>
-					<div className='char-info-doll-boxes-container'>
-						<div
-							className='char-info-paper-doll-body char-info-paper-doll-box'
-							onDragOver={(evt) => {handleItemOverDropZone(evt)}}
-							onDrop={(evt) => props.dropItemToEquipped(evt)}
-						>
-							{(equippedItems.armor &&
-							<div
-								id={equippedItems.armor ? equippedItems.armor : 'body'}
-								className={`inv-object ${convertObjIdToClassId(equippedItems.armor)}-inv`}
-								draggable={true}
-								onDragStart={(evt) => {dragItem(evt, equippedItems.armor)}}
-								onClick={(evt) => {
-									props.setObjectSelected({...itemsPossessed[equippedItems.armor], id: equippedItems.armor}, null);
-									props.setObjectPanelDisplayOption(true, evt);
-								}}
-							></div>) || 'Body'}
-						</div>
+			<div className='char-info-all-contents-container'>
+				<div className='char-info-tabs-container'>
+					<div className={`${activeTab === 'inv' ? 'char-info-active-tab' : 'char-info-tab'}`} onClick={() => updateActiveTab('inv')}>Inventory</div>
+					<div className={`${activeTab === 'stats' ? 'char-info-active-tab' : 'char-info-tab'}`} onClick={() => updateActiveTab('stats')}>Abilities</div>
+					<div className={`${activeTab === 'skills' ? 'char-info-active-tab' : 'char-info-tab'}`} onClick={() => updateActiveTab('skills')}>Skills</div>
+				</div>
 
-						<div
-							className='char-info-paper-doll-right-arm char-info-paper-doll-box'
-							onDragOver={(evt) => {handleItemOverDropZone(evt)}}
-							onDrop={(evt) => props.dropItemToEquipped(evt)}
-						>
-							{(equippedItems.loadout1.right &&
-							<div
-								id={equippedItems.loadout1.right ? equippedItems.loadout1.right : 'right-hand'}
-								className={`inv-object ${convertObjIdToClassId(equippedItems.loadout1.right)}-inv`}
-								draggable={true}
-								onDragStart={(evt) => {dragItem(evt, equippedItems.loadout1.right)}}
-								onClick={(evt) => {
-									props.setObjectSelected({...rightEquippedItemInfo, id: equippedItems.loadout1.right}, null);
-									props.setObjectPanelDisplayOption(true, evt);
-								}}
-							>{equippedItems.loadout1.right ? rightItemAmount : ''}</div>) || 'Right Hand'}
-						</div>
+				<div className={`char-info-inv-container ${activeTab !== 'inv' ? 'hide' : ''}`}>
+					<div className='char-info-equipped-light'>Equipped Light: {props.characterInfo.equippedLight ? `${equippedLight.name} (Time left: ${equippedLight.time})`: 'none'}</div>
 
-						<div
-							className='char-info-paper-doll-left-arm char-info-paper-doll-box'
-							onDragOver={(evt) => {handleItemOverDropZone(evt)}}
-							onDrop={(evt) => props.dropItemToEquipped(evt)}
-						>
-							{(equippedItems.loadout1.left &&
+					<div className='char-info-doll-container'>
+						<div className='char-info-paper-doll'></div>
+						<div className='char-info-doll-boxes-container'>
 							<div
-								id={equippedIsTwoHanded ? equippedItems.loadout1.left + '-leftHand' :
-									equippedItems.loadout1.left ? equippedItems.loadout1.left : 'left-hand'}
-								className={`inv-object ${convertObjIdToClassId(equippedItems.loadout1.left)}-inv`}
-								draggable={true}
-								onDragStart={(evt) => {dragItem(evt, equippedItems.loadout1.left)}}
-								onClick={(evt) => {
-									props.setObjectSelected({...leftEquippedItemInfo, id: equippedItems.loadout1.left}, null);
-									props.setObjectPanelDisplayOption(true, evt);
-								}}
-							>{equippedItems.loadout1.left ? leftItemAmount : ''}</div>) || 'Left Hand'}
+								className='char-info-paper-doll-body char-info-paper-doll-box'
+								onDragOver={(evt) => {handleItemOverDropZone(evt)}}
+								onDrop={(evt) => props.dropItemToEquipped(evt)}
+							>
+								{(equippedItems.armor &&
+									<div
+										id={equippedItems.armor ? equippedItems.armor : 'body'}
+										className={`inv-object ${convertObjIdToClassId(equippedItems.armor)}-inv`}
+										draggable={true}
+										onDragStart={(evt) => {dragItem(evt, equippedItems.armor)}}
+										onClick={(evt) => {
+											props.setObjectSelected({...itemsPossessed[equippedItems.armor], id: equippedItems.armor}, null);
+											props.setObjectPanelDisplayOption(true, evt);
+										}}
+									></div>) || 'Body'}
+							</div>
+
+							<div
+								className='char-info-paper-doll-right-arm char-info-paper-doll-box'
+								onDragOver={(evt) => {handleItemOverDropZone(evt)}}
+								onDrop={(evt) => props.dropItemToEquipped(evt)}
+							>
+								{(equippedItems.loadout1.right &&
+									<div
+										id={equippedItems.loadout1.right ? equippedItems.loadout1.right : 'right-hand'}
+										className={`inv-object ${convertObjIdToClassId(equippedItems.loadout1.right)}-inv`}
+										draggable={true}
+										onDragStart={(evt) => {dragItem(evt, equippedItems.loadout1.right)}}
+										onClick={(evt) => {
+											props.setObjectSelected({...rightEquippedItemInfo, id: equippedItems.loadout1.right}, null);
+											props.setObjectPanelDisplayOption(true, evt);
+										}}
+									>{equippedItems.loadout1.right ? rightItemAmount : ''}</div>) || 'Right Hand'}
+							</div>
+
+							<div
+								className='char-info-paper-doll-left-arm char-info-paper-doll-box'
+								onDragOver={(evt) => {handleItemOverDropZone(evt)}}
+								onDrop={(evt) => props.dropItemToEquipped(evt)}
+							>
+								{(equippedItems.loadout1.left &&
+									<div
+										id={equippedIsTwoHanded ? equippedItems.loadout1.left + '-leftHand' :
+											equippedItems.loadout1.left ? equippedItems.loadout1.left : 'left-hand'}
+										className={`inv-object ${convertObjIdToClassId(equippedItems.loadout1.left)}-inv`}
+										draggable={true}
+										onDragStart={(evt) => {dragItem(evt, equippedItems.loadout1.left)}}
+										onClick={(evt) => {
+											props.setObjectSelected({...leftEquippedItemInfo, id: equippedItems.loadout1.left}, null);
+											props.setObjectPanelDisplayOption(true, evt);
+										}}
+									>{equippedItems.loadout1.left ? leftItemAmount : ''}</div>) || 'Left Hand'}
+							</div>
 						</div>
 					</div>
+
 					<div className='char-info-equip-toggle-button general-button' onClick={() => {
 						if (!notEnoughSpaceInInventory(numItemsInLoadout1, numItemsInLoadout2, props.characterInfo)) {
 							props.switchEquipment(props.characterInfo.id)
@@ -328,9 +332,23 @@ function CharacterInfoPanel(props) {
 							props.setShowDialogProps(true, props.notEnoughSpaceDialogProps);
 						}
 					}}>Switch equipment</div>
+
+					<div>
+						<div className='char-info-item-drop-zone'
+						     onDragOver={(evt) => {handleItemOverDropZone(evt)}}
+						     onDrop={(evt) => {props.setHasObjBeenDropped({objHasBeenDropped: true, evt})}}
+						></div>
+						<span>Drag item here to drop</span>
+					</div>
+
+					{itemsIntoElements}
 				</div>
 
-				<div className='char-info-stats-container'>
+				<div className={`char-info-stats-container ${activeTab !== 'stats' ? 'hide' : ''}`}>
+					<div>{props.characterInfo.profession}</div>
+					<div>Health: {props.characterInfo.currentHealth} / {props.characterInfo.startingHealth}</div>
+					<div>Sanity: {props.characterInfo.currentSanity} / {props.characterInfo.startingSanity}</div>
+					<div>Spirit: {props.characterInfo.currentSpirit} / {props.characterInfo.startingSpirit}</div>
 					<div>Level: {props.characterInfo.level}</div>
 					<div>XP: {props.characterInfo.xp}</div>
 					<div>Strength: {props.characterInfo.strength}</div>
@@ -339,23 +357,14 @@ function CharacterInfoPanel(props) {
 					<div>Initiative: {props.characterInfo.initiative}</div>
 					<div>Defense: {props.characterInfo.defense}</div>
 					<div>Damage Reduction: {props.characterInfo.damageReduction}{equippedItems.armor ? ` (from ${itemsPossessed[equippedItems.armor].name})` : ''}</div>
+				</div>
+
+				<div className={`char-info-skills-container ${activeTab !== 'skills' ? 'hide' : ''}`}>
 					<div>Skills:
 						<ul>{skillList}</ul>
 					</div>
 				</div>
 			</div>
-
-			<div>
-				<div className='char-info-equipped-light'>Equipped Light: {props.characterInfo.equippedLight ? `${equippedLight.name} (Time left: ${equippedLight.time})`: 'none'}</div>
-
-				<div className='char-info-item-drop-zone'
-				     onDragOver={(evt) => {handleItemOverDropZone(evt)}}
-				     onDrop={(evt) => {props.setHasObjBeenDropped({objHasBeenDropped: true, evt})}}
-				></div>
-				<span>Drag item here to drop</span>
-			</div>
-
-			{itemsIntoElements}
 		</div>
 	);
 }
