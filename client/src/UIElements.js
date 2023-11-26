@@ -143,34 +143,36 @@ function CharacterControls(props) {
 				<span className={`control-bar-tab-icon ${convertObjIdToClassId(props.characterId)}`}></span>
 				{displayCharName ? props.characterName : ''}
 			</div>
-			<div className='control-bar-status-bars'>
-				<div className='control-bar-status-row'>
-					<div className='status-bar-icon heart-icon'></div>
-					<div className='status-bar-container'>
-						<div id='status-bar-health' className='status-bar-level' style={{width: healthLevel + '%'}}></div>
+			<div id='control-bar-statuses-container'>
+				<div className='control-bar-status-bars'>
+					<div className='control-bar-status-row'>
+						<div className='status-bar-icon heart-icon'></div>
+						<div className='status-bar-container'>
+							<div id='status-bar-health' className='status-bar-level' style={{width: healthLevel + '%'}}></div>
+						</div>
+					</div>
+					<div className='control-bar-status-row'>
+						<div className='status-bar-icon brain-icon'></div>
+						<div className='status-bar-container'>
+							<div id='status-bar-sanity' className='status-bar-level' style={{width: sanityLevel + '%'}}></div>
+						</div>
+					</div>
+					<div className='control-bar-status-row'>
+						<div className='status-bar-icon spirit-icon'></div>
+						<div className='status-bar-container'>
+							<div id='status-bar-spirit' className='status-bar-level' style={{width: spiritLevel  + '%'}}></div>
+						</div>
 					</div>
 				</div>
-				<div className='control-bar-status-row'>
-					<div className='status-bar-icon brain-icon'></div>
-					<div className='status-bar-container'>
-						<div id='status-bar-sanity' className='status-bar-level' style={{width: sanityLevel + '%'}}></div>
-					</div>
-				</div>
-				<div className='control-bar-status-row'>
-					<div className='status-bar-icon spirit-icon'></div>
-					<div className='status-bar-container'>
-						<div id='status-bar-spirit' className='status-bar-level' style={{width: spiritLevel  + '%'}}></div>
-					</div>
-				</div>
+				{props.inTacticalMode &&
+				<div className='control-bar-actions-moves'>
+					<div id='control-bar-moves-title'>Moves: </div><div id='control-bar-moves-value'>{props.isActiveCharacter ? props.movesRemaining : '0'}</div>
+					<div id='control-bar-actions-title'>Actions: </div><div id='control-bar-actions-value'>{props.isActiveCharacter ? props.actionsRemaining : '0'}</div>
+				</div>}
 			</div>
 			<div
 				id={`char-control-${props.characterId}`}
-				className={`character-control-container ${((props.screenData.isNarrow || props.screenData.isShort) && props.characterId !== props.selectedControlTab) ? 'hide' : ''}`}>
-				{props.inTacticalMode &&
-				<div className='control-bar-actions-moves'>
-					<div className='control-bar-actions-moves-title'>Moves: <span className='control-bar-actions-moves-value'>{props.isActiveCharacter ? props.movesRemaining : '0'}</span></div>
-					<div className='control-bar-actions-moves-title'>Actions: <span className='control-bar-actions-moves-value'>{props.isActiveCharacter ? props.actionsRemaining : '0'}</span></div>
-				</div>}
+				className={`control-bar-buttons-container ${((props.screenData.isNarrow || props.screenData.isShort) && props.characterId !== props.selectedControlTab) ? 'hide' : ''}`}>
 				{weaponButtons}
 				{medicineButtons}
 				<div className='misc-action-buttons-container'>

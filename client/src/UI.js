@@ -822,7 +822,7 @@ class UI extends React.Component {
 
 	render() {
 		return (
-			<div className='ui-container'>
+			<div id='ui-container'>
 				{this.props.showDialog && this.props.dialogProps && <this.showDialog />}
 
 				{this.state.needToShowObjectPanel && <this.showObjectPanel />}

@@ -19,6 +19,8 @@ class Game extends React.Component {
 		this.playerMovesLimit = 3;
 		this.playerActionsLimit = 2;
 
+		this.minScreenWidth = 1000;
+		this.minScreenHeight = 768;
 		this.objectPanelWidth = 300;
 		this.objectPanelHeight = 250;
 		this.contextMenuWidth = 128;
@@ -48,8 +50,8 @@ class Game extends React.Component {
 			screenData: {
 				width: window.innerWidth,
 				height: window.innerHeight,
-				isNarrow: window.innerWidth < 768 && window.innerWidth < window.innerHeight,
-				isShort: window.innerHeight < 768 && window.innerHeight < window.innerWidth,
+				isNarrow: window.innerWidth < this.minScreenWidth,// && window.innerWidth < window.innerHeight,
+				isShort: window.innerHeight < this.minScreenHeight && window.innerHeight < window.innerWidth,
 				isIOS: navigator.userAgent.includes('iPhone OS')
 			},
 			userData: {},
@@ -166,8 +168,8 @@ class Game extends React.Component {
 		const screenData = {...this.state.screenData};
 		screenData.width = window.innerWidth;
 		screenData.height = window.innerHeight;
-		screenData.isNarrow = screenData.width < 768 && screenData.width < screenData.height;
-		screenData.isShort = screenData.height < 768 && screenData.height < screenData.width;
+		screenData.isNarrow = screenData.width < this.minScreenWidth;// && screenData.width < screenData.height;
+		screenData.isShort = screenData.height < this.minScreenHeight && screenData.height < screenData.width;
 		this.setState({screenData});
 	}
 

@@ -21,16 +21,17 @@ h3 {
 	z-index: 2;
 }
 
-.ui-container {
+#ui-container {
 	position: fixed;
 	display: grid;
-	grid-template-columns: 500px 1fr 1fr 50px;
-	grid-template-rows: 150px 580px 1.5fr;
+	grid-template-columns: 500px 1fr 50px;
+	grid-template-rows: 128px 1fr 160px;
 	grid-template-areas:
-	"turnInfo turnInfo turnInfo turnInfo"
-	"characterInfo . creatureInfo creatureInfo"
-	"controlBar controlBar controlBar systemButtons";
+        "turnInfo turnInfo turnInfo"
+        "characterInfo creatureInfo creatureInfo"
+        "controlBar controlBar systemButtons";
 	width: 100%;
+	min-width: 1000px;
 	height: 100%;
 	top: 0;
 	left: 0;
@@ -378,6 +379,7 @@ h3 {
 	justify-content: space-around;
 	grid-area: characterInfo;
 	min-width: 250px;
+	min-height: 500px;
 	padding: 20px;
 	border: 2px solid seagreen;
 	border-left: 0;
@@ -514,7 +516,6 @@ h3 {
 	grid-template-areas: "controlBarTab1 . .";
 	justify-self: center;
 	align-self: end;
-	min-width: 80%;
 	height: 160px;
 	border: 2px solid seagreen;
 	border-bottom: 0;
@@ -530,7 +531,7 @@ h3 {
 .control-bar-tab-container {
 	display: flex;
 	flex-direction: column;
-	min-width: 200px;
+	min-width: 300px;
 	padding: 8px;
 	border-right: 1px solid seagreen;
 }
@@ -547,7 +548,7 @@ h3 {
 	margin: 0 5px 0 0;
 }
 
-.character-control-container {
+.control-bar-buttons-container {
 	display: flex;
 	flex-direction: row;
 	justify-content: left;
@@ -555,9 +556,10 @@ h3 {
 	gap: 2px;
 	min-height: 64px;
 	text-align: left;
+	overflow-x: auto;
 }
 
-.character-control-container:last-child {
+.control-bar-buttons-container:last-child {
 	border: 0;
 }
 
@@ -568,9 +570,17 @@ h3 {
 	border-bottom: 1px solid #225555;
 }
 
+#control-bar-statuses-container {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 10px;
+}
+
 .control-bar-status-bars {
 	display: flex;
 	flex-direction: column;
+	flex-basis: 100%;
 	margin-top: 5px;
 }
 
@@ -630,14 +640,28 @@ h3 {
 }
 
 .control-bar-actions-moves {
-	display: flex;
-	flex-direction: column;
-	gap: 5px;
-	text-align: left;
+	display: grid;
+	grid-template-columns: 70px 10px;
+	grid-template-rows: 20px 20px;
+	grid-template-areas:
+		"movesTitle movesValue"
+		"actionsTitle actionsValue";
 }
 
-.control-bar-actions-moves-value {
-	height: 16px;
+#control-bar-moves-title {
+	grid-area: movesTitle;
+}
+
+#control-bar-moves-value {
+	grid-area: movesValue;
+}
+
+#control-bar-actions-title {
+	grid-area: actionsTitle;
+}
+
+#control-bar-actions-value {
+	grid-area: actionsValue;
 }
 
 .action-button-pair {
@@ -702,7 +726,6 @@ h3 {
 
 .weapon-buttons-container {
 	align-items: center;
-	margin-left: 5px;
 }
 
 .weapon-buttons-container, .item-buttons-container {
@@ -1024,9 +1047,13 @@ select {
 /* MEDIA QUERIES */
 
 /* Narrow or short screens */
-@media (width < 768px) or (height < 768px) {
+@media (width < 1000px) or (height < 768px) {
 	.dialog-login h2, .dialog-login h3 {
 		margin: 10px;
+	}
+
+	#ui-container {
+		min-width: unset;
 	}
 
 	.ui-panel, .log-container {
@@ -1058,6 +1085,7 @@ select {
 		justify-content: start;
 		border-radius: 0;
 		border: 0;
+		min-height: unset;
 	}
 
 	.creature-info-container {
@@ -1091,6 +1119,14 @@ select {
 		font-size: 12px;
 	}
 
+	.control-bar-tab-container:not(#control-bar-tab-1.control-bar-tab-container) {
+		max-width: 40px;
+	}
+
+	#control-bar-statuses-container:not(#control-bar-tab-1 #control-bar-statuses-container)  {
+		display: none;
+	}
+
 	.action-button:hover {
 		border-color: seagreen;
 	}
@@ -1099,14 +1135,14 @@ select {
 		border-color: red;
 	}
 
-	.character-control-container {
+	.control-bar-buttons-container {
 		width: 280px;
 		border: none;
 	}
 }
 
 /* Narrow/tall screens */
-@media (width < 768px) and (height > 500px) {
+@media (width < 1000px) and (height > 500px) {
 	h2 { font-size: 26px; }
 	h3 { font-size: 20px; }
 
@@ -1127,7 +1163,7 @@ select {
 		box-sizing: border-box;
 	}
 
-	.ui-container {
+	#ui-container {
 		grid-template-columns: 1fr 300px;
 		grid-template-rows: 150px 1fr 100px;
 		grid-template-areas:
@@ -1164,6 +1200,11 @@ select {
 		flex-direction: column;
 	}
 
+	.char-info-inv-items {
+		width: calc(66px * 4);
+		margin-bottom: 10px;
+	}
+
 	.char-info-inv-item-box:nth-child(6n) {
 		border-right: 0;
 	}
@@ -1185,13 +1226,21 @@ select {
 	}
 
 	#control-bar-container {
-		grid-template-columns: 250px 1fr 1fr;
+		grid-template-columns: 1fr 50px 50px;
 		border: 0;
 		border-top: 2px solid seagreen;
 		border-radius: 0;
 	}
 
-	.character-control-container {
+	#control-bar-tab-1 {
+		max-width: 260px;
+	}
+
+	#control-bar-statuses-container {
+		width: 350px;
+	}
+
+	.control-bar-buttons-container {
 		width: 350px;
 	}
 
@@ -1213,7 +1262,7 @@ select {
 		margin-top: 5px;
 	}
 
-	.ui-container {
+	#ui-container {
 		grid-template-columns: 330px 1fr;
 		grid-template-rows: 220px 1fr;
 		grid-template-areas:
@@ -1221,7 +1270,7 @@ select {
 		"controlBar characterInfo";
 	}
 
-	.ui-container .dialog {
+	#ui-container .dialog {
 		top: 25%;
 	}
 
@@ -1254,6 +1303,14 @@ select {
 		justify-self: left;
 		border-left: 0;
 		border-top-left-radius: 0;
+	}
+
+	#control-bar-tab-1 {
+		width: unset;
+	}
+
+	#control-bar-statuses-container {
+		width: 300px;
 	}
 }
 
