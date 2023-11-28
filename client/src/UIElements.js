@@ -257,9 +257,9 @@ function CharacterInfoPanel(props) {
 
 			<div className='char-info-all-contents-container'>
 				<div className='char-info-tabs-container'>
-					<div className={`${activeTab === 'inv' ? 'char-info-active-tab' : 'char-info-tab'}`} onClick={() => updateActiveTab('inv')}>Inventory</div>
-					<div className={`${activeTab === 'stats' ? 'char-info-active-tab' : 'char-info-tab'}`} onClick={() => updateActiveTab('stats')}>Abilities</div>
-					<div className={`${activeTab === 'skills' ? 'char-info-active-tab' : 'char-info-tab'}`} onClick={() => updateActiveTab('skills')}>Skills</div>
+					<div className={`char-info-tab ${activeTab === 'inv' ? 'char-info-active-tab' : ''}`} onClick={() => updateActiveTab('inv')}>Inventory</div>
+					<div className={`char-info-tab ${activeTab === 'stats' ? 'char-info-active-tab' : ''}`} onClick={() => updateActiveTab('stats')}>Abilities</div>
+					<div className={`char-info-tab ${activeTab === 'skills' ? 'char-info-active-tab' : ''}`} onClick={() => updateActiveTab('skills')}>Skills</div>
 				</div>
 
 				<div className={`char-info-inv-container ${activeTab !== 'inv' ? 'hide' : ''}`}>

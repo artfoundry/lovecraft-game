@@ -407,19 +407,17 @@ h3 {
 	border-bottom: 1px solid seagreen;
 }
 
-.char-info-active-tab {
-	padding: 5px;
-	background-color: seagreen;
-	border-radius: 5px 5px 0 0;
-	cursor: pointer;
-}
-
 .char-info-tab {
 	padding: 5px;
 	border-top: 1px solid seagreen;
 	border-left: 1px solid seagreen;
 	border-right: 1px solid seagreen;
 	border-radius: 5px 5px 0 0;
+	cursor: pointer;
+}
+
+.char-info-active-tab {
+	background-color: seagreen;
 }
 
 .char-info-inv-container {
