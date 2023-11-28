@@ -184,6 +184,7 @@ function CharacterControls(props) {
 						<div className={`action-button pickup-action ${actionButtonState}`} onClick={(evt) => props.setMapObjectSelected(props.mapObjectsOnPcTiles, evt, true)}></div>
 					}
 				</div>
+				{/*<div className='action-button arrow-button-right action-button-scroll'>⬅</div>*/}
 			</div>
 		</div>
 	);
@@ -373,7 +374,7 @@ function ObjectInfoPanel(props) {
 		// dropItemToEquipped,
 		// dropItemToInv,
 		addObjectToMap,
-		addObjToOtherPc,
+		addStackedObjToOtherPc,
 		addItemToPlayerInventory,
 		isPickUpAction,
 		isMapObj,
@@ -390,7 +391,7 @@ function ObjectInfoPanel(props) {
 		if (objHasBeenDropped) {
 			addObjectToMap(splitValue, remainingCount)
 		} else {
-			addObjToOtherPc(splitValue, remainingCount);
+			addStackedObjToOtherPc(splitValue, remainingCount);
 		}
 		cancelObjPanel();
 	};
@@ -444,7 +445,7 @@ function ObjectInfoPanel(props) {
 		setObjectSelected(null, null);
 		setObjectPanelDisplayOption(false);
 		if (objHasBeenDropped) {
-			setHasObjBeenDropped(false);
+			setHasObjBeenDropped({objHasBeenDropped: false, evt: null});
 		}
 	}
 

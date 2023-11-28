@@ -548,21 +548,6 @@ h3 {
 	margin: 0 5px 0 0;
 }
 
-.control-bar-buttons-container {
-	display: flex;
-	flex-direction: row;
-	justify-content: left;
-	align-items: center;
-	gap: 2px;
-	min-height: 64px;
-	text-align: left;
-	overflow-x: auto;
-}
-
-.control-bar-buttons-container:last-child {
-	border: 0;
-}
-
 .character-name {
 	display: inline-block;
 	margin-bottom: 3px;
@@ -664,15 +649,29 @@ h3 {
 	grid-area: actionsValue;
 }
 
+.control-bar-buttons-container {
+	display: flex;
+	flex-direction: row;
+	justify-content: left;
+	align-items: center;
+	min-height: 64px;
+	text-align: left;
+	overflow-x: auto;
+}
+
+.control-bar-buttons-container:last-child {
+	border: 0;
+}
+
 .action-button-pair {
 	display: flex;
-	margin: 5px;
+	margin: 1px;
 }
 
 .action-button {
 	width: 32px;
 	height: 32px;
-	margin: 5px;
+	margin: 1px;
 	padding: 5px;
 	border: 1px solid seagreen;
 	border-radius: 5px;
@@ -700,6 +699,21 @@ h3 {
 	border-left: none;
 }
 
+.action-button-scroll {
+	width: 12px;
+	padding-left: 1px;
+	padding-right: 5px;
+}
+
+.weapon-buttons-container {
+	align-items: center;
+}
+
+.weapon-buttons-container, .item-buttons-container, .misc-action-buttons-container {
+	display: flex;
+	text-align: center;
+}
+
 .gun-reload-icon {
 	font-size: 30px;
 	line-height: 26px;
@@ -722,15 +736,6 @@ h3 {
 
 .button-selected {
 	background-color: darkred;
-}
-
-.weapon-buttons-container {
-	align-items: center;
-}
-
-.weapon-buttons-container, .item-buttons-container {
-	display: flex;
-	text-align: center;
 }
 
 .context-manu-container {
@@ -968,10 +973,6 @@ select {
 
 .pharmaceuticals-action {
 	background-image: url('../assets/ui/pharmaceuticals_sml.png');
-}
-
-.oil-action {
-	background-image: url('../assets/ui/oil_sml.png');
 }
 
 .acid-concoction-action {

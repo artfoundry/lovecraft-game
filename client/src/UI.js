@@ -194,6 +194,11 @@ class UI extends React.Component {
 		});
 	}
 
+	/**
+	 * For moving an item from one PC to another
+	 * @param evt
+	 * @param recipientId: string
+	 */
 	dropItemToPC = (evt, recipientId) => {
 		const draggedItem = this.state.objectSelected;
 		const draggedObjectMetaData = this.state.draggedObjectMetaData;
@@ -246,6 +251,11 @@ class UI extends React.Component {
 		}
 	}
 
+	/**
+	 * For moving item from unequipped to equipped or from one hand to the other
+	 * Also takes care of item swapping
+	 * @param evt
+	 */
 	dropItemToEquipped = (evt) => {
 		if (!this.state.objectSelected || Object.keys(this.state.objectSelected).length === 0) {
 			return;
@@ -369,6 +379,11 @@ class UI extends React.Component {
 		});
 	}
 
+	/**
+	 * For moving item from equipped to unequipped or from one inv spot to another
+	 * Also takes care of item swapping
+	 * @param evt
+	 */
 	dropItemToInv = (evt) => {
 		if (!this.state.objectSelected || Object.keys(this.state.objectSelected).length === 0) {
 			return;
@@ -429,7 +444,12 @@ class UI extends React.Component {
 		}
 	}
 
-	addObjToOtherPc = (draggedItemCount, sourceItemCount) => {
+	/**
+	 * For moving a stackable item from one PC to another (called by object info panel)
+	 * @param draggedItemCount: integer
+	 * @param sourceItemCount: integer
+	 */
+	addStackedObjToOtherPc = (draggedItemCount, sourceItemCount) => {
 		if (!this.state.objectSelected || Object.keys(this.state.objectSelected).length === 0) {
 			return;
 		}
@@ -507,7 +527,7 @@ class UI extends React.Component {
 				...draggedObject,
 				coords: sourcePcData.coords
 			}
-			this.props.updateMapObjects(mapObjects, lightingChanged, () => this.props.setHasObjBeenDropped(false));
+			this.props.updateMapObjects(mapObjects, lightingChanged, () => this.props.setHasObjBeenDropped({objHasBeenDropped: false, evt: null}));
 		});
 	}
 
@@ -567,7 +587,7 @@ class UI extends React.Component {
 	 * Sets whether to show object info panel
 	 * @param needToShowObjectPanel: boolean (false when closing panel)
 	 * @param evt: event object
-	 * @param draggedObjRecipient: string (ID - used for addObjToOtherPc)
+	 * @param draggedObjRecipient: string (ID - used for addStackedObjToOtherPc)
 	 * @param callback: function (mainly for opening new panel after closing current one)
 	 */
 	setObjectPanelDisplayOption = (needToShowObjectPanel, evt, draggedObjRecipient, callback) => {
@@ -592,13 +612,13 @@ class UI extends React.Component {
 				setObjectSelected={this.setObjectSelected}
 				setObjectPanelDisplayOption={this.setObjectPanelDisplayOption}
 				selectedObjPos={this.state.selectedObjPos}
-				objHasBeenDropped={this.props.objHasBeenDropped}
+				objHasBeenDropped={this.props.objHasBeenDropped.dropped}
 				setHasObjBeenDropped={this.props.setHasObjBeenDropped}
 				dropItemToPC={this.dropItemToPC}
 				dropItemToEquipped={this.dropItemToEquipped}
 				dropItemToInv={this.dropItemToInv}
 				addObjectToMap={this.addObjectToMap}
-				addObjToOtherPc={this.addObjToOtherPc}
+				addStackedObjToOtherPc={this.addStackedObjToOtherPc}
 				addItemToPlayerInventory={this.props.addItemToPlayerInventory}
 				isPickUpAction={this.state.isPickUpAction}
 				isMapObj={this.state.isMapObj}

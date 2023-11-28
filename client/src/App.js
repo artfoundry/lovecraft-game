@@ -1110,7 +1110,6 @@ class Game extends React.Component {
 
 						updateMapObjects={this.updateMapObjects}
 						mapObjects={this.state.mapObjects}
-						setHasObjBeenDropped={this.setHasObjBeenDropped}
 						addItemToPlayerInventory={this.addItemToPlayerInventory}
 						lightingHasChanged={this.state.lightingHasChanged}
 						toggleLightingHasChanged={this.toggleLightingHasChanged}
