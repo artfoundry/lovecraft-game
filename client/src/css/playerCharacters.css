@@ -1,6 +1,7 @@
 .player {
 	position: absolute;
 	transition: transform 0.5s;
+	user-select: none;
 }
 
 .private-eye {

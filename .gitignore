@@ -16,7 +16,7 @@
 
 # misc
 .DS_Store
-/assets_unused/
+/asset_sources/
 notes
 /mapLayoutTool/mapData_*_backup.json
 client_secret*

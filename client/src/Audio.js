@@ -16,7 +16,7 @@ function SoundEffect(props) {
 }
 
 function Music(props) {
-	return (<audio id={props.idProp} preload='auto' className='audio-music' loop controls controlsList="nofullscreen nodownload noremoteplayback noplaybackrate foobar">
+	return (<audio id={props.idProp} preload='auto' className='audio-music' loop>
 		<source src={musicMap[props.sourceName]} type='audio/mpeg' />
 	</audio>);
 }

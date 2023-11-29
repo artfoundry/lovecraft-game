@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {convertObjIdToClassId, notEnoughSpaceInInventory, deepCopy, handleItemOverDropZone} from './Utils';
-
+import {Music} from './Audio';
 
 function CharacterControls(props) {
 	const currentPCdata = props.playerCharacters[props.characterId];
@@ -11,13 +11,12 @@ function CharacterControls(props) {
 		medicine: []
 	};
 
-	const handleWeaponClick = (weapon) => {
+	const handleWeaponClick = (weapon, reloading = false) => {
 		const ammoId = currentPCdata.weapons[weapon.weaponId].gunType + 'Ammo0';
-		if (weapon.ammo === 0) {
+		if (reloading) {
+			const availAmmo = currentPCdata.items[weapon.gunType + 'Ammo0'].amount;
 			// if reloading gun uses up remaining ammo in inv, remove ammo item in inv and update inventory in UI
-			const gunInfo = currentPCdata.weapons[weapon.weaponId];
-			const availAmmo = currentPCdata.items[gunInfo.gunType + 'Ammo0'].amount;
-			if (availAmmo <= gunInfo.rounds) {
+			if (availAmmo <= (weapon.fullyLoaded - weapon.ammo)) {
 				let updatedInventory = props.entireInventory[props.characterId];
 				const ammoInvIndex = updatedInventory.indexOf(ammoId);
 				updatedInventory.splice(ammoInvIndex, 1);
@@ -42,7 +41,7 @@ function CharacterControls(props) {
 			if (weaponInfo.ranged) {
 				const weaponButtonIndex = actionableItems.weapons.findIndex(listItem => listItem.weaponName === weaponInfo.name);
 				if (weaponInfo.gunType) {
-					actionableItems.weapons.push({weaponId: itemId, weaponName: weaponInfo.name, isGun: true, ammo: weaponInfo.currentRounds});
+					actionableItems.weapons.push({weaponId: itemId, gunType: weaponInfo.gunType, weaponName: weaponInfo.name, isGun: true, ammo: weaponInfo.currentRounds, fullyLoaded: weaponInfo.rounds});
 				// check to make sure this stackable weapon isn't already in the controls and has some ammo
 				} else if (weaponButtonIndex === -1 && weaponInfo.stackable && weaponInfo.currentRounds > 0) {
 					actionableItems.weapons.push({weaponId: itemId, weaponName: weaponInfo.name, ammo: weaponInfo.currentRounds});
@@ -70,17 +69,43 @@ function CharacterControls(props) {
 	const weaponButtons = (
 		<div className='weapon-buttons-container'>
 			{actionableItems.weapons.map((weapon, index) => {
-				const actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || (weapon.ammo === 0 && !hasExtraAmmo)) ? 'button-inactive' :
-					(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === weapon.weaponId) ? 'button-selected': '';
-				return (
-					<div
-						className={`action-button ${convertObjIdToClassId(weapon.weaponId)}-action ${actionButtonState} ${weapon.ammo === 0 ? 'gun-reload-icon' : ''}`}
-						key={weapon.weaponId}
-						onClick={() => {
-							handleWeaponClick(weapon);
-						}}
-					>{weapon.ammo || ''}</div>
-				);
+				let actionButtonState = '';
+				let buttonType;
+				if (weapon.isGun) {
+					actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || weapon.ammo === 0) ? 'button-inactive' :
+						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === weapon.weaponId) ? 'button-selected': '';
+					const reloadButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || props.actionButtonSelected || weapon.ammo === weapon.fullyLoaded || !hasExtraAmmo) ? 'button-inactive' :
+						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === weapon.weaponId) ? 'button-selected': '';
+					buttonType = (
+						<div className='action-button-pair' key={weapon.weaponId}>
+							<div
+								className={`action-button ${convertObjIdToClassId(weapon.weaponId)}-action ${actionButtonState}`}
+								onClick={() => {
+									handleWeaponClick(weapon);
+								}}
+							>{weapon.ammo}</div>
+							<div
+								className={`action-button gun-reload-icon ${convertObjIdToClassId(weapon.weaponId)}-action ${reloadButtonState}`}
+								onClick={() => {
+									handleWeaponClick(weapon, true);
+								}}
+							></div>
+						</div>
+					);
+				} else {
+					actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || (weapon.ammo === 0 && !hasExtraAmmo)) ? 'button-inactive' :
+						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === weapon.weaponId) ? 'button-selected': '';
+					buttonType = (
+						<div
+							className={`action-button ${convertObjIdToClassId(weapon.weaponId)}-action ${actionButtonState} ${weapon.ammo === 0 ? 'gun-reload-icon' : ''}`}
+							key={weapon.weaponId}
+							onClick={() => {
+								handleWeaponClick(weapon);
+							}}
+						>{weapon.ammo || ''}</div>
+					);
+				}
+				return buttonType;
 			})}
 		</div>
 	);
@@ -104,26 +129,63 @@ function CharacterControls(props) {
 		</div>
 	);
 
+	const displayCharName = ((props.screenData.isNarrow || props.screenData.isShort) && props.characterId === props.selectedControlTab) || (!props.screenData.isNarrow && !props.screenData.isShort);
+	const healthLevel = (currentPCdata.currentHealth / currentPCdata.startingHealth) * 100;
+	const sanityLevel = (currentPCdata.currentSanity / currentPCdata.startingSanity) * 100;
+	const spiritLevel = (currentPCdata.currentSpirit / currentPCdata.startingSpirit) * 100;
 	return (
 		<div
-			className='character-control-container'
+			id={`${((props.screenData.isNarrow || props.screenData.isShort) && props.characterId === props.selectedControlTab) ? 'control-bar-tab-1' : ''}`}
+			className='control-bar-tab-container'
 			onDragOver={(evt) => handleItemOverDropZone(evt)}
-			onDrop={(evt) => props.dropItemToPC(evt, props.characterId)}
-		>
-			<div>
-				<div className='character-name font-fancy'>{props.characterName}</div>
-				<div>Moves remaining: {props.isActiveCharacter ? props.movesRemaining : ''}</div>
-				<div>Actions remaining: {props.isActiveCharacter ? props.actionsRemaining : ''}</div>
+			onDrop={(evt) => props.dropItemToPC(evt, props.characterId)}>
+			<div className='control-bar-tab character-name font-fancy' onClick={() => props.setSelectedControlTab(props.characterId)}>
+				<span className={`control-bar-tab-icon ${convertObjIdToClassId(props.characterId)}`}></span>
+				{displayCharName ? props.characterName : ''}
 			</div>
-			{weaponButtons}
-			{medicineButtons}
-			{((currentPCdata.equippedLight && (currentPCdata.equippedLight.includes('lantern') || currentPCdata.equippedLight.includes('torch'))) &&
-			currentPCdata.lightTime < currentPCdata.items[currentPCdata.equippedLight].maxTime && currentPCdata.items.oil0) &&
-			<div className={`action-button refill-action ${actionButtonState}`} onClick={() => props.refillLight()}></div>
-			}
-			{(props.mapObjectsOnPcTiles.length > 0) &&
-				<div className={`action-button examine-action ${actionButtonState}`} onClick={(evt) => props.setMapObjectSelected(props.mapObjectsOnPcTiles, evt, true)}></div>
-			}
+			<div id='control-bar-statuses-container'>
+				<div className='control-bar-status-bars'>
+					<div className='control-bar-status-row'>
+						<div className='status-bar-icon heart-icon'></div>
+						<div className='status-bar-container'>
+							<div id='status-bar-health' className='status-bar-level' style={{width: healthLevel + '%'}}></div>
+						</div>
+					</div>
+					<div className='control-bar-status-row'>
+						<div className='status-bar-icon brain-icon'></div>
+						<div className='status-bar-container'>
+							<div id='status-bar-sanity' className='status-bar-level' style={{width: sanityLevel + '%'}}></div>
+						</div>
+					</div>
+					<div className='control-bar-status-row'>
+						<div className='status-bar-icon spirit-icon'></div>
+						<div className='status-bar-container'>
+							<div id='status-bar-spirit' className='status-bar-level' style={{width: spiritLevel  + '%'}}></div>
+						</div>
+					</div>
+				</div>
+				{props.inTacticalMode &&
+				<div className='control-bar-actions-moves'>
+					<div id='control-bar-moves-title'>Moves: </div><div id='control-bar-moves-value'>{props.isActiveCharacter ? props.movesRemaining : '0'}</div>
+					<div id='control-bar-actions-title'>Actions: </div><div id='control-bar-actions-value'>{props.isActiveCharacter ? props.actionsRemaining : '0'}</div>
+				</div>}
+			</div>
+			<div
+				id={`char-control-${props.characterId}`}
+				className={`control-bar-buttons-container ${((props.screenData.isNarrow || props.screenData.isShort) && props.characterId !== props.selectedControlTab) ? 'hide' : ''}`}>
+				{weaponButtons}
+				{medicineButtons}
+				<div className='misc-action-buttons-container'>
+					{((currentPCdata.equippedLight && (currentPCdata.equippedLight.includes('lantern') || currentPCdata.equippedLight.includes('torch'))) &&
+					currentPCdata.lightTime < currentPCdata.items[currentPCdata.equippedLight].maxTime && currentPCdata.items.oil0) &&
+					<div className={`action-button refill-action ${actionButtonState}`} onClick={() => props.refillLight()}></div>
+					}
+					{(props.mapObjectsOnPcTiles.length > 0) &&
+						<div className={`action-button pickup-action ${actionButtonState}`} onClick={(evt) => props.setMapObjectSelected(props.mapObjectsOnPcTiles, evt, true)}></div>
+					}
+				</div>
+				{/*<div className='action-button arrow-button-right action-button-scroll'>⬅</div>*/}
+			</div>
 		</div>
 	);
 }
@@ -185,80 +247,85 @@ function CharacterInfoPanel(props) {
 	const leftEquippedItemInfo = weaponsPossessed[equippedItems.loadout1.left] || itemsPossessed[equippedItems.loadout1.left];
 	const rightItemAmount = (rightEquippedItemInfo && rightEquippedItemInfo.amount) ? rightEquippedItemInfo.amount : (rightEquippedItemInfo && rightEquippedItemInfo.currentRounds) ? rightEquippedItemInfo.currentRounds : '';
 	const leftItemAmount = (leftEquippedItemInfo && leftEquippedItemInfo.amount) ? leftEquippedItemInfo.amount : (leftEquippedItemInfo && leftEquippedItemInfo.currentRounds) ? leftEquippedItemInfo.currentRounds : '';
+	const [activeTab, updateActiveTab] = useState('inv');
 
 	return (
-		<div className={`character-info-container ui-panel`}>
+		<div className='character-info-container ui-panel'>
 			<div className='char-info-header'>
-				<div>
-					<div>Name: {props.characterInfo.name}</div>
-					<div>Profession: {props.characterInfo.profession}</div>
-				</div>
-				<div>
-					<div>Health: {props.characterInfo.currentHealth} / {props.characterInfo.startingHealth}</div>
-					<div>Sanity: {props.characterInfo.currentSanity} / {props.characterInfo.startingSanity}</div>
-				</div>
+				<h3 className='font-fancy'>{props.characterInfo.name}</h3>
 				<div className='general-button' onClick={() => props.updateUnitSelectionStatus(props.characterInfo.id, 'player')}>X</div>
 			</div>
 
-			<div className='char-info-inv-container'>
-				<div className='char-info-doll-container'>
-					<div className='char-info-paper-doll'></div>
-					<div className='char-info-doll-boxes-container'>
-						<div
-							className='char-info-paper-doll-body char-info-paper-doll-box'
-							onDragOver={(evt) => {handleItemOverDropZone(evt)}}
-							onDrop={(evt) => props.dropItemToEquipped(evt)}
-						>
-							{(equippedItems.armor &&
-							<div
-								id={equippedItems.armor ? equippedItems.armor : 'body'}
-								className={`inv-object ${convertObjIdToClassId(equippedItems.armor)}-inv`}
-								draggable={true}
-								onDragStart={(evt) => {dragItem(evt, equippedItems.armor)}}
-								onClick={(evt) => {
-									props.setObjectSelected({...itemsPossessed[equippedItems.armor], id: equippedItems.armor}, null);
-									props.setObjectPanelDisplayOption(true, evt);
-								}}
-							></div>) || 'Body'}
-						</div>
+			<div className='char-info-all-contents-container'>
+				<div className='char-info-tabs-container'>
+					<div className={`char-info-tab ${activeTab === 'inv' ? 'char-info-active-tab' : ''}`} onClick={() => updateActiveTab('inv')}>Inventory</div>
+					<div className={`char-info-tab ${activeTab === 'stats' ? 'char-info-active-tab' : ''}`} onClick={() => updateActiveTab('stats')}>Attributes</div>
+					<div className={`char-info-tab ${activeTab === 'skills' ? 'char-info-active-tab' : ''}`} onClick={() => updateActiveTab('skills')}>Skills</div>
+				</div>
 
-						<div
-							className='char-info-paper-doll-right-arm char-info-paper-doll-box'
-							onDragOver={(evt) => {handleItemOverDropZone(evt)}}
-							onDrop={(evt) => props.dropItemToEquipped(evt)}
-						>
-							{(equippedItems.loadout1.right &&
-							<div
-								id={equippedItems.loadout1.right ? equippedItems.loadout1.right : 'right-hand'}
-								className={`inv-object ${convertObjIdToClassId(equippedItems.loadout1.right)}-inv`}
-								draggable={true}
-								onDragStart={(evt) => {dragItem(evt, equippedItems.loadout1.right)}}
-								onClick={(evt) => {
-									props.setObjectSelected({...rightEquippedItemInfo, id: equippedItems.loadout1.right}, null);
-									props.setObjectPanelDisplayOption(true, evt);
-								}}
-							>{equippedItems.loadout1.right ? rightItemAmount : ''}</div>) || 'Right Hand'}
-						</div>
+				<div className={`char-info-inv-container ${activeTab !== 'inv' ? 'hide' : ''}`}>
+					<div className='char-info-equipped-light'>Equipped Light: {props.characterInfo.equippedLight ? `${equippedLight.name} (Time left: ${equippedLight.time})`: 'none'}</div>
 
-						<div
-							className='char-info-paper-doll-left-arm char-info-paper-doll-box'
-							onDragOver={(evt) => {handleItemOverDropZone(evt)}}
-							onDrop={(evt) => props.dropItemToEquipped(evt)}
-						>
-							{(equippedItems.loadout1.left &&
+					<div className='char-info-doll-container'>
+						<div className='char-info-paper-doll'></div>
+						<div className='char-info-doll-boxes-container'>
 							<div
-								id={equippedIsTwoHanded ? equippedItems.loadout1.left + '-leftHand' :
-									equippedItems.loadout1.left ? equippedItems.loadout1.left : 'left-hand'}
-								className={`inv-object ${convertObjIdToClassId(equippedItems.loadout1.left)}-inv`}
-								draggable={true}
-								onDragStart={(evt) => {dragItem(evt, equippedItems.loadout1.left)}}
-								onClick={(evt) => {
-									props.setObjectSelected({...leftEquippedItemInfo, id: equippedItems.loadout1.left}, null);
-									props.setObjectPanelDisplayOption(true, evt);
-								}}
-							>{equippedItems.loadout1.left ? leftItemAmount : ''}</div>) || 'Left Hand'}
+								className='char-info-paper-doll-body char-info-paper-doll-box'
+								onDragOver={(evt) => {handleItemOverDropZone(evt)}}
+								onDrop={(evt) => props.dropItemToEquipped(evt)}
+							>
+								{(equippedItems.armor &&
+									<div
+										id={equippedItems.armor ? equippedItems.armor : 'body'}
+										className={`inv-object ${convertObjIdToClassId(equippedItems.armor)}-inv`}
+										draggable={true}
+										onDragStart={(evt) => {dragItem(evt, equippedItems.armor)}}
+										onClick={(evt) => {
+											props.setObjectSelected({...itemsPossessed[equippedItems.armor], id: equippedItems.armor}, null);
+											props.setObjectPanelDisplayOption(true, evt);
+										}}
+									></div>) || 'Body'}
+							</div>
+
+							<div
+								className='char-info-paper-doll-right-arm char-info-paper-doll-box'
+								onDragOver={(evt) => {handleItemOverDropZone(evt)}}
+								onDrop={(evt) => props.dropItemToEquipped(evt)}
+							>
+								{(equippedItems.loadout1.right &&
+									<div
+										id={equippedItems.loadout1.right ? equippedItems.loadout1.right : 'right-hand'}
+										className={`inv-object ${convertObjIdToClassId(equippedItems.loadout1.right)}-inv`}
+										draggable={true}
+										onDragStart={(evt) => {dragItem(evt, equippedItems.loadout1.right)}}
+										onClick={(evt) => {
+											props.setObjectSelected({...rightEquippedItemInfo, id: equippedItems.loadout1.right}, null);
+											props.setObjectPanelDisplayOption(true, evt);
+										}}
+									>{equippedItems.loadout1.right ? rightItemAmount : ''}</div>) || 'Right Hand'}
+							</div>
+
+							<div
+								className='char-info-paper-doll-left-arm char-info-paper-doll-box'
+								onDragOver={(evt) => {handleItemOverDropZone(evt)}}
+								onDrop={(evt) => props.dropItemToEquipped(evt)}
+							>
+								{(equippedItems.loadout1.left &&
+									<div
+										id={equippedIsTwoHanded ? equippedItems.loadout1.left + '-leftHand' :
+											equippedItems.loadout1.left ? equippedItems.loadout1.left : 'left-hand'}
+										className={`inv-object ${convertObjIdToClassId(equippedItems.loadout1.left)}-inv`}
+										draggable={true}
+										onDragStart={(evt) => {dragItem(evt, equippedItems.loadout1.left)}}
+										onClick={(evt) => {
+											props.setObjectSelected({...leftEquippedItemInfo, id: equippedItems.loadout1.left}, null);
+											props.setObjectPanelDisplayOption(true, evt);
+										}}
+									>{equippedItems.loadout1.left ? leftItemAmount : ''}</div>) || 'Left Hand'}
+							</div>
 						</div>
 					</div>
+
 					<div className='char-info-equip-toggle-button general-button' onClick={() => {
 						if (!notEnoughSpaceInInventory(numItemsInLoadout1, numItemsInLoadout2, props.characterInfo)) {
 							props.switchEquipment(props.characterInfo.id)
@@ -266,9 +333,23 @@ function CharacterInfoPanel(props) {
 							props.setShowDialogProps(true, props.notEnoughSpaceDialogProps);
 						}
 					}}>Switch equipment</div>
+
+					<div>
+						<div className='char-info-item-drop-zone'
+						     onDragOver={(evt) => {handleItemOverDropZone(evt)}}
+						     onDrop={(evt) => {props.setHasObjBeenDropped({objHasBeenDropped: true, evt})}}
+						></div>
+						<span>Drag item here to drop</span>
+					</div>
+
+					{itemsIntoElements}
 				</div>
 
-				<div className='char-info-stats-container'>
+				<div className={`char-info-stats-container ${activeTab !== 'stats' ? 'hide' : ''}`}>
+					<div>{props.characterInfo.profession}</div>
+					<div>Health: {props.characterInfo.currentHealth} / {props.characterInfo.startingHealth}</div>
+					<div>Sanity: {props.characterInfo.currentSanity} / {props.characterInfo.startingSanity}</div>
+					<div>Spirit: {props.characterInfo.currentSpirit} / {props.characterInfo.startingSpirit}</div>
 					<div>Level: {props.characterInfo.level}</div>
 					<div>XP: {props.characterInfo.xp}</div>
 					<div>Strength: {props.characterInfo.strength}</div>
@@ -277,15 +358,14 @@ function CharacterInfoPanel(props) {
 					<div>Initiative: {props.characterInfo.initiative}</div>
 					<div>Defense: {props.characterInfo.defense}</div>
 					<div>Damage Reduction: {props.characterInfo.damageReduction}{equippedItems.armor ? ` (from ${itemsPossessed[equippedItems.armor].name})` : ''}</div>
+				</div>
+
+				<div className={`char-info-skills-container ${activeTab !== 'skills' ? 'hide' : ''}`}>
 					<div>Skills:
 						<ul>{skillList}</ul>
 					</div>
 				</div>
 			</div>
-
-			<div className='char-info-equipped-light'>Equipped Light: {props.characterInfo.equippedLight ? `${equippedLight.name} (Time left: ${equippedLight.time})`: 'none'}</div>
-
-			{itemsIntoElements}
 		</div>
 	);
 }
@@ -299,11 +379,11 @@ function ObjectInfoPanel(props) {
 		selectedObjPos,
 		objHasBeenDropped,
 		setHasObjBeenDropped,
-		dropItemToPC,
-		dropItemToEquipped,
-		dropItemToInv,
+		// dropItemToPC,  - to be used for buttons as alts for drag-and-drop if needed
+		// dropItemToEquipped,
+		// dropItemToInv,
 		addObjectToMap,
-		addObjToOtherPc,
+		addStackedObjToOtherPc,
 		addItemToPlayerInventory,
 		isPickUpAction,
 		isMapObj,
@@ -320,7 +400,7 @@ function ObjectInfoPanel(props) {
 		if (objHasBeenDropped) {
 			addObjectToMap(splitValue, remainingCount)
 		} else {
-			addObjToOtherPc(splitValue, remainingCount);
+			addStackedObjToOtherPc(splitValue, remainingCount);
 		}
 		cancelObjPanel();
 	};
@@ -374,7 +454,7 @@ function ObjectInfoPanel(props) {
 		setObjectSelected(null, null);
 		setObjectPanelDisplayOption(false);
 		if (objHasBeenDropped) {
-			setHasObjBeenDropped(false);
+			setHasObjBeenDropped({objHasBeenDropped: false, evt: null});
 		}
 	}
 
@@ -450,6 +530,7 @@ function CreatureInfoPanel(props) {
 			<div>Name: {props.creatureInfo.name}</div>
 			<div>Level: {props.creatureInfo.level}</div>
 			<div>Health: {props.creatureInfo.currentHealth} / {props.creatureInfo.startingHealth}</div>
+			<div>Spirit: {props.creatureInfo.currentSpirit} / {props.creatureInfo.startingSpirit}</div>
 			<div>Strength: {props.creatureInfo.strength}</div>
 			<div>Agility: {props.creatureInfo.agility}</div>
 			<div>Mental Acuity: {props.creatureInfo.mentalAcuity}</div>
@@ -494,10 +575,10 @@ function ModeInfoPanel(props) {
 	}
 	const activePlayerObject = props.players[props.activeCharacter];
 	const charactersTurn = activePlayerObject && (props.inTacticalMode || !props.isPartyNearby) ? activePlayerObject.name :
-		props.inTacticalMode && props.threatList.length > 0 ? 'Enemies moving...' : 'Something creeps deep in the darkness...';
+		props.inTacticalMode && props.threatList.length > 0 ? 'Enemies moving...' : 'Wait...';
 
 	return (
-		<div>
+		<div className='mode-info-container'>
 			<div
 				className={'general-button' + (props.inTacticalMode ? ' button-tactical-mode-on' : '')}
 				onClick={() => {
@@ -517,23 +598,25 @@ function ModeInfoPanel(props) {
 				}}>
 				{props.inTacticalMode ? 'In Tactical Mode' : 'In Follow Mode'}
 			</div>
+
 			{!props.inTacticalMode && props.isPartyNearby &&
-				<label>
-					<div>Leader</div>
-					<select name='leader' value={props.activeCharacter} onChange={evt => {
-						props.updateActiveCharacter(() => props.updateFollowModeMoves([]), evt.target.value);
-					}}>
-						{props.players && <ListOptions />}
-					</select>
-				</label>
+			<label>
+				<div>Leader</div>
+				<select name='leader' value={props.activeCharacter} onChange={evt => {
+					props.updateActiveCharacter(() => props.updateFollowModePositions([]), evt.target.value);
+				}}>
+					{props.players && <ListOptions />}
+				</select>
+			</label>
 			}
+
 			{(props.inTacticalMode || !props.isPartyNearby) &&
-				<div>
-					<div>Turn: {charactersTurn}</div>
-					<div className='general-button' onClick={() => {
-						props.endTurnCallback();
-					}}>End Turn</div>
-				</div>
+			<div>
+				<div>Turn: {charactersTurn}</div>
+				<div className='general-button' onClick={() => {
+					props.endTurnCallback();
+				}}>End Turn</div>
+			</div>
 			}
 		</div>
 	);
@@ -591,12 +674,92 @@ function ContextMenu(props) {
 	)
 }
 
-function HelpPopUp(props) {
+function HelpScreen(props) {
+	const [contentNum, updateContentNum] = useState(1);
 	return (
-		<div className='help-popup ui-panel'>
-
+		<div className={`help-screen ui-panel ${props.showHelpScreen ? '' : 'hide'}`}>
+			<div className='general-button help-screen-close' onClick={() => props.toggleHelpScreen()}>X</div>
+			<div id={`help-screen-content-${props.screenData.isNarrow ? 'mobile-portrait-' : props.screenData.isShort ? 'mobile-landscape-' : ''}${contentNum}`} className='help-screen-content'></div>
+			<div className='help-screen-nav-container'>
+				<div className={`general-button arrow-button-left${contentNum === 1 ? ' button-disabled' : ''}`} onClick={() => {
+					if (contentNum > 1) {
+						updateContentNum(contentNum - 1);
+					}
+				}}>&#x2B05;</div>
+				<div className={`general-button arrow-button-right${contentNum === 4 ? ' button-disabled' : ''}`} onClick={() => {
+					if (contentNum < 4) {
+						updateContentNum(contentNum + 1);
+					}
+				}}>&#x2B05;</div>
+			</div>
 		</div>
 	);
 }
 
-export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, DialogWindow, ContextMenu};
+// function HelpPopUp(props) {
+// 	return (
+// 		<div className='help-popup ui-panel'>
+//
+// 		</div>
+// 	);
+// }
+
+function GameOptions(props) {
+	const gameOptions = {...props.gameOptions};
+
+	return (
+		<div className={`dialog ui-panel ${props.showGameOptions ? '' : 'hide'}`}>
+			<div className='font-fancy'>Game Options</div>
+			<div className='game-options-container'>
+				<div className='game-options-row'>
+					<label>Play sound effects: </label>
+					<button
+						className='general-button'
+						onClick={() => {
+							gameOptions.playFx = !gameOptions.playFx;
+							props.updateGameOptions(gameOptions);
+						}}>
+						{props.gameOptions.playFx ? 'On' : 'Off'}
+					</button>
+				</div>
+				<div className={`game-options-row ${props.screenData.isIOS ? 'hide': ''}`}>
+					<label>Sound effects volume: </label>
+					<input className='audio-volume' type='range' min='0' max='1' step='0.1' value={gameOptions.fxVolume} onInput={evt => {
+						gameOptions.fxVolume = evt.target.value;
+						props.updateGameOptions(gameOptions);
+					}} />
+				</div>
+				<div className='game-options-row'>
+					<label>Play music: </label>
+					<button
+						className='general-button'
+						onClick={() => {
+							gameOptions.playMusic = !gameOptions.playMusic;
+							props.updateGameOptions(gameOptions);
+						}}>
+						{props.gameOptions.playMusic ? 'On' : 'Off'}
+					</button>
+				</div>
+				<div className={`game-options-row ${props.screenData.isIOS ? 'hide': ''}`}>
+					<label>Music volume: </label>
+					<input className='audio-volume' type='range' min='0' max='1' step='0.1' value={gameOptions.musicVolume} onInput={evt => {
+						props.adjustMusicComponentVolume(evt.target.value);
+						gameOptions.musicVolume = evt.target.value;
+						props.updateGameOptions(gameOptions);
+					}} />
+				</div>
+				<Music
+					idProp={`music-${props.gameOptions.songName}-theme`}
+					sourceName={props.gameOptions.songName}
+				/>
+			</div>
+			<button
+				className='dialog-button'
+				onClick={() => props.toggleOptionsPanel()}>
+				Close
+			</button>
+		</div>
+	);
+}
+
+export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, DialogWindow, ContextMenu, HelpScreen, GameOptions};

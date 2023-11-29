@@ -99,7 +99,7 @@ Alt class data indicates what a tile's class/texture should be changed to when a
 - You can then change selection mode and select tiles for that setting.
 - Rinse and repeat. Selecting each mode will show which tiles have been selected for that option.
 - Click the Select tiles button again to exit Neighbor settings.  Your settings will be stored in the tiles
-on the grid.
+  on the grid.
 
 Make sure to save the piece to keep your changes!
 

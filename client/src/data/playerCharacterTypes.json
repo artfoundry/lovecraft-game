@@ -8,14 +8,15 @@
     "agility": 5,
     "mentalAcuity": 4,
     "startingHealth": 100,
-    "startingSanity": 8,
+    "startingSanity": 80,
+    "startingSpirit": 90,
     "skills": {
     },
     "weapons": {
       "coltRevolver0": {
         "id": "coltRevolver0",
         "name": "Colt Revolver",
-        "currentRounds": 0
+        "currentRounds": 6
       }
     },
     "equippedItems": {"right": "coltRevolver0", "left": "electricTorch0", "armor": "leatherJacket0"},
@@ -49,7 +50,8 @@
     "agility": 5,
     "mentalAcuity": 6,
     "startingHealth": 80,
-    "startingSanity": 10,
+    "startingSanity": 100,
+    "startingSpirit": 90,
     "skills": {
     },
     "weapons": {
@@ -78,7 +80,8 @@
     "agility": 3,
     "mentalAcuity": 7,
     "startingHealth": 60,
-    "startingSanity": 10,
+    "startingSanity": 100,
+    "startingSpirit": 80,
     "skills": {
     },
     "weapons": {

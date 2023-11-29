@@ -18,6 +18,8 @@ class Creature extends React.Component {
 		this.damageReduction = props.damageReduction;
 		this.startingHealth = props.startingHealth;
 		this.currentHealth = props.startingHealth;
+		this.startingSpirit = props.startingSpirit;
+		this.currentSpirit = props.startingSpirit;
 		this.range = props.range;
 		this.attackType = props.attackType;
 		this.moveSpeed = props.moveSpeed;
@@ -30,28 +32,43 @@ class Creature extends React.Component {
 		let isHit, damage, hitRoll, defenseRoll;
 		let halfStr = Math.round(this.strength / 2);
 		let halfAgility = Math.round(this.agility / 2);
+		let logAttackMessage = `A ${this.name} lashes at ${targetData.name}...`;
+		let logDamageMessage = `The ${this.name} misses.`;
 
 		if (this.attackType === 'ranged') {
 			hitRoll = this.agility + halfStr + diceRoll(20);
 			defenseRoll = targetData.defense + diceRoll(6);
 			damage = halfStr + this.damage + diceRoll(6) - targetData.damageReduction;
+			logAttackMessage = `A ${this.name} reaches out toward ${targetData.name} with something disgusting...`;
 		} else if (this.attackType === 'melee') {
 			hitRoll = this.strength + halfAgility + diceRoll(20);
 			defenseRoll = targetData.defense + diceRoll(6);
 			damage = this.strength + this.damage + diceRoll(6) - targetData.damageReduction;
-		} else {
+		} else if (this.attackType === 'psychic') {
 			hitRoll = this.mentalAcuity + diceRoll(20);
 			defenseRoll = targetData.mentalAcuity + diceRoll(6);
-			damage = this.mentalAcuity + diceRoll(6) - defenseRoll;
+			damage = this.mentalAcuity + diceRoll(6);
+			logAttackMessage = `A ${this.name} reaches out psychically to ${targetData.name}...`;
+			logDamageMessage = `The ${this.name} fails to penetrate ${targetData.name}'s mind.`;
 		}
 		damage = damage < 0 ? 0 : damage;
 		isHit = hitRoll >= defenseRoll;
 
-		updateLog(`A ${this.name} attacks ${targetData.name} with ${hitRoll} to hit vs ${defenseRoll} defense`);
-		updateLog(isHit ? `The ${this.name} hits for ${damage} damage` : `The ${this.name} misses`);
 		if (isHit) {
-			targetData.currentHealth -= damage;
-			updateTarget('player', targetData, targetData.id, false, false, updateTurnCallback);
+			const qualifier = damage > 10 ? ' hard' : '';
+			const attackWord = this.attackType === 'psychic' ? `invades ${targetData.name}'s sanity` : 'hits';
+			logDamageMessage = `The ${this.name} ${attackWord}${qualifier}!`;
+		}
+		updateLog(logAttackMessage);
+		updateLog(logDamageMessage);
+
+		if (isHit) {
+			if (this.attackType === 'psychic') {
+				targetData.currentSanity -= damage;
+			} else {
+				targetData.currentHealth -= damage;
+			}
+			updateTarget('player', targetData, targetData.id, false, false, false, updateTurnCallback);
 		} else if (updateTurnCallback) {
 			updateTurnCallback();
 		}

@@ -19,6 +19,14 @@ class Game extends React.Component {
 		this.playerMovesLimit = 3;
 		this.playerActionsLimit = 2;
 
+		this.minScreenWidth = 1000;
+		this.minScreenHeight = 768;
+		this.objectPanelWidth = 300;
+		this.objectPanelHeight = 250;
+		this.contextMenuWidth = 128;
+		this.contextMenuHeight = 32;
+		this.uiControlBarHeight = 160;
+
 		this.firebase = new Firebase();
 
 		/**
@@ -31,6 +39,21 @@ class Game extends React.Component {
 		 **/
 
 		this.state = {
+			gameOptions: {
+				fxVolume: 1,
+				playFx: true,
+				musicVolume: 1,
+				playMusic: false,
+				songName: '',
+				screenZoom: 1.0
+			},
+			screenData: {
+				width: window.innerWidth,
+				height: window.innerHeight,
+				isNarrow: window.innerWidth < this.minScreenWidth,// && window.innerWidth < window.innerHeight,
+				isShort: window.innerHeight < this.minScreenHeight && window.innerHeight < window.innerWidth,
+				isIOS: navigator.userAgent.includes('iPhone OS')
+			},
 			userData: {},
 			isLoggedIn: false,
 			gameSetupComplete: false,
@@ -39,7 +62,7 @@ class Game extends React.Component {
 			currentLocation: '',
 			currentLevel: 1,
 			playerFollowOrder: [],
-			followModeMoves: [],
+			followModePositions: [],
 			showDialog: false,
 			dialogProps: {
 			dialogContent: this.initialDialogContent,
@@ -67,10 +90,12 @@ class Game extends React.Component {
 			actionButtonSelected: null,
 			objectSelected: null,
 			objHasBeenDropped: false,
+			lightingHasChanged: false,
 			inTacticalMode: true, // start in tactical mode any time entering a new area
 			threatList: [],
 			partyIsNearby: true,
 			contextMenuChoice: null,
+			centerOnPlayer: false,
 			logText: []
 		}
 
@@ -127,14 +152,25 @@ class Game extends React.Component {
 			actionButtonSelected: null,
 			objectSelected: null,
 			objHasBeenDropped: false,
+			lightingHasChanged: false,
 			inTacticalMode: true, // start in tactical mode any time entering a new area
 			threatList: [],
 			partyIsNearby: true,
 			contextMenuChoice: null,
+			centerOnPlayer: false,
 			logText: []
 		}, () => {
 			if (callback) callback();
 		})
+	}
+
+	getScreenDimensions = () => {
+		const screenData = {...this.state.screenData};
+		screenData.width = window.innerWidth;
+		screenData.height = window.innerHeight;
+		screenData.isNarrow = screenData.width < this.minScreenWidth;// && screenData.width < screenData.height;
+		screenData.isShort = screenData.height < this.minScreenHeight && screenData.height < screenData.width;
+		this.setState({screenData});
 	}
 
 	/**
@@ -153,11 +189,12 @@ class Game extends React.Component {
 	 * @param type: String ('player' or 'creature')
 	 * @param updateData: Object (can be any number of data objects unless updating all characters of a type, then must be all data)
 	 * @param id: String (char/creature Id)
+	 * @param lightingHasChanged: boolean
 	 * @param isInitialCreatureSetup: Boolean
 	 * @param isInitialCharacterSetup: Boolean
 	 * @param callback: Function
 	 */
-	updateCharacters = (type, updateData, id, isInitialCreatureSetup = false, isInitialCharacterSetup = false, callback) => {
+	updateCharacters = (type, updateData, id, lightingHasChanged, isInitialCreatureSetup = false, isInitialCharacterSetup = false, callback) => {
 		const collection = type === 'player' ? 'playerCharacters' : 'mapCreatures';
 		if (id) {
 			this.setState(prevState => ({
@@ -171,7 +208,11 @@ class Game extends React.Component {
 						this.updateUnitSelectionStatus(id, 'creature');
 					}
 				}
-				if (callback) callback();
+				if (lightingHasChanged) {
+					this.toggleLightingHasChanged(callback);
+				} else if (callback) {
+					callback();
+				}
 			});
 		} else {
 			this.setState({[collection]: updateData}, () => {
@@ -179,6 +220,8 @@ class Game extends React.Component {
 					this._setAllUnitsTurnOrder('playerCharacters', callback);
 				} else if (isInitialCreatureSetup) {
 					this._setAllUnitsTurnOrder('mapCreatures', callback);
+				} else if (lightingHasChanged) {
+					this.toggleLightingHasChanged(callback);
 				} else if (callback) {
 					callback();
 				}
@@ -186,9 +229,19 @@ class Game extends React.Component {
 		}
 	}
 
-	updateMapObjects = (mapObjects, callback) => {
+	/**
+	 * Updates collection of mapObjects in state for when object is picked up or dropped or during map init
+	 * @param mapObjects: object (modified copy of this.state.mapObjects)
+	 * @param lightingHasChanged: boolean
+	 * @param callback
+	 */
+	updateMapObjects = (mapObjects, lightingHasChanged, callback) => {
 		this.setState({mapObjects}, () => {
-			if (callback) callback();
+			if (lightingHasChanged) {
+				this.toggleLightingHasChanged(callback);
+			} else if (callback) {
+				callback();
+			}
 		});
 	}
 
@@ -235,7 +288,7 @@ class Game extends React.Component {
 	}
 
 	/**
-	 * Saves to state whether game is in combat/tactical mode or not,
+	 * Saves to state whether game is in tactical (combat) mode or not,
 	 * then if not, calls resetCounters
 	 * @param inTacticalMode: boolean
 	 * @param callback: function
@@ -262,9 +315,10 @@ class Game extends React.Component {
 			const mainPcPos = allPcPositions[0].pos;
 			const secPcPos = allPcPositions[1].pos;
 			const thirdPcPos = allPcPositions[2].pos;
-			if (!checkLineOfSightToParty(mainPcPos, secPcPos, false) || (thirdPcPos &&
-				(!checkLineOfSightToParty(mainPcPos, thirdPcPos, false) || !checkLineOfSightToParty(secPcPos, thirdPcPos, false)) ) )
+			if (this.state.partyIsNearby && (!checkLineOfSightToParty(mainPcPos, secPcPos, false) ||
+				(thirdPcPos && (!checkLineOfSightToParty(mainPcPos, thirdPcPos, false) || !checkLineOfSightToParty(secPcPos, thirdPcPos, false))) ))
 			{
+				this.updateLog('All party members are not in sight of each other.');
 				partyIsNearby = false;
 			}
 			this.setState({partyIsNearby}, () => {
@@ -308,9 +362,15 @@ class Game extends React.Component {
 
 			// if entering combat...
 			if (isInCombat && previousListSize === 0 ) {
-				this.toggleTacticalMode(isInCombat, callback);
+				this.updateLog('Something horrific has been spotted nearby!');
+				if (!this.state.inTacticalMode) {
+					this.toggleTacticalMode(isInCombat, callback);
+				} else if (callback) {
+					callback();
+				}
 			// leaving combat...
 			} else if (!isInCombat) {
+				this.updateLog('No terrors in sight...');
 				this.updateIfPartyIsNearby(checkLineOfSightToParty, callback);
 			// already/still in combat
 			} else if (callback) {
@@ -350,13 +410,14 @@ class Game extends React.Component {
 		const gunInfo = updatedPCdata.weapons[weaponId];
 		const gunType = gunInfo.gunType;
 		const availAmmo = updatedPCdata.items[gunType + 'Ammo0'].amount;
-		const resupplyAmmo = gunInfo.rounds <= availAmmo ? gunInfo.rounds : availAmmo;
-		updatedPCdata.weapons[weaponId].currentRounds = resupplyAmmo;
+		const emptyRounds = gunInfo.rounds - gunInfo.currentRounds;
+		const resupplyAmmo = emptyRounds <= availAmmo ? emptyRounds : availAmmo;
+		gunInfo.currentRounds += resupplyAmmo;
 		updatedPCdata.items[gunType + 'Ammo0'].amount = availAmmo - resupplyAmmo;
 		if (updatedPCdata.items[gunType + 'Ammo0'].amount === 0) {
 			delete updatedPCdata.items[gunType + 'Ammo0'];
 		}
-		this.updateCharacters('player', updatedPCdata, this.state.activeCharacter, false, false, () => {
+		this.updateCharacters('player', updatedPCdata, this.state.activeCharacter, false, false, false, () => {
 			this._updateActivePlayerActions();
 		});
 	}
@@ -372,7 +433,7 @@ class Game extends React.Component {
 		if (oil.amount <= 0) {
 			delete activePcData.items.oil0;
 		}
-		this.updateCharacters('player', activePcData, this.state.activeCharacter, false, false, () => {
+		this.updateCharacters('player', activePcData, this.state.activeCharacter, true, false, false, () => {
 			this._updateActivePlayerActions();
 		});
 	}
@@ -478,7 +539,7 @@ class Game extends React.Component {
 	 * @param callback: function
 	 */
 	updateCurrentTurn = (startTurns = false, callback) => {
-		const currentTurn = startTurns || this.state.currentTurn === this.state.unitsTurnOrder.length - 1 ? 0 : this.state.currentTurn + 1;
+		const currentTurn = (startTurns || this.state.currentTurn === this.state.unitsTurnOrder.length - 1) ? 0 : this.state.currentTurn + 1;
 		this.setState({currentTurn, activePlayerActionsCompleted: 0, activePlayerMovesCompleted: 0}, () => {
 			if (this.state.playerCharacters[this.state.activeCharacter] && this.state.actionButtonSelected) {
 				this.toggleActionButton('', '', '', '', () => {
@@ -518,47 +579,73 @@ class Game extends React.Component {
 	}
 
 	/**
+	 * Checks if context menu should be shown or other action processed
+	 * Other action possibilities:
+	 * -close menu
+	 * -handle unit click to show unit info
+	 * -handle unit click to take action on it
+	 * -handle object click to set object selected
+	 * @param actionType: string (possibilities: 'examine', 'creature', 'player', null)
+	 * @param tilePos: string
+	 * @param evt: event object
+	 * @param actionInfo: object (props for appropriate function called upon clicking menu button)
+	 * @returns {{actionToProcess: function, menuNeeded: boolean}} (if menuNeeded, actionToProcess is null)
+	 */
+	isContextMenuNeeded = (actionType, tilePos = null, evt = null, actionInfo = null) => {
+		let contextMenuNeeded = {menuNeeded: true, actionToProcess: null};
+
+		// if clicked obj is a creature/player, check if at least one object is on that tile
+		let objectOnTile = null;
+		if (actionType === 'creature' || actionType === 'player') {
+			objectOnTile = this._isObjectOnTile(tilePos, evt);
+		}
+
+		// bypass setting up context menu if clicked target is a pc or creature with nothing else on the tile and no action cued up...
+		if (!objectOnTile && !this.state.actionButtonSelected && (actionType === 'player' || actionType === 'creature')) {
+			contextMenuNeeded = {
+				menuNeeded: false,
+				actionToProcess: () => this.handleUnitClick(actionInfo.id, actionType)
+			};
+		// ...or if action is being used (regardless of whether object is also there)
+		} else if (this.state.actionButtonSelected && (actionType === 'creature' || actionType === 'player')) {
+			contextMenuNeeded = {
+				menuNeeded: false,
+				actionToProcess: () => this.handleUnitClick(actionInfo.id, actionInfo.target, actionInfo.isInRange, actionInfo.checkLineOfSightToParty)
+			};
+		// ...or if clicked target is a torch
+		} else if (actionType === 'examine' && actionInfo.objectInfo[0].name === 'Torch') {
+			contextMenuNeeded = {
+				menuNeeded: false,
+				actionToProcess: () => this.setMapObjectSelected(actionInfo.objectInfo, actionInfo.selectionEvt, actionInfo.isPickUpAction)
+			};
+		}
+
+		return contextMenuNeeded;
+	}
+
+	/**
 	 * Determines which buttons to add to context menu
 	 * Possibilities:
 	 * creature and item
 	 * player and item
 	 * item and move
-	 * @param actionType: string
+	 * action (shoot) and reload
+	 * @param actionType: string (possibilities: 'examine', 'creature', 'player', null)
 	 * @param tilePos: string
 	 * @param evt: event object
 	 * @param actionInfo: object (props for appropriate function called upon clicking menu button)
+	 * @param contextMenuInfo: object ({actionToProcess: function, menuNeeded: boolean} - passed in only if isContextMenuNeeded was previously called in Map (checkForDragging))
 	 */
-	updateContextMenu = (actionType, tilePos = null, evt = null, actionInfo = null) => {
-		// if already have a context menu showing, user has clicked out of it, so close it
+	updateContextMenu = (actionType, tilePos = null, evt = null, actionInfo = null, contextMenuInfo = null) => {
+		const isContextMenuNeeded = contextMenuInfo || this.isContextMenuNeeded(actionType, tilePos, evt, actionInfo);
+
+		// if no action is being done (action being clicked on item or character) there's already a menu, so close menu
+		// no actionType should indicate menu already exists (as clicking on item, char, or tile is already checking), but just in case...
 		if (!actionType) {
 			this.setState({contextMenu: null});
-			return;
-		}
-
-		// if clicked obj is a creature/player, check if at least one object is on that tile
-		let objectOnTile = null;
-		if (actionType === 'creature' || actionType === 'player') {
-			const objects = Object.values(this.state.mapObjects);
-			let i = 0;
-			while (!objectOnTile && i < objects.length) {
-				if (convertCoordsToPos(objects[i].coords) === tilePos) {
-					// objectInfo needs to be in array for setMapObjectSelected
-					objectOnTile = {objectInfo: [objects[i]], selectionEvt: evt, isPickUpAction: false};
-				} else {
-					i++;
-				}
-			}
-		}
-
-		// bypass setting up context menu if clicked target is a pc or creature with nothing else on the tile...
-		if (!objectOnTile && (actionType === 'player' || (actionType === 'creature' && !this.state.actionButtonSelected))) {
-			this.handleUnitClick(actionInfo.id, actionType);
-		// ...or if action is being used
-		} else if (this.state.actionButtonSelected) {
-			this.handleUnitClick(actionInfo.id, actionInfo.target, actionInfo.isInRange, actionInfo.checkLineOfSightToParty);
-		// ...or if clicked target is a torch
-		} else if (actionType === 'look' && actionInfo.objectInfo[0].name === 'Torch') {
-			this.setMapObjectSelected(actionInfo.objectInfo, actionInfo.selectionEvt, actionInfo.isPickUpAction);
+		// Don't need menu, so do action instead
+		} else if (!isContextMenuNeeded.menuNeeded) {
+			isContextMenuNeeded.actionToProcess();
 		// otherwise, set up context menu
 		} else {
 			const contextMenu = {
@@ -569,9 +656,11 @@ class Game extends React.Component {
 			};
 			if (actionType !== 'player' && actionType !== 'creature') {
 				contextMenu.actionsAvailable.move = true;
-			}
-			if (objectOnTile) {
-				contextMenu.actionsAvailable.look = objectOnTile;
+			} else {
+				const objectOnTile = this._isObjectOnTile(tilePos, evt);
+				if (objectOnTile) {
+					contextMenu.actionsAvailable.examine = objectOnTile;
+				}
 			}
 			this.setState({contextMenu, contextMenuChoice: null});
 		}
@@ -579,14 +668,14 @@ class Game extends React.Component {
 
 	/**
 	 * Calls appropriate function based on menu button clicked
-	 * For 'look' (item): setMapObjectSelected
+	 * For 'examine' (item): setMapObjectSelected
 	 * For 'player'/'creature': handleUnitClick
 	 * For 'move': handled by checkIfTileOrObject in Map
 	 * @param actionType: string
 	 */
 	handleContextMenuSelection = (actionType) => {
 		const storedActionInfo = this.state.contextMenu.actionsAvailable[actionType];
-		if (actionType === 'look') {
+		if (actionType === 'examine') {
 			this.setMapObjectSelected(storedActionInfo.objectInfo, storedActionInfo.selectionEvt, storedActionInfo.isPickUpAction);
 			this.setState({contextMenu: null});
 		} else if (actionType === 'creature' || actionType === 'player') {
@@ -621,8 +710,8 @@ class Game extends React.Component {
 	 * @param updatedList: array (of strings - positions of PCs, updated in moveCharacter in Map)
 	 * @param callback
 	 */
-	updateFollowModeMoves = (updatedList, callback) => {
-		this.setState({followModeMoves: updatedList}, () => {
+	updateFollowModePositions = (updatedList, callback) => {
+		this.setState({followModePositions: updatedList}, () => {
 			if (callback) callback();
 		});
 	}
@@ -636,7 +725,7 @@ class Game extends React.Component {
 	 * @param isPickUpAction: boolean (true if action button clicked to inspect/pickup object)
 	 */
 	setMapObjectSelected = (objectInfo, selectionEvt, isPickUpAction) => {
-		const objectSelected = objectInfo && !this.state.objectSelected ? {objectList: objectInfo, evt: selectionEvt, isPickUpAction} : null;
+		const objectSelected = objectInfo ? {objectList: objectInfo, evt: selectionEvt, isPickUpAction} : null;
 		this.setState({objectSelected});
 	}
 
@@ -646,6 +735,16 @@ class Game extends React.Component {
 	 */
 	setHasObjBeenDropped = (props) => {
 		this.setState({objHasBeenDropped: {dropped: props.objHasBeenDropped, evt: props.evt}});
+	}
+
+	/**
+	 * Set by UI when a light source has been equipped/unequipped/dropped to tell Map to recalculate lighting
+	 * @param callback
+	 */
+	toggleLightingHasChanged = (callback) => {
+		this.setState(prevState => ({lightingHasChanged: !prevState.lightingHasChanged}), () => {
+			if (callback) callback();
+		});
 	}
 
 	/**
@@ -686,12 +785,20 @@ class Game extends React.Component {
 		}
 
 		let updatedData = {[invObjectCategory]: inventoryList};
-		this.updateCharacters('player', updatedData, this.state.activeCharacter, false, false, () => {
+		this.updateCharacters('player', updatedData, this.state.activeCharacter, false, false, false, () => {
 			this._removeItemFromMap(objId);
 			if (isPickUpAction) {
 				this._updateActivePlayerActions();
 			}
 		});
+	}
+
+	toggleCenterOnPlayer = () => {
+		this.setState(prevState => ({centerOnPlayer: !prevState.centerOnPlayer}));
+	}
+
+	updateGameOptions = (gameOptions) => {
+		this.setState({gameOptions});
 	}
 
 
@@ -700,6 +807,28 @@ class Game extends React.Component {
 	 * PRIVATE FUNCTIONS
 	 *********************/
 
+
+	/**
+	 * Determines if object is on a clicked tile (checking for context menu)
+	 * @param tilePos
+	 * @param evt
+	 * @returns null or object ({objectInfo, selectionEvt, isPickUpAction})
+	 * @private
+	 */
+	_isObjectOnTile(tilePos, evt) {
+		let objectOnTile = null;
+		const objects = Object.values(this.state.mapObjects);
+		let i = 0;
+		while (!objectOnTile && i < objects.length) {
+			if (convertCoordsToPos(objects[i].coords) === tilePos) {
+				// objectInfo needs to be in array for setMapObjectSelected
+				objectOnTile = {objectInfo: [objects[i]], selectionEvt: evt, isPickUpAction: false};
+			} else {
+				i++;
+			}
+		}
+		return objectOnTile;
+	}
 
 	/**
 	 * Initialization function. gameSetupComplete in callback indicates Map component can render
@@ -733,8 +862,10 @@ class Game extends React.Component {
 	 * @private
 	 */
 	_setLocation(gameReadyCallback) {
+		const gameOptions = {...this.state.gameOptions};
+		gameOptions.songName = this.startingLocation;
 		if (this.startingLocation) {
-			this.setState({currentLocation: this.startingLocation}, gameReadyCallback);
+			this.setState({currentLocation: this.startingLocation, gameOptions}, gameReadyCallback);
 		} else {
 			// handle location change
 		}
@@ -861,8 +992,9 @@ class Game extends React.Component {
 
 	_removeItemFromMap(id) {
 		const updatedObjects = deepCopy(this.state.mapObjects);
+		const lightingHasChanged = updatedObjects[id].itemType && updatedObjects[id].itemType === 'Light';
 		delete updatedObjects[id];
-		this.updateMapObjects(updatedObjects);
+		this.updateMapObjects(updatedObjects, lightingHasChanged);
 	}
 
 
@@ -873,7 +1005,14 @@ class Game extends React.Component {
 
 	componentDidMount() {
 		if (!this.state.gameSetupComplete) {
+			let resizeTimeout = null;
+			const resizeDelay = 250;
+
 			this._setupGameState();
+			window.addEventListener('resize', () => {
+				clearTimeout(resizeTimeout);
+				resizeTimeout = setTimeout(this.getScreenDimensions, resizeDelay);
+			});
 		}
 
 		// todo: uncomment below and comment Firebase component in render() for testing, remove for prod
@@ -882,13 +1021,22 @@ class Game extends React.Component {
 
 	render() {
 		return (
-			<div className="game">
+			<div className="game" style={{width: `${window.innerWidth}px`, height: `${window.innerHeight}px`}}>
 				<Firebase
 					updateLoggedIn={this.updateLoggedIn}
 				/>
 
 				{this.state.isLoggedIn &&
 					<UI
+						screenData={this.state.screenData}
+						updateGameOptions={this.updateGameOptions}
+						gameOptions={this.state.gameOptions}
+						objectPanelWidth={this.objectPanelWidth}
+						objectPanelHeight={this.objectPanelHeight}
+						contextMenuWidth={this.contextMenuWidth}
+						contextMenuHeight={this.contextMenuHeight}
+						uiControlBarHeight={this.uiControlBarHeight}
+
 						showDialog={this.state.showDialog}
 						setShowDialogProps={this.setShowDialogProps}
 						dialogProps={this.state.dialogProps}
@@ -910,6 +1058,7 @@ class Game extends React.Component {
 						objHasBeenDropped={this.state.objHasBeenDropped}
 						setHasObjBeenDropped={this.setHasObjBeenDropped}
 						addItemToPlayerInventory={this.addItemToPlayerInventory}
+						toggleLightingHasChanged={this.toggleLightingHasChanged}
 
 						updateMapObjects={this.updateMapObjects}
 						mapObjects={this.state.mapObjects}
@@ -920,6 +1069,7 @@ class Game extends React.Component {
 						refillLight={this.refillLight}
 						handleContextMenuSelection={this.handleContextMenuSelection}
 						contextMenu={this.state.contextMenu}
+						toggleCenterOnPlayer={this.toggleCenterOnPlayer}
 
 						currentLocation={this.state.currentLocation}
 						updateCurrentTurn={this.updateCurrentTurn}
@@ -933,12 +1083,16 @@ class Game extends React.Component {
 						isPartyNearby={this.state.partyIsNearby}
 						modeInfo={{inTacticalMode: this.state.inTacticalMode, turn: this.state.currentTurn + 1}}
 						updateActiveCharacter={this.updateActiveCharacter}
-						updateFollowModeMoves={this.updateFollowModeMoves}
+						updateFollowModePositions={this.updateFollowModePositions}
 					/>
 				}
 
 				{this.state.isLoggedIn && this.state.gameSetupComplete &&
 					<Map
+						screenData={this.state.screenData}
+						gameOptions={this.state.gameOptions}
+						objectPanelWidth={this.objectPanelWidth}
+
 						setShowDialogProps={this.setShowDialogProps}
 						notEnoughSpaceDialogProps={this.notEnoughSpaceDialogProps}
 						noMoreActionsDialogProps={this.noMoreActionsDialogProps}
@@ -956,8 +1110,9 @@ class Game extends React.Component {
 
 						updateMapObjects={this.updateMapObjects}
 						mapObjects={this.state.mapObjects}
-						setHasObjBeenDropped={this.setHasObjBeenDropped}
 						addItemToPlayerInventory={this.addItemToPlayerInventory}
+						lightingHasChanged={this.state.lightingHasChanged}
+						toggleLightingHasChanged={this.toggleLightingHasChanged}
 
 						currentTurn={this.state.currentTurn}
 						updateCurrentTurn={this.updateCurrentTurn}
@@ -968,9 +1123,12 @@ class Game extends React.Component {
 
 						updateLog={this.updateLog}
 						actionButtonSelected={this.state.actionButtonSelected}
+						isContextMenuNeeded={this.isContextMenuNeeded}
 						updateContextMenu={this.updateContextMenu}
 						contextMenu={this.state.contextMenu}
 						contextMenuChoice={this.state.contextMenuChoice}
+						centerOnPlayer={this.state.centerOnPlayer}
+						toggleCenterOnPlayer={this.toggleCenterOnPlayer}
 
 						updateThreatList={this.updateThreatList}
 						threatList={this.state.threatList}
@@ -979,8 +1137,8 @@ class Game extends React.Component {
 						isPartyNearby={this.state.partyIsNearby}
 						updateIfPartyIsNearby={this.updateIfPartyIsNearby}
 						playerFollowOrder={this.state.playerFollowOrder}
-						updateFollowModeMoves={this.updateFollowModeMoves}
-						followModeMoves={this.state.followModeMoves}
+						updateFollowModePositions={this.updateFollowModePositions}
+						followModePositions={this.state.followModePositions}
 					/>
 				}
 
