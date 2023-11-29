@@ -12,6 +12,8 @@ Current demo: https://lovecraft-oldones.web.app/
 ---
 #### Current status:
 
+11/28/23: More mobile optimizations; added help screens; control bars now show health, sanity, spirit and have more space for buttons; character info panels now have tabs for inv/attributes/skills; bug fixes.
+
 10/31/23: Fixed styling and functionality for mobile, so now everything should work on phone and tablet. Changing lighting to be smoothly blended between tiles! Moving game settings (music and audio for now) into settings panel. Adding zoom slider to zoom in/out on map.
 
 8/29/23: Added objects to pick up (ammo, weapons, lights, health kits, etc.). Changed PC info panel to full inventory with paper doll. Added drag and drop to move items in inventory, trade between characters, and drop items.
