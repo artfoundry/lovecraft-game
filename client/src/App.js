@@ -1,5 +1,6 @@
 import React from 'react';
 import Firebase from './Firebase';
+import CharacterCreation from './CharacterCreation';
 import Map from './Map';
 import Character from './Character';
 import PlayerCharacterTypes from './data/playerCharacterTypes.json';
@@ -13,9 +14,14 @@ class Game extends React.Component {
 	constructor(props) {
 		super(props);
 
+		// for testing
+		this.testAttr = this.props.testAttributes;
+		this.showLogin = this.testAttr.showLogin;
+		this.showCharacterCreation = this.testAttr.showCharacterCreation;
+		this.startingPlayerCharacters = !this.showCharacterCreation ? this.testAttr.startingCharacters : null;
+		this.startingLocation = this.testAttr.startingLocation;
+
 		this.initialDialogContent = '';
-		this.startingLocation = 'catacombs';
-		this.startingPlayerCharacters = ['privateEye', 'archaeologist', 'chemist'];
 		this.playerMovesLimit = 3;
 		this.playerActionsLimit = 2;
 
@@ -56,6 +62,8 @@ class Game extends React.Component {
 			},
 			userData: {},
 			isLoggedIn: false,
+			characterCreated: false,
+			createdCharData: null,
 			gameSetupComplete: false,
 			playerCharacters: {},
 			pcTypes: PlayerCharacterTypes,
@@ -79,7 +87,7 @@ class Game extends React.Component {
 			mapObjects: {},
 			unitsTurnOrder: [],
 			currentTurn: 0,
-			activeCharacter: this.startingPlayerCharacters[0],
+			activeCharacter: !this.showCharacterCreation ? this.startingPlayerCharacters[0] : null,
 			activePlayerMovesCompleted: 0,
 			activePlayerActionsCompleted: 0,
 			characterIsSelected: false,
@@ -180,6 +188,13 @@ class Game extends React.Component {
 		this.setState({
 			isLoggedIn: true,
 			userData
+		});
+	}
+
+	saveCreatedCharacter = (createdCharData, partyList) => {
+		this.startingPlayerCharacters = partyList;
+		this.setState({createdCharData, characterCreated: true}, () => {
+			this._setupGameState();
 		});
 	}
 
@@ -849,11 +864,21 @@ class Game extends React.Component {
 	_setupPlayerCharacters() {
 		let playerCharacters = {};
 		let playerFollowOrder = [];
+		let activeCharacter = this.state.activeCharacter;
 		this.startingPlayerCharacters.forEach(characterId => {
 			playerCharacters[characterId] = new Character(PlayerCharacterTypes[characterId]);
 			playerFollowOrder.push(characterId);
 		});
-		this.setState({playerCharacters, playerFollowOrder});
+		if (this.showCharacterCreation) {
+			const createdCharData = this.state.createdCharData;
+			const createdPC = playerCharacters[createdCharData.id];
+			createdPC.name = createdCharData.name;
+			createdPC.strength = createdCharData.strength;
+			createdPC.agility = createdCharData.agility;
+			createdPC.mentalAcuity = createdCharData.mentalAcuity;
+			activeCharacter = createdCharData.id;
+		}
+		this.setState({playerCharacters, playerFollowOrder, activeCharacter});
 	}
 
 	/**
@@ -1012,23 +1037,37 @@ class Game extends React.Component {
 				resizeTimeout = setTimeout(this.getScreenDimensions, resizeDelay);
 			};
 
-			this._setupGameState();
 			window.addEventListener('resize', getNewScreenDimensions);
 			window.screen.orientation.addEventListener('change', getNewScreenDimensions);
+
+			if (!this.showCharacterCreation) {
+				this.setState({characterCreated: true}, () => {
+					this._setupGameState();
+				});
+			}
 		}
 
-		// todo: uncomment below and comment Firebase component in render() for testing, remove for prod
-		// this.setState({isLoggedIn: true});
+		if (!this.showLogin) {
+			this.setState({isLoggedIn: true});
+		}
 	}
 
 	render() {
 		return (
-			<div className="game" style={{width: `${window.innerWidth}px`, height: `${window.innerHeight}px`}}>
-				<Firebase
-					updateLoggedIn={this.updateLoggedIn}
-				/>
+			<div className="game" style={{width: `${this.state.screenData.width}px`, height: `${this.state.screenData.height}px`}}>
+				{this.showLogin &&
+					<Firebase
+						updateLoggedIn={this.updateLoggedIn}
+					/>
+				}
 
-				{this.state.isLoggedIn &&
+				{this.state.isLoggedIn && this.showCharacterCreation && !this.state.characterCreated &&
+					<CharacterCreation
+						saveCreatedCharacter={this.saveCreatedCharacter}
+					/>
+				}
+
+				{this.state.isLoggedIn && this.state.gameSetupComplete &&
 					<UI
 						screenData={this.state.screenData}
 						updateGameOptions={this.updateGameOptions}
@@ -1112,6 +1151,7 @@ class Game extends React.Component {
 
 						updateMapObjects={this.updateMapObjects}
 						mapObjects={this.state.mapObjects}
+						setHasObjBeenDropped={this.setHasObjBeenDropped}
 						addItemToPlayerInventory={this.addItemToPlayerInventory}
 						lightingHasChanged={this.state.lightingHasChanged}
 						toggleLightingHasChanged={this.toggleLightingHasChanged}

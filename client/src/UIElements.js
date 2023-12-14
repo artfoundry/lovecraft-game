@@ -191,7 +191,7 @@ function CharacterControls(props) {
 }
 
 function CharacterInfoPanel(props) {
-	const skillList = Object.values(props.characterInfo.skills).map(item => <li key={item + Math.random()}>{item}</li>);
+	const skillList = Object.values(props.characterInfo.skills).map(item => <li key={item.name + Math.random()}>{item.name}</li>);
 	const equippedLight = props.characterInfo.items[props.characterInfo.equippedLight];
 	const equippedItems = props.characterInfo.equippedItems;
 	const equippedIsTwoHanded = equippedItems.loadout1.right && equippedItems.loadout1.right === equippedItems.loadout1.left;

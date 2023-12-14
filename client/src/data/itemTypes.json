@@ -38,27 +38,61 @@
   },
   "Leather Jacket": {
     "itemType": "Armor",
-    "defense": 3,
-    "damageReduction": 1
+    "defense": 2,
+    "damageReduction": 1,
+    "description": "Jacket made of durable leather, providing some defensive protection and minimal damage reduction."
   },
   "Bulletproof Vest": {
     "itemType": "Armor",
     "defense": 4,
-    "damageReduction": 2
+    "damageReduction": 2,
+    "penalty": {"movement": 1},
+    "description": "Heavy cloth vest with metal plates inserted in pockets throughout, providing decent defensive protection and damage reduction at the cost of slower movement."
   },
   "Handgun Ammo": {
     "itemType": "Ammo",
     "gunType":  "handgun",
-    "stackable": true
+    "stackable": true,
+    "description": "Ammunition for all handguns."
   },
   "Shotgun Ammo": {
     "itemType": "Ammo",
     "gunType":  "shotgun",
-    "stackable": true
+    "stackable": true,
+    "description": "Ammunition for all shotguns."
   },
   "Machine Gun Ammo": {
     "itemType": "Ammo",
     "gunType":  "machineGun",
-    "stackable": true
+    "stackable": true,
+    "description": "Ammunition for all machine guns."
+  },
+  "Alcohol": {
+    "itemType": "Component",
+    "stackable": true,
+    "description": "Component for making First Aid Kits, Pharmaceuticals, Molotov Cocktails, and Torches"
+  },
+  "Chemical Components": {
+    "itemType": "Component",
+    "stackable": true,
+    "description": "Components for making Pharmaceuticals and Acid Concoctions"
+  },
+  "Bandages": {
+    "itemType": "Component",
+    "stackable": true,
+    "description": "Component for making First Aid Kits, Molotov Cocktails, and Torches"
+  },
+  "Wood": {
+    "itemType": "Component",
+    "stackable": true,
+    "description": "Component for Torches and Spears"
+  },
+  "Elder Sign": {
+    "itemType": "Relic",
+    "description": "A small tablet of an unknown material with a symbol on it showing an asymmetrical five point star with a flame in the center."
+  },
+  "Necronomicon": {
+    "itemType": "Relic",
+    "description": "An ancient book, bound in leather with iron clasps, translated into Greek from the original which was written in Arabic by Abdul Alhazred, thought to be a mad man from the early 700s CE. It purportedly accounts the details of the Old Ones and the means to summon them, but none who have tried have survived."
   }
 }

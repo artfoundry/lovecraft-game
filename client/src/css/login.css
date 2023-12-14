@@ -1,0 +1,112 @@
+/* LOGIN WINDOW */
+
+.dialog-login {
+	position: absolute;
+	width: 100%;
+	min-height: 100%;
+	top: 0;
+	left: 0;
+	justify-content: center;
+	background-color: #225555;
+	border: none;
+	border-radius: unset;
+	box-sizing: border-box;
+}
+
+.login-methods-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	width: 400px;
+	border-top: 1px solid;
+	padding-top: 20px;
+}
+
+.login-method {
+	margin-bottom: 30px;
+}
+
+.login-method-title {
+	grid-area: title;
+	width: 100%;
+	margin-top: 20px;
+	margin-bottom: 10px;
+	color: #225555;
+	background-color: lightgray;
+}
+
+.login-email-pw-container {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	grid-template-rows: 1fr 50px 150px;
+	grid-template-areas:
+	"title title"
+	"createtab logintab"
+	"content content";
+	width: 100%;
+	padding: 10px;
+}
+
+.login-email-only-container {
+	width: 100%;
+	padding: 10px;
+}
+
+.login-google-container {
+	display: flex;
+	flex-direction: column;
+}
+
+.login-account-entry-row {
+	display: flex;
+	justify-content: space-between;
+	width: 80%;
+	margin: auto;
+}
+
+.login-button {
+	margin: 10px;
+	padding: 5px 10px;
+	background-color: burlywood;
+	cursor: pointer;
+}
+
+.login-email-message-hidden {
+	visibility: hidden;
+}
+
+.email-pw-tab {
+	border-radius: 5px 5px 0 0;
+	font-size: 16px;
+	height: 100%;
+	line-height: 40px;
+	border-top: 2px solid transparent;
+	border-left: 2px solid transparent;
+	border-right: 2px solid transparent;
+	cursor: pointer;
+}
+
+.email-pw-tab:not(.active-tab):hover {
+	background-color: burlywood;
+	color: black;
+}
+
+.create-tab {
+	grid-area: createtab;
+}
+
+.login-tab {
+	grid-area: logintab;
+}
+
+.active-tab {
+	border-top: 2px solid burlywood;
+	border-left: 2px solid burlywood;
+	border-right: 2px solid burlywood;
+}
+
+.active-tab-content {
+	grid-area: content;
+	padding-top: 20px;
+	border-top: 2px solid burlywood;
+}

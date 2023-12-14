@@ -15,6 +15,8 @@ import {
 } from "firebase/auth";
 import { GoogleAuthProvider } from "firebase/auth";
 import { DialogWindow } from "./UIElements";
+import './css/ui.css';
+import './css/login.css';
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -68,8 +70,9 @@ export default class Firebase extends React.Component {
 
 		const dialogContent = (
 			<>
-				<h2 className='font-fancy'>War of the Old Ones</h2>
-				<h3>Choose a method to login</h3>
+				<h1 className='font-fancy'>War of the Old Ones</h1>
+				<div>(Pre-Alpha)</div>
+				<h2>Choose a method to login</h2>
 
 				<div className='login-methods-container'>
 

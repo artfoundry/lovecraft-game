@@ -1,0 +1,11 @@
+{
+  "Create First Aid Kit": {
+    "type": "active",
+    "description": "Create 1 First Aid Kit",
+    "cost": {
+      "bandages": 2,
+      "alcohol": 1
+    },
+    "resources": ["bandages", "alcohol"]
+  }
+}

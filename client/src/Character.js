@@ -22,8 +22,8 @@ class Character extends React.Component {
 		this.currentHealth = props.startingHealth;
 		this.startingSanity = props.startingSanity;
 		this.currentSanity = props.startingSanity;
-		this.startingSpirit = props.startingSpirit;
-		this.currentSpirit = props.startingSpirit;
+		this.startingSpirit = (this.startingHealth / 2) + (this.startingSanity / 2);
+		this.currentSpirit = (this.startingHealth / 2) + (this.startingSanity / 2);
 		this.skills = props.skills;
 		this.weapons = this._populateInfo('weapon', props.weapons);
 		this.equippedItems = {

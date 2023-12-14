@@ -56,7 +56,7 @@
   "shoggoth": {
     "name": "Shoggoth",
     "type": "creature",
-    "level": 4,
+    "level": 6,
     "strength": 8,
     "agility": 1,
     "mentalAcuity": 1,

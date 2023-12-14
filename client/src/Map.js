@@ -12,11 +12,9 @@ import {
 	convertObjIdToClassId,
 	convertPosToCoords,
 	convertCoordsToPos,
-	randomTileMovementValue,
 	roundTowardZero,
 	notEnoughSpaceInInventory,
-	deepCopy,
-	handleItemOverDropZone} from './Utils';
+	deepCopy} from './Utils';
 import './css/map.css';
 import './css/catacombs.css';
 import './css/dungeon.css';
