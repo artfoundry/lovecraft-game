@@ -541,7 +541,6 @@ h3 {
 	grid-template-areas: "controlBarTab1 . .";
 	justify-self: center;
 	align-self: end;
-	height: 160px;
 	border: 2px solid seagreen;
 	border-bottom: 0;
 	border-radius: 5px 5px 0 0;
@@ -1123,7 +1122,6 @@ select {
 	}
 
 	#control-bar-container {
-		grid-template-columns: 220px 1fr 1fr;
 		width: 100%;
 	}
 
@@ -1171,8 +1169,46 @@ select {
 	}
 }
 
+/* For wider mobile screens (or desktop window sized down) */
+@media (768px <= width < 1000px) {
+	#ui-container {
+		grid-template-columns: 1fr;
+		grid-template-rows: 150px 1fr 100px;
+		grid-template-areas:
+		"turnInfo"
+		"characterInfo"
+		"controlBar";
+	}
+
+	.turn-info-container {
+		max-height: 180px;
+		border: 0;
+		border-bottom: 2px solid seagreen;
+		border-radius: 0;
+	}
+
+	#control-bar-container {
+		grid-template-columns: 1fr 50px 50px;
+		border: 0;
+		border-top: 2px solid seagreen;
+		border-radius: 0;
+	}
+
+	#control-bar-tab-1 {
+		max-width: 260px;
+	}
+
+	#control-bar-statuses-container {
+		width: 350px;
+	}
+
+	#system-buttons-container {
+		bottom: 175px;
+	}
+}
+
 /* Narrow/tall screens */
-@media (width < 1000px) and (height > 500px) {
+@media (width < 768px) and (orientation: portrait) {
 	h2 { font-size: 26px; }
 	h3 { font-size: 20px; }
 
@@ -1194,12 +1230,12 @@ select {
 	}
 
 	#ui-container {
-		grid-template-columns: 1fr 300px;
+		grid-template-columns: 1fr;
 		grid-template-rows: 150px 1fr 100px;
 		grid-template-areas:
-		"turnInfo turnInfo"
-		"characterInfo characterInfo"
-		"controlBar controlBar";
+		"turnInfo"
+		"characterInfo"
+		"controlBar";
 	}
 
 	.turn-info-container {
@@ -1252,7 +1288,9 @@ select {
 	}
 
 	.object-info-panel {
-		width: 100%;
+		width: 90%;
+		max-width: unset;
+		left: 5%;
 	}
 
 	#control-bar-container {
@@ -1275,12 +1313,12 @@ select {
 	}
 
 	#system-buttons-container {
-		bottom: 170px;
+		bottom: 175px;
 	}
 }
 
 /* Wide/short screens */
-@media (height < 768px) and (width > 600px) {
+@media (height < 768px) and (orientation: landscape) {
 	.login-methods-container {
 		flex-direction: row;
 		align-items: start;
@@ -1294,7 +1332,7 @@ select {
 
 	#ui-container {
 		grid-template-columns: 330px 1fr;
-		grid-template-rows: 220px 1fr;
+		grid-template-rows: 1fr 1fr;
 		grid-template-areas:
 		"turnInfo characterInfo"
 		"controlBar characterInfo";
@@ -1308,11 +1346,12 @@ select {
 		flex-direction: column;
 		max-height: unset;
 		border-left: 0;
+		border-right: 2px solid seagreen;
 		border-bottom-left-radius: 0;
+		border-bottom-right-radius: 5px;
 	}
 
 	.log-container {
-		height: 100px;
 		border: 0;
 		border-bottom: 1px solid seagreen;
 	}
@@ -1330,9 +1369,12 @@ select {
 	}
 
 	#control-bar-container {
+		grid-template-columns: 220px 1fr 1fr;
 		justify-self: left;
+		border-right: 2px solid seagreen;
 		border-left: 0;
 		border-top-left-radius: 0;
+		border-top-right-radius: 5px;
 	}
 
 	#control-bar-tab-1 {
@@ -1341,6 +1383,10 @@ select {
 
 	#control-bar-statuses-container {
 		width: 300px;
+	}
+
+	#system-buttons-container {
+		bottom: 0;
 	}
 }
 

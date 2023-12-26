@@ -17,7 +17,8 @@
 # misc
 .DS_Store
 /asset_sources/
-notes
+dev_notes
+test_notes
 /mapLayoutTool/mapData_*_backup.json
 client_secret*
 .idea
