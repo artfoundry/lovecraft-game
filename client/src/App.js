@@ -1006,13 +1006,15 @@ class Game extends React.Component {
 	componentDidMount() {
 		if (!this.state.gameSetupComplete) {
 			let resizeTimeout = null;
-			const resizeDelay = 250;
-
-			this._setupGameState();
-			window.addEventListener('resize', () => {
+			const resizeDelay = 500; // lower value may not update properly on screen rotation
+			const getNewScreenDimensions = () => {
 				clearTimeout(resizeTimeout);
 				resizeTimeout = setTimeout(this.getScreenDimensions, resizeDelay);
-			});
+			};
+
+			this._setupGameState();
+			window.addEventListener('resize', getNewScreenDimensions);
+			window.screen.orientation.addEventListener('change', getNewScreenDimensions);
 		}
 
 		// todo: uncomment below and comment Firebase component in render() for testing, remove for prod
