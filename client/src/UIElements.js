@@ -347,6 +347,7 @@ function CharacterInfoPanel(props) {
 
 				<div className={`char-info-stats-container ${activeTab !== 'stats' ? 'hide' : ''}`}>
 					<div>{props.characterInfo.profession}</div>
+					<div>Gender: {props.characterInfo.gender}</div>
 					<div>Health: {props.characterInfo.currentHealth} / {props.characterInfo.startingHealth}</div>
 					<div>Sanity: {props.characterInfo.currentSanity} / {props.characterInfo.startingSanity}</div>
 					<div>Spirit: {props.characterInfo.currentSpirit} / {props.characterInfo.startingSpirit}</div>

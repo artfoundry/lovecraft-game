@@ -10,6 +10,7 @@ class Character extends React.Component {
 		// For instantiation only - updated data is stored in App.state.playerCharacters
 		this.id = props.id;
 		this.name = props.name;
+		this.gender = props.gender;
 		this.type = props.type;
 		this.profession = props.profession;
 		this.level = 1;

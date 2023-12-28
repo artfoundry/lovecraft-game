@@ -39,6 +39,7 @@ export default class CharacterCreation extends React.Component {
 
 		this.state = {
 			name: '',
+			gender: '',
 			profession: null,
 			statsRolled: {
 				roll1: {strength: 0, agility: 0, mentalAcuity: 0},
@@ -108,6 +109,28 @@ export default class CharacterCreation extends React.Component {
 
 					<h3 className='font-fancy'>~ Name ~</h3>
 					<input type='text' value={this.state.name} onChange={evt => this.updateValue({name: evt.target.value})} />
+
+					<h3 className='font-fancy'>~ Gender ~</h3>
+					<label>
+						<input
+							type="radio"
+							name="char-gender"
+							value="Male"
+							checked={this.state.gender === "Male"}
+							onChange={evt => this.updateValue({gender: evt.target.value})}
+						/>
+						Male
+					</label>
+					<label>
+						<input
+							type="radio"
+							name="char-gender"
+							value="Female"
+							checked={this.state.gender === "Female"}
+							onChange={evt => this.updateValue({gender: evt.target.value})}
+						/>
+						Female
+					</label>
 
 					<h3 className='font-fancy'>~ Attributes ~</h3>
 					<div>Roll your initial attributes: Roll three times, then choose one.</div>
@@ -329,11 +352,12 @@ export default class CharacterCreation extends React.Component {
 					<hr />
 					<div id='char-creation-finish'>
 						<p>Once you've created your investigator and chosen your companions, you can...</p>
-						<div className={`char-creation-button ${(this.state.name.length === 0 || this.state.rollNumSaved === 0 || this.state.companions.length < 2) ? 'button-disabled' : ''}`}
+						<div className={`char-creation-button ${(this.state.name.length === 0 || this.state.gender.length === 0 || this.state.rollNumSaved === 0 || this.state.companions.length < 2) ? 'button-disabled' : ''}`}
 							onClick={() => {
 								const pcData = {
 									id: this.state.profession,
 									name: this.state.name,
+									gender: this.state.gender,
 									strength: this.state.statsSaved.strength,
 									agility: this.state.statsSaved.agility,
 									mentalAcuity: this.state.statsSaved.mentalAcuity

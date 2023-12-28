@@ -873,6 +873,7 @@ class Game extends React.Component {
 			const createdCharData = this.state.createdCharData;
 			const createdPC = playerCharacters[createdCharData.id];
 			createdPC.name = createdCharData.name;
+			createdPC.gender = createdCharData.gender;
 			createdPC.strength = createdCharData.strength;
 			createdPC.agility = createdCharData.agility;
 			createdPC.mentalAcuity = createdCharData.mentalAcuity;

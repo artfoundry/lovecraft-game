@@ -2,6 +2,7 @@
   "privateEye": {
     "id": "privateEye",
     "name": "Joseph Hide",
+    "gender": "Male",
     "type": "player",
     "profession": "Private Investigator",
     "strength": 5,
@@ -52,6 +53,7 @@
   "archaeologist": {
     "id": "archaeologist",
     "name": "Mary Simpleton",
+    "gender": "Female",
     "type": "player",
     "profession": "Archaeologist",
     "strength": 3,
@@ -94,6 +96,7 @@
   "chemist": {
     "id": "chemist",
     "name": "Helen Abernathy",
+    "gender": "Female",
     "type": "player",
     "profession": "Chemist",
     "strength": 2,
@@ -154,6 +157,7 @@
   "doctor": {
     "id": "doctor",
     "name": "Thomas Wade",
+    "gender": "Male",
     "type": "player",
     "profession": "Doctor",
     "strength": 3,
@@ -217,6 +221,7 @@
   "priest": {
     "id": "priest",
     "name": "Peter Mulcahy",
+    "gender": "Male",
     "type": "player",
     "profession": "Priest",
     "strength": 4,
@@ -263,6 +268,7 @@
   "veteran": {
     "id": "veteran",
     "name": "Frank Wilcox",
+    "gender": "Male",
     "type": "player",
     "profession": "WWI Veteran",
     "strength": 6,
@@ -303,6 +309,7 @@
   "thief": {
     "id": "thief",
     "name": "Elizabeth Smith",
+    "gender": "Female",
     "type": "player",
     "profession": "Thief",
     "strength": 4,
@@ -331,6 +338,7 @@
   "occultResearcher": {
     "id": "occultResearcher",
     "name": "Philip Howard",
+    "gender": "Male",
     "type": "player",
     "profession": "Occult Researcher",
     "strength": 2,
