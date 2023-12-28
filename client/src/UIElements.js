@@ -679,7 +679,7 @@ function HelpScreen(props) {
 	return (
 		<div className={`help-screen ui-panel ${props.showHelpScreen ? '' : 'hide'}`}>
 			<div className='general-button help-screen-close' onClick={() => props.toggleHelpScreen()}>X</div>
-			<div id={`help-screen-content-${props.screenData.isNarrow ? 'mobile-portrait-' : props.screenData.isShort ? 'mobile-landscape-' : ''}${contentNum}`} className='help-screen-content'></div>
+			<div id={`help-screen-content-${props.screenData.isShort ? 'mobile-landscape-' : props.screenData.isNarrow ? 'mobile-portrait-' : ''}${contentNum}`} className='help-screen-content'></div>
 			<div className='help-screen-nav-container'>
 				<div className={`general-button arrow-button-left${contentNum === 1 ? ' button-disabled' : ''}`} onClick={() => {
 					if (contentNum > 1) {
