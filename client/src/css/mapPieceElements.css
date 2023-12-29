@@ -79,6 +79,7 @@ as box-shadow greatly dims the lighting */
 .object {
 	position: absolute;
 	user-select: none;
+	filter: drop-shadow(4px 4px 2px black);
 }
 
 .torch-top-wall, .torch {

@@ -4,7 +4,7 @@ import PlayerCharacterTypes from './data/playerCharacterTypes.json';
 import ItemTypes from './data/itemTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
 import './css/characterCreation.css';
-
+import './css/playerCharacters.css';
 
 export default class CharacterCreation extends React.Component {
 	constructor(props) {
@@ -167,7 +167,10 @@ export default class CharacterCreation extends React.Component {
 						<div className={`char-creation-prof ${this.state.profession === 'privateEye' ? 'button-selected' : ''}`}
 						     onClick={() => this.updateValue({profession: 'privateEye'})}
 						>
-							<h4 className='font-fancy'>Private Investigator</h4>
+							<div className='char-creation-prof-header'>
+								<div className='char-creation-prof-icon private-eye'></div>
+								<h4 className='font-fancy'>Private Investigator</h4>
+							</div>
 							<p><u>Starting Attributes</u></p>
 							<div>Strength: {this.state.statsSaved.strength + this.privateEyeStrBonus} ({this.privateEyeStrBonus + (this.privateEyeStrBonus >= 0 ? ' bonus' : ' penalty')})</div>
 							<div>Agility: {this.state.statsSaved.agility + this.privateEyeAgilBonus} ({this.privateEyeAgilBonus + (this.privateEyeAgilBonus >= 0 ? ' bonus' : ' penalty')})</div>
@@ -183,7 +186,10 @@ export default class CharacterCreation extends React.Component {
 						<div className={`char-creation-prof ${this.state.profession === 'archaeologist' ? 'button-selected' : ''}`}
 						     onClick={() => this.updateValue({profession: 'archaeologist'})}
 						>
-							<h4 className='font-fancy'>Archaeologist</h4>
+							<div className='char-creation-prof-header'>
+								<div className='char-creation-prof-icon archaeologist'></div>
+								<h4 className='font-fancy'>Archaeologist</h4>
+							</div>
 							<p><u>Starting Attributes</u></p>
 							<div>Strength: {this.state.statsSaved.strength + this.archaeologistStrBonus} ({this.archaeologistStrBonus + (this.archaeologistStrBonus >= 0 ? ' bonus' : ' penalty')})</div>
 							<div>Agility: {this.state.statsSaved.agility + this.archaeologistAgilBonus} ({this.archaeologistAgilBonus + (this.archaeologistAgilBonus >= 0 ? ' bonus' : ' penalty')})</div>
@@ -199,8 +205,11 @@ export default class CharacterCreation extends React.Component {
 						<div className={`char-creation-prof ${this.state.profession === 'chemist' ? 'button-selected' : ''}`}
 						     onClick={() => this.updateValue({profession: 'chemist'})}
 						>
-							<h4 className='font-fancy'>Chemist</h4>
-							<div><u>Starting Attributes</u></div>
+							<div className='char-creation-prof-header'>
+								<div className='char-creation-prof-icon chemist'></div>
+								<h4 className='font-fancy'>Chemist</h4>
+							</div>
+							<p><u>Starting Attributes</u></p>
 							<div>Strength: {this.state.statsSaved.strength + this.chemistStrBonus} ({this.chemistStrBonus + (this.chemistStrBonus >= 0 ? ' bonus' : ' penalty')})</div>
 							<div>Agility: {this.state.statsSaved.agility + this.chemistAgilBonus} ({this.chemistAgilBonus + (this.chemistAgilBonus >= 0 ? ' bonus' : ' penalty')})</div>
 							<div>Mental Acuity: {this.state.statsSaved.mentalAcuity + this.chemistMentalBonus} ({this.chemistMentalBonus + (this.chemistMentalBonus >= 0 ? ' bonus' : ' penalty')})</div>
@@ -215,8 +224,11 @@ export default class CharacterCreation extends React.Component {
 						<div className={`char-creation-prof ${this.state.profession === 'doctor' ? 'button-selected' : ''}`}
 						     onClick={() => this.updateValue({profession: 'doctor'})}
 						>
-							<h4 className='font-fancy'>Doctor</h4>
-							<div><u>Starting Attributes</u></div>
+							<div className='char-creation-prof-header'>
+								<div className='char-creation-prof-icon doctor'></div>
+								<h4 className='font-fancy'>Doctor</h4>
+							</div>
+							<p><u>Starting Attributes</u></p>
 							<div>Strength: {this.state.statsSaved.strength + this.doctorStrBonus} ({this.doctorStrBonus + (this.doctorStrBonus >= 0 ? ' bonus' : ' penalty')})</div>
 							<div>Agility: {this.state.statsSaved.agility + this.doctorAgilBonus} ({this.doctorAgilBonus + (this.doctorAgilBonus >= 0 ? ' bonus' : ' penalty')})</div>
 							<div>Mental Acuity: {this.state.statsSaved.mentalAcuity + this.doctorMentalBonus} ({this.doctorMentalBonus + (this.doctorMentalBonus >= 0 ? ' bonus' : ' penalty')})</div>
@@ -231,8 +243,11 @@ export default class CharacterCreation extends React.Component {
 						<div className={`char-creation-prof ${this.state.profession === 'priest' ? 'button-selected' : ''}`}
 						     onClick={() => this.updateValue({profession: 'priest'})}
 						>
-							<h4 className='font-fancy'>Priest</h4>
-							<div><u>Starting Attributes</u></div>
+							<div className='char-creation-prof-header'>
+								<div className='char-creation-prof-icon priest'></div>
+								<h4 className='font-fancy'>Priest</h4>
+							</div>
+							<p><u>Starting Attributes</u></p>
 							<div>Strength: {this.state.statsSaved.strength + this.priestStrBonus} ({this.priestStrBonus + (this.priestStrBonus >= 0 ? ' bonus' : ' penalty')})</div>
 							<div>Agility: {this.state.statsSaved.agility + this.priestAgilBonus} ({this.priestAgilBonus + (this.priestAgilBonus >= 0 ? ' bonus' : ' penalty')})</div>
 							<div>Mental Acuity: {this.state.statsSaved.mentalAcuity + this.priestMentalBonus} ({this.priestMentalBonus + (this.priestMentalBonus >= 0 ? ' bonus' : ' penalty')})</div>
@@ -247,8 +262,11 @@ export default class CharacterCreation extends React.Component {
 						<div className={`char-creation-prof ${this.state.profession === 'veteran' ? 'button-selected' : ''}`}
 						     onClick={() => this.updateValue({profession: 'veteran'})}
 						>
-							<h4 className='font-fancy'>WWI Veteran</h4>
-							<div><u>Starting Attributes</u></div>
+							<div className='char-creation-prof-header'>
+								<div className='char-creation-prof-icon veteran'></div>
+								<h4 className='font-fancy'>WWI Veteran</h4>
+							</div>
+							<p><u>Starting Attributes</u></p>
 							<div>Strength: {this.state.statsSaved.strength + this.veteranStrBonus} ({this.veteranStrBonus + (this.veteranStrBonus >= 0 ? ' bonus' : ' penalty')})</div>
 							<div>Agility: {this.state.statsSaved.agility + this.veteranAgilBonus} ({this.veteranAgilBonus + (this.veteranAgilBonus >= 0 ? ' bonus' : ' penalty')})</div>
 							<div>Mental Acuity: {this.state.statsSaved.mentalAcuity + this.veteranMentalBonus} ({this.veteranMentalBonus + (this.veteranMentalBonus >= 0 ? ' bonus' : ' penalty')})</div>
@@ -263,8 +281,11 @@ export default class CharacterCreation extends React.Component {
 						<div className={`char-creation-prof ${this.state.profession === 'thief' ? 'button-selected' : ''}`}
 						     onClick={() => this.updateValue({profession: 'thief'})}
 						>
-							<h4 className='font-fancy'>Thief</h4>
-							<div><u>Starting Attributes</u></div>
+							<div className='char-creation-prof-header'>
+								<div className='char-creation-prof-icon thief'></div>
+								<h4 className='font-fancy'>Thief</h4>
+							</div>
+							<p><u>Starting Attributes</u></p>
 							<div>Strength: {this.state.statsSaved.strength + this.thiefStrBonus} ({this.thiefStrBonus + (this.thiefStrBonus >= 0 ? ' bonus' : ' penalty')})</div>
 							<div>Agility: {this.state.statsSaved.agility + this.thiefAgilBonus} ({this.thiefAgilBonus + (this.thiefAgilBonus >= 0 ? ' bonus' : ' penalty')})</div>
 							<div>Mental Acuity: {this.state.statsSaved.mentalAcuity + this.thiefMentalBonus} ({this.thiefMentalBonus + (this.thiefMentalBonus >= 0 ? ' bonus' : ' penalty')})</div>
@@ -279,8 +300,11 @@ export default class CharacterCreation extends React.Component {
 						<div className={`char-creation-prof ${this.state.profession === 'occultResearcher' ? 'button-selected' : ''}`}
 						     onClick={() => this.updateValue({profession: 'occultResearcher'})}
 						>
-							<h4 className='font-fancy'>Occult Researcher</h4>
-							<div><u>Starting Attributes</u></div>
+							<div className='char-creation-prof-header'>
+								<div className='char-creation-prof-icon occult-researcher'></div>
+								<h4 className='font-fancy'>Occult Researcher</h4>
+							</div>
+							<p><u>Starting Attributes</u></p>
 							<div>Strength: {this.state.statsSaved.strength + this.occultResearcherStrBonus} ({this.occultResearcherStrBonus + (this.occultResearcherStrBonus >= 0 ? ' bonus' : ' penalty')})</div>
 							<div>Agility: {this.state.statsSaved.agility + this.occultResearcherAgilBonus} ({this.occultResearcherAgilBonus + (this.occultResearcherAgilBonus >= 0 ? ' bonus' : ' penalty')})</div>
 							<div>Mental Acuity: {this.state.statsSaved.mentalAcuity + this.occultResearcherMentalBonus} ({this.occultResearcherMentalBonus + (this.occultResearcherMentalBonus >= 0 ? ' bonus' : ' penalty')})</div>
@@ -303,49 +327,49 @@ export default class CharacterCreation extends React.Component {
 						     onClick={() => this.addCompanion('privateEye')}
 						>
 							<h4 className='font-fancy'>Joseph Hide</h4>
-							<div>Private Investigator</div>
+							<p>Private Investigator</p>
 						</div>
 						<div className={`char-creation-companion ${this.state.companions.includes('archaeologist') ? 'button-selected' : ''}`}
 						     onClick={() => this.addCompanion('archaeologist')}
 						>
 							<h4 className='font-fancy'>Mary Simpleton</h4>
-							<div>Archaeologist</div>
+							<p>Archaeologist</p>
 						</div>
 						<div className={`char-creation-companion ${this.state.companions.includes('chemist') ? 'button-selected' : ''}`}
 						     onClick={() => this.addCompanion('chemist')}
 						>
 							<h4 className='font-fancy'>Helen Abernathy</h4>
-							<div>Chemist</div>
+							<p>Chemist</p>
 						</div>
 						<div className={`char-creation-companion ${this.state.companions.includes('doctor') ? 'button-selected' : ''}`}
 						     onClick={() => this.addCompanion('doctor')}
 						>
 							<h4 className='font-fancy'>Thomas Wade</h4>
-							<div>Doctor</div>
+							<p>Doctor</p>
 						</div>
 						<div className={`char-creation-companion ${this.state.companions.includes('priest') ? 'button-selected' : ''}`}
 						     onClick={() => this.addCompanion('priest')}
 						>
 							<h4 className='font-fancy'>Peter Mulcahy</h4>
-							<div>Priest</div>
+							<p>Priest</p>
 						</div>
 						<div className={`char-creation-companion ${this.state.companions.includes('veteran') ? 'button-selected' : ''}`}
 						     onClick={() => this.addCompanion('veteran')}
 						>
 							<h4 className='font-fancy'>Frank Wilcox</h4>
-							<div>WWI Veteran</div>
+							<p>WWI Veteran</p>
 						</div>
 						<div className={`char-creation-companion ${this.state.companions.includes('thief') ? 'button-selected' : ''}`}
 						     onClick={() => this.addCompanion('thief')}
 						>
 							<h4 className='font-fancy'>Elizabeth Smith</h4>
-							<div>Thief</div>
+							<p>Thief</p>
 						</div>
 						<div className={`char-creation-companion ${this.state.companions.includes('occultResearcher') ? 'button-selected' : ''}`}
 						     onClick={() => this.addCompanion('occultResearcher')}
 						>
 							<h4 className='font-fancy'>Philip Howard</h4>
-							<div>Occult Researcher</div>
+							<p>Occult Researcher</p>
 						</div>
 					</div>
 

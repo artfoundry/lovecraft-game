@@ -2,6 +2,7 @@
 	position: absolute;
 	transition: transform 0.5s;
 	user-select: none;
+	filter: drop-shadow(4px 4px 2px black);
 }
 
 .private-eye {
@@ -18,4 +19,20 @@
 
 .doctor {
 	content: url('../assets/characters/players/doctor.png');
+}
+
+.priest {
+	content: url('../assets/characters/players/priest.png');
+}
+
+.veteran {
+	content: url('../assets/characters/players/veteran.png');
+}
+
+.thief {
+	content: url('../assets/characters/players/thief.png');
+}
+
+.occult-researcher {
+	content: url('../assets/characters/players/occult-researcher.png');
 }

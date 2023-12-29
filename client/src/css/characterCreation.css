@@ -6,10 +6,6 @@ h2 {
 	margin: 50px 0 20px 0;
 }
 
-h4 {
-	margin-top: 0;
-}
-
 #char-creation-container {
 	height: 100%;
 	padding: 20px;
@@ -98,6 +94,17 @@ h4 {
 	border: 1px solid seagreen;
 	border-radius: 5px;
 	cursor: pointer;
+}
+
+.char-creation-prof-header {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 10px;
+}
+
+.char-creation-prof-icon {
+	filter: drop-shadow(4px 4px 2px black);
 }
 
 #char-creation-finish {
