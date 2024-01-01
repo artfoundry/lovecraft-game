@@ -174,11 +174,11 @@
         "level": 1,
         "cost": {
           "1": {
-            "bandages": 2,
-            "alcohol": 1
+            "Bandages": 2,
+            "Alcohol": 1
           }
         },
-        "resources": ["bandages", "alcohol"]
+        "resources": ["Bandages", "Alcohol"]
       },
       "brewPharmaceutical": {
         "name": "Brew Pharmaceutical",

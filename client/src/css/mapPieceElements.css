@@ -109,7 +109,11 @@ as box-shadow greatly dims the lighting */
 }
 
 .handgun-ammo {
-	content: url('../assets/objects/handgunammo_sml.png');
+	content: url('../assets/objects/handgunAmmo_sml.png');
+}
+
+.shotgun-ammo {
+	content: url('../assets/objects/shotgunAmmo_sml.png');
 }
 
 .first-aid-kit {
@@ -124,6 +128,18 @@ as box-shadow greatly dims the lighting */
 	content: url('../assets/objects/acid_sml.png');
 }
 
+.holy-water {
+	content: url('../assets/objects/holyWater_sml.png');
+}
+
+.knife {
+	content: url('../assets/objects/knife_sml.png');
+}
+
+.kris-knife {
+	content: url('../assets/objects/krisKnife_sml.png');
+}
+
 .pickaxe {
 	content: url('../assets/objects/pickaxe_sml.png');
 }
@@ -134,6 +150,10 @@ as box-shadow greatly dims the lighting */
 
 .s-and-w-revolver {
 	content: url('../assets/objects/SandWrevolver_sml.png');
+}
+
+.remington {
+	content: url('../assets/objects/remington_sml.png');
 }
 
 .leather-jacket {

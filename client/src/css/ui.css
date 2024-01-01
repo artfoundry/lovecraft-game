@@ -590,6 +590,7 @@ h3 {
 	background-position: center;
 	background-repeat: no-repeat;
 	line-height: 32px;
+	font-size: 20px;
 }
 
 .action-button:hover {
@@ -840,7 +841,11 @@ select {
 }
 
 .handgun-ammo-inv {
-	background-image: url('../assets/objects/handgunammo_lrg.png');
+	background-image: url('../assets/objects/handgunAmmo_lrg.png');
+}
+
+.shotgun-ammo-inv {
+	background-image: url('../assets/objects/shotgunAmmo_lrg.png');
 }
 
 .first-aid-kit-inv {
@@ -855,6 +860,18 @@ select {
 	background-image: url('../assets/objects/acid_lrg.png');
 }
 
+.holy-water-inv {
+	background-image: url('../assets/objects/holyWater_lrg.png');
+}
+
+.knife-inv {
+	background-image: url('../assets/objects/knife_lrg.png');
+}
+
+.kris-knife-inv {
+	background-image: url('../assets/objects/krisKnife_lrg.png');
+}
+
 .pickaxe-inv {
 	background-image: url('../assets/objects/pickaxe_lrg.png');
 }
@@ -865,6 +882,10 @@ select {
 
 .s-and-w-revolver-inv {
 	background-image: url('../assets/objects/SandWrevolver_lrg.png');
+}
+
+.remington-inv {
+	background-image: url('../assets/objects/remington_lrg.png');
 }
 
 .leather-jacket-inv {
@@ -879,27 +900,43 @@ select {
 /* ACTION BUTTON ICONS */
 
 .first-aid-kit-action {
-	background-image: url('../assets/ui/firstaidkit_sml.png');
+	background-image: url('../assets/objects/firstaidkit_sml.png');
 }
 
 .pharmaceuticals-action {
-	background-image: url('../assets/ui/pharmaceuticals_sml.png');
+	background-image: url('../assets/objects/pharmaceuticals_sml.png');
 }
 
 .acid-concoction-action {
-	background-image: url('../assets/ui/acid_sml.png');
+	background-image: url('../assets/objects/acid_sml.png');
+}
+
+.holy-water-action {
+	background-image: url('../assets/objects/holyWater_sml.png');
+}
+
+.knife-action {
+	background-image: url('../assets/objects/knife_sml.png');
+}
+
+.kris-knife-action {
+	background-image: url('../assets/objects/krisKnife_sml.png');
 }
 
 .pickaxe-action {
-	background-image: url('../assets/ui/pickaxe_sml.png');
+	background-image: url('../assets/objects/pickaxe_sml.png');
 }
 
 .colt-revolver-action {
-	background-image: url('../assets/ui/coltRevolver_sml.png');
+	background-image: url('../assets/objects/coltRevolver_sml.png');
 }
 
 .s-and-w-revolver-action {
-	background-image: url('../assets/ui/SandWrevolver_sml.png');
+	background-image: url('../assets/objects/SandWrevolver_sml.png');
+}
+
+.remington-action {
+	background-image: url('../assets/objects/remington_sml.png');
 }
 
 .refill-action {
