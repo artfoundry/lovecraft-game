@@ -742,10 +742,10 @@ select {
 	font-family: inherit;
 }
 
-.object-info-panel {
+.object-info-panel, .skill-info-panel {
 	position: fixed;
 	max-width: 400px;
-	max-height: 250px;
+	max-height: 400px;
 	padding: 10px;
 	background-color: #225555;
 	font-family: "Century Gothic", sans-serif;
@@ -767,18 +767,34 @@ select {
 	flex-wrap: wrap;
 }
 
+.skill-panel-container {
+	display: flex;
+	flex-direction: column;
+	min-width: 300px;
+}
+
 .object-text-container {
 	flex-basis: 70%;
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
+	align-items: start;
 	gap: 5px;
 	max-height: 200px;
 	overflow-y: auto;
 	margin-bottom: 20px;
 }
 
-.object-panel-buttons-container {
+.skill-text-container {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	max-height: 200px;
+	overflow-y: auto;
+	margin-bottom: 20px;
+}
+
+.object-panel-buttons-container, .skill-panel-buttons-container {
 	display: flex;
 	justify-content: center;
 	gap: 5px;
@@ -1294,6 +1310,10 @@ select {
 
 	.character-info-container, .creature-info-container {
 		border-left: 2px solid seagreen;
+	}
+
+	.object-info-panel {
+		max-height: 250px;
 	}
 
 	.object-panel-container {

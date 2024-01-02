@@ -45,7 +45,7 @@ h2 {
 	cursor: pointer;
 }
 
-.char-creation-button:hover, .char-creation-prof:hover, .char-creation-companion:hover {
+.char-creation-button:hover, .char-creation-prof-header:hover, .char-creation-companion:hover, .char-creation-item:hover {
 	border-color: yellow;
 }
 
@@ -91,9 +91,11 @@ h2 {
 .char-creation-prof, .char-creation-companion {
 	flex-basis: 300px;
 	padding: 10px;
-	border: 1px solid seagreen;
 	border-radius: 5px;
-	cursor: pointer;
+}
+
+.char-creation-prof {
+	border: 1px solid black;
 }
 
 .char-creation-prof-header {
@@ -101,10 +103,34 @@ h2 {
 	justify-content: center;
 	align-items: center;
 	gap: 10px;
+	border: 1px solid seagreen;
+	border-radius: 5px;
+	cursor: pointer;
 }
 
 .char-creation-prof-icon {
 	filter: drop-shadow(4px 4px 2px black);
+}
+
+.char-creation-items-container {
+	display: flex;
+	justify-content: center;
+	gap: 5px;
+}
+
+.char-creation-item {
+	border: 1px solid seagreen;
+	border-radius: 5px;
+}
+
+.char-creation-skill {
+	font-style: italic;
+	cursor: pointer;
+}
+
+.char-creation-companion {
+	border: 1px solid seagreen;
+	cursor: pointer;
 }
 
 #char-creation-finish {
@@ -112,4 +138,8 @@ h2 {
 	flex-direction: column;
 	align-items: center;
 	margin: 20px;
+}
+
+.object-text-container {
+	text-align: left;
 }

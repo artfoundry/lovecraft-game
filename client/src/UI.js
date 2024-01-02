@@ -626,7 +626,7 @@ class UI extends React.Component {
 				setShowDialogProps={this.props.setShowDialogProps}
 				creatureCoords={creatureCoords}
 			/>
-		)
+		);
 	}
 
 	switchEquipment = (id) => {

@@ -1,41 +1,67 @@
 import React from 'react';
-import {diceRoll} from './Utils';
+import {convertObjIdToClassId, diceRoll} from './Utils';
+import {ObjectInfoPanel, SkillInfoPanel} from './UIElements';
 import PlayerCharacterTypes from './data/playerCharacterTypes.json';
 import ItemTypes from './data/itemTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
 import './css/characterCreation.css';
 import './css/playerCharacters.css';
+import './css/ui.css';
 
 export default class CharacterCreation extends React.Component {
 	constructor(props) {
 		super(props);
 
+		this.itemTypes = ItemTypes;
+		this.weaponTypes = WeaponTypes;
+
+		this.objectPanelWidth = this.props.objectPanelWidth;
+		this.objectPanelHeight = this.props.objectPanelHeight;
+
 		this.showRoll = 1;
 		this.baseAttr = 3;
-		this.privateEyeStrBonus = PlayerCharacterTypes.privateEye.strength - this.baseAttr;
-		this.privateEyeAgilBonus = PlayerCharacterTypes.privateEye.agility - this.baseAttr;
-		this.privateEyeMentalBonus = PlayerCharacterTypes.privateEye.mentalAcuity - this.baseAttr;
-		this.archaeologistStrBonus = PlayerCharacterTypes.archaeologist.strength - this.baseAttr;
-		this.archaeologistAgilBonus = PlayerCharacterTypes.archaeologist.agility - this.baseAttr;
-		this.archaeologistMentalBonus = PlayerCharacterTypes.archaeologist.mentalAcuity - this.baseAttr;
-		this.chemistStrBonus = PlayerCharacterTypes.chemist.strength - this.baseAttr;
-		this.chemistAgilBonus = PlayerCharacterTypes.chemist.agility - this.baseAttr;
-		this.chemistMentalBonus = PlayerCharacterTypes.chemist.mentalAcuity - this.baseAttr;
-		this.doctorStrBonus = PlayerCharacterTypes.doctor.strength - this.baseAttr;
-		this.doctorAgilBonus = PlayerCharacterTypes.doctor.agility - this.baseAttr;
-		this.doctorMentalBonus = PlayerCharacterTypes.doctor.mentalAcuity - this.baseAttr;
-		this.priestStrBonus = PlayerCharacterTypes.priest.strength - this.baseAttr;
-		this.priestAgilBonus = PlayerCharacterTypes.priest.agility - this.baseAttr;
-		this.priestMentalBonus = PlayerCharacterTypes.priest.mentalAcuity - this.baseAttr;
-		this.veteranStrBonus = PlayerCharacterTypes.veteran.strength - this.baseAttr;
-		this.veteranAgilBonus = PlayerCharacterTypes.veteran.agility - this.baseAttr;
-		this.veteranMentalBonus = PlayerCharacterTypes.veteran.mentalAcuity - this.baseAttr;
-		this.thiefStrBonus = PlayerCharacterTypes.thief.strength - this.baseAttr;
-		this.thiefAgilBonus = PlayerCharacterTypes.thief.agility - this.baseAttr;
-		this.thiefMentalBonus = PlayerCharacterTypes.thief.mentalAcuity - this.baseAttr;
-		this.occultResearcherStrBonus = PlayerCharacterTypes.occultResearcher.strength - this.baseAttr;
-		this.occultResearcherAgilBonus = PlayerCharacterTypes.occultResearcher.agility - this.baseAttr;
-		this.occultResearcherMentalBonus = PlayerCharacterTypes.occultResearcher.mentalAcuity - this.baseAttr;
+		this.bonuses = {
+			privateEye: {
+				strength: PlayerCharacterTypes.privateEye.strength - this.baseAttr,
+				agility: PlayerCharacterTypes.privateEye.agility - this.baseAttr,
+				mentalAcuity: PlayerCharacterTypes.privateEye.mentalAcuity - this.baseAttr
+			},
+			archaeologist: {
+				strength: PlayerCharacterTypes.archaeologist.strength - this.baseAttr,
+				agility: PlayerCharacterTypes.archaeologist.agility - this.baseAttr,
+				mentalAcuity: PlayerCharacterTypes.archaeologist.mentalAcuity - this.baseAttr
+			},
+			chemist: {
+				strength: PlayerCharacterTypes.chemist.strength - this.baseAttr,
+				agility: PlayerCharacterTypes.chemist.agility - this.baseAttr,
+				mentalAcuity: PlayerCharacterTypes.chemist.mentalAcuity - this.baseAttr
+			},
+			doctor: {
+				strength: PlayerCharacterTypes.doctor.strength - this.baseAttr,
+				agility: PlayerCharacterTypes.doctor.agility - this.baseAttr,
+				mentalAcuity: PlayerCharacterTypes.doctor.mentalAcuity - this.baseAttr
+			},
+			priest: {
+				strength: PlayerCharacterTypes.priest.strength - this.baseAttr,
+				agility: PlayerCharacterTypes.priest.agility - this.baseAttr,
+				mentalAcuity: PlayerCharacterTypes.priest.mentalAcuity - this.baseAttr
+			},
+			veteran: {
+				strength: PlayerCharacterTypes.veteran.strength - this.baseAttr,
+				agility: PlayerCharacterTypes.veteran.agility - this.baseAttr,
+				mentalAcuity: PlayerCharacterTypes.veteran.mentalAcuity - this.baseAttr
+			},
+			thief: {
+				strength: PlayerCharacterTypes.thief.strength - this.baseAttr,
+				agility: PlayerCharacterTypes.thief.agility - this.baseAttr,
+				mentalAcuity: PlayerCharacterTypes.thief.mentalAcuity - this.baseAttr
+			},
+			occultResearcher: {
+				strength: PlayerCharacterTypes.occultResearcher.strength - this.baseAttr,
+				agility: PlayerCharacterTypes.occultResearcher.agility - this.baseAttr,
+				mentalAcuity: PlayerCharacterTypes.occultResearcher.mentalAcuity - this.baseAttr
+			}
+		};
 
 		this.state = {
 			name: '',
@@ -49,7 +75,11 @@ export default class CharacterCreation extends React.Component {
 			statsSaved: {strength: 0, agility: 0, mentalAcuity: 0},
 			rollCount: 1,
 			rollNumSaved: 0,
-			companions: []
+			companions: [],
+			objectSelected: null,
+			needToShowObjectPanel: false,
+			skillSelected: null,
+			needToShowSkillPanel: false
 		}
 	}
 
@@ -68,6 +98,59 @@ export default class CharacterCreation extends React.Component {
 		this.updateValue({companions: list});
 	}
 
+	showObjectPanel = () => {
+		const top = `calc(50% - ${this.objectPanelHeight / 2}px)`;
+		const left = `calc(50% - ${this.objectPanelWidth / 2}px)`;
+		return (
+			<ObjectInfoPanel
+				objectInfo={this.state.objectSelected}
+				selectedObjPos={{top, left}}
+				isDraggedObject={false}
+				setObjectSelected={this.setObjectSelected}
+				setObjectPanelDisplayOption={this.setObjectPanelDisplayOption}
+				objHasBeenDropped={false}
+				isPickUpAction={false}
+				isMapObj={false}
+			/>
+		);
+	}
+
+	setObjectSelected = (objectSelected, needToShowObjectPanel) => {
+		this.setState({objectSelected}, () => this.setObjectPanelDisplayOption(needToShowObjectPanel));
+	}
+
+	/**
+	 * Sets whether to show object info panel
+	 * @param needToShowObjectPanel: boolean (false when closing panel)
+	 */
+	setObjectPanelDisplayOption = (needToShowObjectPanel) => {
+		this.setState({needToShowObjectPanel});
+	}
+
+	showSkillPanel = () => {
+		const top = `calc(50% - ${this.objectPanelHeight / 2}px)`;
+		const left = `calc(50% - ${this.objectPanelWidth / 2}px)`;
+		return (
+			<SkillInfoPanel
+				skillInfo={this.state.skillSelected}
+				setSkillSelected={this.setSkillSelected}
+				setSkillPanelDisplayOption={this.setSkillPanelDisplayOption}
+				panelPos={{top, left}}
+			/>
+		);
+	}
+
+	setSkillSelected = (skillSelected, needToShowSkillPanel) => {
+		this.setState({skillSelected}, () => this.setSkillPanelDisplayOption(needToShowSkillPanel));
+	}
+
+	/**
+	 * Sets whether to show object info panel
+	 * @param needToShowSkillPanel: boolean (false when closing panel)
+	 */
+	setSkillPanelDisplayOption = (needToShowSkillPanel) => {
+		this.setState({needToShowSkillPanel});
+	}
 
 	rollStats = () => {
 		setTimeout(() => {
@@ -89,6 +172,90 @@ export default class CharacterCreation extends React.Component {
 				}
 			});
 		}, 150);
+	}
+
+	listSkills = (props) => {
+		const id = props.id;
+		const allSkills = PlayerCharacterTypes[id].skills;
+		let skillButtonList = [];
+
+		for (const [skillId, skillInfo] of Object.entries(allSkills)) {
+			skillButtonList.push(
+				<div key={id + '-' + skillId}
+				     className='char-creation-skill'
+				     onClick={() => {
+					this.setSkillSelected({...skillInfo, id: skillId}, true);
+				}}>{skillInfo.name}</div>
+			)
+		}
+		return skillButtonList;
+	}
+
+	listItems = (props) => {
+		const id = props.id;
+		const allItems = {...PlayerCharacterTypes[id].weapons, ...PlayerCharacterTypes[id].items};
+		let itemButtonList = [];
+
+		for (const [itemId, itemInfo] of Object.entries(allItems)) {
+			itemButtonList.push(
+				<div key={id + '-' + itemId} className={`inv-object ${convertObjIdToClassId(itemId)}-inv char-creation-item`} onClick={() => {
+					const object = this.itemTypes[itemInfo.name] || this.weaponTypes[itemInfo.name];
+					object.id = itemId;
+					object.name = itemInfo.name;
+					this.setObjectSelected(object, true);
+				}}></div>
+			)
+		}
+		return itemButtonList;
+	}
+
+	listProfessions = () => {
+		let professionsList = [];
+
+		for (const [id, profInfo] of Object.entries(PlayerCharacterTypes)) {
+			professionsList.push(
+				<div className='char-creation-prof' key={id}>
+					<div className={`char-creation-prof-header ${this.state.profession === id ? 'button-selected' : ''}`}
+					     onClick={() => this.updateValue({profession: id})}
+					>
+						<div className={`char-creation-prof-icon ${convertObjIdToClassId(id)}`}></div>
+						<h4 className='font-fancy'>{profInfo.profession}</h4>
+					</div>
+					<p><u>Starting Attributes</u></p>
+					<div>Strength: {this.state.statsSaved.strength + this.bonuses[id].strength} ({this.bonuses[id].strength + (this.bonuses[id].strength >= 0 ? ' bonus' : ' penalty')})</div>
+					<div>Agility: {this.state.statsSaved.agility + this.bonuses[id].agility} ({this.bonuses[id].agility + (this.bonuses[id].agility >= 0 ? ' bonus' : ' penalty')})</div>
+					<div>Mental Acuity: {this.state.statsSaved.mentalAcuity + this.bonuses[id].mentalAcuity} ({this.bonuses[id].mentalAcuity + (this.bonuses[id].mentalAcuity >= 0 ? ' bonus' : ' penalty')})</div>
+					<div>Starting Health: {PlayerCharacterTypes[id].startingHealth}</div>
+					<div>Starting Sanity: {PlayerCharacterTypes[id].startingSanity}</div>
+					<div>Starting Spirit: {PlayerCharacterTypes[id].startingSpirit}</div>
+					<p><u>Starting Equipment</u></p>
+					<div className='char-creation-items-container'>
+						{<this.listItems id={id} />}
+					</div>
+					<p><u>Starting Skills</u></p>
+					<div>
+						{<this.listSkills id={id} />}
+					</div>
+				</div>
+			)
+		}
+		return professionsList;
+	}
+
+	listCompanions = () => {
+		let companionList = [];
+
+		for (const [id, profInfo] of Object.entries(PlayerCharacterTypes)) {
+			companionList.push(
+				<div key={profInfo.name} className={`char-creation-companion ${this.state.companions.includes(id) ? 'button-selected' : ''}`}
+				     onClick={() => this.addCompanion(id)}
+				>
+					<h4 className='font-fancy'>{profInfo.name}</h4>
+					<p>{profInfo.profession}</p>
+				</div>
+			);
+		}
+		return companionList;
 	}
 
 	render() {
@@ -133,7 +300,7 @@ export default class CharacterCreation extends React.Component {
 					</label>
 
 					<h3 className='font-fancy'>~ Attributes ~</h3>
-					<div>Roll your initial attributes: Roll three times, then choose one.</div>
+					<div>Roll your initial attributes: Roll up to three times, then choose one.</div>
 
 					<div id='char-creation-stat-roll-container'>
 						<div className={`char-creation-button roll-button ${this.state.rollCount > 3 ? 'button-disabled' : ''}`} onClick={this.rollStats}>Roll</div>
@@ -150,10 +317,10 @@ export default class CharacterCreation extends React.Component {
 						<div className='stat-roll-box'>{this.state.statsRolled.roll2.mentalAcuity}</div>
 						<div className='stat-roll-box'>{this.state.statsRolled.roll3.mentalAcuity}</div>
 						<div>Now choose:</div>
-						<div className={`char-creation-button ${this.state.statsRolled.roll3.strength === 0 ? 'button-disabled' : ''} ${this.state.rollNumSaved === 1 ? 'button-selected' : ''}`}
+						<div className={`char-creation-button ${this.state.statsRolled.roll1.strength === 0 ? 'button-disabled' : ''} ${this.state.rollNumSaved === 1 ? 'button-selected' : ''}`}
 						     onClick={() => this.updateValue({statsSaved: this.state.statsRolled.roll1, rollNumSaved: 1})}
 						>1</div>
-						<div className={`char-creation-button ${this.state.statsRolled.roll3.strength === 0 ? 'button-disabled' : ''} ${this.state.rollNumSaved === 2 ? 'button-selected' : ''}`}
+						<div className={`char-creation-button ${this.state.statsRolled.roll2.strength === 0 ? 'button-disabled' : ''} ${this.state.rollNumSaved === 2 ? 'button-selected' : ''}`}
 						     onClick={() => this.updateValue({statsSaved: this.state.statsRolled.roll2, rollNumSaved: 2})}
 						>2</div>
 						<div className={`char-creation-button ${this.state.statsRolled.roll3.strength === 0 ? 'button-disabled' : ''} ${this.state.rollNumSaved === 3 ? 'button-selected' : ''}`}
@@ -164,158 +331,7 @@ export default class CharacterCreation extends React.Component {
 
 					<h3 className='font-fancy'>~ Professions ~</h3>
 					<div id='char-creation-prof-container'>
-						<div className={`char-creation-prof ${this.state.profession === 'privateEye' ? 'button-selected' : ''}`}
-						     onClick={() => this.updateValue({profession: 'privateEye'})}
-						>
-							<div className='char-creation-prof-header'>
-								<div className='char-creation-prof-icon private-eye'></div>
-								<h4 className='font-fancy'>Private Investigator</h4>
-							</div>
-							<p><u>Starting Attributes</u></p>
-							<div>Strength: {this.state.statsSaved.strength + this.privateEyeStrBonus} ({this.privateEyeStrBonus + (this.privateEyeStrBonus >= 0 ? ' bonus' : ' penalty')})</div>
-							<div>Agility: {this.state.statsSaved.agility + this.privateEyeAgilBonus} ({this.privateEyeAgilBonus + (this.privateEyeAgilBonus >= 0 ? ' bonus' : ' penalty')})</div>
-							<div>Mental Acuity: {this.state.statsSaved.mentalAcuity + this.privateEyeMentalBonus} ({this.privateEyeMentalBonus + (this.privateEyeMentalBonus >= 0 ? ' bonus' : ' penalty')})</div>
-							<div>Starting Health: {PlayerCharacterTypes.privateEye.startingHealth}</div>
-							<div>Starting Sanity: {PlayerCharacterTypes.privateEye.startingSanity}</div>
-							<div>Starting Spirit: {PlayerCharacterTypes.privateEye.startingSpirit}</div>
-							<p><u>Starting Equipment</u></p>
-							<div>Colt Revolver (6 rounds), 6 extra Handgun Ammo, Lantern</div>
-							<p><u>Starting Skills</u></p>
-							<div>Quick Reload: Reload your handgun without using an action (20 Spirit)</div>
-						</div>
-						<div className={`char-creation-prof ${this.state.profession === 'archaeologist' ? 'button-selected' : ''}`}
-						     onClick={() => this.updateValue({profession: 'archaeologist'})}
-						>
-							<div className='char-creation-prof-header'>
-								<div className='char-creation-prof-icon archaeologist'></div>
-								<h4 className='font-fancy'>Archaeologist</h4>
-							</div>
-							<p><u>Starting Attributes</u></p>
-							<div>Strength: {this.state.statsSaved.strength + this.archaeologistStrBonus} ({this.archaeologistStrBonus + (this.archaeologistStrBonus >= 0 ? ' bonus' : ' penalty')})</div>
-							<div>Agility: {this.state.statsSaved.agility + this.archaeologistAgilBonus} ({this.archaeologistAgilBonus + (this.archaeologistAgilBonus >= 0 ? ' bonus' : ' penalty')})</div>
-							<div>Mental Acuity: {this.state.statsSaved.mentalAcuity + this.archaeologistMentalBonus} ({this.archaeologistMentalBonus + (this.archaeologistMentalBonus >= 0 ? ' bonus' : ' penalty')})</div>
-							<div>Starting Health: {PlayerCharacterTypes.archaeologist.startingHealth}</div>
-							<div>Starting Sanity: {PlayerCharacterTypes.archaeologist.startingSanity}</div>
-							<div>Starting Spirit: {PlayerCharacterTypes.archaeologist.startingSpirit}</div>
-							<p><u>Starting Equipment</u></p>
-							<div>Pickaxe, Torch</div>
-							<p><u>Starting Skills</u></p>
-							<div>Always On The Lookout: Increased chance of finding Relics</div>
-						</div>
-						<div className={`char-creation-prof ${this.state.profession === 'chemist' ? 'button-selected' : ''}`}
-						     onClick={() => this.updateValue({profession: 'chemist'})}
-						>
-							<div className='char-creation-prof-header'>
-								<div className='char-creation-prof-icon chemist'></div>
-								<h4 className='font-fancy'>Chemist</h4>
-							</div>
-							<p><u>Starting Attributes</u></p>
-							<div>Strength: {this.state.statsSaved.strength + this.chemistStrBonus} ({this.chemistStrBonus + (this.chemistStrBonus >= 0 ? ' bonus' : ' penalty')})</div>
-							<div>Agility: {this.state.statsSaved.agility + this.chemistAgilBonus} ({this.chemistAgilBonus + (this.chemistAgilBonus >= 0 ? ' bonus' : ' penalty')})</div>
-							<div>Mental Acuity: {this.state.statsSaved.mentalAcuity + this.chemistMentalBonus} ({this.chemistMentalBonus + (this.chemistMentalBonus >= 0 ? ' bonus' : ' penalty')})</div>
-							<div>Starting Health: {PlayerCharacterTypes.chemist.startingHealth}</div>
-							<div>Starting Sanity: {PlayerCharacterTypes.chemist.startingSanity}</div>
-							<div>Starting Spirit: {PlayerCharacterTypes.chemist.startingSpirit}</div>
-							<p><u>Starting Equipment</u></p>
-							<div>2 Acid Concoctions, 1 Pharmaceutical, Lantern</div>
-							<p><u>Starting Skills</u></p>
-							<div>Brew Concoctions: Can create 1 Acid Concoction or 1 Pharmaceutical (20 Spirit)</div>
-						</div>
-						<div className={`char-creation-prof ${this.state.profession === 'doctor' ? 'button-selected' : ''}`}
-						     onClick={() => this.updateValue({profession: 'doctor'})}
-						>
-							<div className='char-creation-prof-header'>
-								<div className='char-creation-prof-icon doctor'></div>
-								<h4 className='font-fancy'>Doctor</h4>
-							</div>
-							<p><u>Starting Attributes</u></p>
-							<div>Strength: {this.state.statsSaved.strength + this.doctorStrBonus} ({this.doctorStrBonus + (this.doctorStrBonus >= 0 ? ' bonus' : ' penalty')})</div>
-							<div>Agility: {this.state.statsSaved.agility + this.doctorAgilBonus} ({this.doctorAgilBonus + (this.doctorAgilBonus >= 0 ? ' bonus' : ' penalty')})</div>
-							<div>Mental Acuity: {this.state.statsSaved.mentalAcuity + this.doctorMentalBonus} ({this.doctorMentalBonus + (this.doctorMentalBonus >= 0 ? ' bonus' : ' penalty')})</div>
-							<div>Starting Health: {PlayerCharacterTypes.doctor.startingHealth}</div>
-							<div>Starting Sanity: {PlayerCharacterTypes.doctor.startingSanity}</div>
-							<div>Starting Spirit: {PlayerCharacterTypes.doctor.startingSpirit}</div>
-							<p><u>Starting Equipment</u></p>
-							<div>2 First Aid Kits, 1 Pharmaceuticals, Lantern</div>
-							<p><u>Starting Skills</u></p>
-
-						</div>
-						<div className={`char-creation-prof ${this.state.profession === 'priest' ? 'button-selected' : ''}`}
-						     onClick={() => this.updateValue({profession: 'priest'})}
-						>
-							<div className='char-creation-prof-header'>
-								<div className='char-creation-prof-icon priest'></div>
-								<h4 className='font-fancy'>Priest</h4>
-							</div>
-							<p><u>Starting Attributes</u></p>
-							<div>Strength: {this.state.statsSaved.strength + this.priestStrBonus} ({this.priestStrBonus + (this.priestStrBonus >= 0 ? ' bonus' : ' penalty')})</div>
-							<div>Agility: {this.state.statsSaved.agility + this.priestAgilBonus} ({this.priestAgilBonus + (this.priestAgilBonus >= 0 ? ' bonus' : ' penalty')})</div>
-							<div>Mental Acuity: {this.state.statsSaved.mentalAcuity + this.priestMentalBonus} ({this.priestMentalBonus + (this.priestMentalBonus >= 0 ? ' bonus' : ' penalty')})</div>
-							<div>Starting Health: {PlayerCharacterTypes.priest.startingHealth}</div>
-							<div>Starting Sanity: {PlayerCharacterTypes.priest.startingSanity}</div>
-							<div>Starting Spirit: {PlayerCharacterTypes.priest.startingSpirit}</div>
-							<p><u>Starting Equipment</u></p>
-							<div>2 Holy Water vials, Baseball Bat, 1 First Aid Kit, Torch</div>
-							<p><u>Starting Skills</u></p>
-
-						</div>
-						<div className={`char-creation-prof ${this.state.profession === 'veteran' ? 'button-selected' : ''}`}
-						     onClick={() => this.updateValue({profession: 'veteran'})}
-						>
-							<div className='char-creation-prof-header'>
-								<div className='char-creation-prof-icon veteran'></div>
-								<h4 className='font-fancy'>WWI Veteran</h4>
-							</div>
-							<p><u>Starting Attributes</u></p>
-							<div>Strength: {this.state.statsSaved.strength + this.veteranStrBonus} ({this.veteranStrBonus + (this.veteranStrBonus >= 0 ? ' bonus' : ' penalty')})</div>
-							<div>Agility: {this.state.statsSaved.agility + this.veteranAgilBonus} ({this.veteranAgilBonus + (this.veteranAgilBonus >= 0 ? ' bonus' : ' penalty')})</div>
-							<div>Mental Acuity: {this.state.statsSaved.mentalAcuity + this.veteranMentalBonus} ({this.veteranMentalBonus + (this.veteranMentalBonus >= 0 ? ' bonus' : ' penalty')})</div>
-							<div>Starting Health: {PlayerCharacterTypes.veteran.startingHealth}</div>
-							<div>Starting Sanity: {PlayerCharacterTypes.veteran.startingSanity}</div>
-							<div>Starting Spirit: {PlayerCharacterTypes.veteran.startingSpirit}</div>
-							<p><u>Starting Equipment</u></p>
-							<div>Remington shotgun (5 rounds), 5 extra Shotgun Ammo, Knife, Leather Jacket</div>
-							<p><u>Starting Skills</u></p>
-
-						</div>
-						<div className={`char-creation-prof ${this.state.profession === 'thief' ? 'button-selected' : ''}`}
-						     onClick={() => this.updateValue({profession: 'thief'})}
-						>
-							<div className='char-creation-prof-header'>
-								<div className='char-creation-prof-icon thief'></div>
-								<h4 className='font-fancy'>Thief</h4>
-							</div>
-							<p><u>Starting Attributes</u></p>
-							<div>Strength: {this.state.statsSaved.strength + this.thiefStrBonus} ({this.thiefStrBonus + (this.thiefStrBonus >= 0 ? ' bonus' : ' penalty')})</div>
-							<div>Agility: {this.state.statsSaved.agility + this.thiefAgilBonus} ({this.thiefAgilBonus + (this.thiefAgilBonus >= 0 ? ' bonus' : ' penalty')})</div>
-							<div>Mental Acuity: {this.state.statsSaved.mentalAcuity + this.thiefMentalBonus} ({this.thiefMentalBonus + (this.thiefMentalBonus >= 0 ? ' bonus' : ' penalty')})</div>
-							<div>Starting Health: {PlayerCharacterTypes.thief.startingHealth}</div>
-							<div>Starting Sanity: {PlayerCharacterTypes.thief.startingSanity}</div>
-							<div>Starting Spirit: {PlayerCharacterTypes.thief.startingSpirit}</div>
-							<p><u>Starting Equipment</u></p>
-							<div>Knife, Electric Torch</div>
-							<p><u>Starting Skills</u></p>
-
-						</div>
-						<div className={`char-creation-prof ${this.state.profession === 'occultResearcher' ? 'button-selected' : ''}`}
-						     onClick={() => this.updateValue({profession: 'occultResearcher'})}
-						>
-							<div className='char-creation-prof-header'>
-								<div className='char-creation-prof-icon occult-researcher'></div>
-								<h4 className='font-fancy'>Occult Researcher</h4>
-							</div>
-							<p><u>Starting Attributes</u></p>
-							<div>Strength: {this.state.statsSaved.strength + this.occultResearcherStrBonus} ({this.occultResearcherStrBonus + (this.occultResearcherStrBonus >= 0 ? ' bonus' : ' penalty')})</div>
-							<div>Agility: {this.state.statsSaved.agility + this.occultResearcherAgilBonus} ({this.occultResearcherAgilBonus + (this.occultResearcherAgilBonus >= 0 ? ' bonus' : ' penalty')})</div>
-							<div>Mental Acuity: {this.state.statsSaved.mentalAcuity + this.occultResearcherMentalBonus} ({this.occultResearcherMentalBonus + (this.occultResearcherMentalBonus >= 0 ? ' bonus' : ' penalty')})</div>
-							<div>Starting Health: {PlayerCharacterTypes.occultResearcher.startingHealth}</div>
-							<div>Starting Sanity: {PlayerCharacterTypes.occultResearcher.startingSanity}</div>
-							<div>Starting Spirit: {PlayerCharacterTypes.occultResearcher.startingSpirit}</div>
-							<p><u>Starting Equipment</u></p>
-							<div>Kris Knife, Lantern</div>
-							<p><u>Starting Skills</u></p>
-
-						</div>
+						{<this.listProfessions />}
 					</div>
 
 					<h3><u>Now choose two companions.</u></h3>
@@ -323,54 +339,7 @@ export default class CharacterCreation extends React.Component {
 
 					<h3 className='font-fancy'>~ Companions ~</h3>
 					<div id='char-creation-companions-container'>
-						<div className={`char-creation-companion ${this.state.companions.includes('privateEye') ? 'button-selected' : ''}`}
-						     onClick={() => this.addCompanion('privateEye')}
-						>
-							<h4 className='font-fancy'>Joseph Hide</h4>
-							<p>Private Investigator</p>
-						</div>
-						<div className={`char-creation-companion ${this.state.companions.includes('archaeologist') ? 'button-selected' : ''}`}
-						     onClick={() => this.addCompanion('archaeologist')}
-						>
-							<h4 className='font-fancy'>Mary Simpleton</h4>
-							<p>Archaeologist</p>
-						</div>
-						<div className={`char-creation-companion ${this.state.companions.includes('chemist') ? 'button-selected' : ''}`}
-						     onClick={() => this.addCompanion('chemist')}
-						>
-							<h4 className='font-fancy'>Helen Abernathy</h4>
-							<p>Chemist</p>
-						</div>
-						<div className={`char-creation-companion ${this.state.companions.includes('doctor') ? 'button-selected' : ''}`}
-						     onClick={() => this.addCompanion('doctor')}
-						>
-							<h4 className='font-fancy'>Thomas Wade</h4>
-							<p>Doctor</p>
-						</div>
-						<div className={`char-creation-companion ${this.state.companions.includes('priest') ? 'button-selected' : ''}`}
-						     onClick={() => this.addCompanion('priest')}
-						>
-							<h4 className='font-fancy'>Peter Mulcahy</h4>
-							<p>Priest</p>
-						</div>
-						<div className={`char-creation-companion ${this.state.companions.includes('veteran') ? 'button-selected' : ''}`}
-						     onClick={() => this.addCompanion('veteran')}
-						>
-							<h4 className='font-fancy'>Frank Wilcox</h4>
-							<p>WWI Veteran</p>
-						</div>
-						<div className={`char-creation-companion ${this.state.companions.includes('thief') ? 'button-selected' : ''}`}
-						     onClick={() => this.addCompanion('thief')}
-						>
-							<h4 className='font-fancy'>Elizabeth Smith</h4>
-							<p>Thief</p>
-						</div>
-						<div className={`char-creation-companion ${this.state.companions.includes('occultResearcher') ? 'button-selected' : ''}`}
-						     onClick={() => this.addCompanion('occultResearcher')}
-						>
-							<h4 className='font-fancy'>Philip Howard</h4>
-							<p>Occult Researcher</p>
-						</div>
+						{<this.listCompanions />}
 					</div>
 
 					<hr />
@@ -392,6 +361,8 @@ export default class CharacterCreation extends React.Component {
 						>Venture Forth!</div>
 					</div>
 				</form>
+				{this.state.needToShowObjectPanel && <this.showObjectPanel />}
+				{this.state.needToShowSkillPanel && <this.showSkillPanel />}
 			</div>
 		);
 	}

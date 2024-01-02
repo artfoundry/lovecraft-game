@@ -1065,6 +1065,8 @@ class Game extends React.Component {
 				{this.state.isLoggedIn && this.showCharacterCreation && !this.state.characterCreated &&
 					<CharacterCreation
 						saveCreatedCharacter={this.saveCreatedCharacter}
+						objectPanelWidth={this.objectPanelWidth}
+						objectPanelHeight={this.objectPanelHeight}
 					/>
 				}
 

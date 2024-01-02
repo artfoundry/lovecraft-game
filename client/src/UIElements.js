@@ -524,6 +524,36 @@ function ObjectInfoPanel(props) {
 	);
 }
 
+function SkillInfoPanel(props) {
+	const {
+		skillInfo,
+		setSkillSelected,
+		setSkillPanelDisplayOption,
+		panelPos} = {...props};
+	const [skillToShow] = useState(skillInfo);
+	const cancelSkillPanel = () => {
+		setSkillSelected(null, null);
+		setSkillPanelDisplayOption(false);
+	}
+	return (
+		<div className='skill-info-panel ui-panel' style={{top: panelPos.top, left: panelPos.left}}>
+			<div className='general-button' onClick={() => cancelSkillPanel()}>X</div>
+			{skillToShow &&
+				<div className='skill-panel-container'>
+					<div className='skill-text-container'>
+						<div className='font-fancy'>{skillToShow.name}</div>
+						<div>{skillToShow.description}</div>
+						{/*Need to show cost/bonus*/}
+					</div>
+					<div className='skill-panel-buttons-container'>
+						<span className='general-button' onClick={() => cancelSkillPanel()}>Cancel</span>
+					</div>
+				</div>
+			}
+		</div>
+	)
+}
+
 function CreatureInfoPanel(props) {
 	return (
 		<div className={`creature-info-container ui-panel ${props.creatureIsSelected ? '' : 'hide'}`}>
@@ -763,4 +793,4 @@ function GameOptions(props) {
 	);
 }
 
-export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, DialogWindow, ContextMenu, HelpScreen, GameOptions};
+export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, SkillInfoPanel, ModeInfoPanel, DialogWindow, ContextMenu, HelpScreen, GameOptions};
