@@ -25,15 +25,47 @@ class Game extends React.Component {
 		this.playerMovesLimit = 3;
 		this.playerActionsLimit = 2;
 
-		this.minScreenWidth = 1000;
+		this.minScreenWidthForSmall = 1000;
+		this.minScreenWidthForNarrow = 768;
 		this.minScreenHeight = 768;
-		this.objectPanelWidth = 300;
+		this.objectPanelWidth = 400;
 		this.objectPanelHeight = 250;
 		this.contextMenuWidth = 128;
 		this.contextMenuHeight = 32;
 		this.uiControlBarHeight = 160;
 
 		this.firebase = new Firebase();
+
+		this.notEnoughSpaceDialogProps = {
+			dialogContent: "That character's inventory space is full. Drop or trade out something first.",
+			closeButtonText: 'Ok',
+			closeButtonCallback: null,
+			disableCloseButton: false,
+			actionButtonVisible: false,
+			actionButtonText: '',
+			actionButtonCallback: null,
+			dialogClasses: ''
+		};
+		this.noMoreActionsDialogProps = {
+			dialogContent: 'That character has no more actions this turn',
+			closeButtonText: 'Ok',
+			closeButtonCallback: null,
+			disableCloseButton: false,
+			actionButtonVisible: false,
+			actionButtonText: '',
+			actionButtonCallback: null,
+			dialogClasses: ''
+		};
+		this.noMoreMovesDialogProps = {
+			dialogContent: 'That character has no more moves this turn',
+			closeButtonText: 'Ok',
+			closeButtonCallback: null,
+			disableCloseButton: false,
+			actionButtonVisible: false,
+			actionButtonText: '',
+			actionButtonCallback: null,
+			dialogClasses: ''
+		};
 
 		/**
 		 * Creature data structure : {
@@ -56,7 +88,8 @@ class Game extends React.Component {
 			screenData: {
 				width: window.innerWidth,
 				height: window.innerHeight,
-				isNarrow: window.innerWidth < this.minScreenWidth,// && window.innerWidth < window.innerHeight,
+				isSmall: window.innerWidth < this.minScreenWidthForSmall || window.innerHeight < this.minScreenHeight,
+				isNarrow: window.innerWidth < this.minScreenWidthForNarrow && window.innerWidth < window.innerHeight,
 				isShort: window.innerHeight < this.minScreenHeight && window.innerHeight < window.innerWidth,
 				isIOS: navigator.userAgent.includes('iPhone OS')
 			},
@@ -106,37 +139,6 @@ class Game extends React.Component {
 			centerOnPlayer: false,
 			logText: []
 		}
-
-		this.notEnoughSpaceDialogProps = {
-			dialogContent: "That character's inventory space is full. Drop or trade out something first.",
-			closeButtonText: 'Ok',
-			closeButtonCallback: null,
-			disableCloseButton: false,
-			actionButtonVisible: false,
-			actionButtonText: '',
-			actionButtonCallback: null,
-			dialogClasses: ''
-		};
-		this.noMoreActionsDialogProps = {
-			dialogContent: 'That character has no more actions this turn',
-			closeButtonText: 'Ok',
-			closeButtonCallback: null,
-			disableCloseButton: false,
-			actionButtonVisible: false,
-			actionButtonText: '',
-			actionButtonCallback: null,
-			dialogClasses: ''
-		};
-		this.noMoreMovesDialogProps = {
-			dialogContent: 'That character has no more moves this turn',
-			closeButtonText: 'Ok',
-			closeButtonCallback: null,
-			disableCloseButton: false,
-			actionButtonVisible: false,
-			actionButtonText: '',
-			actionButtonCallback: null,
-			dialogClasses: ''
-		};
 	}
 
 	/**
@@ -176,7 +178,8 @@ class Game extends React.Component {
 		const screenData = {...this.state.screenData};
 		screenData.width = window.innerWidth;
 		screenData.height = window.innerHeight;
-		screenData.isNarrow = screenData.width < this.minScreenWidth;// && screenData.width < screenData.height;
+		screenData.isSmall = window.innerWidth < this.minScreenWidthForSmall || window.innerHeight < this.minScreenHeight;
+		screenData.isNarrow = screenData.width < this.minScreenWidthForNarrow && screenData.width < screenData.height;
 		screenData.isShort = screenData.height < this.minScreenHeight && screenData.height < screenData.width;
 		this.setState({screenData});
 	}

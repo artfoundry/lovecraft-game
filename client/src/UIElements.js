@@ -129,13 +129,13 @@ function CharacterControls(props) {
 		</div>
 	);
 
-	const displayCharName = ((props.screenData.isNarrow || props.screenData.isShort) && props.characterId === props.selectedControlTab) || (!props.screenData.isNarrow && !props.screenData.isShort);
+	const displayCharName = !props.screenData.isSmall || (props.screenData.isSmall && props.characterId === props.selectedControlTab);
 	const healthLevel = (currentPCdata.currentHealth / currentPCdata.startingHealth) * 100;
 	const sanityLevel = (currentPCdata.currentSanity / currentPCdata.startingSanity) * 100;
 	const spiritLevel = (currentPCdata.currentSpirit / currentPCdata.startingSpirit) * 100;
 	return (
 		<div
-			id={`${((props.screenData.isNarrow || props.screenData.isShort) && props.characterId === props.selectedControlTab) ? 'control-bar-tab-1' : ''}`}
+			id={`${(props.screenData.isSmall && props.characterId === props.selectedControlTab) ? 'control-bar-tab-1' : ''}`}
 			className='control-bar-tab-container'
 			onDragOver={(evt) => handleItemOverDropZone(evt)}
 			onDrop={(evt) => props.dropItemToPC(evt, props.characterId)}>
@@ -172,7 +172,7 @@ function CharacterControls(props) {
 			</div>
 			<div
 				id={`char-control-${props.characterId}`}
-				className={`control-bar-buttons-container ${((props.screenData.isNarrow || props.screenData.isShort) && props.characterId !== props.selectedControlTab) ? 'hide' : ''}`}>
+				className={`control-bar-buttons-container ${(props.screenData.isSmall && props.characterId !== props.selectedControlTab) ? 'hide' : ''}`}>
 				{weaponButtons}
 				{medicineButtons}
 				<div className='misc-action-buttons-container'>
@@ -413,7 +413,10 @@ function ObjectInfoPanel(props) {
 					<div key={obj.id}>
 						<div className='object-row-with-buttons'>
 							<div className={`inv-object ${convertObjIdToClassId(obj.id)}`}></div>
-							<div className='font-fancy object-list-objname'>{obj.name}</div>
+							<div>
+								<div className='font-fancy object-list-objname'>{obj.name}</div>
+								<div>{obj.description}</div>
+							</div>
 							{isPickUpAction &&
 								<div className='general-button' onClick={() => updateObjToShow(obj)}>Show</div>
 							}
