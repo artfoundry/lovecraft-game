@@ -2542,6 +2542,7 @@ class Map extends React.Component {
 		}
 		if (prevProps.screenData.width !== this.props.screenData.width ||
 			prevProps.screenData.height !== this.props.screenData.height ||
+			prevProps.screenData.isSmall !== this.props.screenData.isSmall ||
 			prevProps.screenData.isNarrow !== this.props.screenData.isNarrow ||
 			prevProps.screenData.isShort !== this.props.screenData.isShort ||
 			prevProps.gameOptions.screenZoom !== this.props.gameOptions.screenZoom)

@@ -573,11 +573,15 @@ class UI extends React.Component {
 			const yBuffer = 80;
 			const leftMod = x > (window.innerWidth - panelWidth) ? -(panelWidth + xBuffer) : 0;
 			const halfScreenHeight = this.props.screenData.height / 2;
-			const controlBarTopPos = this.props.screenData.height - this.props.uiControlBarHeight;
-			// if context menu or clicked item is top half of screen, position at cursor;
-			// or if clicking pick up action button, push up 3x buffer;
-			// otherwise, clicked lower half of screen, push up 1x buffer
-			const topMod = (panelType === 'menu') || (y < halfScreenHeight) ? 0 : y > controlBarTopPos ? -(yBuffer * 3) : -yBuffer;
+			const controlBarTopPos = this.props.screenData.height - this.props.uiControlBarHeight - yBuffer;
+			let topMod = 0;
+			// if context menu and clicked at bottom of screen (below where top of control bar is), bump up a little
+			if (panelType === 'menu' && y > controlBarTopPos) {
+				topMod = -yBuffer;
+			// else if object panel and clicked at lower half of screen, bump up a lot if below top of control bar height or a little if above control bar
+			} else if (panelType === 'object' && y > halfScreenHeight) {
+				topMod = y > controlBarTopPos ? -(yBuffer * 3) : -yBuffer;
+			}
 			coords = {left: x + leftMod, top: y + topMod};
 		}
 		return coords;
