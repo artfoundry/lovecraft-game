@@ -15,9 +15,6 @@ export default class CharacterCreation extends React.Component {
 		this.itemTypes = ItemTypes;
 		this.weaponTypes = WeaponTypes;
 
-		this.objectPanelWidth = this.props.objectPanelWidth;
-		this.objectPanelHeight = this.props.objectPanelHeight;
-
 		this.showRoll = 1;
 		this.baseAttr = 3;
 		this.bonuses = {
@@ -99,8 +96,8 @@ export default class CharacterCreation extends React.Component {
 	}
 
 	showObjectPanel = () => {
-		const top = `calc(50% - ${this.objectPanelHeight / 2}px)`;
-		const left = `calc(50% - ${this.objectPanelWidth / 2}px)`;
+		const top = `calc(50% - ${this.props.objectPanelHeight / 2}px)`;
+		const left = this.props.screenData.isNarrow ? 0 : `calc(50% - ${this.props.objectPanelWidth / 2}px)`;
 		return (
 			<ObjectInfoPanel
 				objectInfo={this.state.objectSelected}
@@ -128,8 +125,8 @@ export default class CharacterCreation extends React.Component {
 	}
 
 	showSkillPanel = () => {
-		const top = `calc(50% - ${this.objectPanelHeight / 2}px)`;
-		const left = `calc(50% - ${this.objectPanelWidth / 2}px)`;
+		const top = `calc(50% - ${this.props.objectPanelHeight / 2}px)`;
+		const left = `calc(50% - ${this.props.objectPanelWidth / 2}px)`;
 		return (
 			<SkillInfoPanel
 				skillInfo={this.state.skillSelected}

@@ -1070,6 +1070,7 @@ class Game extends React.Component {
 						saveCreatedCharacter={this.saveCreatedCharacter}
 						objectPanelWidth={this.objectPanelWidth}
 						objectPanelHeight={this.objectPanelHeight}
+						screenData={this.state.screenData}
 					/>
 				}
 
