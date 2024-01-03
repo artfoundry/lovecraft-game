@@ -1119,9 +1119,10 @@ select {
 
 /* For wider mobile screens (or desktop window sized down) */
 @media (768px <= width < 1000px) {
+	/* Reduced height of first row to provide as much play space as possible */
 	#ui-container {
 		grid-template-columns: 1fr;
-		grid-template-rows: 150px 1fr 100px;
+		grid-template-rows: 115px 1fr 100px;
 		grid-template-areas:
 		"turnInfo"
 		"characterInfo"
@@ -1129,7 +1130,6 @@ select {
 	}
 
 	.turn-info-container {
-		max-height: 180px;
 		border: 0;
 		border-bottom: 2px solid seagreen;
 		border-radius: 0;
@@ -1177,9 +1177,10 @@ select {
 		box-sizing: border-box;
 	}
 
+	/* Reduced height of first row to provide as much play space as possible */
 	#ui-container {
 		grid-template-columns: 1fr;
-		grid-template-rows: 150px 1fr 100px;
+		grid-template-rows: 115px 1fr 100px;
 		grid-template-areas:
 		"turnInfo"
 		"characterInfo"
@@ -1187,7 +1188,6 @@ select {
 	}
 
 	.turn-info-container {
-		max-height: 180px;
 		border: 0;
 		border-bottom: 2px solid seagreen;
 		border-radius: 0;
@@ -1289,9 +1289,10 @@ select {
 		top: 25%;
 	}
 
+	/* Need max heights on this (200px) and log-container (90px) to allow for needed control bar height and account for browser toolbar */
 	.turn-info-container {
 		flex-direction: column;
-		max-height: unset;
+		max-height: 200px;
 		border-left: 0;
 		border-right: 2px solid seagreen;
 		border-bottom-left-radius: 0;
@@ -1299,7 +1300,7 @@ select {
 	}
 
 	.log-container {
-		max-height: 100px;
+		max-height: 90px;
 		border: 0;
 		border-bottom: 1px solid seagreen;
 	}
