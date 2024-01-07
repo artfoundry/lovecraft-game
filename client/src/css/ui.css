@@ -24,12 +24,12 @@ h3 {
 #ui-container {
 	position: fixed;
 	display: grid;
-	grid-template-columns: 500px 1fr 50px;
-	grid-template-rows: 128px 1fr 160px;
+	grid-template-columns: 500px 1fr 300px 50px;
+	grid-template-rows: 130px 1fr 163px;
 	grid-template-areas:
-        "turnInfo turnInfo turnInfo"
-        "characterInfo creatureInfo creatureInfo"
-        "controlBar controlBar systemButtons";
+        "turnInfo turnInfo turnInfo turnInfo"
+        "characterInfo . creatureInfo creatureInfo"
+        "controlBar controlBar controlBar systemButtons";
 	width: 100%;
 	min-width: 1000px;
 	height: 100%;
@@ -218,7 +218,7 @@ h3 {
 	display: flex;
 	justify-self: center;
 	width: 100%;
-	max-height: 128px;
+	max-height: 130px;
 	border: 2px solid seagreen;
 	border-top: 0;
 	border-radius: 0 0 5px 5px;
@@ -253,7 +253,7 @@ h3 {
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
-	min-width: 160px;
+	min-width: 175px;
 	padding: 10px;
 	border-left: 1px solid seagreen;
 	border-right: 1px solid seagreen;
@@ -428,6 +428,7 @@ h3 {
 	grid-template-areas: "controlBarTab1 . .";
 	justify-self: center;
 	align-self: end;
+	max-height: 163px;
 	border: 2px solid seagreen;
 	border-bottom: 0;
 	border-radius: 5px 5px 0 0;
@@ -1127,20 +1128,34 @@ select {
 
 /* For wider mobile screens (or desktop window sized down) */
 @media (768px <= width < 1000px) {
-	/* Reduced height of first row to provide as much play space as possible */
 	#ui-container {
-		grid-template-columns: 1fr;
-		grid-template-rows: 115px 1fr 100px;
+		grid-template-columns: 500px 1fr;
 		grid-template-areas:
-		"turnInfo"
-		"characterInfo"
-		"controlBar";
+		"turnInfo turnInfo"
+		"characterInfo creatureInfo"
+		"controlBar controlBar";
 	}
 
 	.turn-info-container {
 		border: 0;
 		border-bottom: 2px solid seagreen;
 		border-radius: 0;
+	}
+
+	.character-info-container {
+		border: 2px solid seagreen;
+		border-left: 0;
+		border-radius: 0 5px 5px 0;
+	}
+
+	.creature-info-container {
+		border: 2px solid seagreen;
+		border-right: 0;
+		border-radius: 5px 0 0 5px;
+	}
+
+	.creature-info-container {
+		grid-area: creatureInfo;
 	}
 
 	#control-bar-container {
@@ -1185,10 +1200,8 @@ select {
 		box-sizing: border-box;
 	}
 
-	/* Reduced height of first row to provide as much play space as possible */
 	#ui-container {
 		grid-template-columns: 1fr;
-		grid-template-rows: 115px 1fr 100px;
 		grid-template-areas:
 		"turnInfo"
 		"characterInfo"
@@ -1297,10 +1310,10 @@ select {
 		top: 25%;
 	}
 
-	/* Need max heights on this (200px) and log-container (90px) to allow for needed control bar height and account for browser toolbar */
+	/* Need max heights on this (220px) and log-container (100px) to allow for needed control bar height and account for browser toolbar */
 	.turn-info-container {
 		flex-direction: column;
-		max-height: 200px;
+		max-height: 220px;
 		border-left: 0;
 		border-right: 2px solid seagreen;
 		border-bottom-left-radius: 0;
@@ -1308,7 +1321,7 @@ select {
 	}
 
 	.log-container {
-		max-height: 90px;
+		max-height: 100px;
 		border: 0;
 		border-bottom: 1px solid seagreen;
 	}
