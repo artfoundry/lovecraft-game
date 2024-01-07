@@ -55,9 +55,9 @@ class Creature extends React.Component {
 		isHit = hitRoll >= defenseRoll;
 
 		if (isHit) {
-			const qualifier = damage > 10 ? ' hard' : '';
-			const attackWord = this.attackType === 'psychic' ? `invades ${targetData.name}'s sanity` : 'hits';
-			logDamageMessage = `The ${this.name} ${attackWord}${qualifier}!`;
+			const qualifier = damage > 10 ? 'brutally' : '';
+			const attackWord = this.attackType === 'psychic' ? ` invades ${targetData.name}'s sanity` : ` hits ${targetData.name}`;
+			logDamageMessage = `The ${this.name} ${qualifier}${attackWord}!`;
 		}
 		updateLog(logAttackMessage);
 		updateLog(logDamageMessage);
