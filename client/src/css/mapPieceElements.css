@@ -140,6 +140,10 @@ as box-shadow greatly dims the lighting */
 	content: url('../assets/objects/krisKnife_sml.png');
 }
 
+.baseball-bat {
+	content: url('../assets/objects/baseballBat_sml.png');
+}
+
 .pickaxe {
 	content: url('../assets/objects/pickaxe_sml.png');
 }

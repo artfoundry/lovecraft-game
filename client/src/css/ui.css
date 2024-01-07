@@ -888,6 +888,10 @@ select {
 	background-image: url('../assets/objects/krisKnife_lrg.png');
 }
 
+.baseball-bat-inv {
+	background-image: url('../assets/objects/baseballBat_lrg.png');
+}
+
 .pickaxe-inv {
 	background-image: url('../assets/objects/pickaxe_lrg.png');
 }
@@ -937,6 +941,10 @@ select {
 
 .kris-knife-action {
 	background-image: url('../assets/objects/krisKnife_sml.png');
+}
+
+.baseball-bat-action {
+	background-image: url('../assets/objects/baseballBat_sml.png');
 }
 
 .pickaxe-action {

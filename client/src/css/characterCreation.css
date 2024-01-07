@@ -19,7 +19,7 @@ h2 {
 
 #char-creation-stat-roll-container {
 	display: grid;
-	grid-template-columns: 150px 30px 30px 30px;
+	grid-template-columns: 150px 64px 64px 64px;
 	grid-template-areas:
 		"rollButton rollButton rollButton rollButton"
 		"none none none none"
@@ -31,6 +31,27 @@ h2 {
 	justify-items: center;
 	align-items: center;
 	margin: 10px;
+}
+
+.dice {
+	background-image: url('../assets/ui/dice.png');
+	background-size: 128px 128px;
+}
+
+.die-1 {
+	background-position: 0 0;
+}
+
+.die-2 {
+	background-position: 65px 0;
+}
+
+.die-3 {
+	background-position: 0 65px;
+}
+
+.die-4 {
+	background-position: 65px 65px;
 }
 
 .char-creation-button {
@@ -68,7 +89,8 @@ h2 {
 }
 
 .stat-roll-box {
-	width: 15px;
+	width: 54px;
+	height: 54px;
 	padding: 5px;
 	border: 1px solid seagreen;
 	border-radius: 2px;

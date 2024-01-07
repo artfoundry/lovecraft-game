@@ -1,8 +1,10 @@
 import StoneDoorMP3 from './assets/sfx/stone_door_short.mp3';
+import DiceMP3 from './assets/sfx/rolling-dice-1.mp3';
 import CatacombsThemeM4A from './assets/music/catacombs_theme.m4a';
 
 const sfxMap = {
-	stoneDoor: StoneDoorMP3
+	stoneDoor: StoneDoorMP3,
+	dice: DiceMP3
 };
 
 const musicMap = {

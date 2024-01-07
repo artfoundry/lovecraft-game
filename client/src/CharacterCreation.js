@@ -1,6 +1,7 @@
 import React from 'react';
 import {convertObjIdToClassId, diceRoll} from './Utils';
 import {ObjectInfoPanel, SkillInfoPanel} from './UIElements';
+import {SoundEffect} from './Audio';
 import PlayerCharacterTypes from './data/playerCharacterTypes.json';
 import ItemTypes from './data/itemTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
@@ -147,6 +148,15 @@ export default class CharacterCreation extends React.Component {
 	 */
 	setSkillPanelDisplayOption = (needToShowSkillPanel) => {
 		this.setState({needToShowSkillPanel});
+	}
+
+	toggleDiceSound = () => {
+		const audio = document.getElementById('sfx-dice');
+		if (audio.paused) {
+			audio.play().catch(e => console.log(e));
+		} else if (!audio.paused) {
+			audio.pause().catch(e => console.log(e));
+		}
 	}
 
 	rollStats = () => {
@@ -300,19 +310,20 @@ export default class CharacterCreation extends React.Component {
 					<div>Roll your initial attributes: Roll up to three times, then choose one.</div>
 
 					<div id='char-creation-stat-roll-container'>
-						<div className={`char-creation-button roll-button ${this.state.rollCount > 3 ? 'button-disabled' : ''}`} onClick={this.rollStats}>Roll</div>
+						<SoundEffect key='sfx-Dice' idProp='sfx-dice' sourceName='dice' />
+						<div className={`char-creation-button roll-button ${this.state.rollCount > 3 ? 'button-disabled' : ''}`} onClick={() => {this.toggleDiceSound(); this.rollStats();}}>Roll</div>
 						<div>Strength:</div>
-						<div className='stat-roll-box'>{this.state.statsRolled.roll1.strength}</div>
-						<div className='stat-roll-box'>{this.state.statsRolled.roll2.strength}</div>
-						<div className='stat-roll-box'>{this.state.statsRolled.roll3.strength}</div>
+						<div className={`stat-roll-box dice die-${this.state.statsRolled.roll1.strength}`}></div>
+						<div className={`stat-roll-box dice die-${this.state.statsRolled.roll2.strength}`}></div>
+						<div className={`stat-roll-box dice die-${this.state.statsRolled.roll3.strength}`}></div>
 						<div>Agility:</div>
-						<div className='stat-roll-box'>{this.state.statsRolled.roll1.agility}</div>
-						<div className='stat-roll-box'>{this.state.statsRolled.roll2.agility}</div>
-						<div className='stat-roll-box'>{this.state.statsRolled.roll3.agility}</div>
+						<div className={`stat-roll-box dice die-${this.state.statsRolled.roll1.agility}`}></div>
+						<div className={`stat-roll-box dice die-${this.state.statsRolled.roll2.agility}`}></div>
+						<div className={`stat-roll-box dice die-${this.state.statsRolled.roll3.agility}`}></div>
 						<div>Mental Acuity:</div>
-						<div className='stat-roll-box'>{this.state.statsRolled.roll1.mentalAcuity}</div>
-						<div className='stat-roll-box'>{this.state.statsRolled.roll2.mentalAcuity}</div>
-						<div className='stat-roll-box'>{this.state.statsRolled.roll3.mentalAcuity}</div>
+						<div className={`stat-roll-box dice die-${this.state.statsRolled.roll1.mentalAcuity}`}></div>
+						<div className={`stat-roll-box dice die-${this.state.statsRolled.roll2.mentalAcuity}`}></div>
+						<div className={`stat-roll-box dice die-${this.state.statsRolled.roll3.mentalAcuity}`}></div>
 						<div>Now choose:</div>
 						<div className={`char-creation-button ${this.state.statsRolled.roll1.strength === 0 ? 'button-disabled' : ''} ${this.state.rollNumSaved === 1 ? 'button-selected' : ''}`}
 						     onClick={() => this.updateValue({statsSaved: this.state.statsRolled.roll1, rollNumSaved: 1})}
