@@ -7,13 +7,16 @@
 	top: 0;
 	left: 0;
 	justify-content: center;
-	background-color: #225555;
+	background-color: black;
+	background-image: url('../assets/ui/title_image.jpg');
+	background-size: contain;
+	background-repeat: no-repeat;
 	border: none;
 	border-radius: unset;
 	box-sizing: border-box;
 }
 
-.login-methods-container {
+#login-methods-container {
 	display: flex;
 	flex-direction: column;
 	align-items: center;

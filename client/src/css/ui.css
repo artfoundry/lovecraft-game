@@ -311,7 +311,7 @@ h3 {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	margin-bottom: 20px;
+	padding-bottom: 20px;
 }
 
 .char-info-doll-container {
@@ -1056,7 +1056,7 @@ select {
 	}
 
 	.char-info-inv-container {
-		margin-bottom: 10px;
+		padding-bottom: 10px;
 	}
 
 	.char-info-doll-container {

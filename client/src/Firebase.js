@@ -74,7 +74,7 @@ export default class Firebase extends React.Component {
 				<div>(Pre-Alpha)</div>
 				<h2>Choose a method to login</h2>
 
-				<div className='login-methods-container'>
+				<div id='login-methods-container'>
 
 					<div className='login-email-pw-container'>
 						<div className='login-method-title'>Create an account</div>
