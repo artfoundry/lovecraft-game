@@ -70,8 +70,6 @@ export default class Firebase extends React.Component {
 
 		const dialogContent = (
 			<>
-				<h1 className='font-fancy'>War of the Old Ones</h1>
-				<div>(Pre-Alpha)</div>
 				<h2>Choose a method to login</h2>
 
 				<div id='login-methods-container'>

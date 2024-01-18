@@ -2,16 +2,9 @@
 
 .dialog-login {
 	position: absolute;
-	width: 100%;
-	min-height: 100%;
-	top: 0;
-	left: 0;
+	top: 100px;
 	justify-content: center;
-	background-color: black;
-	background-image: url('../assets/ui/title_image.jpg');
-	background-size: cover;
-	background-repeat: no-repeat;
-	background-position: center;
+	background-color: transparent;
 	border: none;
 	border-radius: unset;
 	box-sizing: border-box;
@@ -118,11 +111,4 @@
 	grid-area: content;
 	padding-top: 20px;
 	border-top: 2px solid burlywood;
-}
-
-@media (width < 1000px) {
-	.dialog-login {
-		background-size: contain;
-		background-position: top;
-	}
 }

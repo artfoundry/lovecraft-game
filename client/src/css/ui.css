@@ -6,9 +6,40 @@
 	font-family: Copperplate, "Gill Sans", sans-serif;
 }
 
+h1 {
+	margin: 0.3em 0;
+	font-size: xxx-large;
+}
+
 h3 {
 	margin: 0 0 0.5em 0;
 }
+
+.title-screen {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	align-items: center;
+	height: 100%;
+	padding-bottom: 30px;
+	background-image: url('../assets/ui/title_image.jpg');
+	background-size: contain;
+	background-repeat: no-repeat;
+	background-position: center;
+}
+
+.title-screen-title-container {
+	text-align: center;
+	color: white;
+}
+
+.title-screen .general-button {
+	width: 150px;
+	text-align: center;
+	font-size: 30px;
+	margin-bottom: 50px;
+}
+
 
 .ui-panel {
 	background-color: #225555;
@@ -1022,6 +1053,10 @@ select {
 
 /* Narrow or short screens */
 @media (width < 1000px) or (height < 768px) {
+	h1 {
+		font-size: revert;
+	}
+
 	.dialog-login h2, .dialog-login h3 {
 		margin: 10px;
 	}

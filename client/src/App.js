@@ -94,6 +94,7 @@ class Game extends React.Component {
 				isIOS: navigator.userAgent.includes('iPhone OS')
 			},
 			userData: {},
+			isLoginWindowRequested: false,
 			isLoggedIn: false,
 			characterCreated: false,
 			createdCharData: null,
@@ -1059,7 +1060,21 @@ class Game extends React.Component {
 	render() {
 		return (
 			<div className="game" style={{width: `${this.state.screenData.width}px`, height: `${this.state.screenData.height}px`}}>
-				{this.showLogin &&
+				{!this.state.isLoggedIn &&
+				<div className='title-screen'>
+					<div className='title-screen-title-container'>
+						<h1 className='font-fancy'>War of the Old Ones</h1>
+						<div>(Pre-Alpha)</div>
+					</div>
+					<div className={`general-button ${this.state.isLoginWindowRequested ? 'button-disabled' : ''}`} onClick={() => {
+						if (this.showLogin) {
+							this.setState({isLoginWindowRequested: true});
+						}
+					}}>Login</div>
+				</div>
+				}
+
+				{this.showLogin && this.state.isLoginWindowRequested &&
 					<Firebase
 						updateLoggedIn={this.updateLoggedIn}
 					/>
