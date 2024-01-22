@@ -1,11 +1,84 @@
 {
-  "Create First Aid Kit": {
-    "type": "active",
-    "description": "Create 1 First Aid Kit",
-    "cost": {
-      "bandages": 2,
-      "alcohol": 1
+  "general": {
+    "Create First Aid Kit": {
+      "type": "active",
+      "description": "Create 1 First Aid Kit",
+      "cost": {
+        "cloth": 2,
+        "alcohol": 1,
+        "flask": 1,
+        "light": 30
+      }
     },
-    "resources": ["bandages", "alcohol"]
+    "Create Molotov Cocktail": {
+      "type": "active",
+      "description": "Create 1 Molotov Cocktail",
+      "cost": {
+        "cloth": 1,
+        "alcohol": 1,
+        "flask": 1,
+        "light": 30
+      }
+    },
+    "Create Torch": {
+      "type": "active",
+      "description": "Create 1 Torch",
+      "cost": {
+        "cloth": 1,
+        "alcohol": 1,
+        "wood": 1,
+        "light": 30
+      }
+    },
+    "Handgun Knowledge": {
+      "type": "passive",
+      "description": "Knowledge of how to use handguns, thus removing 30% penalty to hit targets"
+    },
+    "Machine Gun Knowledge": {
+      "type": "passive",
+      "description": "Knowledge of how to use machine guns, thus removing 30% penalty to hit targets"
+    },
+    "Shotgun Knowledge": {
+      "type": "passive",
+      "description": "Knowledge of how to use shotguns, thus removing 30% penalty to hit targets"
+    }
+  },
+  "privateEye": {
+    "Quick Reload": {
+      "type": "active",
+      "description": "Reload a handgun without using an action",
+      "spirit": [40, 30, 20, 10]
+    },
+    "Keen Investigation": {
+      "type": "passive",
+      "description": "Improved chance of finding secrets when doing a search",
+      "bonus": [0.1, 0.2, 0.3, 0.4, 0.5]
+    },
+    "Steady Hand": {
+      "type": "passive",
+      "description": "Improved accuracy with handguns (bonus to Agility when shooting with a handgun)",
+      "bonus": [1, 2, 3]
+    }
+  },
+  "archaeologist": {
+
+  },
+  "chemist": {
+
+  },
+  "doctor": {
+
+  },
+  "priest": {
+
+  },
+  "veteran": {
+
+  },
+  "thief": {
+
+  },
+  "occultResearcher": {
+
   }
 }

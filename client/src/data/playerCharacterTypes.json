@@ -11,21 +11,7 @@
     "startingHealth": 100,
     "startingSanity": 80,
     "startingSpirit": 90,
-    "skills": {
-      "quickReload": {
-        "name": "Quick Reload",
-        "type": "active",
-        "description": "Reload equipped handgun without using an action",
-        "level": 1,
-        "cost": {
-          "1": 40,
-          "4": 30,
-          "7": 20,
-          "10": 10
-        },
-        "resources": ["Spirit"]
-      }
-    },
+    "skills": ["Quick Reload", "Keen Investigation", "Handgun Knowledge", "Shotgun Knowledge"],
     "weapons": {
       "coltRevolver0": {
         "id": "coltRevolver0",
