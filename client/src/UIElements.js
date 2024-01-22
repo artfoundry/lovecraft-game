@@ -178,7 +178,20 @@ function CharacterControls(props) {
 				<div className='misc-action-buttons-container'>
 					{((currentPCdata.equippedLight && (currentPCdata.equippedLight.includes('lantern') || currentPCdata.equippedLight.includes('torch'))) &&
 					currentPCdata.lightTime < currentPCdata.items[currentPCdata.equippedLight].maxTime && currentPCdata.items.oil0) &&
-					<div className={`action-button refill-action ${actionButtonState}`} onClick={() => props.refillLight()}></div>
+					<div className={`action-button refill-action ${actionButtonState}`} onClick={() => {
+						const availOil = currentPCdata.items.oil0 && currentPCdata.items.oil0.amount;
+						// if reloading light uses up remaining oil in inv, remove oil item in inv and update inventory in UI
+						if (availOil <= (currentPCdata.items[currentPCdata.equippedLight].maxTime - currentPCdata.lightTime)) {
+							let updatedInventory = props.entireInventory[props.characterId];
+							const oilInvIndex = updatedInventory.indexOf('oil0');
+							updatedInventory.splice(oilInvIndex, 1);
+							props.updateInventory(props.characterId, updatedInventory, () => {
+								props.refillLight();
+							});
+						} else {
+							props.refillLight();
+						}
+					}}></div>
 					}
 					{(props.mapObjectsOnPcTiles.length > 0) &&
 						<div className={`action-button pickup-action ${actionButtonState}`} onClick={(evt) => props.setMapObjectSelected(props.mapObjectsOnPcTiles, evt, true)}></div>

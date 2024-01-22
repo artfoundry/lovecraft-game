@@ -885,12 +885,6 @@ class UI extends React.Component {
 						updateActiveCharacter={this.props.updateActiveCharacter}
 						updateFollowModePositions={this.props.updateFollowModePositions}
 						endTurnCallback={this.props.updateCurrentTurn}
-						toggleActionButton={this.props.toggleActionButton}
-						updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
-						characterIsSelected={this.props.characterIsSelected}
-						characterInfo={this.props.selectedCharacterInfo}
-						creatureIsSelected={this.props.creatureIsSelected}
-						creatureInfo={this.props.selectedCreatureInfo}
 					/>}
 					{/*<div className='minimize-button general-button' onClick={() => {*/}
 					{/*	this.minimizePanel('turnInfo');*/}
