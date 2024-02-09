@@ -72,15 +72,25 @@
     "stackable": true,
     "description": "Component for making First Aid Kits, Pharmaceuticals, Molotov Cocktails, and Torches"
   },
-  "Chemical Components": {
+  "Chemical": {
     "itemType": "Component",
     "stackable": true,
-    "description": "Components for making Pharmaceuticals and Acid Concoctions"
+    "description": "Component for making Pharmaceuticals and Acid Concoctions"
   },
-  "Bandages": {
+  "Cloth": {
     "itemType": "Component",
     "stackable": true,
     "description": "Component for making First Aid Kits, Molotov Cocktails, and Torches"
+  },
+  "Flask": {
+    "itemType": "Component",
+    "stackable": true,
+    "description": "Component for making liquids"
+  },
+  "Water": {
+    "itemType": "Component",
+    "stackable": true,
+    "description": "Component for Holy Water"
   },
   "Wood": {
     "itemType": "Component",

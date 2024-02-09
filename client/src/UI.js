@@ -30,6 +30,8 @@ class UI extends React.Component {
 			logMinimized: false,
 			modeMinimized: false,
 			entireInventory: {},
+			prevPlayerInvChanged: this.props.playerInvHasChanged,
+			inventoryData: {},
 			objectIsSelected: false,
 			selectedObjPos: {},
 			objectSelected: {},
@@ -102,7 +104,9 @@ class UI extends React.Component {
 					movesRemaining={this.props.playerLimits.moves - this.props.actionsCompleted.moves}
 					actionsRemaining={this.props.playerLimits.actions - this.props.actionsCompleted.actions}
 					inTacticalMode={this.props.inTacticalMode}
+					threatList={this.props.threatList}
 					updateCharacters={this.props.updateCharacters}
+					addItemToPlayerInventory={this.props.addItemToPlayerInventory}
 					entireInventory={this.state.entireInventory}
 					updateInventory={this.updateInventory}
 					checkForExtraAmmo={this.checkForExtraAmmo}
@@ -729,22 +733,40 @@ class UI extends React.Component {
 		this.audioSelectors.music[this.props.gameOptions.songName] = document.getElementById(`music-${this.props.gameOptions.songName}-theme`);
 	}
 
+	_updateInvData(charId, charInvList) {
+		let inventoryData = deepCopy(this.state.inventoryData);
+		charInvList.forEach(itemId => {
+			if (!inventoryData[charId]) {
+				inventoryData[charId] = {};
+			}
+			if (itemId) {
+				inventoryData[charId][itemId] = {...(this.props.playerCharacters[charId].weapons[itemId] || this.props.playerCharacters[charId].items[itemId])};
+			}
+		});
+		this.setState({inventoryData});
+	}
+
 	/**
 	 * For setting up/updating player inventory (not the stored inventory from App) shown in the char info panel
 	 * @param charId: string
-	 * @param invItemsList: array of itemIds (or null if no item in that slot)
 	 * @private
 	 */
-	_parseInvItems(charId, invItemsList){
+	_parseInvItems(charId){
 		const charInfo = this.props.playerCharacters[charId];
 		const allItems = Object.assign({...charInfo.weapons}, {...charInfo.items});
 		const equippedItems = charInfo.equippedItems;
-		let tempInvList = [...invItemsList];
+		let tempInvList = this.state.entireInventory[charId] ? [...this.state.entireInventory[charId]] : [];
 
+		// need to initially fill in inv slots with null, so char info panel shows empty boxes
+		if (tempInvList.length === 0) {
+			for(let i = 0; i < this.inventoryLength; i++) {
+				tempInvList.push(null);
+			}
+		}
 		for (const itemId of Object.keys(allItems)) {
-			if (itemId !== equippedItems.loadout1.right && itemId !== equippedItems.loadout1.left && itemId !== equippedItems.armor && tempInvList.indexOf(itemId) === -1) {
-				const emptyBoxId = tempInvList.indexOf(null);
-				tempInvList.splice(emptyBoxId, 1, itemId);
+			if (itemId !== equippedItems.loadout1.right && itemId !== equippedItems.loadout1.left && itemId !== equippedItems.armor && !tempInvList.includes(itemId)) {
+				const firstEmptyBoxId = tempInvList.indexOf(null);
+				tempInvList.splice(firstEmptyBoxId, 1, itemId);
 			}
 		}
 
@@ -755,12 +777,10 @@ class UI extends React.Component {
 			}
 		});
 
-		// need to fill in the rest of the inv slots with null, so char info panel shows empty boxes
-		let updatedInventory = [];
-		for (let i=0; i < this.inventoryLength; i++) {
-			updatedInventory.push(tempInvList[i] || null);
-		}
-		this.updateInventory(charId, updatedInventory);
+		this.updateInventory(charId, tempInvList, () => {
+			this._updateInvData(charId, tempInvList);
+		});
+		this.props.updateInvHasChangedStatus('');
 	}
 
 	toggleOptionsPanel = () => {
@@ -799,7 +819,7 @@ class UI extends React.Component {
 	componentDidMount() {
 		if (Object.keys(this.state.entireInventory).length === 0) {
 			for (const id of Object.keys(this.props.playerCharacters)) {
-				this._parseInvItems(id, []);
+				this._parseInvItems(id);
 			}
 		}
 		if (this.initialUiLoad) {
@@ -815,8 +835,8 @@ class UI extends React.Component {
 			this.setState({logText: [...this.props.logText]}, this.scrollLog);
 		}
 
-		if (this.props.selectedCharacterInfo && prevProps.selectedCharacterInfo !== this.props.selectedCharacterInfo) {
-			this._parseInvItems(this.props.selectedCharacterInfo.id, this.state.entireInventory[this.props.selectedCharacterInfo.id]);
+		if (this.props.playerInvHasChanged) {
+			this._parseInvItems(this.props.playerInvHasChanged);
 		}
 
 		if (prevProps.activeCharacter !== this.props.activeCharacter && this.props.playerCharacters[this.props.activeCharacter]) {
@@ -842,6 +862,27 @@ class UI extends React.Component {
 		if (prevProps.gameOptions.playMusic !== this.props.gameOptions.playMusic) {
 			this.toggleMusic();
 		}
+	}
+
+	static getDerivedStateFromProps(props, state) {
+		// Any time the current char inv changes, update inv data for that char
+		if (props.playerInvHasChanged !== state.prevPlayerInvChanged && props.selectedCharacterInfo) {
+			let inventoryData = deepCopy(state.inventoryData);
+			const charId = props.selectedCharacterInfo.id;
+			state.entireInventory[charId].forEach(itemId => {
+				if (!inventoryData[charId]) {
+					inventoryData[charId] = {};
+				}
+				if (itemId) {
+					inventoryData[charId][itemId] = {...(props.selectedCharacterInfo.weapons[itemId] || props.selectedCharacterInfo.items[itemId])};
+				}
+			});
+			return {
+				prevPlayerInvChanged: props.playerInvHasChanged,
+				inventoryData
+			};
+		}
+		return null;
 	}
 
 	render() {
@@ -898,7 +939,8 @@ class UI extends React.Component {
 					characterInfo={this.props.selectedCharacterInfo}
 					switchEquipment={this.switchEquipment}
 					updateCharacters={this.props.updateCharacters}
-					entireInventory={this.state.entireInventory}
+					characterInventoryIds={this.state.entireInventory[this.props.selectedCharacterInfo.id]}
+					inventoryData={this.state.inventoryData[this.props.selectedCharacterInfo.id]}
 					updateInventory={this.updateInventory}
 					setShowDialogProps={this.props.setShowDialogProps}
 					setObjectSelected={this.setObjectSelected}

@@ -653,7 +653,7 @@ h3 {
 	align-items: center;
 }
 
-.weapon-buttons-container, .item-buttons-container, .misc-action-buttons-container {
+.weapon-buttons-container, .item-buttons-container, .misc-action-buttons-container, .skill-buttons-container {
 	display: flex;
 	text-align: center;
 }
@@ -1018,6 +1018,79 @@ select {
 .move-action {
 	background-image: url('../assets/ui/move-icon_sml.png');
 }
+
+.create-first-aid-kit-action {
+	background-image: url('../assets/ui/create-first-aid-kit_sml.png');
+}
+
+.create-pharmaceuticals-action {
+	background-image: url('../assets/ui/create-pharmaceuticals_sml.png');
+}
+
+.create-acid-concoction-action {
+	background-image: url('../assets/ui/create-acid-concoction_sml.png');
+}
+
+.create-molotov-cocktail-action {
+	background-image: url('../assets/ui/create-molotov-cocktail_sml.png');
+}
+
+.create-holy-water-action {
+	background-image: url('../assets/ui/create-holy-water_sml.png');
+}
+
+.create-torch-action {
+	background-image: url('../assets/ui/create-torch_sml.png');
+}
+
+.quick-reload-action {
+	background-image: url('../assets/ui/quick-reload_sml.png');
+}
+
+.dig-action {
+	background-image: url('../assets/ui/dig_sml.png');
+}
+
+.better-living-through-chemicals-action {
+	background-image: url('../assets/ui/better-living-through-chemicals_sml.png');
+}
+
+.resuscitate-action {
+	background-image: url('../assets/ui/resuscitate_sml.png');
+}
+
+.comfort-the-fearful-action {
+	background-image: url('../assets/ui/comfort-the-fearful_sml.png');
+}
+
+.holy-light-action {
+	background-image: url('../assets/ui/holy-light_sml.png');
+}
+
+.go-ballistic-action {
+	background-image: url('../assets/ui/go-ballistic_sml.png');
+}
+
+.move-it-action {
+	background-image: url('../assets/ui/move-it_sml.png');
+}
+
+.flank-action {
+	background-image: url('../assets/ui/flank_sml.png');
+}
+
+.disarm-trap-action {
+	background-image: url('../assets/ui/disarm-trap_sml.png');
+}
+
+.identify-relic-action {
+	background-image: url('../assets/ui/identify-relic_sml.png');
+}
+
+.sacrificial-strike-action {
+	background-image: url('../assets/ui/sacrificial-strike_sml.png');
+}
+
 
 /* Audio */
 

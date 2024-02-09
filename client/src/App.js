@@ -105,6 +105,7 @@ class Game extends React.Component {
 			currentLevel: 1,
 			playerFollowOrder: [],
 			followModePositions: [],
+			playerInvHasChanged: '',
 			showDialog: false,
 			dialogProps: {
 			dialogContent: this.initialDialogContent,
@@ -207,7 +208,7 @@ class Game extends React.Component {
 	 * If id is passed in, updating only one creature; otherwise updating all
 	 * @param type: String ('player' or 'creature')
 	 * @param updateData: Object (can be any number of data objects unless updating all characters of a type, then must be all data)
-	 * @param id: String (char/creature Id)
+	 * @param id: String (char/creature Id) or null
 	 * @param lightingHasChanged: boolean
 	 * @param isInitialCreatureSetup: Boolean
 	 * @param isInitialCharacterSetup: Boolean
@@ -398,26 +399,61 @@ class Game extends React.Component {
 		});
 	}
 
+	updateInvHasChangedStatus = (playerInvHasChanged) => {
+		this.setState({playerInvHasChanged});
+	}
+
 	/**
-	 * Updates to state what PC weapon or item button is selected in the UI
-	 * Data stored in actionButtonSelected: {characterId, itemId, itemName, stats: WeaponTypes[itemName] or ItemTypes[itemName]}
+	 * Updates to state what PC weapon, item, or skill button is selected in the UI
+	 * Data stored in actionButtonSelected: {characterId, itemId, itemName, stats: WeaponTypes[itemName], ItemTypes[itemName], or SkillTypes[itemName]}
+	 * state.actionButtonSelected gets reset in this.updateCurrentTurn
 	 * @param characterId: String
 	 * @param itemId: String
 	 * @param itemName: String
-	 * @param buttonType: String ('weapon' or 'item')
+	 * @param buttonType: String ('weapon', 'item', or 'skill')
 	 * @param callback: Function
 	 */
 	toggleActionButton = (characterId, itemId, itemName, buttonType, callback) => {
 		let buttonState = null;
+		let isImmediateAction = false;
+		let stats = {};
+
 		// if no weapon/item selected or weapon/item selected doesn't match new weapon/item selected, set weapon/item state to new weapon/item
 		if (characterId && (!this.state.actionButtonSelected ||
 			(this.state.actionButtonSelected.characterId !== characterId || this.state.actionButtonSelected.itemId !== itemId)))
 		{
-			buttonState = {characterId, itemId, itemName, stats: buttonType === 'weapon' ? WeaponTypes[itemName] : ItemTypes[itemName]};
+			if (buttonType === 'weapon') {
+				stats = WeaponTypes[itemName];
+			} else if (buttonType === 'item') {
+				stats = ItemTypes[itemName];
+			} else {
+				stats = this.state.playerCharacters[characterId].skills[itemId];
+				isImmediateAction = !stats.hasTarget;
+			}
+			buttonState = {characterId, itemId, itemName, stats};
 		}
-		this.setState({actionButtonSelected: buttonState}, () => {
+		if (isImmediateAction) {
+			// skillType will either be 'create' or 'active'
+			const props = stats.skillType === 'create' ? {
+				itemType: itemId,
+				activeCharId: characterId,
+				currentPcData: this.state.playerCharacters[characterId],
+				updateCharacter: this.updateCharacters,
+				updateLog: this.updateLog,
+				setShowDialogProps: this.setShowDialogProps,
+				addItemToPlayerInventory: this.addItemToPlayerInventory
+			} : {
+
+			};
+			this.state.playerCharacters[characterId][stats.skillType](props);
+			this.updateInvHasChangedStatus(characterId);
+			this._updateActivePlayerActions();
 			if (callback) callback();
-		});
+		} else {
+			this.setState({actionButtonSelected: buttonState}, () => {
+				if (callback) callback();
+			});
+		}
 	}
 
 	/**
@@ -437,10 +473,14 @@ class Game extends React.Component {
 			delete updatedPCdata.items[gunType + 'Ammo0'];
 		}
 		this.updateCharacters('player', updatedPCdata, this.state.activeCharacter, false, false, false, () => {
+			this.updateInvHasChangedStatus(this.state.activeCharacter);
 			this._updateActivePlayerActions();
 		});
 	}
 
+	/**
+	 * Reloading active character's light using oil in inv we already know we have, as determined by CharacterControls in UIElements
+	 */
 	refillLight = () => {
 		const activePcData = deepCopy(this.state.playerCharacters[this.state.activeCharacter]);
 		const equippedLight = activePcData.items[activePcData.equippedLight];
@@ -453,6 +493,7 @@ class Game extends React.Component {
 			delete activePcData.items.oil0;
 		}
 		this.updateCharacters('player', activePcData, this.state.activeCharacter, true, false, false, () => {
+			this.updateInvHasChangedStatus(this.state.activeCharacter);
 			this._updateActivePlayerActions();
 		});
 	}
@@ -478,6 +519,7 @@ class Game extends React.Component {
 				updateLog: this.updateLog,
 				callback: () => {
 					this.toggleActionButton(selectedItemInfo.characterId, selectedItemInfo.itemId, selectedItemInfo.itemName, target === 'creature' ? 'weapon': 'item', () => {
+						this.updateInvHasChangedStatus(selectedItemInfo.characterId);
 						if (target === 'creature' && this.state.mapCreatures[id].currentHealth <= 0) {
 							this._removeDeadFromTurnOrder(id, this._updateActivePlayerActions, checkLineOfSightToParty);
 						} else {
@@ -805,8 +847,9 @@ class Game extends React.Component {
 
 		let updatedData = {[invObjectCategory]: inventoryList};
 		this.updateCharacters('player', updatedData, this.state.activeCharacter, false, false, false, () => {
-			this._removeItemFromMap(objId);
+			this.updateInvHasChangedStatus(this.state.activeCharacter);
 			if (isPickUpAction) {
+				this._removeItemFromMap(objId);
 				this._updateActivePlayerActions();
 			}
 		});
@@ -1115,6 +1158,8 @@ class Game extends React.Component {
 						updateUnitSelectionStatus={this.updateUnitSelectionStatus}
 						updateCharacters={this.updateCharacters}
 						getAllCharactersPos={this.getAllCharactersPos}
+						playerInvHasChanged={this.state.playerInvHasChanged}
+						updateInvHasChangedStatus={this.updateInvHasChangedStatus}
 
 						setMapObjectSelected={this.setMapObjectSelected}
 						objectSelected={this.state.objectSelected}

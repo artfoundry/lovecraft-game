@@ -11,7 +11,7 @@
     "startingHealth": 100,
     "startingSanity": 80,
     "startingSpirit": 90,
-    "skills": ["Quick Reload", "Keen Investigation", "Handgun Knowledge", "Shotgun Knowledge"],
+    "skills": ["quickReload", "keenInvestigation", "steadyHand", "handgunKnowledge", "shotgunKnowledge"],
     "weapons": {
       "coltRevolver0": {
         "id": "coltRevolver0",
@@ -48,20 +48,7 @@
     "startingHealth": 80,
     "startingSanity": 100,
     "startingSpirit": 90,
-    "skills": {
-      "alwaysOnTheLookout": {
-        "name": "Always On The Lookout",
-        "type": "passive",
-        "description": "Increased chance of finding Relics",
-        "level": 1,
-        "bonus": {
-          "1": 0.1,
-          "4": 0.2,
-          "7": 0.3,
-          "10": 0.4
-        }
-      }
-    },
+    "skills": ["alwaysOnTheLookout", "dig", "torch"],
     "weapons": {
       "pickaxe0": {
         "id": "pickaxe0",
@@ -75,6 +62,24 @@
         "name": "Torch",
         "itemType": "Light",
         "time": 100
+      },
+      "wood0": {
+        "id": "wood0",
+        "name": "Wood",
+        "itemType": "Component",
+        "amount": 1
+      },
+      "alcohol0": {
+        "id": "alcohol0",
+        "name": "Alcohol",
+        "itemType": "Component",
+        "amount": 1
+      },
+      "cloth0": {
+        "id": "cloth0",
+        "name": "Cloth",
+        "itemType": "Component",
+        "amount": 1
       }
     },
     "equippedLight": ""
@@ -91,31 +96,7 @@
     "startingHealth": 60,
     "startingSanity": 80,
     "startingSpirit": 70,
-    "skills": {
-      "brewAcidConcoction": {
-        "name": "Brew Acid Concoction",
-        "type": "active",
-        "description": "Create 1 Acid Concoction",
-        "level": 1,
-        "cost": {
-          "1": 3
-        },
-        "resources": ["Chemical Components"]
-      },
-      "brewPharmaceutical": {
-        "name": "Brew Pharmaceutical",
-        "type": "active",
-        "description": "Create 1 Pharmaceutical",
-        "level": 2,
-        "cost": {
-          "2": {
-            "Chemical Components": 2,
-            "Alcohol": 1
-          }
-        },
-        "resources": ["Chemical Components", "Alcohol"]
-      }
-    },
+    "skills": ["acidConcoction", "pharmaceuticals", "betterLivingThroughChemicals"],
     "weapons": {
       "acidConcoction0": {
         "id": "acidConcoction0",
@@ -136,6 +117,18 @@
         "name": "Lantern",
         "itemType": "Light",
         "time": 300
+      },
+      "chemical0": {
+        "id": "chemical0",
+        "name": "Chemical",
+        "itemType": "Component",
+        "amount": 3
+      },
+      "flask0": {
+        "id": "flask0",
+        "name": "Flask",
+        "itemType": "Component",
+        "amount": 1
       }
     },
     "equippedLight": "lantern0"
@@ -152,34 +145,7 @@
     "startingHealth": 110,
     "startingSanity": 100,
     "startingSpirit": 105,
-    "skills": {
-      "createFirstAidKit": {
-        "name": "Create First Aid Kit",
-        "type": "active",
-        "description": "Create 1 First Aid Kit",
-        "level": 1,
-        "cost": {
-          "1": {
-            "Bandages": 2,
-            "Alcohol": 1
-          }
-        },
-        "resources": ["Bandages", "Alcohol"]
-      },
-      "brewPharmaceutical": {
-        "name": "Brew Pharmaceutical",
-        "type": "active",
-        "description": "Create 1 Pharmaceutical",
-        "level": 3,
-        "cost": {
-          "3": {
-            "Chemical Components": 2,
-            "Alcohol": 1
-          }
-        },
-        "resources": ["Chemical Components", "Alcohol"]
-      }
-    },
+    "skills": ["firstAidKit", "pharmaceuticals", "resuscitate"],
     "weapons": {},
     "equippedItems": {"right": "", "left": "lantern0", "armor": ""},
     "items": {
@@ -216,13 +182,7 @@
     "startingHealth": 100,
     "startingSanity": 110,
     "startingSpirit": 105,
-    "skills": {
-      "createHolyWater": {
-        "name": "Create Holy Water",
-        "type": "active",
-        "description": "Create 1 Holy Water"
-      }
-    },
+    "skills": ["holyWater", "comfortTheFearful", "holyLight"],
     "weapons": {
       "holyWater0": {
         "id": "holyWater0",
@@ -263,8 +223,7 @@
     "startingHealth": 120,
     "startingSanity": 60,
     "startingSpirit": 90,
-    "skills": {
-    },
+    "skills": ["sureShot", "goBallistic", "moveIt", "handgunKnowledge", "shotgunKnowledge", "machineGunKnowledge"],
     "weapons": {
       "remington0": {
         "id": "remington0",
@@ -304,8 +263,7 @@
     "startingHealth": 80,
     "startingSanity": 80,
     "startingSpirit": 80,
-    "skills": {
-    },
+    "skills": ["flank", "stealthy", "disarmTrap", "handgunKnowledge"],
     "weapons": {
       "knife0": {
         "id": "knife0",
@@ -333,8 +291,7 @@
     "startingHealth": 60,
     "startingSanity": 80,
     "startingSpirit": 70,
-    "skills": {
-    },
+    "skills": ["identifyRelic", "sacrificialStrike", "relicMastery"],
     "weapons": {
       "krisKnife0": {
         "id": "krisKnife0",

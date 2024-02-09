@@ -1,84 +1,269 @@
 {
-  "general": {
-    "Create First Aid Kit": {
-      "type": "active",
-      "description": "Create 1 First Aid Kit",
-      "cost": {
-        "cloth": 2,
-        "alcohol": 1,
-        "flask": 1,
-        "light": 30
-      }
+  "firstAidKit": {
+    "name": "First Aid Kit",
+    "itemCategory": "items",
+    "skillType": "create",
+    "profession": ["general", "doctor"],
+    "description": "Create 1 First Aid Kit",
+    "mustBeOutOfDanger": true,
+    "cost": {
+      "cloth": 2,
+      "alcohol": 1,
+      "flask": 1
     },
-    "Create Molotov Cocktail": {
-      "type": "active",
-      "description": "Create 1 Molotov Cocktail",
-      "cost": {
-        "cloth": 1,
-        "alcohol": 1,
-        "flask": 1,
-        "light": 30
-      }
+    "light": 30
+  },
+  "molotovCocktail": {
+    "name": "Molotov Cocktail",
+    "itemCategory": "weapons",
+    "skillType": "create",
+    "profession": ["general"],
+    "description": "Create 1 Molotov Cocktail",
+    "mustBeOutOfDanger": true,
+    "cost": {
+      "cloth": 1,
+      "alcohol": 1,
+      "flask": 1
     },
-    "Create Torch": {
-      "type": "active",
-      "description": "Create 1 Torch",
-      "cost": {
-        "cloth": 1,
-        "alcohol": 1,
-        "wood": 1,
-        "light": 30
-      }
+    "light": 30
+  },
+  "torch": {
+    "name": "Torch",
+    "itemCategory": "items",
+    "skillType": "create",
+    "profession": ["general", "archaeologist"],
+    "description": "Create 1 Torch",
+    "mustBeOutOfDanger": true,
+    "cost": {
+      "cloth": 1,
+      "alcohol": 1,
+      "wood": 1
     },
-    "Handgun Knowledge": {
-      "type": "passive",
-      "description": "Knowledge of how to use handguns, thus removing 30% penalty to hit targets"
+    "light": 30
+  },
+  "acidConcoction": {
+    "name": "Acid Concoction",
+    "itemCategory": "weapons",
+    "skillType": "create",
+    "profession": ["general", "chemist"],
+    "description": "Create 1 Acid Concoction",
+    "mustBeOutOfDanger": true,
+    "cost": {
+      "chemical": 3,
+      "flask": 1
     },
-    "Machine Gun Knowledge": {
-      "type": "passive",
-      "description": "Knowledge of how to use machine guns, thus removing 30% penalty to hit targets"
+    "light": 30
+  },
+  "pharmaceuticals": {
+    "name": "Pharmaceuticals",
+    "itemCategory": "items",
+    "skillType": "create",
+    "profession": ["chemist", "doctor"],
+    "description": "Create 1 Pharmaceutical",
+    "mustBeOutOfDanger": true,
+    "cost": {
+      "chemical": 2,
+      "alcohol": 1,
+      "flask": 1
     },
-    "Shotgun Knowledge": {
-      "type": "passive",
-      "description": "Knowledge of how to use shotguns, thus removing 30% penalty to hit targets"
-    }
+    "light": 30
   },
-  "privateEye": {
-    "Quick Reload": {
-      "type": "active",
-      "description": "Reload a handgun without using an action",
-      "spirit": [40, 30, 20, 10]
+  "holyWater": {
+    "name": "Holy Water",
+    "itemCategory": "weapons",
+    "skillType": "create",
+    "profession": ["priest"],
+    "description": "Create 1 Holy Water",
+    "mustBeOutOfDanger": true,
+    "cost": {
+      "water": 1,
+      "flask": 1
     },
-    "Keen Investigation": {
-      "type": "passive",
-      "description": "Improved chance of finding secrets when doing a search",
-      "bonus": [0.1, 0.2, 0.3, 0.4, 0.5]
+    "light": 30
+  },
+  "handgunKnowledge": {
+    "name": "Handgun Knowledge",
+    "skillType": "knowledge",
+    "profession": ["general", "privateEye", "veteran", "thief"],
+    "description": "Knowledge of how to use handguns, thus removing 30% penalty to hit targets"
+  },
+  "shotgunKnowledge": {
+    "name": "Shotgun Knowledge",
+    "skillType": "knowledge",
+    "profession": ["general", "privateEye", "veteran"],
+    "description": "Knowledge of how to use shotguns, thus removing 30% penalty to hit targets"
+  },
+  "machineGunKnowledge": {
+    "name": "Machine Gun Knowledge",
+    "skillType": "knowledge",
+    "profession": ["general", "veteran"],
+    "description": "Knowledge of how to use machine guns, thus removing 30% penalty to hit targets"
+  },
+  "quickReload": {
+    "name": "Quick Reload",
+    "skillType": "active",
+    "profession": ["privateEye"],
+    "description": "Reload a handgun without using an action",
+    "hasTarget": false,
+    "mustBeOutOfDanger": false,
+    "spirit": [40, 30, 20, 10]
+  },
+  "keenInvestigation": {
+    "name": "Keen Investigation",
+    "skillType": "passive",
+    "profession": ["privateEye"],
+    "description": "Improved chance of finding secrets when doing a search",
+    "modifier": [0.1, 0.2, 0.3, 0.4, 0.5]
+  },
+  "steadyHand": {
+    "name": "Steady Hand",
+    "skillType": "passive",
+    "profession": ["privateEye"],
+    "description": "Improved accuracy with handguns (bonus to Agility when shooting with a handgun)",
+    "modifier": [1, 2, 3]
+  },
+  "alwaysOnTheLookout": {
+    "name": "Always On The Lookout",
+    "skillType": "passive",
+    "profession": ["archaeologist"],
+    "description": "Increased chance of finding Relics",
+    "modifier": [0.1, 0.15, 0.2, 0.25, 0.3]
+  },
+  "dig": {
+    "name": "Dig",
+    "skillType": "active",
+    "profession": ["archaeologist"],
+    "description": "Use a pickaxe to dig in certain locations in order to find rocks, gems, precious metals, etc.",
+    "hasTarget": true,
+    "mustBeOutOfDanger": true,
+    "spirit": [45, 40, 35, 30, 25]
+  },
+  "betterLivingThroughChemicals": {
+    "name": "Better Living Through Chemicals",
+    "skillType": "active",
+    "profession": ["chemist"],
+    "description": "Use Pharmaceuticals on self with increased effectiveness",
+    "hasTarget": false,
+    "mustBeOutOfDanger": false,
+    "modifier": [0.1, 0.2, 0.3, 0.4],
+    "spirit": [40, 40, 30, 30]
+  },
+  "resuscitate": {
+    "name": "Resuscitate",
+    "skillType": "active",
+    "profession": ["doctor"],
+    "description": "Adjacent party member at 0 health is brought back to life at 5 health if skill is used within 3 turns of target being mortally wounded",
+    "hasTarget": true,
+    "mustBeOutOfDanger": false,
+    "spirit": [70, 65, 60, 55, 50]
+  },
+  "comfortTheFearful": {
+    "name": "Comfort The Fearful",
+    "skillType": "active",
+    "profession": ["priest"],
+    "description": "Provide sanity damage reduction to party until Follow Mode is activated",
+    "hasTarget": false,
+    "mustBeOutOfDanger": false,
+    "modifier": [-2, -4, -6, -8, -10],
+    "spirit": [70, 60, 50, 40, 30]
+  },
+  "holyLight": {
+    "name": "Holy Light",
+    "skillType": "active",
+    "profession": ["priest"],
+    "description": "Call down holy light to destroy undead or damage other creatures",
+    "hasTarget": true,
+    "mustBeOutOfDanger": false,
+    "modifier": [1, 2, 3],
+    "spirit": [50, 40, 30]
+  },
+  "sureShot": {
+    "name": "Sure Shot",
+    "skillType": "passive",
+    "profession": ["veteran"],
+    "description": "Improved accuracy with all guns (bonus to Agility when shooting with any gun)",
+    "modifier": [1, 2, 3, 4, 5]
+  },
+  "goBallistic": {
+    "name": "Go Ballistic",
+    "skillType": "active",
+    "profession": ["veteran"],
+    "description": "Shoot every enemy in range (provided enough ammo) with reduced accuracy (reduced percent to attack roll)",
+    "hasTarget": false,
+    "mustBeOutOfDanger": false,
+    "modifier": [-0.3, -0.25, -0.2, -0.15, -0.1],
+    "spirit": [60, 55, 50, 45, 40]
+  },
+  "moveIt": {
+    "name": "Move it!",
+    "skillType": "active",
+    "profession": ["veteran"],
+    "description": "Increased movement for one turn",
+    "hasTarget": false,
+    "mustBeOutOfDanger": false,
+    "modifier": [1, 2, 3],
+    "spirit": [40, 30, 20]
+  },
+  "flank": {
+    "name": "Flank",
+    "skillType": "active",
+    "profession": ["thief"],
+    "description": "Increased hit chance and damage with melee attack if another party member is next to target",
+    "hasTarget": true,
+    "mustBeOutOfDanger": false,
+    "modifier": [0.1, 0.2, 0.3, 0.4, 0.5],
+    "spirit": [20, 20, 20, 20, 20]
+  },
+  "stealthy": {
+    "name": "Stealthy",
+    "skillType": "passive",
+    "profession": ["thief"],
+    "description": "Less likely to be hit when not equipped with a light (bonus to Agility when attacked)",
+    "modifier": [1, 2, 3, 4, 5]
+  },
+  "disarmTrap": {
+    "name": "Disarm Trap",
+    "skillType": "active",
+    "profession": ["thief"],
+    "description": "Disarm a trap without chance of it triggering",
+    "hasTarget": true,
+    "mustBeOutOfDanger": true,
+    "cost": {
+      "Light": [30, 25, 20, 15, 10]
     },
-    "Steady Hand": {
-      "type": "passive",
-      "description": "Improved accuracy with handguns (bonus to Agility when shooting with a handgun)",
-      "bonus": [1, 2, 3]
-    }
+    "spirit": [40, 35, 30, 25, 20]
   },
-  "archaeologist": {
-
+  "identifyRelic": {
+    "name": "Identify Relic",
+    "skillType": "active",
+    "profession": ["occultResearcher"],
+    "description": "Discern what a Relic does",
+    "hasTarget": true,
+    "mustBeOutOfDanger": true,
+    "cost": {
+      "Light": [30, 25, 20, 15, 10]
+    },
+    "spirit": [30, 25, 20, 15, 10]
   },
-  "chemist": {
-
+  "sacrificialStrike": {
+    "name": "Sacrificial Strike",
+    "skillType": "active",
+    "profession": ["occultResearcher"],
+    "description": "Guaranteed hit and extra damage with Kris Knife in exchange for health and sanity loss",
+    "hasTarget": true,
+    "mustBeOutOfDanger": false,
+    "modifier": [1.5, 3, 4.5, 6, 7.5, 10],
+    "cost": {
+      "health": [3, 5, 7, 9, 11, 20],
+      "sanity": [3, 5, 7, 9, 11, 20]
+    },
+    "spirit": [30, 30, 30, 30, 30, 30]
   },
-  "doctor": {
-
-  },
-  "priest": {
-
-  },
-  "veteran": {
-
-  },
-  "thief": {
-
-  },
-  "occultResearcher": {
-
+  "relicMastery": {
+    "name": "Relic Mastery",
+    "skillType": "passive",
+    "profession": ["occultResearcher"],
+    "description": "Call down holy Light to destroy undead or damage other creatures",
+    "modifier": [-0.2, -0.4, -0.6]
   }
 }

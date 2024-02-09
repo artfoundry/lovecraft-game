@@ -2,20 +2,35 @@
   "elderThing": {
     "name": "Elder Thing",
     "type": "creature",
-    "level": 6,
+    "level": 10,
     "strength": 4,
     "agility": 4,
     "mentalAcuity": 15,
-    "damage": 5,
+    "damage": 0,
     "defense": 5,
     "damageReduction": 0,
-    "startingHealth": 50,
-    "startingSpirit": 25,
+    "startingHealth": 60,
+    "startingSpirit": 50,
     "range": 3,
     "attackType": "psychic",
     "moveSpeed": 2,
     "perception": 5,
-    "skills": {}
+    "skills": {
+      "Sleep": {
+        "type": "active",
+        "description": "Put a target to sleep for 1-4 turns",
+        "spirit": 30
+      },
+      "Confuse": {
+        "type": "active",
+        "description": "Confuse a target, causing it to act randomly for 1-4 turns",
+        "spirit": 40
+      },
+      "Re-energize": {
+        "type": "passive",
+        "description": "Regenerate Spirit at a rate of 5 per turn"
+      }
+    }
   },
   "ghast": {
     "name": "Ghast",

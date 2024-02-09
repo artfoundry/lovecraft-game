@@ -2,6 +2,7 @@ import React from 'react';
 import {diceRoll, deepCopy} from './Utils';
 import ItemTypes from './data/itemTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
+import Skills from './data/skills.json';
 
 class Character extends React.Component {
 	constructor(props) {
@@ -18,14 +19,14 @@ class Character extends React.Component {
 		this.strength = props.strength;
 		this.agility = props.agility;
 		this.mentalAcuity = props.mentalAcuity;
-		this.initiative = this.calculateInitiative();
+		this.initiative = this._calculateInitiative();
 		this.startingHealth = props.startingHealth;
 		this.currentHealth = props.startingHealth;
 		this.startingSanity = props.startingSanity;
 		this.currentSanity = props.startingSanity;
 		this.startingSpirit = (this.startingHealth / 2) + (this.startingSanity / 2);
 		this.currentSpirit = (this.startingHealth / 2) + (this.startingSanity / 2);
-		this.skills = props.skills;
+		this.skills = this._copySkillData(props.skills);
 		this.weapons = this._populateInfo('weapon', props.weapons);
 		this.equippedItems = {
 			loadout1: {right: props.equippedItems.right, left: this.weaponIsTwoHanded(props.equippedItems.right) ? props.equippedItems.right : props.equippedItems.left},
@@ -51,12 +52,20 @@ class Character extends React.Component {
 		return allInfo;
 	}
 
-	calculateDefense = () => {
-		return this.agility + (this.equippedItems.armor ? this.items[this.equippedItems.armor].defense : 0);
+	_calculateInitiative() {
+		return this.mentalAcuity + this.agility;
 	}
 
-	calculateInitiative() {
-		return this.mentalAcuity + this.agility;
+	_copySkillData(charSkills) {
+		let skillData = {};
+		charSkills.forEach(skillId => {
+			skillData[skillId] = Skills[skillId];
+		});
+		return skillData;
+	}
+
+	calculateDefense = () => {
+		return this.agility + (this.equippedItems.armor ? this.items[this.equippedItems.armor].defense : 0);
 	}
 
 	weaponIsTwoHanded = (weapon) => {
@@ -137,6 +146,102 @@ class Character extends React.Component {
 		updateCharacter('player', updatedTargetData, targetData.id, false, false, false, () => {
 			updateLog(`${pcData.name} uses ${healItem} to increase ${targetData.name}'s ${targetStat.substring(7)}`);
 			updateCharacter('player', updatedHealerData, pcData.id, false, false, false, callback);
+		});
+	}
+
+	/** Profession Skills **/
+
+	/**
+	 * Creates an item using materials and light (cost); enemies must not be around in order to use
+	 * @param props: object {
+	 *     itemType: string ('firstAidKit', 'molotovCocktail', 'torch', 'acidConcoction', 'pharmaceuticals', 'holyWater'),
+	 *     activeCharId: string,
+	 *     currentPcData: object,
+	 *     updateCharacter: function (from App),
+	 *     updateLog: function (from App),
+	 *     setShowDialogProps: function (from App),
+	 *     addItemToPlayerInventory: function (from App)
+	 * }
+	 */
+	create = (props) => {
+		const {itemType, activeCharId, currentPcData, updateCharacter, updateLog, setShowDialogProps, addItemToPlayerInventory} = props;
+		const materialCosts = this.skills[itemType].cost;
+		const lightCost = this.skills[itemType].light;
+		const itemName = this.skills[itemType].name;
+		let updatedPcData = deepCopy(currentPcData);
+		let activeCharItems = updatedPcData.items;
+		const notEnoughMatsDialogProps = {
+			dialogContent: "That character doesn't have enough materials to create that item.",
+			closeButtonText: 'Ok',
+			closeButtonCallback: null,
+			disableCloseButton: false,
+			actionButtonVisible: false,
+			actionButtonText: '',
+			actionButtonCallback: null,
+			dialogClasses: ''
+		};
+		for (const [material, reqAmount] of Object.entries(materialCosts)) {
+			// need to remove the 0 in the inventory item key
+			const materialItemKey = material + '0';
+			if (!currentPcData.items[materialItemKey] || currentPcData.items[materialItemKey].amount < reqAmount) {
+				setShowDialogProps(true, notEnoughMatsDialogProps);
+				return;
+			} else {
+				activeCharItems[materialItemKey].amount -= reqAmount;
+				if (activeCharItems[materialItemKey].amount === 0) {
+					delete activeCharItems[materialItemKey];
+				}
+			}
+		}
+		if (updatedPcData.equippedLight) {
+			const timeSpent = lightCost > updatedPcData.lightTime ? updatedPcData.lightTime : lightCost;
+			const equippedLight = updatedPcData.equippedLight;
+			updatedPcData.items[equippedLight].time -= timeSpent;
+			updatedPcData.lightTime -= timeSpent;
+		}
+
+		let itemId = itemType + '0';
+		const itemCategory = this.skills[itemType].itemCategory;
+		let itemData = {};
+		if (itemCategory === 'items') {
+			itemData = {...ItemTypes[itemName]};
+		} else if (itemCategory === 'weapons') {
+			itemData = {...WeaponTypes[itemName]};
+		}
+		if (updatedPcData.items[itemId] && itemData.stackable) {
+			if (itemCategory === 'items') {
+				itemData.amount++;
+			} else if (itemCategory === 'weapons') {
+				itemData.currentRounds++;
+			}
+		}
+
+		updateLog(`${currentPcData.name} creates a${itemType === 'acidConcoction' ? 'n' : ''} ${itemName}.`);
+		updateCharacter('player', updatedPcData, activeCharId, false, false, false, () => {
+			// For stackable items (5 of the 6 items currently), ID will be coerced to 0 in App.addItemToPlayerInventory, so loop below isn't needed
+			// but if other nonstackable item create skills are added, then this loop will be needed for those
+			let greatestItemNumInInv = 0;
+			if (itemType === 'torch') {
+				for (const itemId of Object.keys(currentPcData[itemCategory])) {
+					if (itemId.includes(itemType)) {
+						const currentItemIdNum = +itemId.substring(itemType.length - 1);
+						if (currentItemIdNum >= greatestItemNumInInv) {
+							greatestItemNumInInv = currentItemIdNum + 1;
+						}
+					}
+				}
+			}
+			itemId = itemType + greatestItemNumInInv;
+			if (itemData.stackable) {
+				if (itemCategory === 'items') {
+					itemData.amount = 1;
+				} else if (itemCategory === 'weapons') {
+					itemData.currentRounds = 1;
+				}
+			}
+			itemData.name = itemName;
+			itemData.id = itemId;
+			addItemToPlayerInventory(itemData, itemId, false);
 		});
 	}
 

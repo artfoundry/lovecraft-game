@@ -6,10 +6,14 @@ function CharacterControls(props) {
 	const currentPCdata = props.playerCharacters[props.characterId];
 	const equippedItems = props.equippedItems.loadout1;
 	const invItems = props.invItems;
+	const pcSkills = currentPCdata.skills;
 	const actionableItems = {
 		weapons: [],
-		medicine: []
+		medicine: [],
+		skills: []
 	};
+	let actionButtonCount = 0;
+	const actionButtonMax = 6;
 
 	const handleWeaponClick = (weapon, reloading = false) => {
 		const ammoId = currentPCdata.weapons[weapon.weaponId].gunType + 'Ammo0';
@@ -33,6 +37,7 @@ function CharacterControls(props) {
 	const hasExtraAmmo = props.checkForExtraAmmo(currentPCdata);
 	const actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0) ? 'button-inactive' : '';
 
+	// add all equipped weapons to actionableItems.weapons
 	for (const itemId of Object.values(equippedItems)) {
 		// need this check for two-handed weapons, since both hands list the same weaponId
 		const existingWeaponIndex = actionableItems.weapons.findIndex(weapon => weapon.weaponId === itemId);
@@ -55,6 +60,7 @@ function CharacterControls(props) {
 		}
 	}
 
+	// add all inv medicine items to actionableItems.medicine
 	for (const [itemId, itemInfo] of Object.entries(invItems)) {
 		if (itemInfo.itemType === 'Medicine') {
 			const matchingItem = actionableItems.medicine.findLast(item => item.name === itemInfo.name);
@@ -66,17 +72,30 @@ function CharacterControls(props) {
 		}
 	}
 
+	// add all action or create skills to actionableItems.skills
+	for (const [skillId, skillInfo] of Object.entries(pcSkills)) {
+		if (skillInfo.skillType === 'create' || skillInfo.skillType === 'active') {
+			actionableItems.skills.push({
+				skillId,
+				name: skillInfo.name,
+				skillType: skillInfo.skillType,
+				mustBeOutOfDanger: skillInfo.mustBeOutOfDanger,
+				hasTarget: skillInfo.hasTarget
+			});
+		}
+	}
+
 	const weaponButtons = (
 		<div className='weapon-buttons-container'>
 			{actionableItems.weapons.map((weapon, index) => {
 				let actionButtonState = '';
-				let buttonType;
+				let button;
 				if (weapon.isGun) {
 					actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || weapon.ammo === 0) ? 'button-inactive' :
 						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === weapon.weaponId) ? 'button-selected': '';
 					const reloadButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || props.actionButtonSelected || weapon.ammo === weapon.fullyLoaded || !hasExtraAmmo) ? 'button-inactive' :
 						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === weapon.weaponId) ? 'button-selected': '';
-					buttonType = (
+					button = (
 						<div className='action-button-pair' key={weapon.weaponId}>
 							<div
 								className={`action-button ${convertObjIdToClassId(weapon.weaponId)}-action ${actionButtonState}`}
@@ -92,10 +111,11 @@ function CharacterControls(props) {
 							></div>
 						</div>
 					);
+					actionButtonCount += 2;
 				} else {
 					actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || (weapon.ammo === 0 && !hasExtraAmmo)) ? 'button-inactive' :
 						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === weapon.weaponId) ? 'button-selected': '';
-					buttonType = (
+					button = (
 						<div
 							className={`action-button ${convertObjIdToClassId(weapon.weaponId)}-action ${actionButtonState} ${weapon.ammo === 0 ? 'gun-reload-icon' : ''}`}
 							key={weapon.weaponId}
@@ -104,8 +124,9 @@ function CharacterControls(props) {
 							}}
 						>{weapon.ammo || ''}</div>
 					);
+					actionButtonCount++;
 				}
-				return buttonType;
+				return button;
 			})}
 		</div>
 	);
@@ -123,7 +144,29 @@ function CharacterControls(props) {
 							props.toggleActionButton(props.characterId, item.itemId, item.name, 'item');
 						}}>{itemCount}</div>
 					);
+					actionButtonCount++;
 				}
+				return button;
+			})}
+		</div>
+	);
+
+	const skillButtons = (
+		<div className='skill-buttons-container'>
+			{actionableItems.skills.map((skill, index) => {
+				let button = null;
+				const actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || (skill.mustBeOutOfDanger && props.threatList.length > 0)) ? 'button-inactive' :
+					(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === skill.skillId && skill.hasTarget) ? 'button-selected': '';
+				let skillClass = `${convertObjIdToClassId(skill.skillId)}-action`;
+				if (skill.skillType === 'create') {
+					skillClass = 'create-' + skillClass;
+				}
+				button = (
+					<div className={`action-button ${skillClass} ${actionButtonState}`} key={skill.skillId} onClick={() => {
+						props.toggleActionButton(props.characterId, skill.skillId, skill.name, 'skill');
+					}}></div>
+				);
+				actionButtonCount++;
 				return button;
 			})}
 		</div>
@@ -139,6 +182,7 @@ function CharacterControls(props) {
 			className='control-bar-tab-container'
 			onDragOver={(evt) => handleItemOverDropZone(evt)}
 			onDrop={(evt) => props.dropItemToPC(evt, props.characterId)}>
+
 			<div className='control-bar-tab character-name font-fancy' onClick={() => props.setSelectedControlTab(props.characterId)}>
 				<span className={`control-bar-tab-icon ${convertObjIdToClassId(props.characterId)}`}></span>
 				{displayCharName ? props.characterName : ''}
@@ -173,9 +217,16 @@ function CharacterControls(props) {
 			<div
 				id={`char-control-${props.characterId}`}
 				className={`control-bar-buttons-container ${(props.screenData.isSmall && props.characterId !== props.selectedControlTab) ? 'hide' : ''}`}>
+				{actionButtonCount > actionButtonMax &&
+					<div className='action-button action-button-scroll'>⬅</div>
+				}
 				{weaponButtons}
+				{skillButtons}
 				{medicineButtons}
 				<div className='misc-action-buttons-container'>
+					{(props.mapObjectsOnPcTiles.length > 0) &&
+						<div className={`action-button pickup-action ${actionButtonState}`} onClick={(evt) => props.setMapObjectSelected(props.mapObjectsOnPcTiles, evt, true)}></div>
+					}
 					{((currentPCdata.equippedLight && (currentPCdata.equippedLight.includes('lantern') || currentPCdata.equippedLight.includes('torch'))) &&
 					currentPCdata.lightTime < currentPCdata.items[currentPCdata.equippedLight].maxTime && currentPCdata.items.oil0) &&
 					<div className={`action-button refill-action ${actionButtonState}`} onClick={() => {
@@ -193,11 +244,10 @@ function CharacterControls(props) {
 						}
 					}}></div>
 					}
-					{(props.mapObjectsOnPcTiles.length > 0) &&
-						<div className={`action-button pickup-action ${actionButtonState}`} onClick={(evt) => props.setMapObjectSelected(props.mapObjectsOnPcTiles, evt, true)}></div>
-					}
 				</div>
-				{/*<div className='action-button arrow-button-right action-button-scroll'>⬅</div>*/}
+				{actionButtonCount > actionButtonMax &&
+				<div className='action-button arrow-button-right action-button-scroll'>⬅</div>
+				}
 			</div>
 		</div>
 	);
@@ -208,7 +258,7 @@ function CharacterInfoPanel(props) {
 	const equippedLight = props.characterInfo.items[props.characterInfo.equippedLight];
 	const equippedItems = props.characterInfo.equippedItems;
 	const equippedIsTwoHanded = equippedItems.loadout1.right && equippedItems.loadout1.right === equippedItems.loadout1.left;
-	const inventoryItems = deepCopy(props.entireInventory[props.characterInfo.id]);
+	const inventoryItems = deepCopy(props.characterInventoryIds);
 	const dragItem = (evt) => {
 		const itemId = evt.target.id.includes('-leftHand') ? evt.target.id.slice(0, evt.target.id.indexOf('-leftHand')) : evt.target.id;
 		const selectedChar = props.characterInfo;
@@ -223,7 +273,7 @@ function CharacterInfoPanel(props) {
 	const itemsIntoElements = (
 		<div className='char-info-inv-items'>
 			{inventoryItems.map((itemId, index) => {
-				const itemInfo = props.characterInfo.weapons[itemId] || props.characterInfo.items[itemId];
+				const itemInfo = props.inventoryData[itemId];
 				return (
 					<div
 						id={'invBox' + index}
