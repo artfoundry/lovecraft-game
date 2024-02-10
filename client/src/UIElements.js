@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {convertObjIdToClassId, notEnoughSpaceInInventory, deepCopy, handleItemOverDropZone} from './Utils';
+import {convertObjIdToClassId, notEnoughSpaceInInventory, handleItemOverDropZone} from './Utils';
 import {Music} from './Audio';
 
 function CharacterControls(props) {
@@ -16,20 +16,9 @@ function CharacterControls(props) {
 	const actionButtonMax = 6;
 
 	const handleWeaponClick = (weapon, reloading = false) => {
-		const ammoId = currentPCdata.weapons[weapon.weaponId].gunType + 'Ammo0';
+		// const ammoId = currentPCdata.weapons[weapon.weaponId].gunType + 'Ammo0';
 		if (reloading) {
-			const availAmmo = currentPCdata.items[weapon.gunType + 'Ammo0'].amount;
-			// if reloading gun uses up remaining ammo in inv, remove ammo item in inv and update inventory in UI
-			if (availAmmo <= (weapon.fullyLoaded - weapon.ammo)) {
-				let updatedInventory = props.entireInventory[props.characterId];
-				const ammoInvIndex = updatedInventory.indexOf(ammoId);
-				updatedInventory.splice(ammoInvIndex, 1);
-				props.updateInventory(props.characterId, updatedInventory, () => {
-					props.reloadGun(weapon.weaponId);
-				});
-			} else {
-				props.reloadGun(weapon.weaponId);
-			}
+			props.reloadGun(weapon.weaponId);
 		} else {
 			props.toggleActionButton(props.characterId, weapon.weaponId, weapon.weaponName, 'weapon');
 		}
@@ -225,24 +214,11 @@ function CharacterControls(props) {
 				{medicineButtons}
 				<div className='misc-action-buttons-container'>
 					{(props.mapObjectsOnPcTiles.length > 0) &&
-						<div className={`action-button pickup-action ${actionButtonState}`} onClick={(evt) => props.setMapObjectSelected(props.mapObjectsOnPcTiles, evt, true)}></div>
+					<div className={`action-button pickup-action ${actionButtonState}`} onClick={(evt) => props.setMapObjectSelected(props.mapObjectsOnPcTiles, evt, true)}></div>
 					}
 					{((currentPCdata.equippedLight && (currentPCdata.equippedLight.includes('lantern') || currentPCdata.equippedLight.includes('torch'))) &&
 					currentPCdata.lightTime < currentPCdata.items[currentPCdata.equippedLight].maxTime && currentPCdata.items.oil0) &&
-					<div className={`action-button refill-action ${actionButtonState}`} onClick={() => {
-						const availOil = currentPCdata.items.oil0 && currentPCdata.items.oil0.amount;
-						// if reloading light uses up remaining oil in inv, remove oil item in inv and update inventory in UI
-						if (availOil <= (currentPCdata.items[currentPCdata.equippedLight].maxTime - currentPCdata.lightTime)) {
-							let updatedInventory = props.entireInventory[props.characterId];
-							const oilInvIndex = updatedInventory.indexOf('oil0');
-							updatedInventory.splice(oilInvIndex, 1);
-							props.updateInventory(props.characterId, updatedInventory, () => {
-								props.refillLight();
-							});
-						} else {
-							props.refillLight();
-						}
-					}}></div>
+					<div className={`action-button refill-action ${actionButtonState}`} onClick={props.refillLight}></div>
 					}
 				</div>
 				{actionButtonCount > actionButtonMax &&
@@ -258,7 +234,7 @@ function CharacterInfoPanel(props) {
 	const equippedLight = props.characterInfo.items[props.characterInfo.equippedLight];
 	const equippedItems = props.characterInfo.equippedItems;
 	const equippedIsTwoHanded = equippedItems.loadout1.right && equippedItems.loadout1.right === equippedItems.loadout1.left;
-	const inventoryItems = deepCopy(props.characterInventoryIds);
+	const inventoryItems = [...props.characterInventoryIds];
 	const dragItem = (evt) => {
 		const itemId = evt.target.id.includes('-leftHand') ? evt.target.id.slice(0, evt.target.id.indexOf('-leftHand')) : evt.target.id;
 		const selectedChar = props.characterInfo;
@@ -273,7 +249,7 @@ function CharacterInfoPanel(props) {
 	const itemsIntoElements = (
 		<div className='char-info-inv-items'>
 			{inventoryItems.map((itemId, index) => {
-				const itemInfo = props.inventoryData[itemId];
+				const itemInfo = props.characterInfo.weapons[itemId] || props.characterInfo.items[itemId];
 				return (
 					<div
 						id={'invBox' + index}
@@ -453,7 +429,8 @@ function ObjectInfoPanel(props) {
 		isMapObj,
 		dialogProps,
 		setShowDialogProps,
-		creatureCoords} = {...props};
+		creatureCoords,
+		activePc} = {...props};
 	const [origObjectList, updateOrigObjectList] = useState(objectInfo);
 	const [objectToShow, updateObjToShow] = useState(isMapObj ? null : objectInfo);
 	const splitStack = (evt) => {
@@ -500,7 +477,7 @@ function ObjectInfoPanel(props) {
 									}
 									setShowDialogProps(true, guardedDialogProps);
 								} else {
-									addItemToPlayerInventory(obj, obj.id, isPickUpAction);
+									addItemToPlayerInventory(obj, obj.id, activePc, isPickUpAction);
 									const updatedList = origObjectList;
 									updatedList[index] = undefined;
 									updateOrigObjectList(updatedList);

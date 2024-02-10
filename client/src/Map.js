@@ -660,20 +660,19 @@ class Map extends React.Component {
 					const tileType = itemName === 'Torch' ? 'wall' : 'floor';
 					const lowerCaseName = itemName.slice(0, 1).toLowerCase() + itemName.slice(1, itemName.length).replaceAll(' ', '');
 					const itemID = lowerCaseName + (i + 1);
-					const looseItemAmount =
-						objectType === 'Ammo' ? Math.floor(Math.random() * 10) + 2 :
-						itemName === 'Oil' ? Math.floor(Math.random() * 90) + 10 :
-						objectType === 'Medicine' ? 1 : null;
 					const gunType = objectType === 'Weapon' && itemInfo.gunType ? itemInfo.gunType : null;
 					const weaponCurrentRounds = gunType ? Math.round(Math.random() * itemInfo.rounds) : objectType === 'Weapon' ? 1 : null;
 					const coords = this._getInitialRandomCoords(itemCoords, tileType); // this.props.playerCharacters['privateEye'].coords (to easily test objects)
 					mapItems[itemID] = {
 						...itemInfo,
 						name: itemName,
-						amount: looseItemAmount,
 						currentRounds: weaponCurrentRounds,
 						coords
 					};
+					mapItems[itemID].amount =
+						objectType === 'Ammo' ? Math.floor(Math.random() * 10) + 2 :
+						itemName === 'Oil' ? Math.floor(Math.random() * 90) + 10 :
+						objectType === 'Medicine' ? 1 : null;
 					itemCoords[itemID] = coords;
 				}
 			}
@@ -1012,13 +1011,8 @@ class Map extends React.Component {
 				objectInfo={{id, ...info}}
 				name={idConvertedToClassName}
 				tilePos={convertCoordsToPos(info.coords)}
-				isActivePlayerNearObject={this.isActivePlayerNearObject}
-				isActivePlayerInvFull={isActivePlayerInvFull}
-				addItemToPlayerInventory={this.props.addItemToPlayerInventory}
 				tileIsVisible={tileIsVisible}
 				updateContextMenu={this.checkForDragging}
-				invFullDialogProps={this.props.notEnoughSpaceDialogProps}
-				setShowDialogProps={this.props.setShowDialogProps}
 				styles={{
 					transform: `translate(${this._calculateObjectTransform(info.coords.xPos, info.coords.yPos)})`,
 					width: this.tileSize + 'px',

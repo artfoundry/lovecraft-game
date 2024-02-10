@@ -27,13 +27,14 @@ class Character extends React.Component {
 		this.startingSpirit = (this.startingHealth / 2) + (this.startingSanity / 2);
 		this.currentSpirit = (this.startingHealth / 2) + (this.startingSanity / 2);
 		this.skills = this._copySkillData(props.skills);
-		this.weapons = this._populateInfo('weapon', props.weapons);
+		this.inventory = this._prePopulateInv(props.playerInventoryLimit);
+		this.weapons = this._populateInvInfo('weapon', props.weapons, props.equippedItems);
 		this.equippedItems = {
 			loadout1: {right: props.equippedItems.right, left: this.weaponIsTwoHanded(props.equippedItems.right) ? props.equippedItems.right : props.equippedItems.left},
 			loadout2: {right: '', left: ''},
 			armor: props.equippedItems.armor || ''
 		};
-		this.items = this._populateInfo('item', props.items);
+		this.items = this._populateInvInfo('item', props.items, props.equippedItems);
 		this.maxItems = 12;
 		this.defense = this.calculateDefense();
 		this.damageReduction = this.equippedItems.armor ? this.items[this.equippedItems.armor].damageReduction : 0;
@@ -43,11 +44,24 @@ class Character extends React.Component {
 		this.lightTime = this.equippedLight ? this.items[this.equippedLight].time : null;
 	}
 
-	_populateInfo(type, props) {
-		const fullData = type === 'weapon' ? WeaponTypes : ItemTypes;
+	_prePopulateInv(invLimit) {
+		// need to initially fill in inv slots with null, so char info panel shows empty boxes
+		let inv = [];
+		for(let i = 0; i < invLimit; i++) {
+			inv.push(null);
+		}
+		return inv;
+	}
+
+	_populateInvInfo(type, objects, equipped) {
+		const fullItemData = type === 'weapon' ? WeaponTypes : ItemTypes;
 		let allInfo = {};
-		for (const [id, info] of Object.entries(props)) {
-			allInfo[id] = {...info, ...fullData[info.name]};
+		for (const [id, info] of Object.entries(objects)) {
+			allInfo[id] = {...info, ...fullItemData[info.name]};
+			if (id !== equipped.right && id !== equipped.left && id !== equipped.armor) {
+				const firstEmptyBoxId = this.inventory.indexOf(null);
+				this.inventory.splice(firstEmptyBoxId, 1, id);
+			}
 		}
 		return allInfo;
 	}
