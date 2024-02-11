@@ -27,13 +27,14 @@ class Character extends React.Component {
 		this.startingSpirit = (this.startingHealth / 2) + (this.startingSanity / 2);
 		this.currentSpirit = (this.startingHealth / 2) + (this.startingSanity / 2);
 		this.skills = this._copySkillData(props.skills);
-		this.weapons = this._populateInfo('weapon', props.weapons);
+		this.inventory = this._prePopulateInv(props.playerInventoryLimit);
+		this.weapons = this._populateInvInfo('weapon', props.weapons, props.equippedItems);
 		this.equippedItems = {
 			loadout1: {right: props.equippedItems.right, left: this.weaponIsTwoHanded(props.equippedItems.right) ? props.equippedItems.right : props.equippedItems.left},
 			loadout2: {right: '', left: ''},
 			armor: props.equippedItems.armor || ''
 		};
-		this.items = this._populateInfo('item', props.items);
+		this.items = this._populateInvInfo('item', props.items, props.equippedItems);
 		this.maxItems = 12;
 		this.defense = this.calculateDefense();
 		this.damageReduction = this.equippedItems.armor ? this.items[this.equippedItems.armor].damageReduction : 0;
@@ -43,11 +44,24 @@ class Character extends React.Component {
 		this.lightTime = this.equippedLight ? this.items[this.equippedLight].time : null;
 	}
 
-	_populateInfo(type, props) {
-		const fullData = type === 'weapon' ? WeaponTypes : ItemTypes;
+	_prePopulateInv(invLimit) {
+		// need to initially fill in inv slots with null, so char info panel shows empty boxes
+		let inv = [];
+		for(let i = 0; i < invLimit; i++) {
+			inv.push(null);
+		}
+		return inv;
+	}
+
+	_populateInvInfo(type, objects, equipped) {
+		const fullItemData = type === 'weapon' ? WeaponTypes : ItemTypes;
 		let allInfo = {};
-		for (const [id, info] of Object.entries(props)) {
-			allInfo[id] = {...info, ...fullData[info.name]};
+		for (const [id, info] of Object.entries(objects)) {
+			allInfo[id] = {...info, ...fullItemData[info.name]};
+			if (id !== equipped.right && id !== equipped.left && id !== equipped.armor) {
+				const firstEmptyBoxId = this.inventory.indexOf(null);
+				this.inventory.splice(firstEmptyBoxId, 1, id);
+			}
 		}
 		return allInfo;
 	}
@@ -183,13 +197,17 @@ class Character extends React.Component {
 		for (const [material, reqAmount] of Object.entries(materialCosts)) {
 			// need to remove the 0 in the inventory item key
 			const materialItemKey = material + '0';
+			// if not enough materials to create, show dialog and exit
 			if (!currentPcData.items[materialItemKey] || currentPcData.items[materialItemKey].amount < reqAmount) {
 				setShowDialogProps(true, notEnoughMatsDialogProps);
 				return;
+			// otherwise, delete materials from inv
 			} else {
 				activeCharItems[materialItemKey].amount -= reqAmount;
 				if (activeCharItems[materialItemKey].amount === 0) {
 					delete activeCharItems[materialItemKey];
+					const materialInvIndex = updatedPcData.inventory.indexOf(materialItemKey);
+					updatedPcData.inventory.splice(materialInvIndex, 1, null);
 				}
 			}
 		}
@@ -217,6 +235,7 @@ class Character extends React.Component {
 		}
 
 		updateLog(`${currentPcData.name} creates a${itemType === 'acidConcoction' ? 'n' : ''} ${itemName}.`);
+		// update stackable counts if applicable and remove used materials
 		updateCharacter('player', updatedPcData, activeCharId, false, false, false, () => {
 			// For stackable items (5 of the 6 items currently), ID will be coerced to 0 in App.addItemToPlayerInventory, so loop below isn't needed
 			// but if other nonstackable item create skills are added, then this loop will be needed for those
@@ -241,7 +260,8 @@ class Character extends React.Component {
 			}
 			itemData.name = itemName;
 			itemData.id = itemId;
-			addItemToPlayerInventory(itemData, itemId, false);
+			// now add item to items/weapons and inv
+			addItemToPlayerInventory(itemData, itemId, activeCharId, false);
 		});
 	}
 

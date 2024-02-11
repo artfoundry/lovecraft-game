@@ -7,7 +7,6 @@ class UI extends React.Component {
 	constructor(props) {
 		super(props);
 
-		this.inventoryLength = 12;
 		this.initialUiLoad = true;
 
 		this.uiRefs = {
@@ -29,8 +28,6 @@ class UI extends React.Component {
 			selectedControlTab: '',
 			logMinimized: false,
 			modeMinimized: false,
-			entireInventory: {},
-			prevPlayerInvChanged: this.props.playerInvHasChanged,
 			inventoryData: {},
 			objectIsSelected: false,
 			selectedObjPos: {},
@@ -106,9 +103,6 @@ class UI extends React.Component {
 					inTacticalMode={this.props.inTacticalMode}
 					threatList={this.props.threatList}
 					updateCharacters={this.props.updateCharacters}
-					addItemToPlayerInventory={this.props.addItemToPlayerInventory}
-					entireInventory={this.state.entireInventory}
-					updateInventory={this.updateInventory}
 					checkForExtraAmmo={this.checkForExtraAmmo}
 					reloadGun={this.props.reloadGun}
 					refillLight={this.props.refillLight}
@@ -148,13 +142,13 @@ class UI extends React.Component {
 
 	/**
 	 * Remove dragged item from source pc inv if it's a single object or an entire stack (of ammo, oil, etc.)
-	 * @param invObjectCategory
-	 * @param sourceItemCount
-	 * @param sourcePCdata
-	 * @param allPlayersInv
-	 * @param callback
+	 * @param invObjectCategory: string
+	 * @param sourceItemCount: number
+	 * @param sourcePCdata: object
+	 * @param lightingChanged: boolean
+	 * @param callback: function
 	 */
-	updateSourcePcInvAfterTransfer = (invObjectCategory, sourceItemCount, sourcePCdata, allPlayersInv, lightingChanged, callback = null) => {
+	updateSourcePcInvAfterTransfer = (invObjectCategory, sourceItemCount, sourcePCdata, lightingChanged, callback = null) => {
 		if (Object.keys(this.state.objectSelected).length === 0) {
 			return;
 		}
@@ -166,7 +160,7 @@ class UI extends React.Component {
 		if (!draggedItem.stackable || sourceItemCount === 0) {
 			// if no source box index, then it was dragged from being equipped and doesn't exist in allPlayersInv
 			if (sourceBoxIndex) {
-				allPlayersInv[draggedObjectMetaData.sourcePC].splice(+sourceBoxIndex[0], 1, null);
+				sourcePCdata.inventory.splice(+sourceBoxIndex[0], 1, null);
 			}
 
 			delete sourcePCdata[invObjectCategory][invId];
@@ -193,9 +187,7 @@ class UI extends React.Component {
 			}
 		}
 
-		this.updateInventory(null, allPlayersInv, () => {
-			this.props.updateCharacters('player', sourcePCdata, draggedObjectMetaData.sourcePC, lightingChanged, false, false, callback);
-		});
+		this.props.updateCharacters('player', sourcePCdata, draggedObjectMetaData.sourcePC, lightingChanged, false, false, callback);
 	}
 
 	/**
@@ -212,9 +204,9 @@ class UI extends React.Component {
 		if (!draggedItem || draggedObjectMetaData.sourcePC === recipientId) {
 			return;
 		}
-		const allPlayersInv = deepCopy(this.state.entireInventory);
 		let dialogProps = null;
 
+		// If destination pc is too far away
 		if (Math.abs(currentPCdata.coords.xPos - sourcePCdata.coords.xPos) > 1 || Math.abs(currentPCdata.coords.yPos - sourcePCdata.coords.yPos) > 1) {
 			dialogProps = {
 				dialogContent: 'That character is too far away. To trade, characters need to be next to each other.',
@@ -226,28 +218,21 @@ class UI extends React.Component {
 				actionButtonCallback: null,
 				dialogClasses: ''
 			};
+		// or if not enough space in destination inv
 		} else if (notEnoughSpaceInInventory(1, 0, currentPCdata)) {
 			dialogProps = this.props.notEnoughSpaceDialogProps;
+		// if item dragged is stackable, open options dialog
+		} else if (draggedItem.stackable) {
+			this.setObjectPanelDisplayOption(true, evt, recipientId);
+		// add dragged item to destination pc inv
 		} else {
-			const firstOpenInvSlot = allPlayersInv[recipientId].indexOf(null);
 			const invObjectCategory = draggedItem.itemType ? 'items' : 'weapons';
 			const invId = draggedItem.id;
 			const lightingChanged = draggedItem.itemType && draggedItem.itemType === 'Light' && sourcePCdata.equippedLight === invId;
 
-			// add dragged item to current pc inv
-			if (draggedItem.stackable) {
-				this.setObjectPanelDisplayOption(true, evt, recipientId);
-			} else {
-				currentPCdata[invObjectCategory][draggedItem.id] = {...draggedItem};
-				// now add item to inv shown in char info panel
-				if (!allPlayersInv[recipientId].includes(invId) && currentPCdata.equippedItems.loadout1.right !== invId && currentPCdata.equippedItems.loadout1.left !== invId) {
-					allPlayersInv[recipientId].splice(firstOpenInvSlot, 1, invId);
-				}
-
-				this.updateSourcePcInvAfterTransfer(invObjectCategory, null, sourcePCdata, allPlayersInv, lightingChanged, () => {
-					this.props.updateCharacters('player', currentPCdata, recipientId);
-				});
-			}
+			this.updateSourcePcInvAfterTransfer(invObjectCategory, null, sourcePCdata, lightingChanged, () => {
+				this.props.addItemToPlayerInventory(draggedItem, invId, recipientId, false);
+			});
 		}
 
 		if (dialogProps) {
@@ -284,11 +269,11 @@ class UI extends React.Component {
 		let hand = '';
 		let oppositeHand = '';
 		const updateData = deepCopy(this.props.selectedCharacterInfo);
-		const inventoryItems = this.state.entireInventory[this.props.selectedCharacterInfo.id];
-		let tempAllItemsList = [...inventoryItems];
 		const sourceBoxIndex = draggedObjectMetaData.sourceLoc.match(/\d+/);
 		const loadout1 = updateData.equippedItems.loadout1;
 		let lightBeingSwapped = null;
+		let itemBeingReplaced = '';
+		let secondItemBeingReplaced = '';
 		let dialogProps = {};
 
 		if (destination === 'hand-swap') {
@@ -317,6 +302,7 @@ class UI extends React.Component {
 				}
 				this.props.setShowDialogProps(true, dialogProps);
 			}
+			itemBeingReplaced = updateData.equippedLight;
 			updateData.equippedLight = draggedItem.id;
 			updateData.lightRange = draggedItem.range;
 			updateData.lightTime = draggedItem.time;
@@ -325,6 +311,7 @@ class UI extends React.Component {
 		} else if (hand && sourceBoxIndex && (loadout1[hand] === updateData.equippedLight ||
 			(draggedItem.twoHanded && loadout1[oppositeHand] === updateData.equippedLight)))
 		{
+			itemBeingReplaced = updateData.equippedLight;
 			updateData.equippedLight = null;
 			updateData.lightRange = 0;
 			updateData.lightTime = 0;
@@ -347,10 +334,13 @@ class UI extends React.Component {
 				this.props.setShowDialogProps(true, dialogProps);
 				return;
 			}
+			itemBeingReplaced = loadout1[hand];
+			secondItemBeingReplaced = loadout1[oppositeHand];
 			loadout1[hand] = draggedItem.id;
 			loadout1[oppositeHand] = draggedItem.id;
 		// or if we're replacing a two-handed item with a one-handed item
 		} else if (hand && loadout1.right && loadout1.right === loadout1.left) {
+			itemBeingReplaced = loadout1[hand];
 			loadout1[hand] = draggedItem.id;
 			loadout1[oppositeHand] = '';
 		// or we're just equipping a one-handed item
@@ -365,22 +355,30 @@ class UI extends React.Component {
 				loadout1.right = '';
 				hand = 'right';
 			}
+			itemBeingReplaced = loadout1[hand];
 			loadout1[hand] = draggedItem.id;
 		// or we're equipping a body item
 		} else if (destination === 'body') {
+			itemBeingReplaced = updateData.equippedItems.armor;
 			updateData.equippedItems.armor = draggedItem.id;
 			updateData.defense = this.props.selectedCharacterInfo.calculateDefense();
 			updateData.damageReduction = draggedItem.damageReduction;
 		}
 
-		// if item is dragged from one hand to another, sourceBoxIndex is null
+		// Update inventory array, though if item is dragged from one hand to another, sourceBoxIndex is null, so no update needed
 		if (sourceBoxIndex) {
-			tempAllItemsList.splice(+sourceBoxIndex[0], 1, null);
+			updateData.inventory.splice(+sourceBoxIndex[0], 1, null);
+			if (itemBeingReplaced) {
+				const firstOpenInvSlot = updateData.inventory.indexOf(null);
+				updateData.inventory.splice(firstOpenInvSlot, 1, itemBeingReplaced);
+			}
+			if (secondItemBeingReplaced) {
+				const firstOpenInvSlot = updateData.inventory.indexOf(null);
+				updateData.inventory.splice(firstOpenInvSlot, 1, secondItemBeingReplaced);
+			}
 		}
 
-		this.updateInventory(this.props.selectedCharacterInfo.id, tempAllItemsList, () => {
-			this.props.updateCharacters('player', updateData, this.props.selectedCharacterInfo.id, lightingChanged, false, false);
-		});
+		this.props.updateCharacters('player', updateData, this.props.selectedCharacterInfo.id, lightingChanged, false, false);
 	}
 
 	/**
@@ -402,7 +400,6 @@ class UI extends React.Component {
 
 		const updateData = deepCopy(this.props.selectedCharacterInfo);
 		const equippedItems = updateData.equippedItems;
-		const inventoryItems = this.state.entireInventory[this.props.selectedCharacterInfo.id];
 		let lightingChanged = false;
 
 		let draggingEquippedItem = false;
@@ -430,22 +427,22 @@ class UI extends React.Component {
 		}
 
 		if (draggingEquippedItem) {
-			this.props.updateCharacters('player', updateData, this.props.selectedCharacterInfo.id, lightingChanged, false, false);
+			const firstOpenInvSlot = updateData.inventory.indexOf(null);
+			updateData.inventory.splice(firstOpenInvSlot, 1, draggedItem.id);
 		} else {
-			let tempAllItemsList = [...inventoryItems];
 			const targetIsBox = evt.target.id.includes('invBox');
 			const targetId = +evt.target.id.match(/\d+/)[0];
 			const parentId = !targetIsBox ? +evt.target.parentElement.id.match(/\d+/)[0] : null;
 			const destBoxIndex = targetIsBox ? targetId : parentId;
-			const destBoxContents = tempAllItemsList[destBoxIndex];
+			const destBoxContents = updateData.inventory[destBoxIndex];
 			const sourceBoxIndex = +draggedObjectMetaData.sourceLoc.match(/\d+/)[0];
 
 			// replace contents of destination spot with dragged item
-			tempAllItemsList.splice(destBoxIndex, 1, draggedItem.id);
+			updateData.inventory.splice(destBoxIndex, 1, draggedItem.id);
 			// replace contents of source spot with replaced destination item
-			tempAllItemsList.splice(sourceBoxIndex, 1, destBoxContents);
-			this.updateInventory(this.props.selectedCharacterInfo.id, tempAllItemsList);
+			updateData.inventory.splice(sourceBoxIndex, 1, destBoxContents);
 		}
+		this.props.updateCharacters('player', updateData, this.props.selectedCharacterInfo.id, lightingChanged, false, false);
 	}
 
 	/**
@@ -465,7 +462,6 @@ class UI extends React.Component {
 		const sourcePCdata = allPCdata[draggedObjectMetaData.sourcePC];
 		const recipientId = this.state.draggedObjRecipient;
 		const currentPCdata = allPCdata[recipientId];
-		const allPlayersInv = deepCopy(this.state.entireInventory);
 		const invObjectCategory = draggedItem.itemType ? 'items' : 'weapons';
 		const invId = draggedItem.id;
 
@@ -494,12 +490,12 @@ class UI extends React.Component {
 		}
 
 		// now add item to inv shown in char info panel
-		const firstOpenInvSlot = allPlayersInv[recipientId].indexOf(null);
-		if (!allPlayersInv[recipientId].includes(invId) && currentPCdata.equippedItems.loadout1.right !== invId && currentPCdata.equippedItems.loadout1.left !== invId) {
-			allPlayersInv[recipientId].splice(firstOpenInvSlot, 1, invId);
+		const firstOpenInvSlot = currentPCdata.inventory.indexOf(null);
+		if (!currentPCdata.inventory.includes(invId) && currentPCdata.equippedItems.loadout1.right !== invId && currentPCdata.equippedItems.loadout1.left !== invId) {
+			currentPCdata.inventory.splice(firstOpenInvSlot, 1, invId);
 		}
 
-		this.updateSourcePcInvAfterTransfer(invObjectCategory, sourceItemCount, sourcePCdata, allPlayersInv, false, () => {
+		this.updateSourcePcInvAfterTransfer(invObjectCategory, sourceItemCount, sourcePCdata, false, () => {
 			this.props.updateCharacters('player', currentPCdata, recipientId);
 		});
 	}
@@ -514,7 +510,6 @@ class UI extends React.Component {
 			return;
 		}
 		const sourcePcData = deepCopy(this.props.playerCharacters[this.state.draggedObjectMetaData.sourcePC]);
-		const allPlayersInv = deepCopy(this.state.entireInventory);
 		const invObjectCategory = this.state.objectSelected.itemType ? 'items' : 'weapons';
 		const draggedObject = deepCopy(this.state.objectSelected);
 		const lightingChanged = draggedObject.itemType && draggedObject.itemType === 'Light';
@@ -525,9 +520,19 @@ class UI extends React.Component {
 		} else if (draggedObject.currentRounds) {
 			draggedObject.currentRounds = draggedItemCount;
 		}
-		this.updateSourcePcInvAfterTransfer(invObjectCategory, sourceItemCount, sourcePcData, allPlayersInv, false, () => {
+		this.updateSourcePcInvAfterTransfer(invObjectCategory, sourceItemCount, sourcePcData, false, () => {
 			const mapObjects = deepCopy(this.props.mapObjects);
-			mapObjects[draggedObject.id] = {
+			const draggedObjGenericId = draggedObject.id.match(/\D+/);
+			let highestIdNum = 0;
+			for (const id of Object.keys(mapObjects)) {
+				if (id.includes(draggedObjGenericId)) {
+					const idNum = +id.match(/\d+/);
+					highestIdNum = idNum > highestIdNum ? idNum : highestIdNum;
+				}
+			}
+			const newMapObjId = draggedObjGenericId + (highestIdNum + 1);
+			draggedObject.id = newMapObjId;
+			mapObjects[newMapObjId] = {
 				...draggedObject,
 				coords: sourcePcData.coords
 			}
@@ -622,9 +627,6 @@ class UI extends React.Component {
 				selectedObjPos={this.state.selectedObjPos}
 				objHasBeenDropped={this.props.objHasBeenDropped.dropped}
 				setHasObjBeenDropped={this.props.setHasObjBeenDropped}
-				dropItemToPC={this.dropItemToPC}
-				dropItemToEquipped={this.dropItemToEquipped}
-				dropItemToInv={this.dropItemToInv}
 				addObjectToMap={this.addObjectToMap}
 				addStackedObjToOtherPc={this.addStackedObjToOtherPc}
 				addItemToPlayerInventory={this.props.addItemToPlayerInventory}
@@ -633,6 +635,7 @@ class UI extends React.Component {
 				dialogProps={dialogProps}
 				setShowDialogProps={this.props.setShowDialogProps}
 				creatureCoords={creatureCoords}
+				activePc={this.props.activeCharacter}
 			/>
 		);
 	}
@@ -642,7 +645,6 @@ class UI extends React.Component {
 		const loadout2 = updateData.equippedItems.loadout2;
 		const leftHandHasLight = updateData.items[loadout2.left] && updateData.items[loadout2.left].itemType === 'Light';
 		const rightHandHasLight = updateData.items[loadout2.right] && updateData.items[loadout2.right].itemType === 'Light';
-		let tempAllItemsList = [...this.state.entireInventory[id]];
 		let lightingChanged = false;
 
 		if (updateData.equippedLight || leftHandHasLight || rightHandHasLight) {
@@ -654,17 +656,22 @@ class UI extends React.Component {
 		updateData.equippedItems.loadout1 = {...loadout2};
 
 		for (const itemId of Object.values(updateData.equippedItems.loadout1)) {
-			const itemBox = tempAllItemsList.indexOf(itemId);
-			tempAllItemsList.splice(itemBox, 1, null);
+			const itemBox = updateData.inventory.indexOf(itemId);
+			updateData.inventory.splice(itemBox, 1, null);
 		}
-		this.updateInventory(id, tempAllItemsList, () => {
-			const updatedData = {
-				equippedItems: updateData.equippedItems,
-				equippedLight: updateData.equippedLight,
-				lightRange: updateData.lightRange
-			};
-			this.props.updateCharacters('player', updatedData, id, lightingChanged, false, false);
-		})
+		for (const itemId of Object.values(updateData.equippedItems.loadout2)) {
+			if (!updateData.inventory.includes(itemId) && updateData.equippedItems.loadout1.left !== itemId && updateData.equippedItems.loadout1.right !== itemId) {
+				const itemBox = updateData.inventory.indexOf(null);
+				updateData.inventory.splice(itemBox, 1, itemId);
+			}
+		}
+		const updatedData = {
+			equippedItems: updateData.equippedItems,
+			equippedLight: updateData.equippedLight,
+			lightRange: updateData.lightRange,
+			inventory: updateData.inventory
+		};
+		this.props.updateCharacters('player', updatedData, id, lightingChanged, false, false);
 	}
 
 	/**
@@ -691,26 +698,6 @@ class UI extends React.Component {
 		return hasExtraAmmo;
 	}
 
-	/**
-	 * Update UI's list of inv items in state
-	 * @param id: string (pc ID)
-	 * @param updatedList: array (of item/weapon IDs)
-	 * @param callback
-	 */
-	updateInventory = (id, updatedList, callback) => {
-		let updatedInv = this.state.entireInventory;
-		if (id) {
-			updatedInv[id] = updatedList;
-		} else {
-			updatedInv = updatedList;
-		}
-		this.setState({entireInventory: updatedInv}, () => {
-			if (callback) {
-				callback();
-			}
-		});
-	}
-
 	toggleMusic = () => {
 		const music = this.audioSelectors.music[this.props.gameOptions.songName];
 		if (this.props.gameOptions.playMusic) {
@@ -731,56 +718,6 @@ class UI extends React.Component {
 	 */
 	_populateSfxSelectors() {
 		this.audioSelectors.music[this.props.gameOptions.songName] = document.getElementById(`music-${this.props.gameOptions.songName}-theme`);
-	}
-
-	_updateInvData(charId, charInvList) {
-		let inventoryData = deepCopy(this.state.inventoryData);
-		charInvList.forEach(itemId => {
-			if (!inventoryData[charId]) {
-				inventoryData[charId] = {};
-			}
-			if (itemId) {
-				inventoryData[charId][itemId] = {...(this.props.playerCharacters[charId].weapons[itemId] || this.props.playerCharacters[charId].items[itemId])};
-			}
-		});
-		this.setState({inventoryData});
-	}
-
-	/**
-	 * For setting up/updating player inventory (not the stored inventory from App) shown in the char info panel
-	 * @param charId: string
-	 * @private
-	 */
-	_parseInvItems(charId){
-		const charInfo = this.props.playerCharacters[charId];
-		const allItems = Object.assign({...charInfo.weapons}, {...charInfo.items});
-		const equippedItems = charInfo.equippedItems;
-		let tempInvList = this.state.entireInventory[charId] ? [...this.state.entireInventory[charId]] : [];
-
-		// need to initially fill in inv slots with null, so char info panel shows empty boxes
-		if (tempInvList.length === 0) {
-			for(let i = 0; i < this.inventoryLength; i++) {
-				tempInvList.push(null);
-			}
-		}
-		for (const itemId of Object.keys(allItems)) {
-			if (itemId !== equippedItems.loadout1.right && itemId !== equippedItems.loadout1.left && itemId !== equippedItems.armor && !tempInvList.includes(itemId)) {
-				const firstEmptyBoxId = tempInvList.indexOf(null);
-				tempInvList.splice(firstEmptyBoxId, 1, itemId);
-			}
-		}
-
-		// remove from inv list any items that are no longer among character's items/weapons
-		tempInvList.forEach((id, index) => {
-			if (!allItems[id]) {
-				tempInvList.splice(index, 1, null);
-			}
-		});
-
-		this.updateInventory(charId, tempInvList, () => {
-			this._updateInvData(charId, tempInvList);
-		});
-		this.props.updateInvHasChangedStatus('');
 	}
 
 	toggleOptionsPanel = () => {
@@ -817,11 +754,6 @@ class UI extends React.Component {
 	}
 
 	componentDidMount() {
-		if (Object.keys(this.state.entireInventory).length === 0) {
-			for (const id of Object.keys(this.props.playerCharacters)) {
-				this._parseInvItems(id);
-			}
-		}
 		if (this.initialUiLoad) {
 			this._populateSfxSelectors();
 			this.toggleMusic();
@@ -833,10 +765,6 @@ class UI extends React.Component {
 	componentDidUpdate(prevProps, prevState, snapShot) {
 		if (prevProps.logText !== this.props.logText) {
 			this.setState({logText: [...this.props.logText]}, this.scrollLog);
-		}
-
-		if (this.props.playerInvHasChanged) {
-			this._parseInvItems(this.props.playerInvHasChanged);
 		}
 
 		if (prevProps.activeCharacter !== this.props.activeCharacter && this.props.playerCharacters[this.props.activeCharacter]) {
@@ -862,27 +790,6 @@ class UI extends React.Component {
 		if (prevProps.gameOptions.playMusic !== this.props.gameOptions.playMusic) {
 			this.toggleMusic();
 		}
-	}
-
-	static getDerivedStateFromProps(props, state) {
-		// Any time the current char inv changes, update inv data for that char
-		if (props.playerInvHasChanged !== state.prevPlayerInvChanged && props.selectedCharacterInfo) {
-			let inventoryData = deepCopy(state.inventoryData);
-			const charId = props.selectedCharacterInfo.id;
-			state.entireInventory[charId].forEach(itemId => {
-				if (!inventoryData[charId]) {
-					inventoryData[charId] = {};
-				}
-				if (itemId) {
-					inventoryData[charId][itemId] = {...(props.selectedCharacterInfo.weapons[itemId] || props.selectedCharacterInfo.items[itemId])};
-				}
-			});
-			return {
-				prevPlayerInvChanged: props.playerInvHasChanged,
-				inventoryData
-			};
-		}
-		return null;
 	}
 
 	render() {
@@ -932,16 +839,14 @@ class UI extends React.Component {
 					{/*}}>_</div>*/}
 				</div>
 
-				{this.props.selectedCharacterInfo && this.state.entireInventory &&
+				{this.props.selectedCharacterInfo &&
 				<CharacterInfoPanel
 					characterIsSelected={this.props.characterIsSelected}
 					updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
 					characterInfo={this.props.selectedCharacterInfo}
 					switchEquipment={this.switchEquipment}
 					updateCharacters={this.props.updateCharacters}
-					characterInventoryIds={this.state.entireInventory[this.props.selectedCharacterInfo.id]}
-					inventoryData={this.state.inventoryData[this.props.selectedCharacterInfo.id]}
-					updateInventory={this.updateInventory}
+					characterInventoryIds={this.props.selectedCharacterInfo.inventory}
 					setShowDialogProps={this.props.setShowDialogProps}
 					setObjectSelected={this.setObjectSelected}
 					setObjectPanelDisplayOption={this.setObjectPanelDisplayOption}

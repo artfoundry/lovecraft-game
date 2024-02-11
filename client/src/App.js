@@ -24,6 +24,7 @@ class Game extends React.Component {
 		this.initialDialogContent = '';
 		this.playerMovesLimit = 3;
 		this.playerActionsLimit = 2;
+		this.playerInventoryLimit = 12;
 
 		this.minScreenWidthForSmall = 1000;
 		this.minScreenWidthForNarrow = 768;
@@ -105,7 +106,6 @@ class Game extends React.Component {
 			currentLevel: 1,
 			playerFollowOrder: [],
 			followModePositions: [],
-			playerInvHasChanged: '',
 			showDialog: false,
 			dialogProps: {
 			dialogContent: this.initialDialogContent,
@@ -399,10 +399,6 @@ class Game extends React.Component {
 		});
 	}
 
-	updateInvHasChangedStatus = (playerInvHasChanged) => {
-		this.setState({playerInvHasChanged});
-	}
-
 	/**
 	 * Updates to state what PC weapon, item, or skill button is selected in the UI
 	 * Data stored in actionButtonSelected: {characterId, itemId, itemName, stats: WeaponTypes[itemName], ItemTypes[itemName], or SkillTypes[itemName]}
@@ -446,7 +442,6 @@ class Game extends React.Component {
 
 			};
 			this.state.playerCharacters[characterId][stats.skillType](props);
-			this.updateInvHasChangedStatus(characterId);
 			this._updateActivePlayerActions();
 			if (callback) callback();
 		} else {
@@ -473,7 +468,6 @@ class Game extends React.Component {
 			delete updatedPCdata.items[gunType + 'Ammo0'];
 		}
 		this.updateCharacters('player', updatedPCdata, this.state.activeCharacter, false, false, false, () => {
-			this.updateInvHasChangedStatus(this.state.activeCharacter);
 			this._updateActivePlayerActions();
 		});
 	}
@@ -493,7 +487,6 @@ class Game extends React.Component {
 			delete activePcData.items.oil0;
 		}
 		this.updateCharacters('player', activePcData, this.state.activeCharacter, true, false, false, () => {
-			this.updateInvHasChangedStatus(this.state.activeCharacter);
 			this._updateActivePlayerActions();
 		});
 	}
@@ -519,7 +512,6 @@ class Game extends React.Component {
 				updateLog: this.updateLog,
 				callback: () => {
 					this.toggleActionButton(selectedItemInfo.characterId, selectedItemInfo.itemId, selectedItemInfo.itemName, target === 'creature' ? 'weapon': 'item', () => {
-						this.updateInvHasChangedStatus(selectedItemInfo.characterId);
 						if (target === 'creature' && this.state.mapCreatures[id].currentHealth <= 0) {
 							this._removeDeadFromTurnOrder(id, this._updateActivePlayerActions, checkLineOfSightToParty);
 						} else {
@@ -791,7 +783,7 @@ class Game extends React.Component {
 	}
 
 	/**
-	 * Called from Map when player drags object to tile
+	 * Called from Map when player drags object to map
 	 * @param props: {objHasBeenDropped (boolean), evt (event object)}
 	 */
 	setHasObjBeenDropped = (props) => {
@@ -809,45 +801,60 @@ class Game extends React.Component {
 	}
 
 	/**
-	 * Add picked up item or weapon to char's inventory
+	 * Add picked up/transferred/created item or weapon to char's inventory
 	 * @param itemData: object
 	 * @param objId: string
+	 * @param recipientId: string (id of pc that's receiving the item
 	 * @param isPickUpAction: boolean (item was picked up using action button)
 	 */
-	addItemToPlayerInventory = (itemData, objId, isPickUpAction) => {
-		const player = this.state.playerCharacters[this.state.activeCharacter];
+	addItemToPlayerInventory = (itemData, objId, recipientId, isPickUpAction) => {
+		const player = this.state.playerCharacters[recipientId];
 		const objectType = itemData.itemType ? itemData.itemType : 'Weapon';
 		const invObjectCategory = objectType === 'Weapon' ? 'weapons' : 'items';
-		let inventoryList = deepCopy(player[invObjectCategory]);
-		let invId = '';
+		let invObjects = deepCopy(player[invObjectCategory]);
+		let modifiedObjId = '';
 
-		if (objectType === 'Ammo') {
-			invId = itemData.gunType + 'Ammo0';
-			const currentAmmoCount = inventoryList[invId] ? inventoryList[invId].amount : 0;
-			inventoryList[invId] = {...itemData};
-			inventoryList[invId].id  = invId; // replace original id with inventory specific id for stackable items
-			inventoryList[invId].amount = currentAmmoCount + itemData.amount;
-		} else if (objectType === 'Light') {
-			inventoryList[objId] = {...itemData};
-			inventoryList[objId].time = itemData.maxTime;
-		} else if (itemData.stackable) {
-			invId = objId.replace(/\d+$/, '0');
-			if (!inventoryList[invId]) {
-				inventoryList[invId] = {...itemData};
-				inventoryList[invId].id  = invId; // replace original id with inventory specific id for stackable items
-				inventoryList[invId].currentRounds = itemData.currentRounds;
-			} else if (objectType === 'Weapon') {
-				inventoryList[invId].currentRounds += itemData.currentRounds;
-			} else {
-				inventoryList[invId].amount += itemData.amount;
-			}
-		} else {
-			inventoryList[objId] = {...itemData};
+		if (itemData.coords) {
+			delete itemData.coords;
 		}
 
-		let updatedData = {[invObjectCategory]: inventoryList};
-		this.updateCharacters('player', updatedData, this.state.activeCharacter, false, false, false, () => {
-			this.updateInvHasChangedStatus(this.state.activeCharacter);
+		if (objectType === 'Ammo') {
+			modifiedObjId = itemData.gunType + 'Ammo0';
+			const currentAmmoCount = invObjects[modifiedObjId] ? invObjects[modifiedObjId].amount : 0;
+			invObjects[modifiedObjId] = {...itemData};
+			invObjects[modifiedObjId].id  = modifiedObjId; // replace original id with inventory specific id for stackable items
+			invObjects[modifiedObjId].amount = currentAmmoCount + itemData.amount;
+		} else if (objectType === 'Light') {
+			invObjects[objId] = {...itemData};
+			invObjects[objId].time = itemData.maxTime;
+		} else if (itemData.stackable) {
+			modifiedObjId = objId.replace(/\d+$/, '0');
+			if (!invObjects[modifiedObjId]) {
+				invObjects[modifiedObjId] = {...itemData};
+				invObjects[modifiedObjId].id  = modifiedObjId; // replace original id with inventory specific id for stackable items
+				invObjects[modifiedObjId].currentRounds = itemData.currentRounds;
+			} else if (objectType === 'Weapon') {
+				invObjects[modifiedObjId].currentRounds += itemData.currentRounds;
+			} else {
+				invObjects[modifiedObjId].amount += itemData.amount;
+			}
+		} else {
+			invObjects[objId] = {...itemData};
+		}
+
+		let updatedData = {[invObjectCategory]: invObjects};
+		let inventory = [...player.inventory];
+		// if not a stackable/ammo item or is but is new (not yet in inventory), then insert into inventory (modifiedObjId only used for stackable/ammo)
+		if (!modifiedObjId || !inventory.includes(modifiedObjId)) {
+			const firstOpenInvSlot = player.inventory.indexOf(null);
+			if (modifiedObjId) {
+				inventory.splice(firstOpenInvSlot, 1, modifiedObjId);
+			} else {
+				inventory.splice(firstOpenInvSlot, 1, objId);
+			}
+			updatedData.inventory = inventory;
+		}
+		this.updateCharacters('player', updatedData, recipientId, false, false, false, () => {
 			if (isPickUpAction) {
 				this._removeItemFromMap(objId);
 				this._updateActivePlayerActions();
@@ -913,7 +920,8 @@ class Game extends React.Component {
 		let playerFollowOrder = [];
 		let activeCharacter = this.state.activeCharacter;
 		this.startingPlayerCharacters.forEach(characterId => {
-			playerCharacters[characterId] = new Character(PlayerCharacterTypes[characterId]);
+			const props = {...PlayerCharacterTypes[characterId], playerInventoryLimit: this.playerInventoryLimit};
+			playerCharacters[characterId] = new Character(props);
 			playerFollowOrder.push(characterId);
 		});
 		if (this.showCharacterCreation) {
@@ -1158,8 +1166,7 @@ class Game extends React.Component {
 						updateUnitSelectionStatus={this.updateUnitSelectionStatus}
 						updateCharacters={this.updateCharacters}
 						getAllCharactersPos={this.getAllCharactersPos}
-						playerInvHasChanged={this.state.playerInvHasChanged}
-						updateInvHasChangedStatus={this.updateInvHasChangedStatus}
+						playerInventoryLimit={this.playerInventoryLimit}
 
 						setMapObjectSelected={this.setMapObjectSelected}
 						objectSelected={this.state.objectSelected}
