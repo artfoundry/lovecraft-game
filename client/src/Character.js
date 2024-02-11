@@ -197,13 +197,17 @@ class Character extends React.Component {
 		for (const [material, reqAmount] of Object.entries(materialCosts)) {
 			// need to remove the 0 in the inventory item key
 			const materialItemKey = material + '0';
+			// if not enough materials to create, show dialog and exit
 			if (!currentPcData.items[materialItemKey] || currentPcData.items[materialItemKey].amount < reqAmount) {
 				setShowDialogProps(true, notEnoughMatsDialogProps);
 				return;
+			// otherwise, delete materials from inv
 			} else {
 				activeCharItems[materialItemKey].amount -= reqAmount;
 				if (activeCharItems[materialItemKey].amount === 0) {
 					delete activeCharItems[materialItemKey];
+					const materialInvIndex = updatedPcData.inventory.indexOf(materialItemKey);
+					updatedPcData.inventory.splice(materialInvIndex, 1, null);
 				}
 			}
 		}
@@ -231,6 +235,7 @@ class Character extends React.Component {
 		}
 
 		updateLog(`${currentPcData.name} creates a${itemType === 'acidConcoction' ? 'n' : ''} ${itemName}.`);
+		// update stackable counts if applicable and remove used materials
 		updateCharacter('player', updatedPcData, activeCharId, false, false, false, () => {
 			// For stackable items (5 of the 6 items currently), ID will be coerced to 0 in App.addItemToPlayerInventory, so loop below isn't needed
 			// but if other nonstackable item create skills are added, then this loop will be needed for those
@@ -255,7 +260,8 @@ class Character extends React.Component {
 			}
 			itemData.name = itemName;
 			itemData.id = itemId;
-			addItemToPlayerInventory(itemData, itemId, false);
+			// now add item to items/weapons and inv
+			addItemToPlayerInventory(itemData, itemId, activeCharId, false);
 		});
 	}
 
