@@ -62,24 +62,6 @@
         "name": "Torch",
         "itemType": "Light",
         "time": 100
-      },
-      "wood0": {
-        "id": "wood0",
-        "name": "Wood",
-        "itemType": "Component",
-        "amount": 1
-      },
-      "alcohol0": {
-        "id": "alcohol0",
-        "name": "Alcohol",
-        "itemType": "Component",
-        "amount": 1
-      },
-      "cloth0": {
-        "id": "cloth0",
-        "name": "Cloth",
-        "itemType": "Component",
-        "amount": 1
       }
     },
     "equippedLight": ""
@@ -117,18 +99,6 @@
         "name": "Lantern",
         "itemType": "Light",
         "time": 300
-      },
-      "chemical0": {
-        "id": "chemical0",
-        "name": "Chemical",
-        "itemType": "Component",
-        "amount": 3
-      },
-      "flask0": {
-        "id": "flask0",
-        "name": "Flask",
-        "itemType": "Component",
-        "amount": 1
       }
     },
     "equippedLight": "lantern0"

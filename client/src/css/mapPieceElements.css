@@ -167,3 +167,27 @@ as box-shadow greatly dims the lighting */
 .bulletproof-vest {
 	content: url('../assets/objects/bulletproofVest_sml.png');
 }
+
+.alcohol {
+	content: url('../assets/objects/alcohol_sml.png');
+}
+
+.chemical {
+	content: url('../assets/objects/chemical_sml.png');
+}
+
+.cloth {
+	content: url('../assets/objects/cloth_sml.png');
+}
+
+.flask {
+	content: url('../assets/objects/flask_sml.png');
+}
+
+.water {
+	content: url('../assets/objects/water_sml.png');
+}
+
+.wood {
+	content: url('../assets/objects/wood_sml.png');
+}

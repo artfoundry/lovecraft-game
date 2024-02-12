@@ -74,6 +74,50 @@
 						"3": 0
 					}
 				}
+			},
+			"Component": {
+				"Alcohol": {
+					"countPerLevel": {
+						"1": 5,
+						"2": 2,
+						"3": 0
+					}
+				},
+				"Chemical": {
+					"countPerLevel": {
+						"1": 3,
+						"2": 2,
+						"3": 0
+					}
+				},
+				"Cloth": {
+					"countPerLevel": {
+						"1": 5,
+						"2": 2,
+						"3": 0
+					}
+				},
+				"Flask": {
+					"countPerLevel": {
+						"1": 5,
+						"2": 2,
+						"3": 0
+					}
+				},
+				"Water": {
+					"countPerLevel": {
+						"1": 3,
+						"2": 2,
+						"3": 0
+					}
+				},
+				"Wood": {
+					"countPerLevel": {
+						"1": 3,
+						"2": 2,
+						"3": 0
+					}
+				}
 			}
 		}
 	}

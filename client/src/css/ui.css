@@ -948,6 +948,29 @@ select {
 	background-image: url('../assets/objects/bulletproofVest_lrg.png');
 }
 
+.alcohol-inv {
+	background-image: url('../assets/objects/alcohol_lrg.png');
+}
+
+.chemical-inv {
+	background-image: url('../assets/objects/chemical_lrg.png');
+}
+
+.cloth-inv {
+	background-image: url('../assets/objects/cloth_lrg.png');
+}
+
+.flask-inv {
+	background-image: url('../assets/objects/flask_lrg.png');
+}
+
+.water-inv {
+	background-image: url('../assets/objects/water_lrg.png');
+}
+
+.wood-inv {
+	background-image: url('../assets/objects/wood_lrg.png');
+}
 
 /* ACTION BUTTON ICONS */
 
