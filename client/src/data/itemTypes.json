@@ -82,20 +82,15 @@
     "stackable": true,
     "description": "Component for making First Aid Kits, Molotov Cocktails, and Torches"
   },
-  "Flask": {
-    "itemType": "Component",
-    "stackable": true,
-    "description": "Component for making liquids"
-  },
   "Water": {
     "itemType": "Component",
     "stackable": true,
-    "description": "Component for Holy Water"
+    "description": "Component for making Holy Water"
   },
   "Wood": {
     "itemType": "Component",
     "stackable": true,
-    "description": "Component for Torches and Spears"
+    "description": "Component for making Torches"
   },
   "Elder Sign": {
     "itemType": "Relic",

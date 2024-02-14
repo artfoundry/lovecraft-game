@@ -777,7 +777,7 @@ select {
 .object-info-panel, .skill-info-panel {
 	position: fixed;
 	width: 400px;
-	max-height: 400px;
+	max-height: 300px;
 	padding: 10px;
 	background-color: #225555;
 	font-family: "Century Gothic", sans-serif;
@@ -844,6 +844,7 @@ select {
 	width: 100%;
 	align-items: center;
 	gap: 10px;
+	margin-bottom: 10px;
 }
 
 .object-row-with-buttons .inv-object {
@@ -912,6 +913,10 @@ select {
 	background-image: url('../assets/objects/holyWater_lrg.png');
 }
 
+.molotov-cocktail-inv {
+	background-image: url('../assets/objects/molotov-cocktail_lrg.png');
+}
+
 .knife-inv {
 	background-image: url('../assets/objects/knife_lrg.png');
 }
@@ -958,10 +963,6 @@ select {
 
 .cloth-inv {
 	background-image: url('../assets/objects/cloth_lrg.png');
-}
-
-.flask-inv {
-	background-image: url('../assets/objects/flask_lrg.png');
 }
 
 .water-inv {

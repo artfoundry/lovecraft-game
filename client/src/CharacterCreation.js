@@ -5,6 +5,7 @@ import {SoundEffect} from './Audio';
 import PlayerCharacterTypes from './data/playerCharacterTypes.json';
 import ItemTypes from './data/itemTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
+import Skills from './data/skills.json';
 import './css/characterCreation.css';
 import './css/playerCharacters.css';
 import './css/ui.css';
@@ -183,18 +184,20 @@ export default class CharacterCreation extends React.Component {
 
 	listSkills = (props) => {
 		const id = props.id;
-		const allSkills = PlayerCharacterTypes[id].skills;
+		const pcSkillIds = PlayerCharacterTypes[id].skills;
 		let skillButtonList = [];
 
-		for (const [skillId, skillInfo] of Object.entries(allSkills)) {
+		pcSkillIds.forEach(skillId => {
+			const skillInfo = Skills[skillId];
 			skillButtonList.push(
 				<div key={id + '-' + skillId}
 				     className='char-creation-skill'
 				     onClick={() => {
-					this.setSkillSelected({...skillInfo, id: skillId}, true);
-				}}>{skillInfo.name}</div>
+						this.setSkillSelected({...skillInfo, id: skillId}, true);
+					 }}
+				>{skillInfo.name}</div>
 			)
-		}
+		});
 		return skillButtonList;
 	}
 
@@ -205,12 +208,15 @@ export default class CharacterCreation extends React.Component {
 
 		for (const [itemId, itemInfo] of Object.entries(allItems)) {
 			itemButtonList.push(
-				<div key={id + '-' + itemId} className={`inv-object ${convertObjIdToClassId(itemId)}-inv char-creation-item`} onClick={() => {
-					const object = this.itemTypes[itemInfo.name] || this.weaponTypes[itemInfo.name];
-					object.id = itemId;
-					object.name = itemInfo.name;
-					this.setObjectSelected(object, true);
-				}}></div>
+				<div key={id + '-' + itemId}
+				     className={`inv-object ${convertObjIdToClassId(itemId)}-inv char-creation-item`}
+				     onClick={() => {
+						const object = this.itemTypes[itemInfo.name] || this.weaponTypes[itemInfo.name];
+						object.id = itemId;
+						object.name = itemInfo.name;
+						this.setObjectSelected(object, true);
+					 }}
+				></div>
 			)
 		}
 		return itemButtonList;

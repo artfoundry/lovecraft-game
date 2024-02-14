@@ -89,5 +89,13 @@
     "stackable": true,
     "twoHanded": false,
     "description": "Useful against the undead but not much else. Except as drinking water."
+  },
+  "Molotov Cocktail": {
+    "damage": 6,
+    "ranged": true,
+    "usesStr": false,
+    "stackable": true,
+    "twoHanded": false,
+    "description": "Fire! Fire!"
   }
 }

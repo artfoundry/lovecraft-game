@@ -672,7 +672,7 @@ class Map extends React.Component {
 					mapItems[itemID].amount =
 						objectType === 'Ammo' ? Math.floor(Math.random() * 10) + 2 :
 						itemName === 'Oil' ? Math.floor(Math.random() * 90) + 10 :
-						objectType === 'Medicine' ? 1 : null;
+						objectType === 'Medicine' || objectType === 'Component' ? 1 : null;
 					itemCoords[itemID] = coords;
 				}
 			}

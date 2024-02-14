@@ -437,12 +437,12 @@ class Game extends React.Component {
 				updateCharacter: this.updateCharacters,
 				updateLog: this.updateLog,
 				setShowDialogProps: this.setShowDialogProps,
-				addItemToPlayerInventory: this.addItemToPlayerInventory
+				addItemToPlayerInventory: this.addItemToPlayerInventory,
+				updateActivePlayerActions: this.updateActivePlayerActions
 			} : {
 
 			};
 			this.state.playerCharacters[characterId][stats.skillType](props);
-			this._updateActivePlayerActions();
 			if (callback) callback();
 		} else {
 			this.setState({actionButtonSelected: buttonState}, () => {
@@ -468,7 +468,7 @@ class Game extends React.Component {
 			delete updatedPCdata.items[gunType + 'Ammo0'];
 		}
 		this.updateCharacters('player', updatedPCdata, this.state.activeCharacter, false, false, false, () => {
-			this._updateActivePlayerActions();
+			this.updateActivePlayerActions();
 		});
 	}
 
@@ -487,7 +487,7 @@ class Game extends React.Component {
 			delete activePcData.items.oil0;
 		}
 		this.updateCharacters('player', activePcData, this.state.activeCharacter, true, false, false, () => {
-			this._updateActivePlayerActions();
+			this.updateActivePlayerActions();
 		});
 	}
 
@@ -513,9 +513,9 @@ class Game extends React.Component {
 				callback: () => {
 					this.toggleActionButton(selectedItemInfo.characterId, selectedItemInfo.itemId, selectedItemInfo.itemName, target === 'creature' ? 'weapon': 'item', () => {
 						if (target === 'creature' && this.state.mapCreatures[id].currentHealth <= 0) {
-							this._removeDeadFromTurnOrder(id, this._updateActivePlayerActions, checkLineOfSightToParty);
+							this._removeDeadFromTurnOrder(id, this.updateActivePlayerActions, checkLineOfSightToParty);
 						} else {
-							this._updateActivePlayerActions();
+							this.updateActivePlayerActions();
 						}
 					});
 				}
@@ -610,6 +610,16 @@ class Game extends React.Component {
 	updateActivePlayerMoves = () => {
 		const activePlayerMovesCompleted = this.state.activePlayerMovesCompleted + 1;
 		this.setState({activePlayerMovesCompleted});
+	}
+
+	/**
+	 * Increments and updates to state number of actions the active PC has done
+	 */
+	updateActivePlayerActions = () => {
+		if (this.state.inTacticalMode) {
+			const activePlayerActionsCompleted = this.state.activePlayerActionsCompleted + 1;
+			this.setState({activePlayerActionsCompleted});
+		}
 	}
 
 	/**
@@ -806,8 +816,9 @@ class Game extends React.Component {
 	 * @param objId: string
 	 * @param recipientId: string (id of pc that's receiving the item
 	 * @param isPickUpAction: boolean (item was picked up using action button)
+	 * @param isCreateAction: boolean (item created using skill)
 	 */
-	addItemToPlayerInventory = (itemData, objId, recipientId, isPickUpAction) => {
+	addItemToPlayerInventory = (itemData, objId, recipientId, isPickUpAction, isCreateAction) => {
 		const player = this.state.playerCharacters[recipientId];
 		const objectType = itemData.itemType ? itemData.itemType : 'Weapon';
 		const invObjectCategory = objectType === 'Weapon' ? 'weapons' : 'items';
@@ -857,7 +868,9 @@ class Game extends React.Component {
 		this.updateCharacters('player', updatedData, recipientId, false, false, false, () => {
 			if (isPickUpAction) {
 				this._removeItemFromMap(objId);
-				this._updateActivePlayerActions();
+				this.updateActivePlayerActions();
+			} else if (isCreateAction) {
+				this.updateActivePlayerActions();
 			}
 		});
 	}
@@ -1033,17 +1046,6 @@ class Game extends React.Component {
 		this.setState({activePlayerMovesCompleted: 0, activePlayerActionsCompleted: 0, currentTurn: 0}, () => {
 			this.updateActiveCharacter(callback, this.state.playerFollowOrder[0]);
 		});
-	}
-
-	/**
-	 * Increments and updates to state number of actions the active PC has done
-	 * @private
-	 */
-	_updateActivePlayerActions = () => {
-		if (this.state.inTacticalMode) {
-			const activePlayerActionsCompleted = this.state.activePlayerActionsCompleted + 1;
-			this.setState({activePlayerActionsCompleted});
-		}
 	}
 
 	/**
@@ -1226,7 +1228,6 @@ class Game extends React.Component {
 						updateMapObjects={this.updateMapObjects}
 						mapObjects={this.state.mapObjects}
 						setHasObjBeenDropped={this.setHasObjBeenDropped}
-						addItemToPlayerInventory={this.addItemToPlayerInventory}
 						lightingHasChanged={this.state.lightingHasChanged}
 						toggleLightingHasChanged={this.toggleLightingHasChanged}
 

@@ -8,6 +8,10 @@ class Character extends React.Component {
 	constructor(props) {
 		super(props);
 
+		this.noGunKnowledgePenalty = 0.5;
+		this.hitDie = 10;
+		this.damageDie = 6;
+
 		// For instantiation only - updated data is stored in App.state.playerCharacters
 		this.id = props.id;
 		this.name = props.name;
@@ -30,13 +34,13 @@ class Character extends React.Component {
 		this.inventory = this._prePopulateInv(props.playerInventoryLimit);
 		this.weapons = this._populateInvInfo('weapon', props.weapons, props.equippedItems);
 		this.equippedItems = {
-			loadout1: {right: props.equippedItems.right, left: this.weaponIsTwoHanded(props.equippedItems.right) ? props.equippedItems.right : props.equippedItems.left},
+			loadout1: {right: props.equippedItems.right, left: this._weaponIsTwoHanded(props.equippedItems.right) ? props.equippedItems.right : props.equippedItems.left},
 			loadout2: {right: '', left: ''},
 			armor: props.equippedItems.armor || ''
 		};
 		this.items = this._populateInvInfo('item', props.items, props.equippedItems);
 		this.maxItems = 12;
-		this.defense = this.calculateDefense();
+		this.defense = this.calculateDefense(props.agility, props.equippedItems.armor ? this.items[props.equippedItems.armor].defense : 0);
 		this.damageReduction = this.equippedItems.armor ? this.items[this.equippedItems.armor].damageReduction : 0;
 		this.coords = {};
 		this.equippedLight = props.equippedLight || null;
@@ -78,12 +82,14 @@ class Character extends React.Component {
 		return skillData;
 	}
 
-	calculateDefense = () => {
-		return this.agility + (this.equippedItems.armor ? this.items[this.equippedItems.armor].defense : 0);
+	_weaponIsTwoHanded(weapon) {
+		return this.weapons[weapon] && WeaponTypes[this.weapons[weapon].name].twoHanded;
 	}
 
-	weaponIsTwoHanded = (weapon) => {
-		return this.weapons[weapon] && WeaponTypes[this.weapons[weapon].name].twoHanded;
+	/* PUBLIC */
+
+	calculateDefense = (agility, armor) => {
+		return agility + armor;
 	}
 
 	/**
@@ -101,28 +107,32 @@ class Character extends React.Component {
 	attack = (props) => {
 		const {itemId, itemStats, targetData, pcData, updateCharacter, updateLog, callback} = props;
 		let isHit, damage, hitRoll, defenseRoll;
-		let rangedStrHitModifier = itemStats.usesStr ? Math.round(this.strength / 2) : 0;
+		let rangedStrHitModifier = itemStats.usesStr ? Math.round(pcData.strength / 2) : 0;
 		let updatedPcData = deepCopy(pcData);
 		let updatedCreatureData = deepCopy(targetData);
 		const weaponInfo = updatedPcData.weapons[itemId];
 		const equippedSide = pcData.equippedItems.loadout1.right === itemId ? 'right' : 'left';
-
+		const equippedGunType = weaponInfo.gunType;
+		const noGunKnowledgeMod =
+			(!pcData.skills.handgunKnowledge && equippedGunType === 'handgun') ||
+			(!pcData.skills.shotgunKnowledge && equippedGunType === 'shotgun') ||
+			(!pcData.skills.machineGunKnowledge && equippedGunType === 'machineGun') ? this.noGunKnowledgePenalty : 1;
 		if (itemStats.ranged) {
-			hitRoll = this.agility + rangedStrHitModifier + diceRoll(20);
-			damage = rangedStrHitModifier + itemStats.damage + diceRoll(6) - targetData.damageReduction;
+			hitRoll = Math.round(noGunKnowledgeMod * (pcData.agility + rangedStrHitModifier + diceRoll(this.hitDie)));
+			damage = rangedStrHitModifier + itemStats.damage + diceRoll(this.damageDie) - targetData.damageReduction;
 			weaponInfo.currentRounds--;
 			if (weaponInfo.currentRounds === 0 && weaponInfo.stackable) {
 				delete updatedPcData.weapons[itemId];
 				updatedPcData.equippedItems.loadout1[equippedSide] = '';
 			}
 		} else {
-			hitRoll = this.strength + Math.round(this.agility / 2) + diceRoll(20);
-			damage = this.strength + itemStats.damage + diceRoll(6) - targetData.damageReduction;
+			hitRoll = pcData.strength + Math.round(pcData.agility / 2) + diceRoll(this.hitDie);
+			damage = pcData.strength + itemStats.damage + diceRoll(this.damageDie) - targetData.damageReduction;
 		}
 		damage = damage < 0 ? 0 : damage;
-		defenseRoll = targetData.defense + diceRoll(6);
+		defenseRoll = targetData.defense + diceRoll(this.damageDie);
 		isHit = hitRoll >= defenseRoll;
-		updateLog(`${this.name} attacks with a ${weaponInfo.name} and rolls ${hitRoll} to hit...`);
+		updateLog(`${pcData.name} attacks with a ${weaponInfo.name} and rolls ${hitRoll} to hit...`);
 		updateCharacter('player', updatedPcData, pcData.id, false, false, false, () => {
 			if (isHit) {
 				updatedCreatureData.currentHealth -= damage;
@@ -131,7 +141,7 @@ class Character extends React.Component {
 				callback();
 			}
 		});
-		updateLog(isHit ? `${this.name} hits for ${damage} damage!` : this.name + ' misses.');
+		updateLog(isHit ? `${pcData.name} hits for ${damage} damage!` : pcData.name + ' misses.');
 	}
 
 	/**
@@ -174,14 +184,15 @@ class Character extends React.Component {
 	 *     updateCharacter: function (from App),
 	 *     updateLog: function (from App),
 	 *     setShowDialogProps: function (from App),
-	 *     addItemToPlayerInventory: function (from App)
+	 *     addItemToPlayerInventory: function (from App),
+	 *     updateActivePlayerActions: function (from App)
 	 * }
 	 */
 	create = (props) => {
-		const {itemType, activeCharId, currentPcData, updateCharacter, updateLog, setShowDialogProps, addItemToPlayerInventory} = props;
-		const materialCosts = this.skills[itemType].cost;
-		const lightCost = this.skills[itemType].light;
-		const itemName = this.skills[itemType].name;
+		const {itemType, activeCharId, currentPcData, updateCharacter, updateLog, setShowDialogProps, addItemToPlayerInventory, updateActivePlayerActions} = props;
+		const materialCosts = currentPcData.skills[itemType].cost;
+		const lightCost = currentPcData.skills[itemType].light;
+		const itemName = currentPcData.skills[itemType].name;
 		let updatedPcData = deepCopy(currentPcData);
 		let activeCharItems = updatedPcData.items;
 		const notEnoughMatsDialogProps = {
@@ -219,49 +230,55 @@ class Character extends React.Component {
 		}
 
 		let itemId = itemType + '0';
-		const itemCategory = this.skills[itemType].itemCategory;
+		const itemCategory = currentPcData.skills[itemType].itemCategory;
 		let itemData = {};
 		if (itemCategory === 'items') {
 			itemData = {...ItemTypes[itemName]};
 		} else if (itemCategory === 'weapons') {
 			itemData = {...WeaponTypes[itemName]};
 		}
-		if (updatedPcData.items[itemId] && itemData.stackable) {
+		if ((updatedPcData.items[itemId] || updatedPcData.weapons[itemId]) && itemData.stackable) {
 			if (itemCategory === 'items') {
-				itemData.amount++;
+				updatedPcData.items[itemId].amount++;
 			} else if (itemCategory === 'weapons') {
-				itemData.currentRounds++;
+				updatedPcData.weapons[itemId].currentRounds++;
 			}
 		}
 
 		updateLog(`${currentPcData.name} creates a${itemType === 'acidConcoction' ? 'n' : ''} ${itemName}.`);
 		// update stackable counts if applicable and remove used materials
 		updateCharacter('player', updatedPcData, activeCharId, false, false, false, () => {
-			// For stackable items (5 of the 6 items currently), ID will be coerced to 0 in App.addItemToPlayerInventory, so loop below isn't needed
-			// but if other nonstackable item create skills are added, then this loop will be needed for those
-			let greatestItemNumInInv = 0;
-			if (itemType === 'torch') {
-				for (const itemId of Object.keys(currentPcData[itemCategory])) {
-					if (itemId.includes(itemType)) {
-						const currentItemIdNum = +itemId.substring(itemType.length - 1);
-						if (currentItemIdNum >= greatestItemNumInInv) {
-							greatestItemNumInInv = currentItemIdNum + 1;
+			// if item is new (not stackable or is stackable but id not in items/weapons), add to items/weapons and inventory
+			if (!itemData.stackable || (!updatedPcData.items[itemId] && !updatedPcData.weapons[itemId])) {
+				// For stackable items (5 of the 6 items currently), ID will be coerced to 0 in App.addItemToPlayerInventory, so loop below isn't needed
+				// but if other nonstackable item create skills are added, then this loop will be needed for those
+				let greatestItemNumInInv = 0;
+				if (itemType === 'torch') {
+					for (const itemId of Object.keys(currentPcData[itemCategory])) {
+						if (itemId.includes(itemType)) {
+							const currentItemIdNum = +itemId.substring(itemType.length - 1);
+							if (currentItemIdNum >= greatestItemNumInInv) {
+								greatestItemNumInInv = currentItemIdNum + 1;
+							}
 						}
 					}
 				}
-			}
-			itemId = itemType + greatestItemNumInInv;
-			if (itemData.stackable) {
-				if (itemCategory === 'items') {
-					itemData.amount = 1;
-				} else if (itemCategory === 'weapons') {
-					itemData.currentRounds = 1;
+				itemId = itemType + greatestItemNumInInv;
+				if (itemData.stackable) {
+					if (itemCategory === 'items') {
+						itemData.amount = 1;
+					} else if (itemCategory === 'weapons') {
+						itemData.currentRounds = 1;
+					}
 				}
+				itemData.name = itemName;
+				itemData.id = itemId;
+				// now add item to items/weapons and inv
+				addItemToPlayerInventory(itemData, itemId, activeCharId, false, true);
+			// otherwise, not new item (stacked item and count was already updated), so just update actions
+			} else {
+				updateActivePlayerActions();
 			}
-			itemData.name = itemName;
-			itemData.id = itemId;
-			// now add item to items/weapons and inv
-			addItemToPlayerInventory(itemData, itemId, activeCharId, false);
 		});
 	}
 

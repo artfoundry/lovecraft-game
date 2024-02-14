@@ -231,7 +231,7 @@ class UI extends React.Component {
 			const lightingChanged = draggedItem.itemType && draggedItem.itemType === 'Light' && sourcePCdata.equippedLight === invId;
 
 			this.updateSourcePcInvAfterTransfer(invObjectCategory, null, sourcePCdata, lightingChanged, () => {
-				this.props.addItemToPlayerInventory(draggedItem, invId, recipientId, false);
+				this.props.addItemToPlayerInventory(draggedItem, invId, recipientId, false, false);
 			});
 		}
 
@@ -361,7 +361,7 @@ class UI extends React.Component {
 		} else if (destination === 'body') {
 			itemBeingReplaced = updateData.equippedItems.armor;
 			updateData.equippedItems.armor = draggedItem.id;
-			updateData.defense = this.props.selectedCharacterInfo.calculateDefense();
+			updateData.defense = this.props.selectedCharacterInfo.calculateDefense(this.props.selectedCharacterInfo.agility, this.props.selectedCharacterInfo.items[updateData.equippedItems.armor].defense);
 			updateData.damageReduction = draggedItem.damageReduction;
 		}
 
@@ -405,7 +405,7 @@ class UI extends React.Component {
 		let draggingEquippedItem = false;
 		if (equippedItems.armor === draggedItem.id) {
 			updateData.equippedItems.armor = '';
-			updateData.defense = this.props.selectedCharacterInfo.calculateDefense();
+			updateData.defense = this.props.selectedCharacterInfo.calculateDefense(this.props.selectedCharacterInfo.agility, 0);
 			updateData.damageReduction = 0;
 			draggingEquippedItem = true;
 		} else if (equippedItems.loadout1.left === draggedItem.id) {
@@ -589,7 +589,7 @@ class UI extends React.Component {
 				topMod = -yBuffer;
 			// else if object panel and clicked at lower half of screen, bump up a lot if below top of control bar height or a little if above control bar
 			} else if (panelType === 'object' && y > halfScreenHeight) {
-				topMod = y > controlBarTopPos ? -(yBuffer * 3) : -yBuffer;
+				topMod = y > controlBarTopPos ? -(yBuffer * 4) : -yBuffer;
 			}
 			coords = {left: x + leftMod, top: y + topMod};
 		}

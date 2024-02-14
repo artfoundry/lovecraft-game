@@ -132,6 +132,10 @@ as box-shadow greatly dims the lighting */
 	content: url('../assets/objects/holyWater_sml.png');
 }
 
+.molotov-cocktail {
+	content: url('../assets/objects/molotov-cocktail_sml.png');
+}
+
 .knife {
 	content: url('../assets/objects/knife_sml.png');
 }
@@ -178,10 +182,6 @@ as box-shadow greatly dims the lighting */
 
 .cloth {
 	content: url('../assets/objects/cloth_sml.png');
-}
-
-.flask {
-	content: url('../assets/objects/flask_sml.png');
 }
 
 .water {

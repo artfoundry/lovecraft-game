@@ -8,8 +8,7 @@
     "mustBeOutOfDanger": true,
     "cost": {
       "cloth": 2,
-      "alcohol": 1,
-      "flask": 1
+      "alcohol": 2
     },
     "light": 30
   },
@@ -22,8 +21,7 @@
     "mustBeOutOfDanger": true,
     "cost": {
       "cloth": 1,
-      "alcohol": 1,
-      "flask": 1
+      "alcohol": 3
     },
     "light": 30
   },
@@ -49,8 +47,7 @@
     "description": "Create 1 Acid Concoction",
     "mustBeOutOfDanger": true,
     "cost": {
-      "chemical": 3,
-      "flask": 1
+      "chemical": 3
     },
     "light": 30
   },
@@ -63,8 +60,7 @@
     "mustBeOutOfDanger": true,
     "cost": {
       "chemical": 2,
-      "alcohol": 1,
-      "flask": 1
+      "alcohol": 1
     },
     "light": 30
   },
@@ -76,8 +72,7 @@
     "description": "Create 1 Holy Water",
     "mustBeOutOfDanger": true,
     "cost": {
-      "water": 1,
-      "flask": 1
+      "water": 3
     },
     "light": 30
   },
@@ -85,19 +80,19 @@
     "name": "Handgun Knowledge",
     "skillType": "knowledge",
     "profession": ["general", "privateEye", "veteran", "thief"],
-    "description": "Knowledge of how to use handguns, thus removing 30% penalty to hit targets"
+    "description": "Knowledge of how to use handguns, thus removing 50% penalty to hit targets"
   },
   "shotgunKnowledge": {
     "name": "Shotgun Knowledge",
     "skillType": "knowledge",
     "profession": ["general", "privateEye", "veteran"],
-    "description": "Knowledge of how to use shotguns, thus removing 30% penalty to hit targets"
+    "description": "Knowledge of how to use shotguns, thus removing 50% penalty to hit targets"
   },
   "machineGunKnowledge": {
     "name": "Machine Gun Knowledge",
     "skillType": "knowledge",
     "profession": ["general", "veteran"],
-    "description": "Knowledge of how to use machine guns, thus removing 30% penalty to hit targets"
+    "description": "Knowledge of how to use machine guns, thus removing 50% penalty to hit targets"
   },
   "quickReload": {
     "name": "Quick Reload",
@@ -265,5 +260,12 @@
     "profession": ["occultResearcher"],
     "description": "Call down holy Light to destroy undead or damage other creatures",
     "modifier": [-0.2, -0.4, -0.6]
+  },
+  "krisKnifeExpertise": {
+    "name": "Kris Knife Expertise",
+    "skillType": "passive",
+    "profession": ["occultResearcher"],
+    "description": "Knowledge of how to strike with precision in order to do the most damage possible",
+    "modifier": [0.1, 0.15, 0.2, 0.25]
   }
 }

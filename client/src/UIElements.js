@@ -477,7 +477,7 @@ function ObjectInfoPanel(props) {
 									}
 									setShowDialogProps(true, guardedDialogProps);
 								} else {
-									addItemToPlayerInventory(obj, obj.id, activePc, isPickUpAction);
+									addItemToPlayerInventory(obj, obj.id, activePc, isPickUpAction, false);
 									const updatedList = origObjectList;
 									updatedList[index] = undefined;
 									updateOrigObjectList(updatedList);
@@ -522,7 +522,7 @@ function ObjectInfoPanel(props) {
 					{objectToShow.amount && <div>Amount: {objectToShow.amount}</div>}
 					{objectToShow.currentRounds !== null && objectToShow.currentRounds >= 0 && <div>Rounds remaining: {objectToShow.currentRounds}</div>}
 					{objectToShow.twoHanded && <div>Two-handed</div>}
-					{objectToShow.damage && <div>Damage: {objectToShow.damage}</div>}
+					{objectToShow.damage && <div>Base damage: {objectToShow.damage}</div>}
 					{objectToShow.time && <div>Light remaining: {objectToShow.time} steps</div>}
 					<div>{objectToShow.description}</div>
 				</div>

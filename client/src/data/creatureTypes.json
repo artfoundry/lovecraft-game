@@ -2,6 +2,7 @@
   "elderThing": {
     "name": "Elder Thing",
     "type": "creature",
+    "race": "Creator",
     "level": 10,
     "strength": 4,
     "agility": 4,
@@ -35,6 +36,7 @@
   "ghast": {
     "name": "Ghast",
     "type": "creature",
+    "race": "Undead",
     "level": 3,
     "strength": 3,
     "agility": 3,
@@ -53,6 +55,7 @@
   "ghoul": {
     "name": "Ghoul",
     "type": "creature",
+    "race": "Undead",
     "level": 2,
     "strength": 2,
     "agility": 2,
@@ -71,6 +74,7 @@
   "shoggoth": {
     "name": "Shoggoth",
     "type": "creature",
+    "race": "Servant",
     "level": 6,
     "strength": 8,
     "agility": 1,
