@@ -101,6 +101,7 @@
     "description": "Reload a handgun without using an action",
     "hasTarget": false,
     "mustBeOutOfDanger": false,
+    "requiresEquippedGunType": ["handgun"],
     "spirit": [40, 30, 20, 10]
   },
   "keenInvestigation": {
@@ -131,6 +132,7 @@
     "description": "Use a pickaxe to dig in certain locations in order to find rocks, gems, precious metals, etc.",
     "hasTarget": true,
     "mustBeOutOfDanger": true,
+    "requiresEquippedItem": "pickaxe0",
     "spirit": [45, 40, 35, 30, 25]
   },
   "betterLivingThroughChemicals": {
@@ -140,6 +142,7 @@
     "description": "Use Pharmaceuticals on self with increased effectiveness",
     "hasTarget": false,
     "mustBeOutOfDanger": false,
+    "requiresItem": "pharmaceuticals0",
     "modifier": [0.1, 0.2, 0.3, 0.4],
     "spirit": [40, 40, 30, 30]
   },
@@ -186,6 +189,7 @@
     "description": "Shoot every enemy in range (provided enough ammo) with reduced accuracy (reduced percent to attack roll)",
     "hasTarget": false,
     "mustBeOutOfDanger": false,
+    "requiresEquippedGunType": ["handgun", "shotgun", "machineGun"],
     "modifier": [-0.3, -0.25, -0.2, -0.15, -0.1],
     "spirit": [60, 55, 50, 45, 40]
   },
@@ -206,6 +210,7 @@
     "description": "Increased hit chance and damage with melee attack if another party member is next to target",
     "hasTarget": true,
     "mustBeOutOfDanger": false,
+    "requiresEquippedMeleeWeapon": true,
     "modifier": [0.1, 0.2, 0.3, 0.4, 0.5],
     "spirit": [20, 20, 20, 20, 20]
   },
@@ -247,6 +252,7 @@
     "description": "Guaranteed hit and extra damage with Kris Knife in exchange for health and sanity loss",
     "hasTarget": true,
     "mustBeOutOfDanger": false,
+    "requiredEquippedItem": "krisKnife0",
     "modifier": [1.5, 3, 4.5, 6, 7.5, 10],
     "cost": {
       "health": [3, 5, 7, 9, 11, 20],

@@ -11,6 +11,7 @@ class Character extends React.Component {
 		this.noGunKnowledgePenalty = 0.5;
 		this.hitDie = 10;
 		this.damageDie = 6;
+		this.defenseDie = 4;
 
 		// For instantiation only - updated data is stored in App.state.playerCharacters
 		this.id = props.id;
@@ -77,7 +78,7 @@ class Character extends React.Component {
 	_copySkillData(charSkills) {
 		let skillData = {};
 		charSkills.forEach(skillId => {
-			skillData[skillId] = Skills[skillId];
+			skillData[skillId] = {...Skills[skillId], level: 1};
 		});
 		return skillData;
 	}
@@ -106,7 +107,7 @@ class Character extends React.Component {
 	 */
 	attack = (props) => {
 		const {itemId, itemStats, targetData, pcData, updateCharacter, updateLog, callback} = props;
-		let isHit, damage, hitRoll, defenseRoll;
+		let isHit, damageTotal, attackTotal, defenseTotal;
 		let rangedStrHitModifier = itemStats.usesStr ? Math.round(pcData.strength / 2) : 0;
 		let updatedPcData = deepCopy(pcData);
 		let updatedCreatureData = deepCopy(targetData);
@@ -117,31 +118,34 @@ class Character extends React.Component {
 			(!pcData.skills.handgunKnowledge && equippedGunType === 'handgun') ||
 			(!pcData.skills.shotgunKnowledge && equippedGunType === 'shotgun') ||
 			(!pcData.skills.machineGunKnowledge && equippedGunType === 'machineGun') ? this.noGunKnowledgePenalty : 1;
+		const hitRoll = diceRoll(this.hitDie);
+		const damageRoll = diceRoll(this.damageDie);
+		const defenseRoll = diceRoll(this.defenseDie);
 		if (itemStats.ranged) {
-			hitRoll = Math.round(noGunKnowledgeMod * (pcData.agility + rangedStrHitModifier + diceRoll(this.hitDie)));
-			damage = rangedStrHitModifier + itemStats.damage + diceRoll(this.damageDie) - targetData.damageReduction;
+			attackTotal = Math.round(noGunKnowledgeMod * (pcData.agility + rangedStrHitModifier + hitRoll));
+			damageTotal = rangedStrHitModifier + itemStats.damage + damageRoll - targetData.damageReduction;
 			weaponInfo.currentRounds--;
 			if (weaponInfo.currentRounds === 0 && weaponInfo.stackable) {
 				delete updatedPcData.weapons[itemId];
 				updatedPcData.equippedItems.loadout1[equippedSide] = '';
 			}
 		} else {
-			hitRoll = pcData.strength + Math.round(pcData.agility / 2) + diceRoll(this.hitDie);
-			damage = pcData.strength + itemStats.damage + diceRoll(this.damageDie) - targetData.damageReduction;
+			attackTotal = pcData.strength + Math.round(pcData.agility / 2) + hitRoll;
+			damageTotal = pcData.strength + itemStats.damage + damageRoll - targetData.damageReduction;
 		}
-		damage = damage < 0 ? 0 : damage;
-		defenseRoll = targetData.defense + diceRoll(this.damageDie);
-		isHit = hitRoll >= defenseRoll;
-		updateLog(`${pcData.name} attacks with a ${weaponInfo.name} and rolls ${hitRoll} to hit...`);
+		damageTotal = damageTotal < 0 ? 0 : damageTotal;
+		defenseTotal = targetData.defense + defenseRoll;
+		isHit = attackTotal >= defenseTotal;
+		updateLog(`${pcData.name} attacks with a ${weaponInfo.name} and rolls ${attackTotal} to hit...`);
 		updateCharacter('player', updatedPcData, pcData.id, false, false, false, () => {
 			if (isHit) {
-				updatedCreatureData.currentHealth -= damage;
+				updatedCreatureData.currentHealth -= damageTotal;
 				updateCharacter('creature', updatedCreatureData, targetData.id, false, false, false, callback);
 			} else if (callback) {
 				callback();
 			}
 		});
-		updateLog(isHit ? `${pcData.name} hits for ${damage} damage!` : pcData.name + ' misses.');
+		updateLog(isHit ? `${pcData.name} hits for ${damageTotal} damage!` : pcData.name + ' misses.');
 	}
 
 	/**
@@ -282,6 +286,15 @@ class Character extends React.Component {
 		});
 	}
 
+	/**
+	 *
+	 * @param props: object {
+	 *
+	 * }
+	 */
+	dig = (props) => {
+
+	}
 }
 
 export default Character;

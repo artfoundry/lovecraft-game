@@ -454,8 +454,9 @@ class Game extends React.Component {
 	/**
 	 * Reloading active character's gun using ammo in inv we already know we have, as determined by CharacterControls in UIElements
 	 * @param weaponId: string
+	 * @param isQuickReload: boolean (true if using the Quick Reload skill)
 	 */
-	reloadGun = (weaponId) => {
+	reloadGun = (weaponId, isQuickReload) => {
 		const updatedPCdata = deepCopy(this.state.playerCharacters[this.state.activeCharacter]);
 		const gunInfo = updatedPCdata.weapons[weaponId];
 		const gunType = gunInfo.gunType;
@@ -467,8 +468,13 @@ class Game extends React.Component {
 		if (updatedPCdata.items[gunType + 'Ammo0'].amount === 0) {
 			delete updatedPCdata.items[gunType + 'Ammo0'];
 		}
+		if (isQuickReload) {
+			updatedPCdata.currentSpirit = this.reduceCharSpirit('quickReload');
+		}
 		this.updateCharacters('player', updatedPCdata, this.state.activeCharacter, false, false, false, () => {
-			this.updateActivePlayerActions();
+			if (!isQuickReload) {
+				this.updateActivePlayerActions();
+			}
 		});
 	}
 
@@ -489,6 +495,18 @@ class Game extends React.Component {
 		this.updateCharacters('player', activePcData, this.state.activeCharacter, true, false, false, () => {
 			this.updateActivePlayerActions();
 		});
+	}
+
+	/**
+	 * Returns new spirit value for active PC after subtracting spirit cost for used active skill
+	 * @param skillId: string
+	 * @returns {number}
+	 */
+	reduceCharSpirit = (skillId) => {
+		const pcData = this.state.playerCharacters[this.state.activeCharacter];
+		const skillData = pcData.skills[skillId];
+		const skillLevel = skillData.level - 1;
+		return pcData.currentSpirit - skillData.spirit[skillLevel];
 	}
 
 	/**
