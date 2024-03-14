@@ -121,8 +121,11 @@ class Character extends React.Component {
 		const hitRoll = diceRoll(this.hitDie);
 		const damageRoll = diceRoll(this.damageDie);
 		const defenseRoll = diceRoll(this.defenseDie);
+
 		if (itemStats.ranged) {
-			attackTotal = Math.round(noGunKnowledgeMod * (pcData.agility + rangedStrHitModifier + hitRoll));
+			const steadyHandSkill = pcData.skills.steadyHand;
+			const accuracyBonus = steadyHandSkill && equippedGunType === 'handgun' ? steadyHandSkill.modifier[steadyHandSkill.level - 1] : 0;
+			attackTotal = Math.round(noGunKnowledgeMod * (pcData.agility + accuracyBonus + rangedStrHitModifier + hitRoll));
 			damageTotal = rangedStrHitModifier + itemStats.damage + damageRoll - targetData.damageReduction;
 			weaponInfo.currentRounds--;
 			if (weaponInfo.currentRounds === 0 && weaponInfo.stackable) {
