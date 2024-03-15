@@ -597,6 +597,7 @@ h3 {
 	flex-direction: row;
 	justify-content: left;
 	align-items: center;
+	width: 300px; /* for large screens that allow showing all 3 control bars at once */
 	min-height: 64px;
 	text-align: left;
 	overflow-x: auto;
@@ -644,7 +645,7 @@ h3 {
 }
 
 .action-button-scroll {
-	width: 12px;
+	width: 16px;
 	padding-left: 1px;
 	padding-right: 5px;
 }
@@ -1253,7 +1254,6 @@ select {
 	}
 
 	.control-bar-buttons-container {
-		width: 280px;
 		border: none;
 	}
 }

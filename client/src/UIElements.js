@@ -10,10 +10,17 @@ function CharacterControls(props) {
 	const actionableItems = {
 		weapons: [],
 		medicine: [],
-		skills: []
+		skills: [],
+		misc: []
 	};
 	let actionButtonCount = 0;
 	const actionButtonMax = 6;
+	const [skillPaginationNum, updateSkillPageNum] = useState(1);
+	const shouldActionButtonShow = () => {
+		return (actionButtonCount <= actionButtonMax && skillPaginationNum === 1) ||
+			(actionButtonCount > actionButtonMax && skillPaginationNum === 2) ||
+			(actionButtonCount > (actionButtonMax * 2) && skillPaginationNum === 3);
+	}
 
 	const handleWeaponClick = (weapon, reloading = false, isQuickReload = false) => {
 		if (reloading) {
@@ -79,9 +86,19 @@ function CharacterControls(props) {
 		}
 	}
 
+	// add misc actions to actionableItems.misc
+	if (props.mapObjectsOnPcTiles.length > 0) {
+		actionableItems.misc.push('pickup');
+	}
+	if ((currentPCdata.equippedLight && (currentPCdata.equippedLight.includes('lantern') || currentPCdata.equippedLight.includes('torch'))) &&
+		currentPCdata.lightTime < currentPCdata.items[currentPCdata.equippedLight].maxTime && currentPCdata.items.oil0)
+	{
+		actionableItems.misc.push('refill');
+	}
+
 	const weaponButtons = (
 		<div className='weapon-buttons-container'>
-			{actionableItems.weapons.map((weapon) => {
+			{actionableItems.weapons.map(weapon => {
 				let actionButtonState = '';
 				let button;
 				if (weapon.isGun) {
@@ -89,8 +106,9 @@ function CharacterControls(props) {
 						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === weapon.weaponId) ? 'button-selected': '';
 					const reloadButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || props.actionButtonSelected || weapon.ammo === weapon.fullyLoaded || !hasExtraAmmo) ? 'button-inactive' :
 						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === weapon.weaponId) ? 'button-selected': '';
+					actionButtonCount += 2;
 					button = (
-						<div className='action-button-pair' key={weapon.weaponId}>
+						<div key={weapon.weaponId} className={`action-button-pair ${shouldActionButtonShow() ? '' : 'hide'}`}>
 							<div
 								className={`action-button ${convertObjIdToClassId(weapon.weaponId)}-action ${actionButtonState}`}
 								onClick={() => {
@@ -105,40 +123,19 @@ function CharacterControls(props) {
 							></div>
 						</div>
 					);
-					actionButtonCount += 2;
 				} else {
 					actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || (weapon.ammo === 0 && !hasExtraAmmo)) ? 'button-inactive' :
 						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === weapon.weaponId) ? 'button-selected': '';
+					actionButtonCount++;
 					button = (
 						<div
-							className={`action-button ${convertObjIdToClassId(weapon.weaponId)}-action ${actionButtonState} ${weapon.ammo === 0 ? 'gun-reload-icon' : ''}`}
 							key={weapon.weaponId}
+							className={`action-button ${shouldActionButtonShow() ? '' : 'hide'} ${convertObjIdToClassId(weapon.weaponId)}-action ${actionButtonState} ${weapon.ammo === 0 ? 'gun-reload-icon' : ''}`}
 							onClick={() => {
 								handleWeaponClick(weapon);
 							}}
 						>{weapon.ammo || ''}</div>
 					);
-					actionButtonCount++;
-				}
-				return button;
-			})}
-		</div>
-	);
-
-	const medicineButtons = (
-		<div className='item-buttons-container'>
-			{actionableItems.medicine.map((item) => {
-				const itemCount = actionableItems.medicine.findLast(match => match.name === item.name).amount;
-				let button = null;
-				if (item.amount === itemCount) {
-					const actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0) ? 'button-inactive' :
-						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === item.itemId) ? 'button-selected': '';
-					button = (
-						<div className={`action-button ${convertObjIdToClassId(item.itemId)}-action ${actionButtonState}`} key={item.itemId} onClick={() => {
-							props.toggleActionButton(props.characterId, item.itemId, item.name, 'item');
-						}}>{itemCount}</div>
-					);
-					actionButtonCount++;
 				}
 				return button;
 			})}
@@ -147,7 +144,7 @@ function CharacterControls(props) {
 
 	const skillButtons = (
 		<div className='skill-buttons-container'>
-			{actionableItems.skills.map((skill) => {
+			{actionableItems.skills.map(skill => {
 				let button = null;
 				const leftWeapon = currentPCdata.weapons[equippedItems.left];
 				const rightWeapon = currentPCdata.weapons[equippedItems.right];
@@ -167,8 +164,9 @@ function CharacterControls(props) {
 				if (skill.skillType === 'create') {
 					skillClass = 'create-' + skillClass;
 				}
+				actionButtonCount++;
 				button = (
-					<div className={`action-button ${skillClass} ${actionButtonState}`} key={skill.skillId} onClick={() => {
+					<div key={skill.skillId} className={`action-button ${shouldActionButtonShow() ? '' : 'hide'} ${skillClass} ${actionButtonState}`} onClick={() => {
 						if (reloadSkillAndHasAmmo) {
 							const weaponId = leftWeaponNeedsReloading ? equippedItems.left : equippedItems.right;
 							const weapon = {weaponId};
@@ -178,7 +176,47 @@ function CharacterControls(props) {
 						}
 					}}></div>
 				);
+				return button;
+			})}
+		</div>
+	);
+
+	const medicineButtons = (
+		<div className='item-buttons-container'>
+			{actionableItems.medicine.map(item => {
+				const itemCount = actionableItems.medicine.findLast(match => match.name === item.name).amount;
+				let button = null;
+				if (item.amount === itemCount) {
+					const actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0) ? 'button-inactive' :
+						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === item.itemId) ? 'button-selected': '';
+					actionButtonCount++;
+					button = (
+						<div key={item.itemId} className={`action-button ${shouldActionButtonShow() ? '' : 'hide'} ${convertObjIdToClassId(item.itemId)}-action ${actionButtonState}`} onClick={() => {
+							props.toggleActionButton(props.characterId, item.itemId, item.name, 'item');
+						}}>{itemCount}</div>
+					);
+				}
+				return button;
+			})}
+		</div>
+	);
+
+	const miscButtons = (
+		<div className='misc-action-buttons-container'>
+			{actionableItems.misc.map((item, index) => {
+				let button = null;
 				actionButtonCount++;
+				if (item === 'pickup') {
+					button = <div
+						key={item + index}
+						className={`action-button pickup-action ${shouldActionButtonShow() ? '' : 'hide'} ${actionButtonState}`}
+						onClick={(evt) => props.setMapObjectSelected(props.mapObjectsOnPcTiles, evt, true)}></div>;
+				} else if (item === 'refill') {
+					button = <div
+						key={item + index}
+						className={`action-button refill-action ${shouldActionButtonShow() ? '' : 'hide'} ${actionButtonState}`}
+						onClick={props.refillLight}></div>;
+				}
 				return button;
 			})}
 		</div>
@@ -188,6 +226,8 @@ function CharacterControls(props) {
 	const healthLevel = (currentPCdata.currentHealth / currentPCdata.startingHealth) * 100;
 	const sanityLevel = (currentPCdata.currentSanity / currentPCdata.startingSanity) * 100;
 	const spiritLevel = (currentPCdata.currentSpirit / currentPCdata.startingSpirit) * 100;
+	const skillPageTotal = Math.ceil(actionButtonCount / actionButtonMax);
+
 	return (
 		<div
 			id={`${(props.screenData.isSmall && props.characterId === props.selectedControlTab) ? 'control-bar-tab-1' : ''}`}
@@ -229,23 +269,15 @@ function CharacterControls(props) {
 			<div
 				id={`char-control-${props.characterId}`}
 				className={`control-bar-buttons-container ${(props.screenData.isSmall && props.characterId !== props.selectedControlTab) ? 'hide' : ''}`}>
-				{actionButtonCount > actionButtonMax &&
-					<div className='action-button action-button-scroll'>⬅</div>
+				{(actionButtonCount > actionButtonMax) && (skillPaginationNum > 1) &&
+					<div className='action-button action-button-scroll' onClick={() => updateSkillPageNum(skillPaginationNum - 1)}>⬅</div>
 				}
 				{weaponButtons}
 				{skillButtons}
 				{medicineButtons}
-				<div className='misc-action-buttons-container'>
-					{(props.mapObjectsOnPcTiles.length > 0) &&
-					<div className={`action-button pickup-action ${actionButtonState}`} onClick={(evt) => props.setMapObjectSelected(props.mapObjectsOnPcTiles, evt, true)}></div>
-					}
-					{((currentPCdata.equippedLight && (currentPCdata.equippedLight.includes('lantern') || currentPCdata.equippedLight.includes('torch'))) &&
-					currentPCdata.lightTime < currentPCdata.items[currentPCdata.equippedLight].maxTime && currentPCdata.items.oil0) &&
-					<div className={`action-button refill-action ${actionButtonState}`} onClick={props.refillLight}></div>
-					}
-				</div>
-				{actionButtonCount > actionButtonMax &&
-				<div className='action-button arrow-button-right action-button-scroll'>⬅</div>
+				{miscButtons}
+				{(actionButtonCount > actionButtonMax) && (skillPageTotal > 1) && (skillPaginationNum < skillPageTotal) &&
+				<div className='action-button arrow-button-right action-button-scroll' onClick={() => updateSkillPageNum(skillPaginationNum + 1)}>⬅</div>
 				}
 			</div>
 		</div>
