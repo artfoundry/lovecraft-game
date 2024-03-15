@@ -13,8 +13,8 @@ import {
 	convertPosToCoords,
 	convertCoordsToPos,
 	roundTowardZero,
-	notEnoughSpaceInInventory,
-	deepCopy} from './Utils';
+	deepCopy,
+	diceRoll} from './Utils';
 import './css/map.css';
 import './css/catacombs.css';
 import './css/dungeon.css';
@@ -654,26 +654,33 @@ class Map extends React.Component {
 		let mapItems = {};
 		let itemCoords = {};
 		for (const [objectType, objectTypesInfo] of Object.entries(this.currentMapData.objects)) {
-			for (const [itemName, countInfo] of Object.entries(objectTypesInfo)) {
-				for (let i=0; i < countInfo.countPerLevel[this.props.currentLevel]; i++) {
-					const itemInfo = objectType === 'Weapon' ? WeaponTypes[itemName] : ItemTypes[itemName];
-					const tileType = itemName === 'Torch' ? 'wall' : 'floor';
-					const lowerCaseName = itemName.slice(0, 1).toLowerCase() + itemName.slice(1, itemName.length).replaceAll(' ', '');
-					const itemID = lowerCaseName + (i + 1);
-					const gunType = objectType === 'Weapon' && itemInfo.gunType ? itemInfo.gunType : null;
-					const weaponCurrentRounds = gunType ? Math.round(Math.random() * itemInfo.rounds) : objectType === 'Weapon' ? 1 : null;
-					const coords = this._getInitialRandomCoords(itemCoords, tileType); // this.props.playerCharacters['privateEye'].coords (to easily test objects)
-					mapItems[itemID] = {
-						...itemInfo,
-						name: itemName,
-						currentRounds: weaponCurrentRounds,
-						coords
-					};
-					mapItems[itemID].amount =
-						objectType === 'Ammo' ? Math.floor(Math.random() * 10) + 2 :
-						itemName === 'Oil' ? Math.floor(Math.random() * 90) + 10 :
-						objectType === 'Medicine' || objectType === 'Component' ? 1 : null;
-					itemCoords[itemID] = coords;
+			const alwaysOnTheLookoutSkillInfo = this.props.playerCharacters.archaeologist ? this.props.playerCharacters.archaeologist.skills.alwaysOnTheLookout : null;
+			let relicChance = alwaysOnTheLookoutSkillInfo ? alwaysOnTheLookoutSkillInfo.modifier[alwaysOnTheLookoutSkillInfo.level] : 0;
+			for (const [itemName, itemInfo] of Object.entries(objectTypesInfo)) {
+				if (objectType === 'Relic') {
+					relicChance = (relicChance + itemInfo.chancePerLevel[this.props.currentLevel]) * 100;
+				}
+				if (objectType !== 'Relic' || (objectType === 'Relic' && (diceRoll(100) <= relicChance))) {
+					for (let i=0; i < itemInfo.countPerLevel[this.props.currentLevel]; i++) {
+						const itemInfo = objectType === 'Weapon' ? WeaponTypes[itemName] : ItemTypes[itemName];
+						const tileType = itemName === 'Torch' ? 'wall' : 'floor';
+						const lowerCaseName = itemName.slice(0, 1).toLowerCase() + itemName.slice(1, itemName.length).replaceAll(' ', '');
+						const itemID = lowerCaseName + (i + 1);
+						const gunType = objectType === 'Weapon' && itemInfo.gunType ? itemInfo.gunType : null;
+						const weaponCurrentRounds = gunType ? Math.round(Math.random() * itemInfo.rounds) : objectType === 'Weapon' ? 1 : null;
+						const coords = this._getInitialRandomCoords(itemCoords, tileType); // this.props.playerCharacters['privateEye'].coords (to easily test objects)
+						mapItems[itemID] = {
+							...itemInfo,
+							name: itemName,
+							currentRounds: weaponCurrentRounds,
+							coords
+						};
+						mapItems[itemID].amount =
+							objectType === 'Ammo' ? Math.floor(Math.random() * 10) + 2 :
+							itemName === 'Oil' ? Math.floor(Math.random() * 90) + 10 :
+							objectType === 'Medicine' || objectType === 'Component' || objectType === 'Relic' ? 1 : null;
+						itemCoords[itemID] = coords;
+					}
 				}
 			}
 		}
@@ -984,8 +991,6 @@ class Map extends React.Component {
 	 */
 	_addItems() {
 		let items = [];
-		const activePlayer = this.props.playerCharacters[this.props.activeCharacter];
-		const isActivePlayerInvFull = activePlayer && notEnoughSpaceInInventory(1, 0, activePlayer);
 		let tileIsVisible = true;
 
 		for (const [id, info] of Object.entries(this.props.mapObjects)) {
