@@ -155,10 +155,10 @@ function CharacterControls(props) {
 					(skill.requiresEquippedGunType && ((leftWeapon && skill.requiresEquippedGunType.includes(leftWeapon.gunType)) || (rightWeapon && skill.requiresEquippedGunType.includes(rightWeapon.gunType)))) ||
 					(skill.requiresEquippedItem && (skill.requiresEquippedItem === equippedItems.left || skill.requiresEquippedItem === equippedItems.right)) ||
 					(skill.requiresEquippedMeleeWeapon && ((leftWeapon && !leftWeapon.ranged) || (rightWeapon && !rightWeapon.ranged)));
-				const reloadSkillAndHasAmmo = skill.name === 'Quick Reload' && hasExtraAmmo && hasNeededItem && (leftWeaponNeedsReloading || rightWeaponNeedsReloading);
+				const hasAmmoForReloadSkill = hasExtraAmmo && hasNeededItem && (leftWeaponNeedsReloading || rightWeaponNeedsReloading);
 				// all active and only active skills require spirit
 				const hasEnoughSpirit = skill.spirit && currentPCdata.currentSpirit >= skill.spirit[skill.level - 1]; // level -1 because level values start at 1
-				const actionButtonState = (!props.isActiveCharacter || (props.actionsRemaining === 0 && skill.name !== 'Quick Reload') || (skill.spirit && !hasEnoughSpirit) || !hasNeededItem || !reloadSkillAndHasAmmo || (skill.mustBeOutOfDanger && props.threatList.length > 0)) ? 'button-inactive' :
+				const actionButtonState = (!props.isActiveCharacter || (props.actionsRemaining === 0 && skill.name !== 'Quick Reload') || (skill.spirit && !hasEnoughSpirit) || !hasNeededItem || (skill.name === 'Quick Reload' && !hasAmmoForReloadSkill) || (skill.mustBeOutOfDanger && props.threatList.length > 0)) ? 'button-inactive' :
 					(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === skill.skillId && skill.hasTarget) ? 'button-selected': '';
 				let skillClass = `${convertObjIdToClassId(skill.skillId)}-action`;
 				if (skill.skillType === 'create') {
@@ -167,7 +167,7 @@ function CharacterControls(props) {
 				actionButtonCount++;
 				button = (
 					<div key={skill.skillId} className={`action-button ${shouldActionButtonShow() ? '' : 'hide'} ${skillClass} ${actionButtonState}`} onClick={() => {
-						if (reloadSkillAndHasAmmo) {
+						if (skill.name === 'Quick Reload' && hasAmmoForReloadSkill) {
 							const weaponId = leftWeaponNeedsReloading ? equippedItems.left : equippedItems.right;
 							const weapon = {weaponId};
 							handleWeaponClick(weapon, true, true);

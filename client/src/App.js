@@ -404,14 +404,14 @@ class Game extends React.Component {
 	 * Data stored in actionButtonSelected: {characterId, itemId, itemName, stats: WeaponTypes[itemName], ItemTypes[itemName], or SkillTypes[itemName]}
 	 * state.actionButtonSelected gets reset in this.updateCurrentTurn
 	 * @param characterId: String
-	 * @param itemId: String
+	 * @param itemId: String (action button ID - ie. item, weapon, or skill ID)
 	 * @param itemName: String
 	 * @param buttonType: String ('weapon', 'item', or 'skill')
 	 * @param callback: Function
 	 */
 	toggleActionButton = (characterId, itemId, itemName, buttonType, callback) => {
 		let buttonState = null;
-		let isImmediateAction = false;
+		let isImmediateAction = false; // action takes effect without needing user to select a target
 		let stats = {};
 
 		// if no weapon/item selected or weapon/item selected doesn't match new weapon/item selected, set weapon/item state to new weapon/item
@@ -440,9 +440,12 @@ class Game extends React.Component {
 				addItemToPlayerInventory: this.addItemToPlayerInventory,
 				updateActivePlayerActions: this.updateActivePlayerActions
 			} : {
-
+				currentPcData: this.state.playerCharacters[characterId],
+				updateCharacter: this.updateCharacters,
+				updateLog: this.updateLog,
+				updateActivePlayerActions: this.updateActivePlayerActions
 			};
-			this.state.playerCharacters[characterId][stats.skillType](props);
+			this.state.playerCharacters[characterId][itemId](props);
 			if (callback) callback();
 		} else {
 			this.setState({actionButtonSelected: buttonState}, () => {

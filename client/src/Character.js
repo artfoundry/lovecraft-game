@@ -160,20 +160,32 @@ class Character extends React.Component {
 	 *  pcData: object,
 	 *  updateCharacter: function (from App),
 	 *  updateLog: function (from App),
+	 *  isChemistSkill: boolean (used for betterLivingThroughChemicals skill)
 	 *  callback: function (from App - calls toggleWeapon, _removeDeadFromTurnOrder if creature dies, then _updateActivePlayerActions)
 	 * )
 	 */
 	heal = (props) => {
-		const {itemId, itemStats, targetData, pcData, updateCharacter, updateLog, callback} = props;
+		const {itemId, itemStats, targetData, pcData, updateCharacter, updateLog, isChemistSkill, callback} = props;
 		const healItem = pcData.items[itemId].name;
 		const targetStat = itemStats.healingType === 'health' ? 'currentHealth' : 'currentSanity';
 		const startingStatValue = itemStats.healingType === 'health' ? targetData.startingHealth : targetData.startingSanity;
-		const healAmount = Math.round(pcData.mentalAcuity / 2) + (itemStats.healingType === 'health' ? diceRoll(12) : diceRoll(4)) + itemStats.healingAmount;
+		let healAmount = Math.round(pcData.mentalAcuity / 2) + (itemStats.healingType === 'health' ? diceRoll(12) : diceRoll(4)) + itemStats.healingAmount;
 		let updatedTargetData = deepCopy(targetData);
+		let updatedHealerData = deepCopy(pcData);
+		if (isChemistSkill) {
+			const skillData = pcData.skills.betterLivingThroughChemicals;
+			healAmount += skillData.modifier[skillData.level] * healAmount;
+			updatedHealerData.currentSpirit -= skillData.spirit[skillData.level];
+		}
 		const healedStatValue = targetData[targetStat] + healAmount;
 		updatedTargetData[targetStat] = healedStatValue > startingStatValue ? startingStatValue : healedStatValue;
-		let updatedHealerData = deepCopy(pcData);
-		delete updatedHealerData.items[itemId];
+		if (updatedHealerData.items[itemId].amount === 1) {
+			delete updatedHealerData.items[itemId];
+			const itemInvIndex = updatedHealerData.inventory.indexOf(itemId);
+			updatedHealerData.inventory.splice(itemInvIndex, 1, null);
+		} else {
+			updatedHealerData.items[itemId].amount--;
+		}
 		updateCharacter('player', updatedTargetData, targetData.id, false, false, false, () => {
 			updateLog(`${pcData.name} uses ${healItem} to increase ${targetData.name}'s ${targetStat.substring(7)}`);
 			updateCharacter('player', updatedHealerData, pcData.id, false, false, false, callback);
@@ -297,6 +309,21 @@ class Character extends React.Component {
 	 */
 	dig = (props) => {
 
+	}
+
+	betterLivingThroughChemicals = (props) => {
+		const {currentPcData, updateCharacter, updateLog, updateActivePlayerActions} = props;
+		const healProps = {
+			itemId: 'pharmaceuticals0',
+			itemStats: ItemTypes.Pharmaceuticals,
+			isChemistSkill: true,
+			targetData: currentPcData,
+			pcData: currentPcData,
+			updateCharacter,
+			updateLog,
+			callback: updateActivePlayerActions
+		}
+		this.heal(healProps);
 	}
 }
 
