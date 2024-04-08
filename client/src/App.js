@@ -25,6 +25,7 @@ class Game extends React.Component {
 		this.playerMovesLimit = 3;
 		this.playerActionsLimit = 2;
 		this.playerInventoryLimit = 12;
+		this.maxTurnsToReviveDeadPlayer = 3;
 
 		this.minScreenWidthForSmall = 1000;
 		this.minScreenWidthForNarrow = 768;
@@ -609,23 +610,47 @@ class Game extends React.Component {
 	/**
 	 * Increments and sets to state the current turn number (or resets if on last turn of unitTurnOrder),
 	 * as well as resets number of moves and actions taken by the active PC
-	 * then calls functions to clear any action button from previous char and then update which is the active character
+	 * then calls functions to clear any action button from previous char and then update which is the active character.
+	 * Skips PC if PC has <= 0 health/sanity and increments turnsSinceDeath if health is <= 0, then either updates char
+	 * or removes char from game if char has been at 0 health for 3 turns
 	 * @param startTurns: boolean (true if starting turns, ie. combat just started)
 	 * @param callback: function
 	 */
 	updateCurrentTurn = (startTurns = false, callback) => {
 		let currentTurn = (startTurns || this.state.currentTurn === this.state.unitsTurnOrder.length - 1) ? 0 : this.state.currentTurn + 1;
-		const newActiveCharId = Object.values(this.state.unitsTurnOrder[this.state.currentTurn])[0].id;
-		if (this.state.playerCharacters[newActiveCharId] && this.state.playerCharacters[newActiveCharId].currentHealth <= 0) {
+		const nextActiveCharId = Object.values(this.state.unitsTurnOrder[currentTurn])[0].id;
+		let nextActiveChar = deepCopy(this.state.playerCharacters[nextActiveCharId]);
+		let updateOrRemoveChar = null;
+		if (nextActiveChar && (nextActiveChar.currentHealth <= 0 || nextActiveChar.currentSanity <= 0)) {
 			currentTurn++;
+			if (nextActiveChar.currentHealth <= 0 && nextActiveChar.turnsSinceDeath < this.maxTurnsToReviveDeadPlayer) {
+				nextActiveChar.turnsSinceDeath++;
+				updateOrRemoveChar = nextActiveChar.turnsSinceDeath < this.maxTurnsToReviveDeadPlayer ? 'update' : 'remove';
+			}
 		}
 		this.setState({currentTurn, activePlayerActionsCompleted: 0, activePlayerMovesCompleted: 0}, () => {
-			if (this.state.playerCharacters[this.state.activeCharacter] && this.state.actionButtonSelected) {
-				this.toggleActionButton('', '', '', '', () => {
+			const updateActiveChar = () => {
+				if (this.state.playerCharacters[this.state.activeCharacter] && this.state.actionButtonSelected) {
+					this.toggleActionButton('', '', '', '', () => {
+						this.updateActiveCharacter(callback);
+					});
+				} else {
 					this.updateActiveCharacter(callback);
+				}
+			}
+			if (updateOrRemoveChar) {
+				if (updateOrRemoveChar === 'update') {
+					this.updateLog(`${nextActiveChar.name} is dying and has ${this.maxTurnsToReviveDeadPlayer - nextActiveChar.turnsSinceDeath} turns to be resuscitated!`);
+				}
+				this.updateCharacters('player', nextActiveChar, nextActiveCharId, false, false, false, () => {
+					if (updateOrRemoveChar === 'remove') {
+						this._removeDeadPCFromGame(nextActiveCharId, updateActiveChar);
+					} else {
+						updateActiveChar();
+					}
 				});
 			} else {
-				this.updateActiveCharacter(callback);
+				updateActiveChar();
 			}
 		});
 	}
@@ -959,7 +984,7 @@ class Game extends React.Component {
 		let playerFollowOrder = [];
 		let activeCharacter = this.state.activeCharacter;
 		this.startingPlayerCharacters.forEach(characterId => {
-			const props = {...PlayerCharacterTypes[characterId], playerInventoryLimit: this.playerInventoryLimit};
+			const props = {...PlayerCharacterTypes[characterId], playerInventoryLimit: this.playerInventoryLimit, maxTurnsToReviveDeadPlayer: this.maxTurnsToReviveDeadPlayer};
 			playerCharacters[characterId] = new Character(props);
 			playerFollowOrder.push(characterId);
 		});
@@ -1074,8 +1099,22 @@ class Game extends React.Component {
 		});
 	}
 
+	_removeDeadPCFromGame(id, callback) {
+		if (this.state.playerCharacters[id]) {
+			this.updateLog(`${this.state.playerCharacters[id].name} has gone from mostly dead to all dead!`);
+			if (id === this.state.createdCharData.id) {
+				this._endGame();
+			} else {
+				// let playerChars = deepCopy(this.state.playerCharacters);
+				// delete playerChars[id];
+				// this.updateCharacters('player', playerChars, null, false, false, false, callback);
+				this._removeDeadFromTurnOrder(id, callback);
+			}
+		} else if (callback) callback();
+	}
+
 	/**
-	 * Updates to state the turn order with the dead unit removed
+	 * Updates to state the turn order with the dead removed
 	 * @param id: String
 	 * @param callback: function
 	 * @param checkLineOfSightToParty: function (from Map)
@@ -1093,16 +1132,11 @@ class Game extends React.Component {
 			}
 			index++;
 		}
-		if (this.state.playerCharacters[id]) {
-			this.updateLog(`${this.state.playerCharacters[id]} has died!`);
-			if (id === this.state.createdCharData.id) {
-				this._endGame();
-			}
-		} else {
-			this.updateLog(`The ${this.state.mapCreatures[id].name} is dead!`);
-		}
 		this.setState({unitsTurnOrder}, () => {
-			this.updateThreatList([], [id], callback, checkLineOfSightToParty);
+			if (checkLineOfSightToParty) {
+				this.updateLog(`The ${this.state.mapCreatures[id].name} is dead!`);
+				this.updateThreatList([], [id], callback, checkLineOfSightToParty);
+			} else if (callback) callback();
 		});
 	}
 

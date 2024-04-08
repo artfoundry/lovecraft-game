@@ -12,6 +12,7 @@ class Character extends React.Component {
 		this.hitDie = 10;
 		this.damageDie = 6;
 		this.defenseDie = 4;
+		this.maxTurnsToReviveDeadPlayer = props.maxTurnsToReviveDeadPlayer;
 
 		// For instantiation only - updated data is stored in App.state.playerCharacters
 		this.id = props.id;
@@ -27,7 +28,7 @@ class Character extends React.Component {
 		this.initiative = this._calculateInitiative();
 		this.startingHealth = props.startingHealth;
 		this.currentHealth = props.startingHealth;
-		this.turnsSinceDeath = 4;
+		this.turnsSinceDeath = 0;
 		this.startingSanity = props.startingSanity;
 		this.currentSanity = props.startingSanity;
 		this.startingSpirit = (this.startingHealth / 2) + (this.startingSanity / 2);
@@ -329,7 +330,7 @@ class Character extends React.Component {
 
 	resuscitate = (props) => {
 		const {targetData, pcData, updateCharacter, updateLog, setShowDialogProps, callback} = props;
-		if (targetData.turnsSinceDeath > 3) {
+		if (targetData.turnsSinceDeath >= this.maxTurnsToReviveDeadPlayer) {
 			const dialogProps = {
 				dialogContent: `${targetData.name} has been dead for too long and can't be revived!`,
 				closeButtonText: 'Ok',
@@ -346,7 +347,8 @@ class Character extends React.Component {
 		let updatedTargetData = deepCopy(targetData);
 		let updatedHealerData = deepCopy(pcData);
 		const resusSkillData = pcData.skills.resuscitate;
-		updatedTargetData.currentHealth = 5;
+		updatedTargetData.currentHealth = resusSkillData.modifier[resusSkillData.level];
+		updatedTargetData.turnsSinceDeath = 0;
 		updatedHealerData.currentSpirit -= resusSkillData.spirit[resusSkillData.level];
 		updateCharacter('player', updatedTargetData, targetData.id, false, false, false, () => {
 			updateLog(`${pcData.name} resuscitates  ${targetData.name} back to life!`);

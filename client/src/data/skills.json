@@ -153,6 +153,7 @@
     "description": "Adjacent party member at 0 health is brought back to life at 5 health if skill is used within 3 turns of target being mortally wounded",
     "hasTarget": true,
     "mustBeOutOfDanger": false,
+    "modifier": [5, 5, 5, 5, 5],
     "spirit": [70, 65, 60, 55, 50]
   },
   "comfortTheFearful": {
