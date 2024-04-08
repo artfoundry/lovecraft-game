@@ -150,6 +150,7 @@ function CharacterControls(props) {
 				const rightWeapon = currentPCdata.weapons[equippedItems.right];
 				const leftWeaponNeedsReloading = leftWeapon && leftWeapon.gunType && leftWeapon.currentRounds < leftWeapon.rounds;
 				const rightWeaponNeedsReloading = rightWeapon && rightWeapon.gunType && rightWeapon.currentRounds < rightWeapon.rounds;
+				const requiresItemOrWeapon = skill.requiresItem || skill.requiresEquippedGunType || skill.requiresEquippedItem || skill.requiresEquippedMeleeWeapon;
 				const hasNeededItem =
 					(skill.requiresItem && invItems[skill.requiresItem]) ||
 					(skill.requiresEquippedGunType && ((leftWeapon && skill.requiresEquippedGunType.includes(leftWeapon.gunType)) || (rightWeapon && skill.requiresEquippedGunType.includes(rightWeapon.gunType)))) ||
@@ -158,8 +159,16 @@ function CharacterControls(props) {
 				const hasAmmoForReloadSkill = hasExtraAmmo && hasNeededItem && (leftWeaponNeedsReloading || rightWeaponNeedsReloading);
 				// all active and only active skills require spirit
 				const hasEnoughSpirit = skill.spirit && currentPCdata.currentSpirit >= skill.spirit[skill.level - 1]; // level -1 because level values start at 1
-				const actionButtonState = (!props.isActiveCharacter || (props.actionsRemaining === 0 && skill.name !== 'Quick Reload') || (skill.spirit && !hasEnoughSpirit) || !hasNeededItem || (skill.name === 'Quick Reload' && !hasAmmoForReloadSkill) || (skill.mustBeOutOfDanger && props.threatList.length > 0)) ? 'button-inactive' :
-					(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === skill.skillId && skill.hasTarget) ? 'button-selected': '';
+				const actionButtonState =
+					(!props.isActiveCharacter ||
+					(props.actionsRemaining === 0 && skill.name !== 'Quick Reload') ||
+					(skill.spirit && !hasEnoughSpirit) || (requiresItemOrWeapon && !hasNeededItem) ||
+					(skill.name === 'Quick Reload' && !hasAmmoForReloadSkill) ||
+					(skill.mustBeOutOfDanger && props.threatList.length > 0)) ? 'button-inactive' :
+					(props.isActiveCharacter &&
+					props.actionButtonSelected &&
+					props.actionButtonSelected.characterId === props.characterId &&
+					props.actionButtonSelected.itemId === skill.skillId && skill.hasTarget) ? 'button-selected': '';
 				let skillClass = `${convertObjIdToClassId(skill.skillId)}-action`;
 				if (skill.skillType === 'create') {
 					skillClass = 'create-' + skillClass;
@@ -743,7 +752,7 @@ function ModeInfoPanel(props) {
 			<div>
 				<div>Turn: {charactersTurn}</div>
 				<div className='general-button' onClick={() => {
-					props.endTurnCallback();
+					props.updateCurrentTurn();
 				}}>End Turn</div>
 			</div>
 			}

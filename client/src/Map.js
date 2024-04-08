@@ -915,8 +915,9 @@ class Map extends React.Component {
 			let companionIsAdjacent = false;
 			let activePlayerPos = '';
 			let adjacentTiles = {};
-			let actionIsItem = false;
+			let actionIsItemOrSkill = false;
 			let tileIsVisible = true;
+			let isResuscitateSkill = false;
 
 			if (props.characterType === 'player') {
 				characterTransform = this._calculateObjectTransform(characterCoords.xPos, characterCoords.yPos);
@@ -927,17 +928,22 @@ class Map extends React.Component {
 			}
 
 			if (actionButtonIsSelected) {
-				actionIsItem = this.props.actionButtonSelected.stats.itemType;
-				if (actionIsItem && props.characterType === 'player') {
+				actionIsItemOrSkill = this.props.actionButtonSelected.stats.itemType || this.props.actionButtonSelected.stats.skillType;
+				if (actionIsItemOrSkill && props.characterType === 'player') {
+					isResuscitateSkill = this.props.actionButtonSelected.stats.name && this.props.actionButtonSelected.stats.name === 'Resuscitate';
+					let adjacentCompanionIsDead = false;
 					activePlayerPos = convertCoordsToPos(activeCharIsPlayer.coords);
 					adjacentTiles = this._getAllSurroundingTilesToRange(activePlayerPos, 1);
 					for (const positions of Object.values(adjacentTiles)) {
 						if (positions.includes(characterPos)) {
+							adjacentCompanionIsDead = this.props.playerCharacters[id].currentHealth <= 0;
 							companionIsAdjacent = true;
 						}
 					}
-					targetIsInRange = activeCharIsPlayer && (companionIsAdjacent || activePlayerPos === characterPos);
-				} else if (!actionIsItem && props.characterType === 'creature') {
+					targetIsInRange = activeCharIsPlayer && (
+						(companionIsAdjacent && (!isResuscitateSkill || (isResuscitateSkill && adjacentCompanionIsDead))) ||
+						(!isResuscitateSkill && activePlayerPos === characterPos));
+				} else if (!actionIsItemOrSkill && props.characterType === 'creature') {
 					targetIsInRange = activeCharIsPlayer && this.props.mapCreatures[id].currentHealth > 0 && this.isCreatureInRange(id, this.props.actionButtonSelected);
 				}
 			}
@@ -953,7 +959,7 @@ class Map extends React.Component {
 					idClassName={idConvertedToClassName}
 					isHidden={creatureIsHidden}
 					isSelected={characters[id].isSelected}
-					isDead={characters[id].currentHealth <= 0}
+					isDead={characters[id].currentHealth <= 0 && !isResuscitateSkill}
 					isInRange={actionButtonIsSelected && targetIsInRange}
 					isLineOfSight={this.isInLineOfSight}
 					charPos={characterPos}

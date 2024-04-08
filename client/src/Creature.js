@@ -72,7 +72,8 @@ class Creature extends React.Component {
 			if (this.attackType === 'psychic') {
 				targetData.currentSanity -= damageTotal;
 			} else {
-				targetData.currentHealth -= damageTotal;
+				const resultingHealth = targetData.currentHealth - damageTotal;
+				targetData.currentHealth = resultingHealth < 0 ? 0 : resultingHealth;
 			}
 			updateTarget('player', targetData, targetData.id, false, false, false, updateTurnCallback);
 		} else if (updateTurnCallback) {

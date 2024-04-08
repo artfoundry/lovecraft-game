@@ -531,6 +531,7 @@ class Game extends React.Component {
 				pcData: activePC,
 				updateCharacter: this.updateCharacters,
 				updateLog: this.updateLog,
+				setShowDialogProps: this.setShowDialogProps,
 				callback: () => {
 					this.toggleActionButton(selectedItemInfo.characterId, selectedItemInfo.itemId, selectedItemInfo.itemName, target === 'creature' ? 'weapon': 'item', () => {
 						if (target === 'creature' && this.state.mapCreatures[id].currentHealth <= 0) {
@@ -541,7 +542,7 @@ class Game extends React.Component {
 					});
 				}
 			};
-			target === 'creature' ? activePC.attack(actionProps) : activePC.heal(actionProps);
+			target === 'creature' ? activePC.attack(actionProps) : (selectedItemInfo.stats.name && selectedItemInfo.stats.name === 'Resuscitate') ? activePC.resuscitate(actionProps) : activePC.heal(actionProps);
 		} else {
 			// clicked unit is just being selected/deselected
 			this.updateUnitSelectionStatus(id, target);
@@ -613,7 +614,11 @@ class Game extends React.Component {
 	 * @param callback: function
 	 */
 	updateCurrentTurn = (startTurns = false, callback) => {
-		const currentTurn = (startTurns || this.state.currentTurn === this.state.unitsTurnOrder.length - 1) ? 0 : this.state.currentTurn + 1;
+		let currentTurn = (startTurns || this.state.currentTurn === this.state.unitsTurnOrder.length - 1) ? 0 : this.state.currentTurn + 1;
+		const newActiveCharId = Object.values(this.state.unitsTurnOrder[this.state.currentTurn])[0].id;
+		if (this.state.playerCharacters[newActiveCharId] && this.state.playerCharacters[newActiveCharId].currentHealth <= 0) {
+			currentTurn++;
+		}
 		this.setState({currentTurn, activePlayerActionsCompleted: 0, activePlayerMovesCompleted: 0}, () => {
 			if (this.state.playerCharacters[this.state.activeCharacter] && this.state.actionButtonSelected) {
 				this.toggleActionButton('', '', '', '', () => {
@@ -1088,7 +1093,14 @@ class Game extends React.Component {
 			}
 			index++;
 		}
-		this.updateLog(`The ${this.state.mapCreatures[id].name} is dead!`);
+		if (this.state.playerCharacters[id]) {
+			this.updateLog(`${this.state.playerCharacters[id]} has died!`);
+			if (id === this.state.createdCharData.id) {
+				this._endGame();
+			}
+		} else {
+			this.updateLog(`The ${this.state.mapCreatures[id].name} is dead!`);
+		}
 		this.setState({unitsTurnOrder}, () => {
 			this.updateThreatList([], [id], callback, checkLineOfSightToParty);
 		});
@@ -1099,6 +1111,20 @@ class Game extends React.Component {
 		const lightingHasChanged = updatedObjects[id].itemType && updatedObjects[id].itemType === 'Light';
 		delete updatedObjects[id];
 		this.updateMapObjects(updatedObjects, lightingHasChanged);
+	}
+
+	_endGame() {
+		const dialogProps = {
+			dialogContent: 'The main character has died, so the game is over.  Try again!',
+			closeButtonText: 'Ok',
+			closeButtonCallback: null,
+			disableCloseButton: false,
+			actionButtonVisible: false,
+			actionButtonText: '',
+			actionButtonCallback: null,
+			dialogClasses: ''
+		}
+		this.setShowDialogProps(dialogProps);
 	}
 
 

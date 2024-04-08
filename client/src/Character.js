@@ -27,6 +27,7 @@ class Character extends React.Component {
 		this.initiative = this._calculateInitiative();
 		this.startingHealth = props.startingHealth;
 		this.currentHealth = props.startingHealth;
+		this.turnsSinceDeath = 4;
 		this.startingSanity = props.startingSanity;
 		this.currentSanity = props.startingSanity;
 		this.startingSpirit = (this.startingHealth / 2) + (this.startingSanity / 2);
@@ -324,6 +325,33 @@ class Character extends React.Component {
 			callback: updateActivePlayerActions
 		}
 		this.heal(healProps);
+	}
+
+	resuscitate = (props) => {
+		const {targetData, pcData, updateCharacter, updateLog, setShowDialogProps, callback} = props;
+		if (targetData.turnsSinceDeath > 3) {
+			const dialogProps = {
+				dialogContent: `${targetData.name} has been dead for too long and can't be revived!`,
+				closeButtonText: 'Ok',
+				closeButtonCallback: null,
+				disableCloseButton: false,
+				actionButtonVisible: false,
+				actionButtonText: '',
+				actionButtonCallback: null,
+				dialogClasses: ''
+			}
+			setShowDialogProps(true, dialogProps);
+			return;
+		}
+		let updatedTargetData = deepCopy(targetData);
+		let updatedHealerData = deepCopy(pcData);
+		const resusSkillData = pcData.skills.resuscitate;
+		updatedTargetData.currentHealth = 5;
+		updatedHealerData.currentSpirit -= resusSkillData.spirit[resusSkillData.level];
+		updateCharacter('player', updatedTargetData, targetData.id, false, false, false, () => {
+			updateLog(`${pcData.name} resuscitates  ${targetData.name} back to life!`);
+			updateCharacter('player', updatedHealerData, pcData.id, false, false, false, callback);
+		});
 	}
 }
 

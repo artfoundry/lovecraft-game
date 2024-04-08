@@ -5,7 +5,7 @@
 	filter: drop-shadow(4px 4px 2px black);
 }
 
-.dead {
+.creature.dead {
 	pointer-events: none;
 }
 
