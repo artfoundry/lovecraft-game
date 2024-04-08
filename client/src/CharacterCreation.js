@@ -260,7 +260,8 @@ export default class CharacterCreation extends React.Component {
 
 		for (const [id, profInfo] of Object.entries(PlayerCharacterTypes)) {
 			companionList.push(
-				<div key={profInfo.name} className={`char-creation-companion ${this.state.companions.includes(id) ? 'button-selected' : ''}`}
+				<div key={profInfo.name}
+				     className={`char-creation-companion ${id === this.state.profession ? 'button-disabled' : ''} ${this.state.companions.includes(id) ? 'button-selected' : ''}`}
 				     onClick={() => this.addCompanion(id)}
 				>
 					<h4 className='font-fancy'>{profInfo.name}</h4>
@@ -350,6 +351,7 @@ export default class CharacterCreation extends React.Component {
 
 					<h3><u>Now choose two companions.</u></h3>
 					<p>Each companion starts with average attributes and the same starting equipment.</p>
+					<p>You may not have a companion with the same profession as your created character.</p>
 
 					<h3 className='font-fancy'>~ Companions ~</h3>
 					<div id='char-creation-companions-container'>
