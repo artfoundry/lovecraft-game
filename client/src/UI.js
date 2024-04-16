@@ -743,7 +743,7 @@ class UI extends React.Component {
 				}
 			}
 		} else {
-			//todo: not sure deepcopy is needed, as currently nothing is modifying this.state.selectedObject outside of setObjectSelected for clicked objects
+			//TODO: not sure deepcopy is needed, as currently nothing is modifying this.state.selectedObject outside of setObjectSelected for clicked objects
 			clickedObjects = deepCopy(this.props.objectSelected.objectList);
 		}
 		this.setObjectPanelDisplayOption(false, null, null, () => {

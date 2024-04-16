@@ -617,7 +617,7 @@ class Map extends React.Component {
 		let mapCreatures = {};
 		let creatureCoords = {};
 		for (const [name, stats] of Object.entries(this.currentMapData.creatures)) {
-	//todo: change this logic and data in gameLocations.json to use same level/count format as objects
+	//TODO: change this logic and data in gameLocations.json to use same level/count format as objects
 			for (let i=0; i < stats.count; i++) {
 				const coords = this._getInitialRandomCoords(creatureCoords);
 				const creatureId = name + i;
@@ -955,7 +955,7 @@ class Map extends React.Component {
 					id={id}
 					key={id}
 					charRef={this.charRefs[id]}
-					characterType={characters[id].type}
+					characterType={props.characterType}
 					idClassName={idConvertedToClassName}
 					isHidden={creatureIsHidden}
 					isSelected={characters[id].isSelected}
@@ -963,7 +963,6 @@ class Map extends React.Component {
 					isInRange={actionButtonIsSelected && targetIsInRange}
 					isLineOfSight={this.isInLineOfSight}
 					charPos={characterPos}
-					dataCharType={props.characterType}
 					tileIsVisible={tileIsVisible}
 					updateContextMenu={this.checkForDragging}
 					styles={{
@@ -1365,7 +1364,7 @@ class Map extends React.Component {
 	pathFromAtoB(startTileCoords, endTileCoords) {
 		const allPcPos = this.props.getAllCharactersPos('player', 'pos');
 		const allCreaturePos = this.props.getAllCharactersPos('creature', 'pos');
-//todo: need allEnvObjectPos for env objects (not objs to be picked up)
+//TODO: need allEnvObjectPos for env objects (not objs to be picked up)
 		const allEnvObjectPos = [];
 
 		let pathData = {
@@ -1642,7 +1641,7 @@ class Map extends React.Component {
 					const yPos = xPos === longerAxisNewPos ? shorterAxisNewPos : longerAxisNewPos;
 					const currentPos = `${xPos}-${yPos}`;
 
-			//todo: need to come up with a way to allow pc to have a clear path from around a corner
+			//TODO: need to come up with a way to allow pc to have a clear path from around a corner
 					if (this._isCurrentTileBlocked(currentPos, checkForCreatures)) {
 						numOfClearPaths--;
 						clearPaths[delta] = false;
@@ -1973,7 +1972,7 @@ class Map extends React.Component {
 							const listOfPlayerPos = playerPositions.map(player => player.pos);
 							let newFollowerPos = this.props.followModePositions.find(pos => !listOfPlayerPos.includes(pos));
 
-							// todo: find temp path using pathAtoB to get follower to pos behind leader in order to prevent followers jumping tiles
+							// TODO: find temp path using pathAtoB to get follower to pos behind leader in order to prevent followers jumping tiles
 
 							// if leader has moved, there is at least 1 follower, and pc just moved was the leader,
 							// then call moveCharacter to update first follower to next avail pos in followModePositions array
@@ -2121,7 +2120,7 @@ class Map extends React.Component {
 		creatureData[creatureID].coords = nextCoords;
 
 		this.props.updateCharacters('creature', creatureData[creatureID], creatureID, false, false, false, () => {
-			//todo: will need to add _calculateLighting here if we add creature that changes lighting during movement
+			//TODO: will need to add _calculateLighting here if we add creature that changes lighting during movement
 			setTimeout(() => {
 				if (newCoordsArray.length > 0) {
 					this._storeNewCreatureCoords(creatureID, newCoordsArray, callback);
@@ -2160,22 +2159,24 @@ class Map extends React.Component {
 
 			// find closest player for creature to focus on
 			for (const playerData of Object.values(this.props.playerCharacters)) {
-				playerPos = convertCoordsToPos(playerData.coords);
-				let playerDistance = 0;
-				let searchDistance = 0;
-				let tileAtSearchDistance = tilesToSearch[searchDistance];
-				while (playerDistance === 0 && searchDistance < tilesToSearch.length) {
-					if (creatureData.perception >= searchDistance + 1 && tileAtSearchDistance.floors[playerPos]) {
-						playerDistance = searchDistance + 1;
+				if (playerData.currentHealth > 0 && playerData.currentSanity > 0) {
+					playerPos = convertCoordsToPos(playerData.coords);
+					let playerDistance = 0;
+					let searchDistance = 0;
+					let tileAtSearchDistance = tilesToSearch[searchDistance];
+					while (playerDistance === 0 && searchDistance < tilesToSearch.length) {
+						if (creatureData.perception >= (searchDistance + 1) && tileAtSearchDistance.floors[playerPos]) {
+							playerDistance = searchDistance + 1;
+						}
+						searchDistance++;
+						tileAtSearchDistance = tilesToSearch[searchDistance];
 					}
-					searchDistance++;
-					tileAtSearchDistance = tilesToSearch[searchDistance];
-				}
 
-				if (playerDistance > 0 && (!targetPlayerDistance || playerDistance < targetPlayerDistance)) {
-					targetPlayerDistance = playerDistance;
-					targetPlayerPos = playerPos;
-					targetPlayerData = playerData;
+					if (playerDistance > 0 && (!targetPlayerDistance || playerDistance < targetPlayerDistance)) {
+						targetPlayerDistance = playerDistance;
+						targetPlayerPos = playerPos;
+						targetPlayerData = playerData;
+					}
 				}
 			}
 
@@ -2273,7 +2274,7 @@ class Map extends React.Component {
 		// this.props.updateLog(`Moving ${creatureID} randomly to ${newRandX}, ${newRandY}`);
 	}
 
-	// todo: No longer needed? Was being used in moveCharacter, but from old map paradigm using tile sides to determine valid moves
+	// TODO: No longer needed? Was being used in moveCharacter, but from old map paradigm using tile sides to determine valid moves
 	//
 	// getSidesBetweenAdjacentTiles(mainTileLoc, adjTileLoc) {
 	// 	let sides = [];

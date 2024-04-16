@@ -19,7 +19,7 @@ function Character(props) {
 				 if (props.tileIsVisible) {
 					 const actionInfo = {
 						 id: props.id,
-						 target: props.dataCharType,
+						 target: props.characterType,
 						 isInRange: props.isInRange,
 						 checkLineOfSightToParty: props.isLineOfSight
 					 };
