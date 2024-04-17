@@ -730,7 +730,7 @@ class Map extends React.Component {
 	 * @private
 	 */
 	_calculateLighting(callback) {
-		const playerPositions = this.props.getAllCharactersPos('player', 'pos');
+		const playerPositions = this.props.getAllCharactersPos('player', 'pos', true);
 		let mapLights = this.findMapLights();
 		let allLightPos = [...playerPositions, ...mapLights];
 		const lightStrengthByTile = {};
@@ -895,11 +895,10 @@ class Map extends React.Component {
 
 	/**
 	 * Called by render() and spawns all PCs and NPCs/creatures on the map, creating a Character component for each one
-	 * @param props: Object passed from render(): {characterType: String}
 	 * @returns Array (of Character components)
 	 */
-	addCharacters = (props) => {
-		const characters = props.characterType === 'player' ? {...this.props.playerCharacters} : {...this.props.mapCreatures};
+	addCharacters = () => {
+		const characters = {...this.props.playerCharacters, ...this.props.mapCreatures};
 		const characterIDs = Object.keys(characters);
 		let characterList = [];
 		let characterTransform = null;
@@ -911,6 +910,7 @@ class Map extends React.Component {
 			const characterPos = convertCoordsToPos(characterCoords);
 			const actionButtonIsSelected = this.props.actionButtonSelected;
 			const activeCharIsPlayer = this.props.activeCharacter ? this.props.playerCharacters[this.props.activeCharacter] : null;
+			const characterType = characters[id].type;
 			let targetIsInRange = false;
 			let companionIsAdjacent = false;
 			let activePlayerPos = '';
@@ -918,18 +918,31 @@ class Map extends React.Component {
 			let actionIsItemOrSkill = false;
 			let tileIsVisible = true;
 			let isResuscitateSkill = false;
+			let creatureIsOnTopOfPc = false;
 
-			if (props.characterType === 'player') {
+			if (characterType === 'player') {
 				characterTransform = this._calculateObjectTransform(characterCoords.xPos, characterCoords.yPos);
 			} else {
 				// hide all creatures from rendering unless creature is in sight of any PC or map light
 				creatureIsHidden = this.state.mapLayout[characterPos].lightStrength === 0;
 				characterTransform = this._calculateObjectTransform(characterCoords.xPos, characterCoords.yPos);
+
+				// check if creature is standing on top of (dead/insane) pc
+				const pcData = Object.values(this.props.playerCharacters);
+				let pcCounter = 0;
+				while (!creatureIsOnTopOfPc && pcCounter < pcData.length) {
+					if (characterPos === convertCoordsToPos(pcData[pcCounter].coords)) {
+						creatureIsOnTopOfPc = true;
+					} else {
+						pcCounter++;
+					}
+				}
+
 			}
 
 			if (actionButtonIsSelected) {
 				actionIsItemOrSkill = this.props.actionButtonSelected.stats.itemType || this.props.actionButtonSelected.stats.skillType;
-				if (actionIsItemOrSkill && props.characterType === 'player') {
+				if (actionIsItemOrSkill && characterType === 'player') {
 					isResuscitateSkill = this.props.actionButtonSelected.stats.name && this.props.actionButtonSelected.stats.name === 'Resuscitate';
 					let adjacentCompanionIsDead = false;
 					activePlayerPos = convertCoordsToPos(activeCharIsPlayer.coords);
@@ -943,7 +956,7 @@ class Map extends React.Component {
 					targetIsInRange = activeCharIsPlayer && (
 						(companionIsAdjacent && (!isResuscitateSkill || (isResuscitateSkill && adjacentCompanionIsDead))) ||
 						(!isResuscitateSkill && activePlayerPos === characterPos));
-				} else if (!actionIsItemOrSkill && props.characterType === 'creature') {
+				} else if (!actionIsItemOrSkill && characterType === 'creature') {
 					targetIsInRange = activeCharIsPlayer && this.props.mapCreatures[id].currentHealth > 0 && this.isCreatureInRange(id, this.props.actionButtonSelected);
 				}
 			}
@@ -955,13 +968,14 @@ class Map extends React.Component {
 					id={id}
 					key={id}
 					charRef={this.charRefs[id]}
-					characterType={props.characterType}
+					characterType={characterType}
 					idClassName={idConvertedToClassName}
 					isHidden={creatureIsHidden}
 					isSelected={characters[id].isSelected}
 					isDead={characters[id].currentHealth <= 0 && !isResuscitateSkill}
 					isInRange={actionButtonIsSelected && targetIsInRange}
 					isLineOfSight={this.isInLineOfSight}
+					isOnTop={creatureIsOnTopOfPc}
 					charPos={characterPos}
 					tileIsVisible={tileIsVisible}
 					updateContextMenu={this.checkForDragging}
@@ -2598,11 +2612,8 @@ class Map extends React.Component {
 				<div className='lighting' draggable={false}>
 					{ this.state.exitPlaced && this.state.objectsPlaced && this.state.lightingCalculated && <this.addLighting />}
 				</div>
-				<div className='creatures' draggable={false}>
-					{ this.state.mapLayoutDone && this.state.playerPlaced && this.state.creaturesPlaced && <this.addCharacters characterType='creature' /> }
-				</div>
-				<div className='player-characters' draggable={false}>
-					{ this.state.mapLayoutDone && this.state.playerPlaced && <this.addCharacters characterType='player' /> }
+				<div className='characters' draggable={false}>
+					{ this.state.mapLayoutDone && this.state.playerPlaced && this.state.creaturesPlaced && <this.addCharacters /> }
 				</div>
 				{ <this.setupSoundEffects /> }
 				<MapCover styleProp={{opacity: this.state.mapMoved ? '0' : '1.0'}} />

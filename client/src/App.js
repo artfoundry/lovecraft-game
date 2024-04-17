@@ -270,16 +270,17 @@ class Game extends React.Component {
 	 * Gets the positions for each LIVING character of a genre, player, creature, or all
 	 * @param type: String ('player', 'creature' or 'all')
 	 * @param format: String ('pos' (string) or 'coords' (object))
+	 * @param includeDead: Boolean (mainly for calculating lighting)
 	 * @returns Array (of Objects {id: coords})
 	 */
-	getAllCharactersPos = (type, format) => {
+	getAllCharactersPos = (type, format, includeDead = false) => {
 		const allCharactersPos = [];
 		const collection =
 			type === 'player' ? this.state.playerCharacters :
 			type === 'creature' ? this.state.mapCreatures :
 			Object.assign({}, this.state.playerCharacters, this.state.mapCreatures); // copy all to empty object to avoid modifying originals
 		for (const [id, characterData] of Object.entries(collection)) {
-			if (characterData.currentHealth > 0) {
+			if ((characterData.currentHealth > 0 && (type === 'creature' || characterData.currentSanity > 0)) || includeDead) {
 				let coords = format === 'pos' ? `${characterData.coords.xPos}-${characterData.coords.yPos}` : characterData.coords;
 				allCharactersPos.push({id, [format]: coords});
 			}
@@ -1102,7 +1103,8 @@ class Game extends React.Component {
 	_removeDeadPCFromGame(id, callback) {
 		if (this.state.playerCharacters[id]) {
 			this.updateLog(`${this.state.playerCharacters[id].name} has gone from mostly dead to all dead!`);
-			if (id === this.state.createdCharData.id) {
+			//check for this.state.createdCharData is so game doesn't crash when char creation is turned off
+			if (this.state.createdCharData && id === this.state.createdCharData.id) {
 				this._endGame();
 			} else {
 				// let playerChars = deepCopy(this.state.playerCharacters);

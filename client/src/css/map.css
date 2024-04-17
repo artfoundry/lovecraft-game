@@ -15,7 +15,7 @@
 	transition: transform 0.5s;
 }
 
-.player-characters {
+.characters {
 	position: relative;
 	margin: auto;
 	z-index: 3;
@@ -23,12 +23,8 @@
 	cursor: pointer;
 }
 
-.creatures {
-	position: relative;
-	margin: auto;
-	z-index: 2;
-	transition: transform 0.5s;
-	cursor: pointer;
+.creature.character-on-top, .player.character-on-top {
+	z-index: 3;
 }
 
 .objects {

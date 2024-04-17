@@ -7,12 +7,13 @@ function Character(props) {
 	const isSelectedClass = !props.isHidden && props.isSelected ? ' selected' : '';
 	const isDeadClass = !props.isHidden && props.isDead ? ` ${props.idClassName}-dead dead` : '';
 	const isInRangeClass = !props.isHidden && !props.isDead && props.isInRange ? ' in-range' : '';
+	const isOnTopClass = props.isOnTop ? ' character-on-top' : '';
 	return (
 		<img id={props.id}
 		     ref={props.charRef}
 			 alt={props.classes}
 		     draggable={false}
-		     className={props.characterType + ' ' + props.idClassName + isHiddenClass + isSelectedClass + isDeadClass + isInRangeClass}
+		     className={props.characterType + ' ' + props.idClassName + isHiddenClass + isSelectedClass + isDeadClass + isInRangeClass + isOnTopClass}
 		     style={props.styles}
 		     data-location={props.charPos}
 			 onClick={(evt) => {
