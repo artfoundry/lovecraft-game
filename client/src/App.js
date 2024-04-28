@@ -626,7 +626,12 @@ class Game extends React.Component {
 			currentTurn++;
 			if (nextActiveChar.currentHealth <= 0 && nextActiveChar.turnsSinceDeath < this.maxTurnsToReviveDeadPlayer) {
 				nextActiveChar.turnsSinceDeath++;
-				updateOrRemoveChar = nextActiveChar.turnsSinceDeath < this.maxTurnsToReviveDeadPlayer ? 'update' : 'remove';
+				if (nextActiveChar.turnsSinceDeath < this.maxTurnsToReviveDeadPlayer) {
+					updateOrRemoveChar = 'update';
+				} else {
+					updateOrRemoveChar = 'remove';
+					nextActiveChar.isDeadOrInsane = true;
+				}
 			}
 		}
 		this.setState({currentTurn, activePlayerActionsCompleted: 0, activePlayerMovesCompleted: 0}, () => {
@@ -715,18 +720,60 @@ class Game extends React.Component {
 			objectOnTile = this._isObjectOnTile(tilePos, evt);
 		}
 
-		// bypass setting up context menu if clicked target is a pc or creature with nothing else on the tile and no action cued up...
-		if (!objectOnTile && !this.state.actionButtonSelected && (actionType === 'player' || actionType === 'creature')) {
+		const clickedTargetId = evt.currentTarget.id;
+		const skillId = this.state.actionButtonSelected ? this.state.actionButtonSelected.itemId : null;
+		let otherCharacterOnTile = '';
+		let dyingChar = '';
+		let isClickedTargetDyingPc = false;
+		for (const charData of Object.values(this.state.playerCharacters)) {
+			if (charData.currentHealth <= 0 && convertCoordsToPos(charData.coords) === tilePos) {
+				dyingChar = charData.name;
+				if (clickedTargetId === charData.id) {
+					isClickedTargetDyingPc = true;
+				}
+			}
+		}
+		if (skillId === 'resuscitate') {
+			// check if other creature/player is on clicked tile to know whether it blocks the Resuscitate skill
+			const allChars = {...this.state.playerCharacters, ...this.state.mapCreatures};
+			if (allChars[clickedTargetId] && convertCoordsToPos(allChars[clickedTargetId].coords) === tilePos && allChars[clickedTargetId].name !== dyingChar) {
+				otherCharacterOnTile = (allChars[clickedTargetId].type === 'player' ? '' : 'The ') + allChars[clickedTargetId].name;
+			}
+		}
+
+		// if clicked target is dying pc and no action cued up...
+		if (actionType === 'player' && isClickedTargetDyingPc && !this.state.actionButtonSelected) {
+			contextMenuNeeded = {
+				menuNeeded: true,
+				actionToProcess: () => this.handleUnitClick(actionInfo.id, actionType)
+			};
+		// ...or bypass setting up context menu if clicked target is a pc or creature with nothing else on the tile and no action cued up...
+		} else if (!objectOnTile && !this.state.actionButtonSelected && (actionType === 'player' || actionType === 'creature')) {
 			contextMenuNeeded = {
 				menuNeeded: false,
 				actionToProcess: () => this.handleUnitClick(actionInfo.id, actionType)
 			};
 		// ...or if action is being used (regardless of whether object is also there)
 		} else if (this.state.actionButtonSelected && (actionType === 'creature' || actionType === 'player')) {
-			contextMenuNeeded = {
-				menuNeeded: false,
-				actionToProcess: () => this.handleUnitClick(actionInfo.id, actionInfo.target, actionInfo.isInRange, actionInfo.checkLineOfSightToParty)
-			};
+			if (skillId === 'resuscitate' && dyingChar && otherCharacterOnTile) {
+				const resusBlockedDialogProps = {
+					dialogContent: `${otherCharacterOnTile} is on top of ${dyingChar}, preventing resuscitation!`,
+					closeButtonText: 'Ok',
+					closeButtonCallback: null,
+					disableCloseButton: false,
+					actionButtonVisible: false,
+					actionButtonText: '',
+					actionButtonCallback: null,
+					dialogClasses: ''
+				};
+				this.setShowDialogProps(true, resusBlockedDialogProps);
+				contextMenuNeeded = {menuNeeded: false, actionToProcess: null};
+			} else {
+				contextMenuNeeded = {
+					menuNeeded: false,
+					actionToProcess: () => this.handleUnitClick(actionInfo.id, actionInfo.target, actionInfo.isInRange, actionInfo.checkLineOfSightToParty)
+				};
+			}
 		// ...or if clicked target is a torch
 		} else if (actionType === 'examine' && actionInfo.objectInfo[0].name === 'Torch') {
 			contextMenuNeeded = {
@@ -744,6 +791,8 @@ class Game extends React.Component {
 	 * creature and item
 	 * player and item
 	 * item and move
+	 * dying player (get info) and move
+	 * dying player (get info), item, and move
 	 * action (shoot) and reload
 	 * @param actionType: string (possibilities: 'examine', 'creature', 'player', null)
 	 * @param tilePos: string
@@ -752,6 +801,11 @@ class Game extends React.Component {
 	 * @param contextMenuInfo: object ({actionToProcess: function, menuNeeded: boolean} - passed in only if isContextMenuNeeded was previously called in Map (checkForDragging))
 	 */
 	updateContextMenu = (actionType, tilePos = null, evt = null, actionInfo = null, contextMenuInfo = null) => {
+		// for edge cases, like using Resuscitate action when pc is blocked by another character standing on top of it
+		if (contextMenuInfo && !contextMenuInfo.menuNeeded && !contextMenuInfo.actionToProcess) {
+			return;
+		}
+
 		const isContextMenuNeeded = contextMenuInfo || this.isContextMenuNeeded(actionType, tilePos, evt, actionInfo);
 
 		// if no action is being done (action being clicked on item or character) there's already a menu, so close menu
@@ -769,7 +823,9 @@ class Game extends React.Component {
 				tilePos,
 				evt
 			};
-			if (actionType !== 'player' && actionType !== 'creature') {
+			const clickedTargetIsPc = this.state.playerCharacters[evt.currentTarget.id];
+			const clickedTargetIsDyingPc = clickedTargetIsPc && clickedTargetIsPc.currentHealth <= 0;
+			if ((actionType !== 'player' && actionType !== 'creature') || (actionType === 'player' && clickedTargetIsDyingPc)) {
 				contextMenu.actionsAvailable.move = true;
 			} else {
 				const objectOnTile = this._isObjectOnTile(tilePos, evt);
@@ -985,7 +1041,7 @@ class Game extends React.Component {
 		let playerFollowOrder = [];
 		let activeCharacter = this.state.activeCharacter;
 		this.startingPlayerCharacters.forEach(characterId => {
-			const props = {...PlayerCharacterTypes[characterId], playerInventoryLimit: this.playerInventoryLimit, maxTurnsToReviveDeadPlayer: this.maxTurnsToReviveDeadPlayer};
+			const props = {...PlayerCharacterTypes[characterId], playerInventoryLimit: this.playerInventoryLimit};
 			playerCharacters[characterId] = new Character(props);
 			playerFollowOrder.push(characterId);
 		});

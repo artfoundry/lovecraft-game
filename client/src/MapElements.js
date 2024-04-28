@@ -6,26 +6,25 @@ function Character(props) {
 	const isHiddenClass = props.isHidden ? ' hidden' : '';
 	const isSelectedClass = !props.isHidden && props.isSelected ? ' selected' : '';
 	const isDeadClass = !props.isHidden && props.isDead ? ` ${props.idClassName}-dead dead` : '';
-	const isInRangeClass = !props.isHidden && !props.isDead && props.isInRange ? ' in-range' : '';
-	const isOnTopClass = props.isOnTop ? ' character-on-top' : '';
+	const isDyingClass = !props.isHidden && props.isDying ? ` ${props.idClassName}-dead` : '';
+	const isInRangeClass = !props.isHidden && props.isInRange ? ' in-range' : '';
+	const isOnTopClass = props.isOtherCharOnTop ? ' character-on-top' : '';
 	return (
 		<img id={props.id}
 		     ref={props.charRef}
 			 alt={props.classes}
 		     draggable={false}
-		     className={props.characterType + ' ' + props.idClassName + isHiddenClass + isSelectedClass + isDeadClass + isInRangeClass + isOnTopClass}
+		     className={props.characterType + ' ' + props.idClassName + isHiddenClass + isSelectedClass + isDyingClass + isDeadClass + isInRangeClass + isOnTopClass}
 		     style={props.styles}
 		     data-location={props.charPos}
 			 onClick={(evt) => {
-				 if (props.tileIsVisible) {
-					 const actionInfo = {
-						 id: props.id,
-						 target: props.characterType,
-						 isInRange: props.isInRange,
-						 checkLineOfSightToParty: props.isLineOfSight
-					 };
-					 props.updateContextMenu(props.characterType, props.charPos, evt, actionInfo);
-				 }
+				 const actionInfo = {
+					 id: props.id,
+					 target: props.characterType,
+					 isInRange: props.isInRange,
+					 checkLineOfSightToParty: props.isLineOfSight
+				 };
+				 props.updateContextMenu(props.characterType, props.charPos, evt, actionInfo);
 			 }} />
 	)
 }

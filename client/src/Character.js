@@ -12,7 +12,6 @@ class Character extends React.Component {
 		this.hitDie = 10;
 		this.damageDie = 6;
 		this.defenseDie = 4;
-		this.maxTurnsToReviveDeadPlayer = props.maxTurnsToReviveDeadPlayer;
 
 		// For instantiation only - updated data is stored in App.state.playerCharacters
 		this.id = props.id;
@@ -29,6 +28,7 @@ class Character extends React.Component {
 		this.startingHealth = props.startingHealth;
 		this.currentHealth = props.startingHealth;
 		this.turnsSinceDeath = 0;
+		this.isDeadOrInsane = false;
 		this.startingSanity = props.startingSanity;
 		this.currentSanity = props.startingSanity;
 		this.startingSpirit = (this.startingHealth / 2) + (this.startingSanity / 2);
@@ -330,7 +330,7 @@ class Character extends React.Component {
 
 	resuscitate = (props) => {
 		const {targetData, pcData, updateCharacter, updateLog, setShowDialogProps, callback} = props;
-		if (targetData.turnsSinceDeath >= this.maxTurnsToReviveDeadPlayer) {
+		if (targetData.isDeadOrInsane) {
 			const dialogProps = {
 				dialogContent: `${targetData.name} has been dead for too long and can't be revived!`,
 				closeButtonText: 'Ok',

@@ -911,14 +911,14 @@ class Map extends React.Component {
 			const actionButtonIsSelected = this.props.actionButtonSelected;
 			const activeCharIsPlayer = this.props.activeCharacter ? this.props.playerCharacters[this.props.activeCharacter] : null;
 			const characterType = characters[id].type;
+			const isDyingPc = characterType === 'player' && characters[id].currentHealth <= 0 && !characters[id].isDeadOrInsane;
 			let targetIsInRange = false;
 			let companionIsAdjacent = false;
 			let activePlayerPos = '';
 			let adjacentTiles = {};
 			let actionIsItemOrSkill = false;
-			let tileIsVisible = true;
 			let isResuscitateSkill = false;
-			let creatureIsOnTopOfPc = false;
+			let otherCharisOnTopOfPc = false;
 
 			if (characterType === 'player') {
 				characterTransform = this._calculateObjectTransform(characterCoords.xPos, characterCoords.yPos);
@@ -926,38 +926,40 @@ class Map extends React.Component {
 				// hide all creatures from rendering unless creature is in sight of any PC or map light
 				creatureIsHidden = this.state.mapLayout[characterPos].lightStrength === 0;
 				characterTransform = this._calculateObjectTransform(characterCoords.xPos, characterCoords.yPos);
+			}
 
-				// check if creature is standing on top of (dead/insane) pc
-				const pcData = Object.values(this.props.playerCharacters);
-				let pcCounter = 0;
-				while (!creatureIsOnTopOfPc && pcCounter < pcData.length) {
-					if (characterPos === convertCoordsToPos(pcData[pcCounter].coords)) {
-						creatureIsOnTopOfPc = true;
-					} else {
-						pcCounter++;
-					}
+			// check if character is standing on top of (dead/insane) pc
+			const pcData = Object.values(this.props.playerCharacters);
+			let pcCounter = 0;
+			while (!otherCharisOnTopOfPc && pcCounter < pcData.length) {
+				if (characterPos === convertCoordsToPos(pcData[pcCounter].coords) &&
+					characters[id].currentHealth > 0 &&
+					(pcData[pcCounter].currentHealth <= 0 || pcData[pcCounter].currentSanity <= 0))
+				{
+					otherCharisOnTopOfPc = true;
+				} else {
+					pcCounter++;
 				}
-
 			}
 
 			if (actionButtonIsSelected) {
 				actionIsItemOrSkill = this.props.actionButtonSelected.stats.itemType || this.props.actionButtonSelected.stats.skillType;
 				if (actionIsItemOrSkill && characterType === 'player') {
 					isResuscitateSkill = this.props.actionButtonSelected.stats.name && this.props.actionButtonSelected.stats.name === 'Resuscitate';
-					let adjacentCompanionIsDead = false;
+					let adjacentCompanionIsDying = false;
 					activePlayerPos = convertCoordsToPos(activeCharIsPlayer.coords);
 					adjacentTiles = this._getAllSurroundingTilesToRange(activePlayerPos, 1);
 					for (const positions of Object.values(adjacentTiles)) {
 						if (positions.includes(characterPos)) {
-							adjacentCompanionIsDead = this.props.playerCharacters[id].currentHealth <= 0;
+							adjacentCompanionIsDying = isDyingPc;
 							companionIsAdjacent = true;
 						}
 					}
 					targetIsInRange = activeCharIsPlayer && (
-						(companionIsAdjacent && (!isResuscitateSkill || (isResuscitateSkill && adjacentCompanionIsDead))) ||
+						(companionIsAdjacent && (!isResuscitateSkill || (isResuscitateSkill && adjacentCompanionIsDying))) ||
 						(!isResuscitateSkill && activePlayerPos === characterPos));
 				} else if (!actionIsItemOrSkill && characterType === 'creature') {
-					targetIsInRange = activeCharIsPlayer && this.props.mapCreatures[id].currentHealth > 0 && this.isCreatureInRange(id, this.props.actionButtonSelected);
+					targetIsInRange = activeCharIsPlayer && characters[id].currentHealth > 0 && this.isCreatureInRange(id, this.props.actionButtonSelected);
 				}
 			}
 
@@ -972,12 +974,12 @@ class Map extends React.Component {
 					idClassName={idConvertedToClassName}
 					isHidden={creatureIsHidden}
 					isSelected={characters[id].isSelected}
-					isDead={characters[id].currentHealth <= 0 && !isResuscitateSkill}
+					isDying={isDyingPc}
+					isDead={characters[id].currentHealth <= 0 && !isDyingPc}
 					isInRange={actionButtonIsSelected && targetIsInRange}
 					isLineOfSight={this.isInLineOfSight}
-					isOnTop={creatureIsOnTopOfPc}
+					isOtherCharOnTop={otherCharisOnTopOfPc}
 					charPos={characterPos}
-					tileIsVisible={tileIsVisible}
 					updateContextMenu={this.checkForDragging}
 					styles={{
 						transform: `translate(${characterTransform})`,

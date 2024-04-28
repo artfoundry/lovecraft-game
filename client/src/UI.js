@@ -35,7 +35,8 @@ class UI extends React.Component {
 			draggedObjectMetaData: {},
 			draggedObjRecipient: '',
 			needToShowObjectPanel: false,
-			isPickUpAction: false
+			isPickUpAction: false,
+			controlBarColumnCount: ''
 		};
 	}
 
@@ -78,43 +79,45 @@ class UI extends React.Component {
 		let controlPanels = [];
 
 		for (const [id, playerInfo] of Object.entries(this.props.playerCharacters)) {
-			let mapObjectsOnPcTiles = [];
-			for (const [objId, objInfo] of Object.entries(this.props.mapObjects)) {
-				const xDelta = Math.abs(playerInfo.coords.xPos - objInfo.coords.xPos);
-				const yDelta = Math.abs(playerInfo.coords.yPos - objInfo.coords.yPos);
-				if (xDelta <= 1 && yDelta <= 1) {
-					mapObjectsOnPcTiles.push({...objInfo, id: objId});
+			if (!playerInfo.isDeadOrInsane) {
+				let mapObjectsOnPcTiles = [];
+				for (const [objId, objInfo] of Object.entries(this.props.mapObjects)) {
+					const xDelta = Math.abs(playerInfo.coords.xPos - objInfo.coords.xPos);
+					const yDelta = Math.abs(playerInfo.coords.yPos - objInfo.coords.yPos);
+					if (xDelta <= 1 && yDelta <= 1) {
+						mapObjectsOnPcTiles.push({...objInfo, id: objId});
+					}
 				}
-			}
 
-			controlPanels.push(
-				<CharacterControls
-					key={id}
-					playerCharacters={this.props.playerCharacters}
-					characterId={id}
-					characterName={playerInfo.name}
-					equippedItems={playerInfo.equippedItems}
-					invItems={playerInfo.items}
-					toggleActionButton={this.props.toggleActionButton}
-					actionButtonSelected={this.props.actionButtonSelected}
-					isActiveCharacter={id === this.props.activeCharacter}
-					movesRemaining={this.props.playerLimits.moves - this.props.actionsCompleted.moves}
-					actionsRemaining={this.props.playerLimits.actions - this.props.actionsCompleted.actions}
-					inTacticalMode={this.props.inTacticalMode}
-					threatList={this.props.threatList}
-					updateCharacters={this.props.updateCharacters}
-					checkForExtraAmmo={this.checkForExtraAmmo}
-					reloadGun={this.props.reloadGun}
-					refillLight={this.props.refillLight}
-					setShowDialogProps={this.props.setShowDialogProps}
-					dropItemToPC={this.dropItemToPC}
-					setMapObjectSelected={this.props.setMapObjectSelected}
-					mapObjectsOnPcTiles={mapObjectsOnPcTiles}
-					screenData={this.props.screenData}
-					selectedControlTab={this.state.selectedControlTab}
-					setSelectedControlTab={this.setSelectedControlTab}
-				/>
-			)
+				controlPanels.push(
+					<CharacterControls
+						key={id}
+						playerCharacters={this.props.playerCharacters}
+						characterId={id}
+						characterName={playerInfo.name}
+						equippedItems={playerInfo.equippedItems}
+						invItems={playerInfo.items}
+						toggleActionButton={this.props.toggleActionButton}
+						actionButtonSelected={this.props.actionButtonSelected}
+						isActiveCharacter={id === this.props.activeCharacter}
+						movesRemaining={this.props.playerLimits.moves - this.props.actionsCompleted.moves}
+						actionsRemaining={this.props.playerLimits.actions - this.props.actionsCompleted.actions}
+						inTacticalMode={this.props.inTacticalMode}
+						threatList={this.props.threatList}
+						updateCharacters={this.props.updateCharacters}
+						checkForExtraAmmo={this.checkForExtraAmmo}
+						reloadGun={this.props.reloadGun}
+						refillLight={this.props.refillLight}
+						setShowDialogProps={this.props.setShowDialogProps}
+						dropItemToPC={this.dropItemToPC}
+						setMapObjectSelected={this.props.setMapObjectSelected}
+						mapObjectsOnPcTiles={mapObjectsOnPcTiles}
+						screenData={this.props.screenData}
+						selectedControlTab={this.state.selectedControlTab}
+						setSelectedControlTab={this.setSelectedControlTab}
+					/>
+				)
+			}
 		}
 		return controlPanels;
 	}
@@ -728,6 +731,11 @@ class UI extends React.Component {
 		this.setState(prevState => ({showHelpScreen: !prevState.showHelpScreen}));
 	}
 
+	updateControlBarColumnCount = (playerCount) => {
+		const controlBarColumnCount = `control-bar-${playerCount}-columns`;
+		this.setState({controlBarColumnCount});
+	}
+
 	/**
 	 *
 	 * @param clickedObjPos
@@ -769,6 +777,11 @@ class UI extends React.Component {
 
 		if (prevProps.activeCharacter !== this.props.activeCharacter && this.props.playerCharacters[this.props.activeCharacter]) {
 			this.setSelectedControlTab(this.props.activeCharacter);
+		}
+
+		const newPlayerCount = Object.keys(prevProps.playerCharacters).length;
+		if (newPlayerCount !== Object.keys(this.props.playerCharacters).length) {
+			this.updateControlBarColumnCount(newPlayerCount);
 		}
 
 		const clickedObjPos = this.props.objectSelected ? convertCoordsToPos(this.props.objectSelected.objectList[0].coords) : null;
@@ -878,7 +891,7 @@ class UI extends React.Component {
 					<div className='system-button game-options-button' onClick={() => this.toggleOptionsPanel()}></div>
 				</div>
 
-				<div id='control-bar-container' ref={this.uiRefs.controlBar} className='ui-panel'>
+				<div id='control-bar-container' ref={this.uiRefs.controlBar} className={`ui-panel ${this.state.controlBarColumnCount}`}>
 					{/*<div className='minimize-button general-button' onClick={() => {*/}
 					{/*	this.minimizePanel('controlBar');*/}
 					{/*}}>_</div>*/}
