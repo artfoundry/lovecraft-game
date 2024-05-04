@@ -447,7 +447,8 @@ class Game extends React.Component {
 				updateLog: this.updateLog,
 				updateActivePlayerActions: this.updateActivePlayerActions
 			};
-			this.state.playerCharacters[characterId][itemId](props);
+			const skillId = stats.skillType === 'create' ? 'create' : itemId;
+			this.state.playerCharacters[characterId][skillId](props);
 			if (callback) callback();
 		} else {
 			this.setState({actionButtonSelected: buttonState}, () => {
