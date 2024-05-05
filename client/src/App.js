@@ -807,34 +807,36 @@ class Game extends React.Component {
 			return;
 		}
 
-		const isContextMenuNeeded = contextMenuInfo || this.isContextMenuNeeded(actionType, tilePos, evt, actionInfo);
-
 		// if no action is being done (action being clicked on item or character) there's already a menu, so close menu
 		// no actionType should indicate menu already exists (as clicking on item, char, or tile is already checking), but just in case...
 		if (!actionType) {
 			this.setState({contextMenu: null});
 		// Don't need menu, so do action instead
-		} else if (!isContextMenuNeeded.menuNeeded) {
-			isContextMenuNeeded.actionToProcess();
-		// otherwise, set up context menu
 		} else {
-			const contextMenu = {
-				actionsAvailable: {[actionType]: actionInfo},
-				creatureId: actionInfo.id || null,
-				tilePos,
-				evt
-			};
-			const clickedTargetIsPc = this.state.playerCharacters[evt.currentTarget.id];
-			const clickedTargetIsDyingPc = clickedTargetIsPc && clickedTargetIsPc.currentHealth <= 0;
-			if ((actionType !== 'player' && actionType !== 'creature') || (actionType === 'player' && clickedTargetIsDyingPc)) {
-				contextMenu.actionsAvailable.move = true;
+			const isContextMenuNeeded = contextMenuInfo || this.isContextMenuNeeded(actionType, tilePos, evt, actionInfo);
+
+			if (!isContextMenuNeeded.menuNeeded) {
+				isContextMenuNeeded.actionToProcess();
+			// otherwise, set up context menu
 			} else {
-				const objectOnTile = this._isObjectOnTile(tilePos, evt);
-				if (objectOnTile) {
-					contextMenu.actionsAvailable.examine = objectOnTile;
+				const contextMenu = {
+					actionsAvailable: {[actionType]: actionInfo},
+					creatureId: actionInfo.id || null,
+					tilePos,
+					evt
+				};
+				const clickedTargetIsPc = this.state.playerCharacters[evt.currentTarget.id];
+				const clickedTargetIsDyingPc = clickedTargetIsPc && clickedTargetIsPc.currentHealth <= 0;
+				if ((actionType !== 'player' && actionType !== 'creature') || (actionType === 'player' && clickedTargetIsDyingPc)) {
+					contextMenu.actionsAvailable.move = true;
+				} else {
+					const objectOnTile = this._isObjectOnTile(tilePos, evt);
+					if (objectOnTile) {
+						contextMenu.actionsAvailable.examine = objectOnTile;
+					}
 				}
+				this.setState({contextMenu, contextMenuChoice: null});
 			}
-			this.setState({contextMenu, contextMenuChoice: null});
 		}
 	}
 

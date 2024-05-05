@@ -1,6 +1,6 @@
 {
   "firstAidKit": {
-    "name": "First Aid Kit",
+    "name": "Create First Aid Kit",
     "itemCategory": "items",
     "skillType": "create",
     "profession": ["general", "doctor"],
@@ -10,10 +10,10 @@
       "cloth": 2,
       "alcohol": 2
     },
-    "light": 30
+    "light": [30]
   },
   "molotovCocktail": {
-    "name": "Molotov Cocktail",
+    "name": "Create Molotov Cocktail",
     "itemCategory": "weapons",
     "skillType": "create",
     "profession": ["general"],
@@ -23,10 +23,10 @@
       "cloth": 1,
       "alcohol": 3
     },
-    "light": 30
+    "light": [30]
   },
   "torch": {
-    "name": "Torch",
+    "name": "Create Torch",
     "itemCategory": "items",
     "skillType": "create",
     "profession": ["general", "archaeologist"],
@@ -37,10 +37,10 @@
       "alcohol": 1,
       "wood": 1
     },
-    "light": 30
+    "light": [30]
   },
   "acidConcoction": {
-    "name": "Acid Concoction",
+    "name": "Create Acid Concoction",
     "itemCategory": "weapons",
     "skillType": "create",
     "profession": ["general", "chemist"],
@@ -49,10 +49,10 @@
     "cost": {
       "chemical": 3
     },
-    "light": 30
+    "light": [30]
   },
   "pharmaceuticals": {
-    "name": "Pharmaceuticals",
+    "name": "Create Pharmaceuticals",
     "itemCategory": "items",
     "skillType": "create",
     "profession": ["chemist", "doctor"],
@@ -62,10 +62,10 @@
       "chemical": 2,
       "alcohol": 1
     },
-    "light": 30
+    "light": [30]
   },
   "holyWater": {
-    "name": "Holy Water",
+    "name": "Create Holy Water",
     "itemCategory": "weapons",
     "skillType": "create",
     "profession": ["priest"],
@@ -74,7 +74,7 @@
     "cost": {
       "water": 3
     },
-    "light": 30
+    "light": [30]
   },
   "handgunKnowledge": {
     "name": "Handgun Knowledge",
@@ -139,7 +139,7 @@
     "name": "Better Living Through Chemicals",
     "skillType": "active",
     "profession": ["chemist"],
-    "description": "Use Pharmaceuticals on self with increased effectiveness",
+    "description": "Use Pharmaceuticals on self with increased effectiveness (more Sanity recovered)",
     "hasTarget": false,
     "mustBeOutOfDanger": false,
     "requiresItem": "pharmaceuticals0",
@@ -229,21 +229,17 @@
     "description": "Disarm a trap without chance of it triggering",
     "hasTarget": true,
     "mustBeOutOfDanger": true,
-    "cost": {
-      "Light": [30, 25, 20, 15, 10]
-    },
+    "light": [30, 25, 20, 15, 10],
     "spirit": [40, 35, 30, 25, 20]
   },
   "identifyRelic": {
     "name": "Identify Relic",
     "skillType": "active",
     "profession": ["occultResearcher"],
-    "description": "Discern what a Relic does",
+    "description": "Discern what a Relic does (item must be in inventory)",
     "hasTarget": true,
     "mustBeOutOfDanger": true,
-    "cost": {
-      "Light": [30, 25, 20, 15, 10]
-    },
+    "light": [30, 25, 20, 15, 10],
     "spirit": [30, 25, 20, 15, 10]
   },
   "sacrificialStrike": {
@@ -256,8 +252,8 @@
     "requiredEquippedItem": "krisKnife0",
     "modifier": [1.5, 3, 4.5, 6, 7.5, 10],
     "cost": {
-      "health": [3, 5, 7, 9, 11, 20],
-      "sanity": [3, 5, 7, 9, 11, 20]
+      "health": [-3, -5, -7, -9, -11, -20],
+      "sanity": [-3, -5, -7, -9, -11, -20]
     },
     "spirit": [30, 30, 30, 30, 30, 30]
   },
@@ -265,7 +261,7 @@
     "name": "Relic Mastery",
     "skillType": "passive",
     "profession": ["occultResearcher"],
-    "description": "Call down holy Light to destroy undead or damage other creatures",
+    "description": "Suffer less Sanity loss when using Relics",
     "modifier": [-0.2, -0.4, -0.6]
   },
   "krisKnifeExpertise": {

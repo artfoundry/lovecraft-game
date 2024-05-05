@@ -212,7 +212,7 @@ class Character extends React.Component {
 	create = (props) => {
 		const {itemType, activeCharId, currentPcData, updateCharacter, updateLog, setShowDialogProps, addItemToPlayerInventory, updateActivePlayerActions} = props;
 		const materialCosts = currentPcData.skills[itemType].cost;
-		const lightCost = currentPcData.skills[itemType].light;
+		const lightCost = currentPcData.skills[itemType].light[0];
 		const itemName = currentPcData.skills[itemType].name;
 		let updatedPcData = deepCopy(currentPcData);
 		let activeCharItems = updatedPcData.items;

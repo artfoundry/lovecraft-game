@@ -70,27 +70,27 @@
   "Alcohol": {
     "itemType": "Component",
     "stackable": true,
-    "description": "Component for making First Aid Kits, Pharmaceuticals, Molotov Cocktails, and Torches"
+    "description": "Component for making First Aid Kits, Pharmaceuticals, Molotov Cocktails, and Torches (requires create skill for the appropriate item)"
   },
   "Chemical": {
     "itemType": "Component",
     "stackable": true,
-    "description": "Component for making Pharmaceuticals and Acid Concoctions"
+    "description": "Component for making Pharmaceuticals and Acid Concoctions (requires create skill for the appropriate item)"
   },
   "Cloth": {
     "itemType": "Component",
     "stackable": true,
-    "description": "Component for making First Aid Kits, Molotov Cocktails, and Torches"
+    "description": "Component for making First Aid Kits, Molotov Cocktails, and Torches (requires create skill for the appropriate item)"
   },
   "Water": {
     "itemType": "Component",
     "stackable": true,
-    "description": "Component for making Holy Water"
+    "description": "Component for making Holy Water (requires Holy Water create skill)"
   },
   "Wood": {
     "itemType": "Component",
     "stackable": true,
-    "description": "Component for making Torches"
+    "description": "Component for making Torches (requires Torch create skill)"
   },
   "Elder Sign": {
     "itemType": "Relic",

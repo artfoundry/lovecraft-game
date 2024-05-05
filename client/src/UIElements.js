@@ -294,7 +294,32 @@ function CharacterControls(props) {
 }
 
 function CharacterInfoPanel(props) {
-	const skillList = Object.values(props.characterInfo.skills).map(item => <li key={item.name + Math.random()}>{item.name}</li>);
+	const skillList = Object.values(props.characterInfo.skills).map(item => {
+		const compList = item.cost ? Object.entries(item.cost).map(cost => {
+			const compKey = cost[0];
+			const compVal = cost[1];
+			const compName = compKey.substring(0,1).toUpperCase() + compKey.substring(1, compKey.length);
+			return <li key={compName + '-' + compVal} className='char-info-skill-component-list-item'>{compName}: {compVal}</li>;
+		}) : null;
+		const skillModValue = item.modifier ? item.modifier[item.level -1] : null;
+		// if modifier is between 1 and -1 and is a decimal, it needs to be displayed as a percentage
+		const modifier = skillModValue && ((skillModValue < 1) && (skillModValue > -1) && (skillModValue - Math.floor(skillModValue)) !== 0) ? skillModValue * 100 + '%' : skillModValue;
+		return (
+			<div key={item.name + Math.random()} className='char-info-skills-skill-container'>
+				<div className='char-info-skill-name'>{item.name}</div>
+				<div>{item.description}</div>
+				<div>Skill level: {item.level}</div>
+				{item.modifier ? <div>Benefit amount: {modifier}</div> : null}
+				{item.mustBeOutOfDanger ? <div>Can't be used during combat</div> : null}
+				{item.cost ? <div>Required components: {compList}</div> : null}
+				{item.light ? <div>Required time (light): {item.light[item.level -1]}</div> : null}
+				{item.spirit ? <div>Required Spirit: {item.spirit[item.level -1]}</div> : null}
+				{item.requiresEquippedGunType ? <div>Requires equipped {item.requiresEquippedGunType}</div> : null}
+				{item.requiresEquippedMeleeWeapon ? <div>Requires equipped melee weapon</div> : null}
+				{item.requiredEquippedItem ? <div>Requires equipped {item.requiredEquippedItem}</div> : null}
+			</div>
+		);
+	});
 	const equippedLight = props.characterInfo.items[props.characterInfo.equippedLight];
 	const equippedItems = props.characterInfo.equippedItems;
 	const equippedIsTwoHanded = equippedItems.loadout1.right && equippedItems.loadout1.right === equippedItems.loadout1.left;
@@ -465,9 +490,7 @@ function CharacterInfoPanel(props) {
 				</div>
 
 				<div className={`char-info-skills-container ${activeTab !== 'skills' ? 'hide' : ''}`}>
-					<div>Skills:
-						<ul>{skillList}</ul>
-					</div>
+					{skillList}
 				</div>
 			</div>
 		</div>
