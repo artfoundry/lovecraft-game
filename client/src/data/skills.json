@@ -160,10 +160,11 @@
     "name": "Comfort The Fearful",
     "skillType": "active",
     "profession": ["priest"],
-    "description": "Provide sanity damage reduction to party until Follow Mode is activated",
+    "description": "Provide sanity damage reduction to party for a number of turns while in Tactical Mode",
     "hasTarget": false,
     "mustBeOutOfDanger": false,
     "modifier": [-2, -4, -6, -8, -10],
+    "turnsLeft": [2, 2, 3, 3, 4],
     "spirit": [70, 60, 50, 40, 30]
   },
   "holyLight": {

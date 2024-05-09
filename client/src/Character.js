@@ -49,6 +49,7 @@ class Character extends React.Component {
 		this.equippedLight = props.equippedLight || null;
 		this.lightRange = this.equippedLight ? this.items[this.equippedLight].range : 0;
 		this.lightTime = this.equippedLight ? this.items[this.equippedLight].time : null;
+		this.statuses = {};
 	}
 
 	_prePopulateInv(invLimit) {
@@ -313,6 +314,15 @@ class Character extends React.Component {
 
 	}
 
+	/**
+	 * Skill (Chemist): enhance sanity healing when using pharma
+	 * @param props: object {
+	 *     currentPcData: object,
+	 *     updateCharacter: function (App),
+	 *     updateLog: function (App),
+	 *     updateActivePlayerActions: function (App)
+	 * }
+	 */
 	betterLivingThroughChemicals = (props) => {
 		const {currentPcData, updateCharacter, updateLog, updateActivePlayerActions} = props;
 		const healProps = {
@@ -328,6 +338,18 @@ class Character extends React.Component {
 		this.heal(healProps);
 	}
 
+	/**
+	 * Skill (Doctor): bring pc back to life if reduced to 0 health within last few turns
+	 * Called from handleUnitClick in App
+	 * @param props: object {
+	 *     targetData: object
+	 *     pcData: object,
+	 *     updateCharacter: function (App),
+	 *     updateLog: function (App),
+	 *     setShowDialogProps: function (App),
+	 *     callback: function
+	 * }
+	 */
 	resuscitate = (props) => {
 		const {targetData, pcData, updateCharacter, updateLog, setShowDialogProps, callback} = props;
 		if (targetData.isDeadOrInsane) {
@@ -353,6 +375,50 @@ class Character extends React.Component {
 		updateCharacter('player', updatedTargetData, targetData.id, false, false, false, () => {
 			updateLog(`${pcData.name} resuscitates  ${targetData.name} back to life!`);
 			updateCharacter('player', updatedHealerData, pcData.id, false, false, false, callback);
+		});
+	}
+
+	/**
+	 * Simple helper function to format status data to save to pc data
+	 * @param charStatuses: object (status data from a pc)
+	 * @param statusData: object (status data to be applied)
+	 * @returns {*}
+	 */
+	updateStatus = (charStatuses, statusData) => {
+		const {attribute, startingRound, turnsLeft, modifier} = statusData;
+		charStatuses[statusData.name] = {attribute, startingRound, turnsLeft, modifier};
+		return charStatuses;
+	}
+
+	/**
+	 * Skill (Priest): provide buff to party, reducing sanity loss until
+	 * @param props: object {
+	 *     partyData: object,
+	 *     currentRound: number,
+	 *     updateCharacter: function (App),
+	 *     updateLog: function (App),
+	 *     updateActivePlayerActions: function (App)
+	 * }
+	 */
+	comfortTheFearful = (props) => {
+		const {partyData, currentRound, updateCharacter, updateLog, updateActivePlayerActions} = props;
+		let updatedPartyData = deepCopy(partyData);
+		const comfortSkillData = updatedPartyData.priest.skills.comfortTheFearful;
+
+		for (const [id, charData] of Object.entries(partyData)) {
+			const statusData = {
+				name: 'sanityBuff',
+				attribute: 'sanity',
+				startingRound: currentRound,
+				turnsLeft: comfortSkillData.turnsLeft[comfortSkillData.level],
+				modifier: comfortSkillData.modifier[comfortSkillData.level]
+			}
+			updatedPartyData[id].statuses = this.updateStatus(charData.statuses, statusData);
+		}
+		updatedPartyData.priest.currentSpirit -= comfortSkillData.spirit[comfortSkillData.level];
+		updateCharacter('player', updatedPartyData, null, false, false, false, () => {
+			updateLog(`${updatedPartyData.priest.name} comforts the party, easing their minds from the horrors around them!`);
+			updateActivePlayerActions();
 		});
 	}
 }

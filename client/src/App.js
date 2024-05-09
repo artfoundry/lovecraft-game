@@ -107,6 +107,7 @@ class Game extends React.Component {
 			currentLevel: 1,
 			playerFollowOrder: [],
 			followModePositions: [],
+			currentRound: 1, // starts on 1 because always enter a new area in tactical mode but updateCurrentTurn isn't called on entry
 			showDialog: false,
 			dialogProps: {
 			dialogContent: this.initialDialogContent,
@@ -443,6 +444,8 @@ class Game extends React.Component {
 				updateActivePlayerActions: this.updateActivePlayerActions
 			} : {
 				currentPcData: this.state.playerCharacters[characterId],
+				partyData: this.state.playerCharacters,
+				currentRound: this.state.currentRound,
 				updateCharacter: this.updateCharacters,
 				updateLog: this.updateLog,
 				updateActivePlayerActions: this.updateActivePlayerActions
@@ -612,6 +615,7 @@ class Game extends React.Component {
 	/**
 	 * Increments and sets to state the current turn number (or resets if on last turn of unitTurnOrder),
 	 * as well as resets number of moves and actions taken by the active PC
+	 * and decrements any pc's status' turnsLeft (or removes the status if no turns left) if that pc is the next active pc
 	 * then calls functions to clear any action button from previous char and then update which is the active character.
 	 * Skips PC if PC has <= 0 health/sanity and increments turnsSinceDeath if health is <= 0, then either updates char
 	 * or removes char from game if char has been at 0 health for 3 turns
@@ -620,6 +624,7 @@ class Game extends React.Component {
 	 */
 	updateCurrentTurn = (startTurns = false, callback) => {
 		let currentTurn = (startTurns || this.state.currentTurn === this.state.unitsTurnOrder.length - 1) ? 0 : this.state.currentTurn + 1;
+		const currentRound = currentTurn === 0 ? this.state.currentRound + 1 : this.state.currentRound;
 		const nextActiveCharId = Object.values(this.state.unitsTurnOrder[currentTurn])[0].id;
 		let nextActiveChar = deepCopy(this.state.playerCharacters[nextActiveCharId]);
 		let updateOrRemoveChar = null;
@@ -635,7 +640,19 @@ class Game extends React.Component {
 				}
 			}
 		}
-		this.setState({currentTurn, activePlayerActionsCompleted: 0, activePlayerMovesCompleted: 0}, () => {
+		if (nextActiveChar && Object.keys(nextActiveChar.statuses).length > 0) {
+			updateOrRemoveChar = true;
+			for (const [statusName, statusData] of Object.entries(nextActiveChar.statuses)) {
+				if (statusData.startingRound !== currentRound) {
+					if (statusData.turnsLeft === 1) {
+						delete nextActiveChar.statuses[statusName];
+					} else {
+						statusData.turnsLeft--;
+					}
+				}
+			}
+		}
+		this.setState({currentTurn, currentRound, activePlayerActionsCompleted: 0, activePlayerMovesCompleted: 0}, () => {
 			const updateActiveChar = () => {
 				if (this.state.playerCharacters[this.state.activeCharacter] && this.state.actionButtonSelected) {
 					this.toggleActionButton('', '', '', '', () => {
@@ -1154,7 +1171,7 @@ class Game extends React.Component {
 	 * @private
 	 */
 	_resetCounters(callback) {
-		this.setState({activePlayerMovesCompleted: 0, activePlayerActionsCompleted: 0, currentTurn: 0}, () => {
+		this.setState({activePlayerMovesCompleted: 0, activePlayerActionsCompleted: 0, currentTurn: 0, currentRound: 0}, () => {
 			this.updateActiveCharacter(callback, this.state.playerFollowOrder[0]);
 		});
 	}
