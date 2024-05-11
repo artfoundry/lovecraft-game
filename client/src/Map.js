@@ -1886,19 +1886,7 @@ class Map extends React.Component {
 			return;
 		}
 		if (pathData.blockerType && pathData.tilePath.length === 0 && !followerId) {
-			if (pathData.blockerType === 'door') {
-				const dialogProps = {
-					dialogContent: 'The door is closed. Open the door first.',
-					closeButtonText: 'Ok',
-					closeButtonCallback: null,
-					disableCloseButton: false,
-					actionButtonVisible: false,
-					actionButtonText: '',
-					actionButtonCallback: null,
-					dialogClasses: ''
-				};
-				this.props.setShowDialogProps(true, dialogProps);
-			} else {
+			if (pathData.blockerType !== 'door') {
 				const showDialog = true;
 				const dialogProps = {
 					dialogContent: 'The path is blocked.',
