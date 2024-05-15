@@ -156,6 +156,15 @@
     "modifier": [5, 5, 5, 5, 5],
     "spirit": [70, 65, 60, 55, 50]
   },
+  "medicalExpertise": {
+    "name": "Medical Expertise",
+    "skillType": "passive",
+    "profession": ["doctor"],
+    "description": "Improved healing with First Aid Kits",
+    "hasTarget": false,
+    "mustBeOutOfDanger": false,
+    "modifier": [5, 10, 15, 20, 25]
+  },
   "comfortTheFearful": {
     "name": "Comfort The Fearful",
     "skillType": "active",

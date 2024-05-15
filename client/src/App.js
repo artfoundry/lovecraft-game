@@ -432,7 +432,7 @@ class Game extends React.Component {
 			buttonState = {characterId, itemId, itemName, stats};
 		}
 		if (isImmediateAction) {
-			// skillType will either be 'create' or 'active'
+			// skillType will either be 'create' or 'active' (except heal and resuscitate skills are called from handleUnitClick)
 			const props = stats.skillType === 'create' ? {
 				itemType: itemId,
 				activeCharId: characterId,
@@ -514,7 +514,7 @@ class Game extends React.Component {
 	reduceCharSpirit = (skillId) => {
 		const pcData = this.state.playerCharacters[this.state.activeCharacter];
 		const skillData = pcData.skills[skillId];
-		const skillLevel = skillData.level - 1;
+		const skillLevel = skillData.level;
 		return pcData.currentSpirit - skillData.spirit[skillLevel];
 	}
 
@@ -548,6 +548,7 @@ class Game extends React.Component {
 					});
 				}
 			};
+			// if target is creature, attack, or if Resuscitate skill button was activated, resuscitate, otherwise, heal
 			target === 'creature' ? activePC.attack(actionProps) : (selectedItemInfo.stats.name && selectedItemInfo.stats.name === 'Resuscitate') ? activePC.resuscitate(actionProps) : activePC.heal(actionProps);
 		} else {
 			// clicked unit is just being selected/deselected

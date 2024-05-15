@@ -58,12 +58,15 @@ function CharacterControls(props) {
 	// add all inv medicine items to actionableItems.medicine
 	for (const [itemId, itemInfo] of Object.entries(invItems)) {
 		if (itemInfo.itemType === 'Medicine') {
-			const matchingItem = actionableItems.medicine.findLast(item => item.name === itemInfo.name);
-			let existingAmount = 1;
-			if (matchingItem) {
-				existingAmount = matchingItem.amount + 1;
-			}
-			actionableItems.medicine.push({itemId, name: itemInfo.name, amount: existingAmount});
+			// don't know why I was doing this, but it doesn't seem to be working properly - amount of items in button is always 1
+			// const lastItemIndex = actionableItems.medicine.findLastIndex(item => item.name === itemInfo.name);
+			// const matchingItem = actionableItems.medicine[lastItemIndex];
+			// let existingAmount = 1;
+			// if (matchingItem) {
+			// 	existingAmount = matchingItem.amount + 1;
+			// }
+			// actionableItems.medicine.push({itemId, name: itemInfo.name, amount: existingAmount});
+			actionableItems.medicine.push({itemId, name: itemInfo.name, amount: itemInfo.amount});
 		}
 	}
 
@@ -158,7 +161,7 @@ function CharacterControls(props) {
 					(skill.requiresEquippedMeleeWeapon && ((leftWeapon && !leftWeapon.ranged) || (rightWeapon && !rightWeapon.ranged)));
 				const hasAmmoForReloadSkill = hasExtraAmmo && hasNeededItem && (leftWeaponNeedsReloading || rightWeaponNeedsReloading);
 				// all active and only active skills require spirit
-				const hasEnoughSpirit = skill.spirit && currentPCdata.currentSpirit >= skill.spirit[skill.level - 1]; // level -1 because level values start at 1
+				const hasEnoughSpirit = skill.spirit && currentPCdata.currentSpirit >= skill.spirit[skill.level];
 				const actionButtonState =
 					(!props.isActiveCharacter ||
 					(props.actionsRemaining === 0 && skill.name !== 'Quick Reload') ||
@@ -193,7 +196,8 @@ function CharacterControls(props) {
 	const medicineButtons = (
 		<div className='item-buttons-container'>
 			{actionableItems.medicine.map(item => {
-				const itemCount = actionableItems.medicine.findLast(match => match.name === item.name).amount;
+				const lastItemIndex = actionableItems.medicine.findLastIndex(match => match.name === item.name);
+				const itemCount = actionableItems.medicine[lastItemIndex].amount;
 				let button = null;
 				if (item.amount === itemCount) {
 					const actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0) ? 'button-inactive' :
@@ -294,29 +298,33 @@ function CharacterControls(props) {
 }
 
 function CharacterInfoPanel(props) {
-	const skillList = Object.values(props.characterInfo.skills).map(item => {
-		const compList = item.cost ? Object.entries(item.cost).map(cost => {
+	const skillList = Object.values(props.characterInfo.skills).map(skill => {
+		const compList = skill.cost ? Object.entries(skill.cost).map(cost => {
 			const compKey = cost[0];
-			const compVal = cost[1];
+			let compVal = cost[1];
+			if (Array.isArray(compVal)) {
+				compVal = compVal[skill.level];
+			}
 			const compName = compKey.substring(0,1).toUpperCase() + compKey.substring(1, compKey.length);
 			return <li key={compName + '-' + compVal} className='char-info-skill-component-list-item'>{compName}: {compVal}</li>;
 		}) : null;
-		const skillModValue = item.modifier ? item.modifier[item.level -1] : null;
+		const skillModValue = skill.modifier ? skill.modifier[skill.level] : null;
 		// if modifier is between 1 and -1 and is a decimal, it needs to be displayed as a percentage
 		const modifier = skillModValue && ((skillModValue < 1) && (skillModValue > -1) && (skillModValue - Math.floor(skillModValue)) !== 0) ? skillModValue * 100 + '%' : skillModValue;
 		return (
-			<div key={item.name + Math.random()} className='char-info-skills-skill-container'>
-				<div className='char-info-skill-name'>{item.name}</div>
-				<div>{item.description}</div>
-				<div>Skill level: {item.level}</div>
-				{item.modifier ? <div>Benefit amount: {modifier}</div> : null}
-				{item.mustBeOutOfDanger ? <div>Can't be used during combat</div> : null}
-				{item.cost ? <div>Required components: {compList}</div> : null}
-				{item.light ? <div>Required time (light): {item.light[item.level -1]}</div> : null}
-				{item.spirit ? <div>Required Spirit: {item.spirit[item.level -1]}</div> : null}
-				{item.requiresEquippedGunType ? <div>Requires equipped {item.requiresEquippedGunType}</div> : null}
-				{item.requiresEquippedMeleeWeapon ? <div>Requires equipped melee weapon</div> : null}
-				{item.requiredEquippedItem ? <div>Requires equipped {item.requiredEquippedItem}</div> : null}
+			<div key={skill.name + Math.random()} className='char-info-skills-skill-container'>
+				<div className='char-info-skill-name'>{skill.name}</div>
+				<div>{skill.description}</div>
+				<div>Skill level: {skill.level +1}</div>
+				{skill.modifier ? <div>Benefit amount: {modifier}</div> : null}
+				{skill.mustBeOutOfDanger ? <div>Can't be used during combat</div> : null}
+				{skill.cost && skill.name !== 'Sacrificial Strike' ? <div>Required components: {compList}</div> : null}
+				{skill.cost && skill.name === 'Sacrificial Strike' ? <div>Cost: {compList}</div> : null}
+				{skill.light ? <div>Required time (light): {skill.light[skill.level]}</div> : null}
+				{skill.spirit ? <div>Required Spirit: {skill.spirit[skill.level]}</div> : null}
+				{skill.requiresEquippedGunType ? <div>Requires equipped {skill.requiresEquippedGunType}</div> : null}
+				{skill.requiresEquippedMeleeWeapon ? <div>Requires equipped melee weapon</div> : null}
+				{skill.requiredEquippedItem ? <div>Requires equipped {skill.requiredEquippedItem}</div> : null}
 			</div>
 		);
 	});

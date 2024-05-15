@@ -115,7 +115,7 @@
     "startingHealth": 110,
     "startingSanity": 100,
     "startingSpirit": 105,
-    "skills": ["firstAidKit", "pharmaceuticals", "resuscitate"],
+    "skills": ["firstAidKit", "medicalExpertise", "resuscitate"],
     "weapons": {},
     "equippedItems": {"right": "", "left": "lantern0", "armor": ""},
     "items": {

@@ -81,7 +81,7 @@ class Character extends React.Component {
 	_copySkillData(charSkills) {
 		let skillData = {};
 		charSkills.forEach(skillId => {
-			skillData[skillId] = {...Skills[skillId], level: 1};
+			skillData[skillId] = {...Skills[skillId], level: 0};
 		});
 		return skillData;
 	}
@@ -127,7 +127,7 @@ class Character extends React.Component {
 
 		if (itemStats.ranged) {
 			const steadyHandSkill = pcData.skills.steadyHand;
-			const accuracyBonus = steadyHandSkill && equippedGunType === 'handgun' ? steadyHandSkill.modifier[steadyHandSkill.level - 1] : 0;
+			const accuracyBonus = steadyHandSkill && equippedGunType === 'handgun' ? steadyHandSkill.modifier[steadyHandSkill.level] : 0;
 			attackTotal = Math.round(noGunKnowledgeMod * (pcData.agility + accuracyBonus + rangedStrHitModifier + hitRoll));
 			damageTotal = rangedStrHitModifier + itemStats.damage + damageRoll - targetData.damageReduction;
 			weaponInfo.currentRounds--;
@@ -173,13 +173,20 @@ class Character extends React.Component {
 		const targetStat = itemStats.healingType === 'health' ? 'currentHealth' : 'currentSanity';
 		const startingStatValue = itemStats.healingType === 'health' ? targetData.startingHealth : targetData.startingSanity;
 		let healAmount = Math.round(pcData.mentalAcuity / 2) + (itemStats.healingType === 'health' ? diceRoll(12) : diceRoll(4)) + itemStats.healingAmount;
-		let updatedTargetData = deepCopy(targetData);
 		let updatedHealerData = deepCopy(pcData);
+		// if pc is healing itself, target points to healer object
+		let updatedTargetData = targetData.id !== pcData.id ? deepCopy(targetData) : updatedHealerData;
+		const medicalExpertSkill = updatedHealerData.skills.medicalExpertise;
+
+		if (medicalExpertSkill) {
+			healAmount += medicalExpertSkill.modifier[medicalExpertSkill.level];
+		}
 		if (isChemistSkill) {
 			const skillData = pcData.skills.betterLivingThroughChemicals;
 			healAmount += skillData.modifier[skillData.level] * healAmount;
 			updatedHealerData.currentSpirit -= skillData.spirit[skillData.level];
 		}
+
 		const healedStatValue = targetData[targetStat] + healAmount;
 		updatedTargetData[targetStat] = healedStatValue > startingStatValue ? startingStatValue : healedStatValue;
 		if (updatedHealerData.items[itemId].amount === 1) {
@@ -191,7 +198,11 @@ class Character extends React.Component {
 		}
 		updateCharacter('player', updatedTargetData, targetData.id, false, false, false, () => {
 			updateLog(`${pcData.name} uses ${healItem} to increase ${targetData.name}'s ${targetStat.substring(7)}`);
-			updateCharacter('player', updatedHealerData, pcData.id, false, false, false, callback);
+			if (targetData.id !== pcData.id) {
+				updateCharacter('player', updatedHealerData, pcData.id, false, false, false, callback);
+			} else {
+				callback();
+			}
 		});
 	}
 
