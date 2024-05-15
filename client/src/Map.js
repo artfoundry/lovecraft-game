@@ -945,7 +945,8 @@ class Map extends React.Component {
 			if (actionButtonIsSelected) {
 				actionIsItemOrSkill = this.props.actionButtonSelected.stats.itemType || this.props.actionButtonSelected.stats.skillType;
 				if (actionIsItemOrSkill && characterType === 'player') {
-					isResuscitateSkill = this.props.actionButtonSelected.stats.name && this.props.actionButtonSelected.stats.name === 'Resuscitate';
+					const buttonName = this.props.actionButtonSelected.itemName;
+					isResuscitateSkill = buttonName && buttonName === 'Resuscitate';
 					let adjacentCompanionIsDying = false;
 					activePlayerPos = convertCoordsToPos(activeCharIsPlayer.coords);
 					adjacentTiles = this._getAllSurroundingTilesToRange(activePlayerPos, 1);
@@ -955,9 +956,13 @@ class Map extends React.Component {
 							companionIsAdjacent = true;
 						}
 					}
+					const pcNeedsHealth = buttonName === 'First Aid Kit' && (characters[id].currentHealth < characters[id].startingHealth) && characters[id].currentHealth > 0;
+					const pcNeedsSanity = buttonName === 'Pharmaceuticals' && (characters[id].currentSanity < characters[id].startingSanity) && characters[id].currentSanity > 0;
+					const isHealTypeSkill = buttonName === 'First Aid Kit' || buttonName === 'Pharmaceuticals';
 					targetIsInRange = activeCharIsPlayer && (
-						(companionIsAdjacent && (!isResuscitateSkill || (isResuscitateSkill && adjacentCompanionIsDying))) ||
-						(!isResuscitateSkill && activePlayerPos === characterPos));
+						((activePlayerPos === characterPos || companionIsAdjacent) && (pcNeedsHealth || pcNeedsSanity)) ||
+						(companionIsAdjacent && ((!isResuscitateSkill && !isHealTypeSkill) || (isResuscitateSkill && adjacentCompanionIsDying))) ||
+						(!isResuscitateSkill && !isHealTypeSkill && activePlayerPos === characterPos));
 				} else if (!actionIsItemOrSkill && characterType === 'creature') {
 					targetIsInRange = activeCharIsPlayer && characters[id].currentHealth > 0 && this.isCreatureInRange(id, this.props.actionButtonSelected);
 				}
