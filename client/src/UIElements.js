@@ -58,14 +58,6 @@ function CharacterControls(props) {
 	// add all inv medicine items to actionableItems.medicine
 	for (const [itemId, itemInfo] of Object.entries(invItems)) {
 		if (itemInfo.itemType === 'Medicine') {
-			// don't know why I was doing this, but it doesn't seem to be working properly - amount of items in button is always 1
-			// const lastItemIndex = actionableItems.medicine.findLastIndex(item => item.name === itemInfo.name);
-			// const matchingItem = actionableItems.medicine[lastItemIndex];
-			// let existingAmount = 1;
-			// if (matchingItem) {
-			// 	existingAmount = matchingItem.amount + 1;
-			// }
-			// actionableItems.medicine.push({itemId, name: itemInfo.name, amount: existingAmount});
 			actionableItems.medicine.push({itemId, name: itemInfo.name, amount: itemInfo.amount});
 		}
 	}
