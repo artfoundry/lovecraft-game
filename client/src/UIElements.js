@@ -75,6 +75,7 @@ function CharacterControls(props) {
 				requiresEquippedItem: skillInfo.requiresEquippedItem,
 				requiresItem: skillInfo.requiresItem,
 				requiresEquippedMeleeWeapon: skillInfo.requiresEquippedMeleeWeapon,
+				requiresBothActions: skillInfo.requiresBothActions,
 				spirit: skillInfo.spirit,
 				level: skillInfo.level
 			});
@@ -159,7 +160,8 @@ function CharacterControls(props) {
 					(props.actionsRemaining === 0 && skill.name !== 'Quick Reload') ||
 					(skill.spirit && !hasEnoughSpirit) || (requiresItemOrWeapon && !hasNeededItem) ||
 					(skill.name === 'Quick Reload' && !hasAmmoForReloadSkill) ||
-					(skill.mustBeOutOfDanger && props.threatList.length > 0)) ? 'button-inactive' :
+					(skill.mustBeOutOfDanger && props.threatList.length > 0) ||
+					(skill.requiresBothActions && props.actionsRemaining < 2)) ? 'button-inactive' :
 					(props.isActiveCharacter &&
 					props.actionButtonSelected &&
 					props.actionButtonSelected.characterId === props.characterId &&

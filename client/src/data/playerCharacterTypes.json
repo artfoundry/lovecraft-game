@@ -152,7 +152,7 @@
     "startingHealth": 100,
     "startingSanity": 110,
     "startingSpirit": 105,
-    "skills": ["holyWater", "comfortTheFearful", "holyLight"],
+    "skills": ["holyWater", "comfortTheFearful", "spiritualInspiration"],
     "weapons": {
       "holyWater0": {
         "id": "holyWater0",

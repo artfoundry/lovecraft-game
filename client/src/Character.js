@@ -197,7 +197,8 @@ class Character extends React.Component {
 			updatedHealerData.items[itemId].amount--;
 		}
 		updateCharacter('player', updatedTargetData, targetData.id, false, false, false, () => {
-			updateLog(`${pcData.name} uses ${healItem} to increase ${targetData.name}'s ${targetStat.substring(7)}`);
+			const target = pcData.name === targetData.name ? (targetData.gender === 'Male' ? 'his' : 'her') : targetData.name + "'s";
+			updateLog(`${pcData.name} uses ${healItem} to recover ${target} ${targetStat.substring(7)}`);
 			if (targetData.id !== pcData.id) {
 				updateCharacter('player', updatedHealerData, pcData.id, false, false, false, callback);
 			} else {
@@ -210,6 +211,7 @@ class Character extends React.Component {
 
 	/**
 	 * Creates an item using materials and light (cost); enemies must not be around in order to use
+	 * Called from toggleActionButton in App
 	 * @param props: object {
 	 *     itemType: string ('firstAidKit', 'molotovCocktail', 'torch', 'acidConcoction', 'pharmaceuticals', 'holyWater'),
 	 *     activeCharId: string,
@@ -327,15 +329,33 @@ class Character extends React.Component {
 
 	/**
 	 * Skill (Chemist): enhance sanity healing when using pharma
+	 * Called from toggleActionButton in App
 	 * @param props: object {
 	 *     currentPcData: object,
 	 *     updateCharacter: function (App),
 	 *     updateLog: function (App),
+	 *     setShowDialogProps: function (App),
 	 *     updateActivePlayerActions: function (App)
 	 * }
 	 */
 	betterLivingThroughChemicals = (props) => {
-		const {currentPcData, updateCharacter, updateLog, updateActivePlayerActions} = props;
+		const {currentPcData, updateCharacter, updateLog, setShowDialogProps, updateActivePlayerActions} = props;
+
+		if (currentPcData.currentSanity === currentPcData.startingSanity) {
+			const fullSanityDialogProps = {
+				dialogContent: `${currentPcData.name}'s Sanity is already at its highest!`,
+				closeButtonText: 'Ok',
+				closeButtonCallback: null,
+				disableCloseButton: false,
+				actionButtonVisible: false,
+				actionButtonText: '',
+				actionButtonCallback: null,
+				dialogClasses: ''
+			};
+			setShowDialogProps(true, fullSanityDialogProps);
+			return;
+		}
+
 		const healProps = {
 			itemId: 'pharmaceuticals0',
 			itemStats: ItemTypes.Pharmaceuticals,
@@ -403,6 +423,7 @@ class Character extends React.Component {
 
 	/**
 	 * Skill (Priest): provide buff to party, reducing sanity loss until
+	 * Called from toggleActionButton in App
 	 * @param props: object {
 	 *     partyData: object,
 	 *     currentRound: number,
@@ -430,6 +451,32 @@ class Character extends React.Component {
 		updateCharacter('player', updatedPartyData, null, false, false, false, () => {
 			updateLog(`${updatedPartyData.priest.name} comforts the party, easing their minds from the horrors around them!`);
 			updateActivePlayerActions();
+		});
+	}
+
+	/**
+	 * Skill (Priest): use both actions to recover some Spirit for the party
+	 * Called from toggleActionButton in App
+	 * @param props: object {
+	 *     partyData: object,
+	 *     updateCharacter: function (App),
+	 *     updateLog: function (App),
+	 *     updateActivePlayerActions: function (App)
+	 * }
+	 */
+	spiritualInspiration = (props) => {
+		const {partyData, updateCharacter, updateLog, updateActivePlayerActions} = props;
+		let updatedPartyData = deepCopy(partyData);
+		const inspireSkillData = updatedPartyData.priest.skills.spiritualInspiration;
+		const inspireModifier = inspireSkillData.modifier[inspireSkillData.level];
+
+		for (const id of Object.keys(partyData)) {
+			const modifiedSpirit = updatedPartyData[id].currentSpirit + inspireModifier;
+			updatedPartyData[id].currentSpirit = modifiedSpirit > updatedPartyData[id].startingSpirit ? updatedPartyData[id].startingSpirit : modifiedSpirit;
+		}
+		updateCharacter('player', updatedPartyData, null, false, false, false, () => {
+			updateLog(`${updatedPartyData.priest.name} inspires the party, filling them with spiritual energy!`);
+			updateActivePlayerActions(true);
 		});
 	}
 }

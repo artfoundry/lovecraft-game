@@ -448,6 +448,7 @@ class Game extends React.Component {
 				currentRound: this.state.currentRound,
 				updateCharacter: this.updateCharacters,
 				updateLog: this.updateLog,
+				setShowDialogProps: this.setShowDialogProps,
 				updateActivePlayerActions: this.updateActivePlayerActions
 			};
 			const skillId = stats.skillType === 'create' ? 'create' : itemId;
@@ -690,10 +691,11 @@ class Game extends React.Component {
 
 	/**
 	 * Increments and updates to state number of actions the active PC has done
+	 * @param completeTwoActions: boolean (for skills that use two actions)
 	 */
-	updateActivePlayerActions = () => {
+	updateActivePlayerActions = (completeTwoActions = false) => {
 		if (this.state.inTacticalMode) {
-			const activePlayerActionsCompleted = this.state.activePlayerActionsCompleted + 1;
+			const activePlayerActionsCompleted = this.state.activePlayerActionsCompleted + (completeTwoActions ? 2 : 1);
 			this.setState({activePlayerActionsCompleted});
 		}
 	}

@@ -169,22 +169,22 @@
     "name": "Comfort The Fearful",
     "skillType": "active",
     "profession": ["priest"],
-    "description": "Provide sanity damage reduction to party for a number of turns while in Tactical Mode",
+    "description": "Comfort the party with calming words and presence to provide sanity damage reduction to the party for a number of turns while in Tactical Mode",
     "hasTarget": false,
     "mustBeOutOfDanger": false,
     "modifier": [-2, -4, -6, -8, -10],
     "turnsLeft": [2, 2, 3, 3, 4],
     "spirit": [70, 60, 50, 40, 30]
   },
-  "holyLight": {
-    "name": "Holy Light",
+  "spiritualInspiration": {
+    "name": "Spiritual Inspiration",
     "skillType": "active",
     "profession": ["priest"],
-    "description": "Call down holy light to destroy undead or damage other creatures",
-    "hasTarget": true,
+    "description": "Use both actions (and amazing words of inspiration) to recover some Spirit for the party",
+    "hasTarget": false,
     "mustBeOutOfDanger": false,
-    "modifier": [1, 2, 3],
-    "spirit": [50, 40, 30]
+    "modifier": [10, 20, 30, 40, 50],
+    "requiresBothActions": true
   },
   "sureShot": {
     "name": "Sure Shot",
@@ -259,7 +259,7 @@
     "description": "Guaranteed hit and extra damage with Kris Knife in exchange for health and sanity loss",
     "hasTarget": true,
     "mustBeOutOfDanger": false,
-    "requiredEquippedItem": "krisKnife0",
+    "requiresEquippedItem": "krisKnife0",
     "modifier": [1.5, 3, 4.5, 6, 7.5, 10],
     "cost": {
       "health": [-3, -5, -7, -9, -11, -20],
