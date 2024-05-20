@@ -104,7 +104,7 @@ class Game extends React.Component {
 			playerCharacters: {},
 			pcTypes: PlayerCharacterTypes,
 			currentLocation: '',
-			currentLevel: 1,
+			currentFloor: 1,
 			playerFollowOrder: [],
 			followModePositions: [],
 			currentRound: 1, // starts on 1 because always enter a new area in tactical mode but updateCurrentTurn isn't called on entry
@@ -119,7 +119,7 @@ class Game extends React.Component {
 				actionButtonCallback:  null,
 				dialogClasses: ''
 			},
-			// these need resetting on level change
+			// these need resetting on floor change
 			mapCreatures: {},
 			mapObjects: {},
 			unitsTurnOrder: [],
@@ -146,10 +146,10 @@ class Game extends React.Component {
 	}
 
 	/**
-	 * Resets level related data in state back to defaults when changing levels
+	 * Resets floor related data in state back to defaults when changing floors
 	 * @param callback: function
 	 */
-	resetDataForNewLevel = (callback) => {
+	resetDataForNewFloor = (callback) => {
 		this.setState({
 			mapCreatures: {},
 			mapObjects: {},
@@ -1397,8 +1397,8 @@ class Game extends React.Component {
 						updateCurrentTurn={this.updateCurrentTurn}
 
 						currentLocation={this.state.currentLocation}
-						currentLevel={this.state.currentLevel}
-						resetDataForNewLevel={this.resetDataForNewLevel}
+						currentFloor={this.state.currentFloor}
+						resetDataForNewFloor={this.resetDataForNewFloor}
 
 						updateLog={this.updateLog}
 						actionButtonSelected={this.state.actionButtonSelected}

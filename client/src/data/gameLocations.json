@@ -4,28 +4,28 @@
 		"creatures": {
 			"elderThing": {
 				"count": 1,
-				"levels": [3]
+				"floors": [3]
 			},
 			"ghoul": {
 				"count": 15,
-				"levels": [1, 2]
+				"floors": [1, 2]
 			},
 			"shoggoth": {
 				"count": 1,
-				"levels": [2, 3]
+				"floors": [2, 3]
 			}
 		},
 		"objects": {
 			"Weapon": {
 				"S And W Revolver": {
-					"countPerLevel": {
+					"countPerFloor": {
 						"1": 1,
 						"2": 0,
 						"3": 1
 					}
 				},
 				"Acid Concoction": {
-					"countPerLevel": {
+					"countPerFloor": {
 						"1": 2,
 						"2": 0,
 						"3": 1
@@ -34,7 +34,7 @@
 			},
 			"Ammo": {
 				"Handgun Ammo": {
-					"countPerLevel": {
+					"countPerFloor": {
 						"1": 5,
 						"2": 4,
 						"3": 3
@@ -43,7 +43,7 @@
 			},
 			"Medicine": {
 				"First Aid Kit": {
-					"countPerLevel": {
+					"countPerFloor": {
 						"1": 5,
 						"2": 1,
 						"3": 0
@@ -52,14 +52,14 @@
 			},
 			"Light": {
 				"Lantern": {
-					"countPerLevel": {
+					"countPerFloor": {
 						"1": 1,
 						"2": 0,
 						"3": 0
 					}
 				},
 				"Torch": {
-					"countPerLevel": {
+					"countPerFloor": {
 						"1": 10,
 						"2": 5,
 						"3": 0
@@ -68,7 +68,7 @@
 			},
 			"Miscellaneous": {
 				"Oil": {
-					"countPerLevel": {
+					"countPerFloor": {
 						"1": 2,
 						"2": 2,
 						"3": 0
@@ -77,35 +77,35 @@
 			},
 			"Component": {
 				"Alcohol": {
-					"countPerLevel": {
+					"countPerFloor": {
 						"1": 5,
 						"2": 2,
 						"3": 0
 					}
 				},
 				"Chemical": {
-					"countPerLevel": {
+					"countPerFloor": {
 						"1": 3,
 						"2": 2,
 						"3": 0
 					}
 				},
 				"Cloth": {
-					"countPerLevel": {
+					"countPerFloor": {
 						"1": 5,
 						"2": 2,
 						"3": 0
 					}
 				},
 				"Water": {
-					"countPerLevel": {
+					"countPerFloor": {
 						"1": 3,
 						"2": 2,
 						"3": 0
 					}
 				},
 				"Wood": {
-					"countPerLevel": {
+					"countPerFloor": {
 						"1": 3,
 						"2": 2,
 						"3": 0
@@ -114,12 +114,12 @@
 			},
 			"Relic": {
 				"Elder Sign": {
-					"countPerLevel": {
+					"countPerFloor": {
 						"1": 1,
 						"2": 1,
 						"3": 1
 					},
-					"chancePerLevel": {
+					"chancePerFloor": {
 						"1": 0.1,
 						"2": 0.2,
 						"3": 0.3
