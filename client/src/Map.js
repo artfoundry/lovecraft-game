@@ -93,7 +93,7 @@ class Map extends React.Component {
 	}
 
 	/**
-	 * Resets state and other vars related to map - used for moving from one level to another
+	 * Resets state and other vars related to map - used for moving from one floor to another
 	 */
 	resetMap = () => {
 		this.initialMapLoad = true;
@@ -114,7 +114,7 @@ class Map extends React.Component {
 			worldWidth: 0,
 			worldHeight: 0
 		}, () => {
-			this.props.resetDataForNewLevel(this.layoutPieces);
+			this.props.resetDataForNewFloor(this.layoutPieces);
 		});
 	}
 
@@ -658,10 +658,10 @@ class Map extends React.Component {
 			let relicChance = alwaysOnTheLookoutSkillInfo ? alwaysOnTheLookoutSkillInfo.modifier[alwaysOnTheLookoutSkillInfo.level] : 0;
 			for (const [itemName, itemInfo] of Object.entries(objectTypesInfo)) {
 				if (objectType === 'Relic') {
-					relicChance = (relicChance + itemInfo.chancePerLevel[this.props.currentLevel]) * 100;
+					relicChance = (relicChance + itemInfo.chancePerFloor[this.props.currentFloor]) * 100;
 				}
 				if (objectType !== 'Relic' || (objectType === 'Relic' && (diceRoll(100) <= relicChance))) {
-					for (let i=0; i < itemInfo.countPerLevel[this.props.currentLevel]; i++) {
+					for (let i=0; i < itemInfo.countPerFloor[this.props.currentFloor]; i++) {
 						const itemInfo = objectType === 'Weapon' ? WeaponTypes[itemName] : ItemTypes[itemName];
 						const tileType = itemName === 'Torch' ? 'wall' : 'floor';
 						const lowerCaseName = itemName.slice(0, 1).toLowerCase() + itemName.slice(1, itemName.length).replaceAll(' ', '');
