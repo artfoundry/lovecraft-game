@@ -197,12 +197,12 @@
     "name": "Go Ballistic",
     "skillType": "active",
     "profession": ["veteran"],
-    "description": "Shoot every enemy in range (provided enough ammo) with reduced accuracy (reduced percent to attack roll)",
-    "hasTarget": false,
+    "description": "Use all remaining ammo in gun to shoot target with reduced accuracy (reduced percent to attack roll)",
+    "hasTarget": true,
     "mustBeOutOfDanger": false,
     "requiresEquippedGunType": ["handgun", "shotgun", "machineGun"],
-    "modifier": [-0.3, -0.25, -0.2, -0.15, -0.1],
-    "spirit": [60, 55, 50, 45, 40]
+    "modifier": [-0.4, -0.35, -0.3, -0.25, -0.2],
+    "spirit": [80, 75, 70, 65, 60]
   },
   "moveIt": {
     "name": "Move it!",

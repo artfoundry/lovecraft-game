@@ -153,6 +153,9 @@ function CharacterControls(props) {
 					(skill.requiresEquippedItem && (skill.requiresEquippedItem === equippedItems.left || skill.requiresEquippedItem === equippedItems.right)) ||
 					(skill.requiresEquippedMeleeWeapon && ((leftWeapon && !leftWeapon.ranged) || (rightWeapon && !rightWeapon.ranged)));
 				const hasAmmoForReloadSkill = hasExtraAmmo && hasNeededItem && (leftWeaponNeedsReloading || rightWeaponNeedsReloading);
+				const leftGunHasAmmo = leftWeapon && leftWeapon.currentRounds > 0;
+				const rightGunHasAmmo = rightWeapon && rightWeapon.currentRounds > 0;
+				const gunIsLoaded = skill.requiresEquippedGunType && hasNeededItem && (leftGunHasAmmo || rightGunHasAmmo);
 				// all active and only active skills require spirit
 				const hasEnoughSpirit = skill.spirit && currentPCdata.currentSpirit >= skill.spirit[skill.level];
 				const actionButtonState =
@@ -160,6 +163,7 @@ function CharacterControls(props) {
 					(props.actionsRemaining === 0 && skill.name !== 'Quick Reload') ||
 					(skill.spirit && !hasEnoughSpirit) || (requiresItemOrWeapon && !hasNeededItem) ||
 					(skill.name === 'Quick Reload' && !hasAmmoForReloadSkill) ||
+					(skill.name === 'Go Ballistic' && !gunIsLoaded) ||
 					(skill.mustBeOutOfDanger && props.threatList.length > 0) ||
 					(skill.requiresBothActions && props.actionsRemaining < 2)) ? 'button-inactive' :
 					(props.isActiveCharacter &&
@@ -173,10 +177,18 @@ function CharacterControls(props) {
 				actionButtonCount++;
 				button = (
 					<div key={skill.skillId} className={`action-button ${shouldActionButtonShow() ? '' : 'hide'} ${skillClass} ${actionButtonState}`} onClick={() => {
-						if (skill.name === 'Quick Reload' && hasAmmoForReloadSkill) {
-							const weaponId = leftWeaponNeedsReloading ? equippedItems.left : equippedItems.right;
-							const weapon = {weaponId};
+						if (skill.name === 'Quick Reload') {
+							const weapon = leftWeaponNeedsReloading ? {weaponId: equippedItems.left} : {weaponId: equippedItems.right};
 							handleWeaponClick(weapon, true, true);
+						} else if (skill.name === 'Go Ballistic') {
+							const weapon = {
+								weaponId: leftGunHasAmmo ? equippedItems.left : equippedItems.right,
+								weaponName: leftGunHasAmmo ? leftWeapon.name : rightWeapon.name
+							};
+							const handleWeaponClickCallback = () => {
+								handleWeaponClick(weapon);
+							};
+							props.toggleActionButton(props.characterId, skill.skillId, skill.name, 'skill', handleWeaponClickCallback);
 						} else {
 							props.toggleActionButton(props.characterId, skill.skillId, skill.name, 'skill');
 						}
@@ -310,7 +322,7 @@ function CharacterInfoPanel(props) {
 				<div className='char-info-skill-name'>{skill.name}</div>
 				<div>{skill.description}</div>
 				<div>Skill level: {skill.level +1}</div>
-				{skill.modifier ? <div>Benefit amount: {modifier}</div> : null}
+				{skill.modifier ? <div>Modifier: {modifier}</div> : null}
 				{skill.mustBeOutOfDanger ? <div>Can't be used during combat</div> : null}
 				{skill.cost && skill.name !== 'Sacrificial Strike' ? <div>Required components: {compList}</div> : null}
 				{skill.cost && skill.name === 'Sacrificial Strike' ? <div>Cost: {compList}</div> : null}

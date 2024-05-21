@@ -405,7 +405,8 @@ class Game extends React.Component {
 	/**
 	 * Updates to state what PC weapon, item, or skill button is selected in the UI
 	 * Data stored in actionButtonSelected: {characterId, itemId, itemName, stats: WeaponTypes[itemName], ItemTypes[itemName], or SkillTypes[itemName]}
-	 * state.actionButtonSelected gets reset in this.updateCurrentTurn
+	 * Doesn't set actionButtonSelected if action is immediate
+	 * state.actionButtonSelected gets reset in handleUnitClick (in callback after action is done) and in this.updateCurrentTurn
 	 * @param characterId: String
 	 * @param itemId: String (action button ID - ie. item, weapon, or skill ID)
 	 * @param itemName: String
@@ -423,6 +424,9 @@ class Game extends React.Component {
 		{
 			if (buttonType === 'weapon') {
 				stats = WeaponTypes[itemName];
+				if (this.state.actionButtonSelected && this.state.actionButtonSelected.stats.name === 'Go Ballistic') {
+					stats.goingBallistic = this.state.playerCharacters[characterId].skills.goBallistic;
+				}
 			} else if (buttonType === 'item') {
 				stats = ItemTypes[itemName];
 			} else {
@@ -467,21 +471,21 @@ class Game extends React.Component {
 	 * @param isQuickReload: boolean (true if using the Quick Reload skill)
 	 */
 	reloadGun = (weaponId, isQuickReload) => {
-		const updatedPCdata = deepCopy(this.state.playerCharacters[this.state.activeCharacter]);
-		const gunInfo = updatedPCdata.weapons[weaponId];
+		const updatedPcData = deepCopy(this.state.playerCharacters[this.state.activeCharacter]);
+		const gunInfo = updatedPcData.weapons[weaponId];
 		const gunType = gunInfo.gunType;
-		const availAmmo = updatedPCdata.items[gunType + 'Ammo0'].amount;
+		const availAmmo = updatedPcData.items[gunType + 'Ammo0'].amount;
 		const emptyRounds = gunInfo.rounds - gunInfo.currentRounds;
 		const resupplyAmmo = emptyRounds <= availAmmo ? emptyRounds : availAmmo;
 		gunInfo.currentRounds += resupplyAmmo;
-		updatedPCdata.items[gunType + 'Ammo0'].amount = availAmmo - resupplyAmmo;
-		if (updatedPCdata.items[gunType + 'Ammo0'].amount === 0) {
-			delete updatedPCdata.items[gunType + 'Ammo0'];
+		updatedPcData.items[gunType + 'Ammo0'].amount = availAmmo - resupplyAmmo;
+		if (updatedPcData.items[gunType + 'Ammo0'].amount === 0) {
+			delete updatedPcData.items[gunType + 'Ammo0'];
 		}
 		if (isQuickReload) {
-			updatedPCdata.currentSpirit = this.reduceCharSpirit('quickReload');
+			updatedPcData.currentSpirit = this.reduceCharSpirit('quickReload');
 		}
-		this.updateCharacters('player', updatedPCdata, this.state.activeCharacter, false, false, false, () => {
+		this.updateCharacters('player', updatedPcData, this.state.activeCharacter, false, false, false, () => {
 			if (!isQuickReload) {
 				this.updateActivePlayerActions();
 			}
@@ -540,7 +544,7 @@ class Game extends React.Component {
 				updateLog: this.updateLog,
 				setShowDialogProps: this.setShowDialogProps,
 				callback: () => {
-					this.toggleActionButton(selectedItemInfo.characterId, selectedItemInfo.itemId, selectedItemInfo.itemName, target === 'creature' ? 'weapon': 'item', () => {
+					this.toggleActionButton('', '', '', '', () => {
 						if (target === 'creature' && this.state.mapCreatures[id].currentHealth <= 0) {
 							this._removeDeadFromTurnOrder(id, this.updateActivePlayerActions, checkLineOfSightToParty);
 						} else {

@@ -361,15 +361,15 @@ export default class CharacterCreation extends React.Component {
 					<hr />
 					<div id='char-creation-finish'>
 						<p>Once you've created your investigator and chosen your companions, you can...</p>
-						<div className={`char-creation-button ${(this.state.name.length === 0 || this.state.gender.length === 0 || this.state.rollNumSaved === 0 || this.state.companions.length < 2) ? 'button-disabled' : ''}`}
+						<div className={`char-creation-button ${(this.state.name.length === 0 || this.state.gender.length === 0 || this.state.rollNumSaved === 0 || !this.state.profession || this.state.companions.length < 2) ? 'button-disabled' : ''}`}
 							onClick={() => {
 								const pcData = {
 									id: this.state.profession,
 									name: this.state.name,
 									gender: this.state.gender,
-									strength: this.state.statsSaved.strength,
-									agility: this.state.statsSaved.agility,
-									mentalAcuity: this.state.statsSaved.mentalAcuity
+									strength: this.state.statsSaved.strength + this.bonuses[this.state.profession].strength,
+									agility: this.state.statsSaved.agility + this.bonuses[this.state.profession].agility,
+									mentalAcuity: this.state.statsSaved.mentalAcuity + this.bonuses[this.state.profession].mentalAcuity
 								};
 								const partyList = [pcData.id, ...this.state.companions];
 								this.props.saveCreatedCharacter(pcData, partyList);

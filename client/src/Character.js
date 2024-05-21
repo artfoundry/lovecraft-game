@@ -8,9 +8,8 @@ class Character extends React.Component {
 	constructor(props) {
 		super(props);
 
-		this.noGunKnowledgePenalty = 0.5;
+		this.noGunKnowledgePenalty = -0.5;
 		this.hitDie = 10;
-		this.damageDie = 6;
 		this.defenseDie = 4;
 
 		// For instantiation only - updated data is stored in App.state.playerCharacters
@@ -110,7 +109,9 @@ class Character extends React.Component {
 	 */
 	attack = (props) => {
 		const {itemId, itemStats, targetData, pcData, updateCharacter, updateLog, callback} = props;
-		let isHit, damageTotal, attackTotal, defenseTotal;
+		let attackTotal, hitRoll, defenseRoll, defenseTotal;
+		let isHit = false;
+		let damageTotal = 0;
 		let rangedStrHitModifier = itemStats.usesStr ? Math.round(pcData.strength / 2) : 0;
 		let updatedPcData = deepCopy(pcData);
 		let updatedCreatureData = deepCopy(targetData);
@@ -120,40 +121,67 @@ class Character extends React.Component {
 		const noGunKnowledgeMod =
 			(!pcData.skills.handgunKnowledge && equippedGunType === 'handgun') ||
 			(!pcData.skills.shotgunKnowledge && equippedGunType === 'shotgun') ||
-			(!pcData.skills.machineGunKnowledge && equippedGunType === 'machineGun') ? this.noGunKnowledgePenalty : 1;
-		const hitRoll = diceRoll(this.hitDie);
-		const damageRoll = diceRoll(this.damageDie);
-		const defenseRoll = diceRoll(this.defenseDie);
+			(!pcData.skills.machineGunKnowledge && equippedGunType === 'machineGun') ? this.noGunKnowledgePenalty : 0;
+		const goingBallistic = itemStats.goingBallistic;
 
 		if (itemStats.ranged) {
-			const sureShotSkill = pcData.skills.sureShot;
-			const sureShotBonus = sureShotSkill && equippedGunType ? sureShotSkill.modifier[sureShotSkill.level] : 0;
-			const steadyHandSkill = pcData.skills.steadyHand;
-			const steadyHandBonus = steadyHandSkill && equippedGunType === 'handgun' ? steadyHandSkill.modifier[steadyHandSkill.level] : 0;
-			attackTotal = Math.round(noGunKnowledgeMod * (pcData.agility + steadyHandBonus + sureShotBonus + rangedStrHitModifier + hitRoll));
-			damageTotal = rangedStrHitModifier + itemStats.damage + damageRoll - targetData.damageReduction;
-			weaponInfo.currentRounds--;
-			if (weaponInfo.currentRounds === 0 && weaponInfo.stackable) {
-				delete updatedPcData.weapons[itemId];
-				updatedPcData.equippedItems.loadout1[equippedSide] = '';
+			let numOfAttacks = goingBallistic ? weaponInfo.currentRounds : 1;
+			if (goingBallistic) {
+				updateLog(`${pcData.name} goes ballistic!`);
+				updatedPcData.currentSpirit -= goingBallistic.spirit[goingBallistic.level];
 			}
+			for (let attackNum = 1; attackNum <= numOfAttacks; attackNum++) {
+				hitRoll = diceRoll(this.hitDie);
+				defenseRoll = diceRoll(this.defenseDie);
+				defenseTotal = targetData.defense + defenseRoll;
+				const sureShotSkill = pcData.skills.sureShot;
+				const sureShotModifier = sureShotSkill && equippedGunType ? sureShotSkill.modifier[sureShotSkill.level] : 0;
+				const steadyHandSkill = pcData.skills.steadyHand;
+				const steadyHandModifier = steadyHandSkill && equippedGunType === 'handgun' ? steadyHandSkill.modifier[steadyHandSkill.level] : 0;
+				const goingBallisticModifier = goingBallistic ? goingBallistic.modifier[goingBallistic.level] : 0;
+				let damage = 0;
+				attackTotal = hitRoll + pcData.agility + steadyHandModifier + sureShotModifier + rangedStrHitModifier;
+				// noGunKnowledgeMod and goingBallisticModifier are negative (or 0)
+				attackTotal += Math.round(noGunKnowledgeMod * attackTotal) + Math.round(goingBallisticModifier * attackTotal);
+				isHit = attackTotal >= defenseTotal;
+				if (isHit) {
+					const attackDifference = attackTotal - defenseTotal;
+					const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 2);
+					damage = rangedStrHitModifier + itemStats.damage + damageModBasedOnAttack;
+					damage -= targetData.damageReduction <= damage ? targetData.damageReduction : damage;
+					damageTotal += damage;
+				}
+				weaponInfo.currentRounds--;
+				if (weaponInfo.currentRounds === 0 && weaponInfo.stackable) {
+					delete updatedPcData.weapons[itemId];
+					updatedPcData.equippedItems.loadout1[equippedSide] = '';
+				}
+				updateLog(`${pcData.name} attacks with the ${weaponInfo.name}, scores ${attackTotal} to hit...and ${isHit ? `does ${damage} damage!` : `misses (${targetData.name} scored ${defenseTotal} for defense).`}`);
+			}
+
 		} else {
-			attackTotal = pcData.strength + Math.round(pcData.agility / 2) + hitRoll;
-			damageTotal = pcData.strength + itemStats.damage + damageRoll - targetData.damageReduction;
-		}
-		damageTotal = damageTotal < 0 ? 0 : damageTotal;
-		defenseTotal = targetData.defense + defenseRoll;
-		isHit = attackTotal >= defenseTotal;
-		updateLog(`${pcData.name} attacks with a ${weaponInfo.name} and rolls ${attackTotal} to hit...`);
-		updateCharacter('player', updatedPcData, pcData.id, false, false, false, () => {
+			hitRoll = diceRoll(this.hitDie);
+			defenseRoll = diceRoll(this.defenseDie);
+			defenseTotal = targetData.defense + defenseRoll;
+			attackTotal = pcData.strength + Math.floor(pcData.agility / 2) + hitRoll;
+			isHit = attackTotal >= defenseTotal;
 			if (isHit) {
+				const attackDifference = attackTotal - defenseTotal;
+				const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 2);
+				damageTotal = pcData.strength + itemStats.damage + damageModBasedOnAttack;
+				damageTotal -= targetData.damageReduction <= damageTotal ? targetData.damageReduction : damageTotal;
+			}
+			updateLog(`${pcData.name} attacks with the ${weaponInfo.name}, scores ${attackTotal} to hit...and ${isHit ? `does ${damageTotal} damage!` : `misses (${targetData.name} scored ${defenseTotal} for defense).`}`);
+		}
+
+		updateCharacter('player', updatedPcData, pcData.id, false, false, false, () => {
+			if (damageTotal > 0) {
 				updatedCreatureData.currentHealth -= damageTotal;
 				updateCharacter('creature', updatedCreatureData, targetData.id, false, false, false, callback);
 			} else if (callback) {
 				callback();
 			}
 		});
-		updateLog(isHit ? `${pcData.name} hits for ${damageTotal} damage!` : pcData.name + ' misses.');
 	}
 
 	/**

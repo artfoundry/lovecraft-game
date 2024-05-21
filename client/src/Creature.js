@@ -5,7 +5,6 @@ class Creature extends React.Component {
 	constructor(props) {
 		super(props);
 		this.hitDie = 10;
-		this.damageDie = 6;
 		this.defenseDie = 4;
 
 		this.id = props.creatureId;
@@ -35,27 +34,32 @@ class Creature extends React.Component {
 		let isHit, damageTotal = 0, hitTotal = 0, defenseTotal = 0;
 		let halfStr = Math.round(this.strength / 2);
 		let halfAgility = Math.round(this.agility / 2);
-		let logAttackMessage = `A ${this.name} lashes at ${targetData.name}...`;
+		let logAttackMessage = `A ${this.name} lashes at ${targetData.name} with something disgusting...`;
 		let logDamageMessage = `The ${this.name} misses.`;
 		const hitRoll = diceRoll(this.hitDie);
-		const damageRoll = diceRoll(this.damageDie);
 		const defenseRoll = diceRoll(this.defenseDie);
 
 		if (this.attackType === 'ranged') {
 			hitTotal = this.agility + halfStr + hitRoll;
 			defenseTotal = targetData.defense + defenseRoll;
-			damageTotal = halfStr + this.damage + damageRoll - targetData.damageReduction;
-			logAttackMessage = `A ${this.name} reaches out toward ${targetData.name} with something disgusting...`;
+			const attackDifference = hitTotal - defenseTotal;
+			const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 2);
+			damageTotal = halfStr + this.damage + damageModBasedOnAttack - targetData.damageReduction;
+			logAttackMessage = `A ${this.name} launches something at ${targetData.name}...`;
 		} else if (this.attackType === 'melee') {
 			hitTotal = this.strength + halfAgility + hitRoll;
 			defenseTotal = targetData.defense + defenseRoll;
-			damageTotal = this.strength + this.damage + damageRoll - targetData.damageReduction;
+			const attackDifference = hitTotal - defenseTotal;
+			const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 2);
+			damageTotal = this.strength + this.damage + damageModBasedOnAttack - targetData.damageReduction;
 		} else if (this.attackType === 'psychic') {
 			// sanityBuff modifier from comfortTheFearful is negative
 			const damageAdjustment = targetData.statuses.sanityBuff ? targetData.statuses.sanityBuff.modifier : 0;
 			hitTotal = this.mentalAcuity + hitRoll;
 			defenseTotal = targetData.mentalAcuity + defenseRoll;
-			damageTotal = this.mentalAcuity + damageRoll + damageAdjustment;
+			const attackDifference = hitTotal - defenseTotal;
+			const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 2);
+			damageTotal = this.mentalAcuity + damageModBasedOnAttack + damageAdjustment;
 			logAttackMessage = `A ${this.name} psychically attacks ${targetData.name}...`;
 			logDamageMessage = `The ${this.name} fails to penetrate ${targetData.name}'s mind.`;
 		}
