@@ -77,7 +77,8 @@ function CharacterControls(props) {
 				requiresEquippedMeleeWeapon: skillInfo.requiresEquippedMeleeWeapon,
 				requiresBothActions: skillInfo.requiresBothActions,
 				spirit: skillInfo.spirit,
-				level: skillInfo.level
+				level: skillInfo.level,
+				active: skillInfo.active
 			});
 		}
 	}
@@ -165,6 +166,7 @@ function CharacterControls(props) {
 					(skill.name === 'Quick Reload' && !hasAmmoForReloadSkill) ||
 					(skill.name === 'Go Ballistic' && !gunIsLoaded) ||
 					(skill.mustBeOutOfDanger && props.threatList.length > 0) ||
+					skill.active ||
 					(skill.requiresBothActions && props.actionsRemaining < 2)) ? 'button-inactive' :
 					(props.isActiveCharacter &&
 					props.actionButtonSelected &&

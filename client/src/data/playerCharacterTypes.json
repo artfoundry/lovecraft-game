@@ -193,7 +193,7 @@
     "startingHealth": 120,
     "startingSanity": 60,
     "startingSpirit": 90,
-    "skills": ["sureShot", "goBallistic", "moveIt", "handgunKnowledge", "shotgunKnowledge", "machineGunKnowledge"],
+    "skills": ["feelThePain", "goBallistic", "moveIt", "handgunKnowledge", "shotgunKnowledge", "machineGunKnowledge"],
     "weapons": {
       "remington0": {
         "id": "remington0",

@@ -933,7 +933,7 @@ class Map extends React.Component {
 			let pcCounter = 0;
 			while (!otherCharisOnTopOfPc && pcCounter < pcData.length) {
 				if (characterPos === convertCoordsToPos(pcData[pcCounter].coords) &&
-					characters[id].currentHealth > 0 &&
+					characters[id].currentHealth > 0 && characters[id].currentSanity > 0 &&
 					(pcData[pcCounter].currentHealth <= 0 || pcData[pcCounter].currentSanity <= 0))
 				{
 					otherCharisOnTopOfPc = true;
@@ -981,6 +981,7 @@ class Map extends React.Component {
 					isSelected={characters[id].isSelected}
 					isDying={isDyingPc}
 					isDead={characters[id].currentHealth <= 0 && !isDyingPc}
+					isCatatonic={characters[id].currentSanity <= 0 && characters[id].currentHealth > 0}
 					isInRange={actionButtonIsSelected && targetIsInRange}
 					isLineOfSight={this.isInLineOfSight}
 					isOtherCharOnTop={otherCharisOnTopOfPc}

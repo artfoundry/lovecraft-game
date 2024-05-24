@@ -219,6 +219,9 @@ class Game extends React.Component {
 	updateCharacters = (type, updateData, id, lightingHasChanged, isInitialCreatureSetup = false, isInitialCharacterSetup = false, callback) => {
 		const collection = type === 'player' ? 'playerCharacters' : 'mapCreatures';
 		if (id) {
+			if (updateData.currentSanity <= 0) {
+				updateData.isDeadOrInsane = true;
+			}
 			this.setState(prevState => ({
 				[collection]: {
 					...prevState[collection],
@@ -232,9 +235,9 @@ class Game extends React.Component {
 				}
 				if (lightingHasChanged) {
 					this.toggleLightingHasChanged(callback);
-				} else if (callback) {
-					callback();
-				}
+				} else if (updateData.isDeadOrInsane) {
+					this._removeDeadPCFromGame(id, callback);
+				} else if (callback) callback();
 			});
 		} else {
 			this.setState({[collection]: updateData}, () => {
@@ -1184,9 +1187,14 @@ class Game extends React.Component {
 	}
 
 	_removeDeadPCFromGame(id, callback) {
-		if (this.state.playerCharacters[id]) {
-			this.updateLog(`${this.state.playerCharacters[id].name} has gone from mostly dead to all dead!`);
-			//check for this.state.createdCharData is so game doesn't crash when char creation is turned off
+		const deadPc = this.state.playerCharacters[id];
+		if (deadPc) {
+			if (deadPc.currentHealth <= 0) {
+				this.updateLog(`${deadPc.name} has gone from mostly dead to all dead!`);
+			} else if (deadPc.currentSanity <= 0) {
+				this.updateLog(`The horrors are too much for ${deadPc.name}, and ${deadPc.gender === 'Male' ? 'he' : 'she'} has gone insane and become catatonic!`);
+			}
+			//check for this.state.createdCharData is done so game doesn't crash when char creation is turned off
 			if (this.state.createdCharData && id === this.state.createdCharData.id) {
 				this._endGame();
 			} else {

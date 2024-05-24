@@ -6,7 +6,7 @@ function Character(props) {
 	const isHiddenClass = props.isHidden ? ' hidden' : '';
 	const isSelectedClass = !props.isHidden && props.isSelected ? ' selected' : '';
 	const isDeadClass = !props.isHidden && props.isDead ? ` ${props.idClassName}-dead dead` : '';
-	const isDyingClass = !props.isHidden && props.isDying ? ` ${props.idClassName}-dead` : '';
+	const isDyingOrCatatonicClass = !props.isHidden && (props.isDying || props.isCatatonic) ? ` ${props.idClassName}-dead` : '';
 	const isInRangeClass = !props.isHidden && props.isInRange ? ' in-range' : '';
 	const isOnTopClass = props.isOtherCharOnTop ? ' character-on-top' : '';
 	return (
@@ -14,7 +14,7 @@ function Character(props) {
 		     ref={props.charRef}
 			 alt={props.classes}
 		     draggable={false}
-		     className={props.characterType + ' ' + props.idClassName + isHiddenClass + isSelectedClass + isDyingClass + isDeadClass + isInRangeClass + isOnTopClass}
+		     className={props.characterType + ' ' + props.idClassName + isHiddenClass + isSelectedClass + isDyingOrCatatonicClass + isDeadClass + isInRangeClass + isOnTopClass}
 		     style={props.styles}
 		     data-location={props.charPos}
 			 onClick={(evt) => {

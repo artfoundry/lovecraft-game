@@ -1124,6 +1124,10 @@ select {
 	background-image: url('../assets/ui/spiritual-inspiration_sml.png');
 }
 
+.feel-the-pain-action {
+	background-image: url('../assets/ui/feel-the-pain_sml.png');
+}
+
 .go-ballistic-action {
 	background-image: url('../assets/ui/go-ballistic_sml.png');
 }

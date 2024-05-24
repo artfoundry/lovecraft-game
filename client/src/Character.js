@@ -509,6 +509,29 @@ class Character extends React.Component {
 			updateActivePlayerActions(true);
 		});
 	}
+
+	/**
+	 * Skill (Veteran): for 1 psychic attack, divert sanity damage to 2x health
+	 * Called from toggleActionButton in App
+	 * @param props: object {
+	 *     currentPcData: object,
+	 *     updateCharacter: function (App),
+	 *     updateLog: function (App),
+	 *     updateActivePlayerActions: function (App)
+	 * }
+	 */
+	feelThePain = (props) => {
+		const {currentPcData, updateCharacter, updateLog, updateActivePlayerActions} = props;
+		let updatedPcData = deepCopy(currentPcData);
+		const feelThePainSkill = updatedPcData.skills.feelThePain;
+
+		feelThePainSkill.active = true;
+		updatedPcData.currentSpirit -= feelThePainSkill.spirit[feelThePainSkill.level];
+		updateCharacter('player', updatedPcData, 'veteran', false, false, false, () => {
+			updateLog(`${updatedPcData.name} prepares for a psychic attack...`);
+			updateActivePlayerActions();
+		});
+	}
 }
 
 export default Character;

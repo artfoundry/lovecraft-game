@@ -75,9 +75,16 @@ class Creature extends React.Component {
 		updateLog(logDamageMessage);
 
 		if (isHit) {
-			if (this.attackType === 'psychic') {
-				targetData.currentSanity -= damageTotal;
+			const feelThePainSkill = targetData.skills.feelThePain;
+			if (this.attackType === 'psychic' && (!feelThePainSkill || (feelThePainSkill && !feelThePainSkill.active))) {
+				const resultingSanity = targetData.currentSanity - damageTotal;
+				targetData.currentSanity = resultingSanity < 0 ? 0 : resultingSanity;
 			} else {
+				if (this.attackType === 'psychic' && feelThePainSkill && feelThePainSkill.active) {
+					damageTotal += damageTotal;
+					feelThePainSkill.active = false;
+					updateLog(`${targetData.name} endures the psychic attack, feeling the pain physically`);
+				}
 				const resultingHealth = targetData.currentHealth - damageTotal;
 				targetData.currentHealth = resultingHealth < 0 ? 0 : resultingHealth;
 				if (targetData.currentHealth === 0) {

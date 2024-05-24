@@ -94,6 +94,13 @@
     "profession": ["general", "veteran"],
     "description": "Knowledge of how to use machine guns, thus removing 50% penalty to hit targets"
   },
+  "sureShot": {
+    "name": "Sure Shot",
+    "skillType": "passive",
+    "profession": ["general"],
+    "description": "Improved accuracy with all guns (bonus to Agility when shooting with any gun)",
+    "modifier": [1, 2, 3, 4, 5]
+  },
   "quickReload": {
     "name": "Quick Reload",
     "skillType": "active",
@@ -186,12 +193,12 @@
     "modifier": [10, 20, 30, 40, 50],
     "requiresBothActions": true
   },
-  "sureShot": {
-    "name": "Sure Shot",
-    "skillType": "passive",
+  "feelThePain": {
+    "name": "Feel The Pain",
+    "skillType": "active",
     "profession": ["veteran"],
-    "description": "Improved accuracy with all guns (bonus to Agility when shooting with any gun)",
-    "modifier": [1, 2, 3, 4, 5]
+    "description": "For the next Psychic attack that reduces Sanity, Sanity reduction is converted to 2x Health damage, ignoring any health damage reductions",
+    "spirit": [40, 35, 30, 25, 20]
   },
   "goBallistic": {
     "name": "Go Ballistic",
@@ -205,14 +212,13 @@
     "spirit": [80, 75, 70, 65, 60]
   },
   "moveIt": {
-    "name": "Move it!",
-    "skillType": "active",
+    "name": "Move It!",
+    "skillType": "passive",
     "profession": ["veteran"],
-    "description": "Increased movement for one turn",
+    "description": "Permanent increase to movement",
     "hasTarget": false,
     "mustBeOutOfDanger": false,
-    "modifier": [1, 2, 3],
-    "spirit": [40, 30, 20]
+    "modifier": [1, 2, 3]
   },
   "flank": {
     "name": "Flank",
