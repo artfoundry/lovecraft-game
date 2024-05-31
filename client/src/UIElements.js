@@ -173,9 +173,6 @@ function CharacterControls(props) {
 					props.actionButtonSelected.characterId === props.characterId &&
 					props.actionButtonSelected.itemId === skill.skillId && skill.hasTarget) ? 'button-selected': '';
 				let skillClass = `${convertObjIdToClassId(skill.skillId)}-action`;
-				if (skill.skillType === 'create') {
-					skillClass = 'create-' + skillClass;
-				}
 				actionButtonCount++;
 				button = (
 					<div key={skill.skillId} className={`action-button ${shouldActionButtonShow() ? '' : 'hide'} ${skillClass} ${actionButtonState}`} onClick={() => {
@@ -306,7 +303,9 @@ function CharacterControls(props) {
 }
 
 function CharacterInfoPanel(props) {
-	const skillList = Object.values(props.characterInfo.skills).map(skill => {
+	const skillList = Object.entries(props.characterInfo.skills).map(skillInfo => {
+		const skillId = skillInfo[0];
+		const skill = skillInfo[1];
 		const compList = skill.cost ? Object.entries(skill.cost).map(cost => {
 			const compKey = cost[0];
 			let compVal = cost[1];
@@ -321,18 +320,23 @@ function CharacterInfoPanel(props) {
 		const modifier = skillModValue && ((skillModValue < 1) && (skillModValue > -1) && (skillModValue - Math.floor(skillModValue)) !== 0) ? skillModValue * 100 + '%' : skillModValue;
 		return (
 			<div key={skill.name + Math.random()} className='char-info-skills-skill-container'>
-				<div className='char-info-skill-name'>{skill.name}</div>
-				<div>{skill.description}</div>
-				<div>Skill level: {skill.level +1}</div>
-				{skill.modifier ? <div>Modifier: {modifier}</div> : null}
-				{skill.mustBeOutOfDanger ? <div>Can't be used during combat</div> : null}
-				{skill.cost && skill.name !== 'Sacrificial Strike' ? <div>Required components: {compList}</div> : null}
-				{skill.cost && skill.name === 'Sacrificial Strike' ? <div>Cost: {compList}</div> : null}
-				{skill.light ? <div>Required time (light): {skill.light[skill.level]}</div> : null}
-				{skill.spirit ? <div>Required Spirit: {skill.spirit[skill.level]}</div> : null}
-				{skill.requiresEquippedGunType ? <div>Requires equipped {skill.requiresEquippedGunType}</div> : null}
-				{skill.requiresEquippedMeleeWeapon ? <div>Requires equipped melee weapon</div> : null}
-				{skill.requiredEquippedItem ? <div>Requires equipped {skill.requiredEquippedItem}</div> : null}
+				<div className='char-info-skill-icon-column'>
+					<div className={`char-info-skill-icon skill-icon-${convertObjIdToClassId(skillId)}`}></div>
+				</div>
+				<div>
+					<div className='char-info-skill-name'>{skill.name}</div>
+					<div>{skill.description}</div>
+					<div>Skill level: {skill.level +1}</div>
+					{skill.modifier ? <div>Modifier: {modifier}</div> : null}
+					{skill.mustBeOutOfDanger ? <div>Can't be used during combat</div> : null}
+					{skill.cost && skill.name !== 'Sacrificial Strike' ? <div>Required components: {compList}</div> : null}
+					{skill.cost && skill.name === 'Sacrificial Strike' ? <div>Cost: {compList}</div> : null}
+					{skill.light ? <div>Required time (light): {skill.light[skill.level]}</div> : null}
+					{skill.spirit ? <div>Required Spirit: {skill.spirit[skill.level]}</div> : null}
+					{skill.requiresEquippedGunType ? <div>Requires equipped {skill.requiresEquippedGunType}</div> : null}
+					{skill.requiresEquippedMeleeWeapon ? <div>Requires equipped melee weapon</div> : null}
+					{skill.requiredEquippedItem ? <div>Requires equipped {skill.requiredEquippedItem}</div> : null}
+				</div>
 			</div>
 		);
 	});
@@ -617,52 +621,54 @@ function ObjectInfoPanel(props) {
 			}
 			{objectToShow &&
 			<div className='object-panel-container'>
-				<div className={`inv-object ${convertObjIdToClassId(objectToShow.id)}-inv`}></div>
-				<div className='object-text-container'>
-					<div className='font-fancy'>{objectToShow.name}</div>
-					<div>{objectToShow.itemType ? objectToShow.itemType : (objectToShow.ranged ? 'Ranged' : 'Melee') + ' weapon'}</div>
-					{objectToShow.rounds && <div>Capacity: {objectToShow.rounds} rounds</div>}
-					{objectToShow.amount && <div>Amount: {objectToShow.amount}</div>}
-					{objectToShow.currentRounds !== null && objectToShow.currentRounds >= 0 && <div>Rounds remaining: {objectToShow.currentRounds}</div>}
-					{objectToShow.twoHanded && <div>Two-handed</div>}
-					{objectToShow.damage && <div>Base damage: {objectToShow.damage}</div>}
-					{objectToShow.time && <div>Light remaining: {objectToShow.time} steps</div>}
-					<div>{objectToShow.description}</div>
-				</div>
-				<div className='object-panel-buttons-container'>
-					{isDraggedObject && objectToShow.stackable &&
-						<form className='object-row-with-buttons' onSubmit={(evt) => splitStack(evt)}>
-							<label htmlFor='object-split'>{objHasBeenDropped ? 'Drop' : 'Trade'} how many?</label>
-							<input type='number' id='object-split' name='object-split' size='3' defaultValue='1' min='1' max={objectToShow.amount || objectToShow.currentRounds} />
-							<button className='general-button' type='submit'>{objHasBeenDropped ? 'Drop' : 'Trade'}</button>
-						</form>
-					}
-					{isMapObj &&
-						<span className='general-button' onClick={() => updateObjToShow(null)}>Back</span>
-					}
-					{/* MAY ADD THESE BUTTONS FOR MOVING ITEMS (INSTEAD OF DRAG AND DROP) IN LATER IF NEEDED */}
+				<div className='object-panel-contents'>
+					<div className={`inv-object ${convertObjIdToClassId(objectToShow.id)}-inv`}></div>
+					<div className='object-text-container'>
+						<div className='font-fancy'>{objectToShow.name}</div>
+						<div>{objectToShow.itemType ? objectToShow.itemType : (objectToShow.ranged ? 'Ranged' : 'Melee') + ' weapon'}</div>
+						{objectToShow.rounds && <div>Capacity: {objectToShow.rounds} rounds</div>}
+						{objectToShow.amount && <div>Amount: {objectToShow.amount}</div>}
+						{objectToShow.currentRounds !== null && objectToShow.currentRounds >= 0 && <div>Rounds remaining: {objectToShow.currentRounds}</div>}
+						{objectToShow.twoHanded && <div>Two-handed</div>}
+						{objectToShow.damage && <div>Base damage: {objectToShow.damage}</div>}
+						{objectToShow.time && <div>Light remaining: {objectToShow.time} steps</div>}
+						<div>{objectToShow.description}</div>
+					</div>
+					<div className='object-panel-buttons-container'>
+						{isDraggedObject && objectToShow.stackable &&
+							<form className='object-row-with-buttons' onSubmit={(evt) => splitStack(evt)}>
+								<label htmlFor='object-split'>{objHasBeenDropped ? 'Drop' : 'Trade'} how many?</label>
+								<input type='number' id='object-split' name='object-split' size='3' defaultValue='1' min='1' max={objectToShow.amount || objectToShow.currentRounds} />
+								<button className='general-button' type='submit'>{objHasBeenDropped ? 'Drop' : 'Trade'}</button>
+							</form>
+						}
+						{isMapObj &&
+							<span className='general-button' onClick={() => updateObjToShow(null)}>Back</span>
+						}
+						{/* MAY ADD THESE BUTTONS FOR MOVING ITEMS (INSTEAD OF DRAG AND DROP) IN LATER IF NEEDED */}
 
-					{/*{!isMapObj && !isDraggedObject &&*/}
-					{/*	<div className='object-panel-buttons'>*/}
-					{/*		<span className='general-button' onClick={() => dropItemToEquipped(null)}>Equip Right</span>*/}
-					{/*		<span className='general-button' onClick={() => dropItemToEquipped(null)}>Equip Left</span>*/}
-					{/*		<span className='general-button' onClick={() => dropItemToInv(null)}>Unequip</span>*/}
-					{/*		<span className='general-button' onClick={() => {*/}
-					{/*			if (objectToShow.stackable) {*/}
-					{/*				setObjectPanelDisplayOption(true, null, null);*/}
-					{/*			} else {*/}
-					{/*				// don't need to pass in dropped and source counts, as it's not a stackable object*/}
-					{/*				addObjectToMap();*/}
-					{/*			}*/}
-					{/*		}}>Drop</span>*/}
-					{/*		<span className='general-button' onClick={() => {*/}
-					{/*			let recipientId = '';*/}
+						{/*{!isMapObj && !isDraggedObject &&*/}
+						{/*	<div className='object-panel-buttons'>*/}
+						{/*		<span className='general-button' onClick={() => dropItemToEquipped(null)}>Equip Right</span>*/}
+						{/*		<span className='general-button' onClick={() => dropItemToEquipped(null)}>Equip Left</span>*/}
+						{/*		<span className='general-button' onClick={() => dropItemToInv(null)}>Unequip</span>*/}
+						{/*		<span className='general-button' onClick={() => {*/}
+						{/*			if (objectToShow.stackable) {*/}
+						{/*				setObjectPanelDisplayOption(true, null, null);*/}
+						{/*			} else {*/}
+						{/*				// don't need to pass in dropped and source counts, as it's not a stackable object*/}
+						{/*				addObjectToMap();*/}
+						{/*			}*/}
+						{/*		}}>Drop</span>*/}
+						{/*		<span className='general-button' onClick={() => {*/}
+						{/*			let recipientId = '';*/}
 
-					{/*			dropItemToPC(null, recipientId);*/}
-					{/*		}}>Trade</span>*/}
-					{/*	</div>*/}
-					{/*}*/}
-					<span className='general-button' onClick={() => cancelObjPanel()}>Cancel</span>
+						{/*			dropItemToPC(null, recipientId);*/}
+						{/*		}}>Trade</span>*/}
+						{/*	</div>*/}
+						{/*}*/}
+						<span className='general-button' onClick={() => cancelObjPanel()}>Close</span>
+					</div>
 				</div>
 			</div>
 			}
@@ -692,7 +698,7 @@ function SkillInfoPanel(props) {
 						{/*Need to show cost/bonus*/}
 					</div>
 					<div className='skill-panel-buttons-container'>
-						<span className='general-button' onClick={() => cancelSkillPanel()}>Cancel</span>
+						<span className='general-button' onClick={() => cancelSkillPanel()}>Close</span>
 					</div>
 				</div>
 			}

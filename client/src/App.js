@@ -440,8 +440,9 @@ class Game extends React.Component {
 		}
 		if (isImmediateAction) {
 			// skillType will either be 'create' or 'active' (except heal and resuscitate skills are called from handleUnitClick)
+			const createSkillId = itemId.substring(6); // removes 'create' from skill name
 			const props = stats.skillType === 'create' ? {
-				itemType: itemId,
+				itemType: createSkillId,
 				activeCharId: characterId,
 				currentPcData: this.state.playerCharacters[characterId],
 				updateCharacter: this.updateCharacters,

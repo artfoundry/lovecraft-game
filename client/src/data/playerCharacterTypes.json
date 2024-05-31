@@ -48,7 +48,7 @@
     "startingHealth": 80,
     "startingSanity": 100,
     "startingSpirit": 90,
-    "skills": ["alwaysOnTheLookout", "dig", "torch"],
+    "skills": ["alwaysOnTheLookout", "dig", "createTorch"],
     "weapons": {
       "pickaxe0": {
         "id": "pickaxe0",
@@ -78,7 +78,7 @@
     "startingHealth": 60,
     "startingSanity": 80,
     "startingSpirit": 70,
-    "skills": ["acidConcoction", "pharmaceuticals", "betterLivingThroughChemicals"],
+    "skills": ["createAcidConcoction", "createPharmaceuticals", "betterLivingThroughChemicals"],
     "weapons": {
       "acidConcoction0": {
         "id": "acidConcoction0",
@@ -115,7 +115,7 @@
     "startingHealth": 110,
     "startingSanity": 100,
     "startingSpirit": 105,
-    "skills": ["firstAidKit", "medicalExpertise", "resuscitate"],
+    "skills": ["createFirstAidKit", "medicalExpertise", "resuscitate"],
     "weapons": {},
     "equippedItems": {"right": "", "left": "lantern0", "armor": ""},
     "items": {
@@ -152,7 +152,7 @@
     "startingHealth": 100,
     "startingSanity": 110,
     "startingSpirit": 105,
-    "skills": ["holyWater", "comfortTheFearful", "spiritualInspiration"],
+    "skills": ["createHolyWater", "comfortTheFearful", "spiritualInspiration"],
     "weapons": {
       "holyWater0": {
         "id": "holyWater0",

@@ -134,8 +134,9 @@ h2 {
 	filter: drop-shadow(4px 4px 2px black);
 }
 
-.char-creation-items-container {
+.char-creation-items-container, .char-creation-skills-container {
 	display: flex;
+	flex-wrap: wrap;
 	justify-content: center;
 	gap: 5px;
 }

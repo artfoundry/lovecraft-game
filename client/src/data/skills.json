@@ -1,5 +1,5 @@
 {
-  "firstAidKit": {
+  "createFirstAidKit": {
     "name": "Create First Aid Kit",
     "itemCategory": "items",
     "skillType": "create",
@@ -12,7 +12,7 @@
     },
     "light": [30]
   },
-  "molotovCocktail": {
+  "createMolotovCocktail": {
     "name": "Create Molotov Cocktail",
     "itemCategory": "weapons",
     "skillType": "create",
@@ -25,7 +25,7 @@
     },
     "light": [30]
   },
-  "torch": {
+  "createTorch": {
     "name": "Create Torch",
     "itemCategory": "items",
     "skillType": "create",
@@ -39,7 +39,7 @@
     },
     "light": [30]
   },
-  "acidConcoction": {
+  "createAcidConcoction": {
     "name": "Create Acid Concoction",
     "itemCategory": "weapons",
     "skillType": "create",
@@ -51,7 +51,7 @@
     },
     "light": [30]
   },
-  "pharmaceuticals": {
+  "createPharmaceuticals": {
     "name": "Create Pharmaceuticals",
     "itemCategory": "items",
     "skillType": "create",
@@ -64,7 +64,7 @@
     },
     "light": [30]
   },
-  "holyWater": {
+  "createHolyWater": {
     "name": "Create Holy Water",
     "itemCategory": "weapons",
     "skillType": "create",
@@ -176,7 +176,7 @@
     "name": "Comfort The Fearful",
     "skillType": "active",
     "profession": ["priest"],
-    "description": "Comfort the party with calming words and presence to provide sanity damage reduction to the party for a number of turns while in Tactical Mode",
+    "description": "Comfort the party with calming words and presence to reduce Sanity damage to the party for a number of turns while in Tactical Mode",
     "hasTarget": false,
     "mustBeOutOfDanger": false,
     "modifier": [-2, -4, -6, -8, -10],

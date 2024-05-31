@@ -448,6 +448,7 @@ h3 {
 }
 
 .char-info-skills-skill-container {
+	display: flex;
 	padding-bottom: 20px;
 }
 
@@ -459,6 +460,139 @@ h3 {
 .char-info-skill-component-list-item {
 	list-style: none inside;
 	margin-left: 10px;
+}
+
+.char-info-skill-icon-column {
+	padding: 0 5px;
+}
+
+.char-info-skill-icon {
+	width: 64px;
+	height: 64px;
+	border: 1px solid seagreen;
+	border-radius: 5px;
+	background-position: center;
+	background-repeat: no-repeat;
+}
+
+.skill-icon-create-first-aid-kit {
+	background-image: url('../assets/ui/create-first-aid-kit.png');
+}
+
+.skill-icon-create-molotov-cocktail {
+	background-image: url('../assets/ui/create-molotov-cocktail.png');
+}
+
+.skill-icon-create-torch {
+	background-image: url('../assets/ui/create-torch.png');
+}
+
+.skill-icon-create-acid-concoction {
+	background-image: url('../assets/ui/create-acid-concoction.png');
+}
+
+.skill-icon-create-pharmaceuticals {
+	background-image: url('../assets/ui/create-pharmaceuticals.png');
+}
+
+.skill-icon-create-holy-water {
+	background-image: url('../assets/ui/create-holy-water.png');
+}
+
+.skill-icon-handgun-knowledge {
+	background-image: url('../assets/ui/handgun-knowledge.png');
+}
+
+.skill-icon-shotgun-knowledge {
+	background-image: url('../assets/ui/shotgun-knowledge.png');
+}
+
+.skill-icon-machine-gun-knowledge {
+	background-image: url('../assets/ui/machine-gun-knowledge.png');
+}
+
+.skill-icon-sure-shot {
+	background-image: url('../assets/ui/sure-shot.png');
+}
+
+.skill-icon-quick-reload {
+	background-image: url('../assets/ui/quick-reload.png');
+}
+
+.skill-icon-keen-investigation {
+	background-image: url('../assets/ui/keen-investigation.png');
+}
+
+.skill-icon-steady-hand {
+	background-image: url('../assets/ui/steady-hand.png');
+}
+
+.skill-icon-always-on-the-lookout {
+	background-image: url('../assets/ui/always-on-the-lookout.png');
+}
+
+.skill-icon-dig {
+	background-image: url('../assets/ui/dig.png');
+}
+
+.skill-icon-better-living-through-chemicals {
+	background-image: url('../assets/ui/better-living-through-chemicals.png');
+}
+
+.skill-icon-resuscitate {
+	background-image: url('../assets/ui/resuscitate.png');
+}
+
+.skill-icon-medical-expertise {
+	background-image: url('../assets/ui/medical-expertise.png');
+}
+
+.skill-icon-comfort-the-fearful {
+	background-image: url('../assets/ui/comfort-the-fearful.png');
+}
+
+.skill-icon-spiritual-inspiration {
+	background-image: url('../assets/ui/spiritual-inspiration.png');
+}
+
+.skill-icon-feel-the-pain {
+	background-image: url('../assets/ui/feel-the-pain.png');
+}
+
+.skill-icon-go-ballistic {
+	background-image: url('../assets/ui/go-ballistic.png');
+}
+
+.skill-icon-move-it {
+	background-image: url('../assets/ui/move-it.png');
+}
+
+.skill-icon-flank {
+	background-image: url('../assets/ui/flank.png');
+}
+
+.skill-icon-stealthy {
+	background-image: url('../assets/ui/stealthy.png');
+}
+
+.skill-icon-disarm-trap {
+	background-image: url('../assets/ui/disarm-trap.png');
+}
+
+.skill-icon-identify-relic {
+	background-image: url('../assets/ui/identify-relic.png');
+}
+
+.skill-icon-sacrificial-strike {
+	background-image: url('../assets/ui/sacrificial-strike.png');
+}
+
+.skill-icon-relic-mastery {
+	background-image: url('../assets/ui/relic-mastery.png');
+}
+
+.skill-icon-kris-knife-expertise {
+	background-image: url('../assets/ui/kris-knife-expertise.png');
 }
 
 .creature-info-container {
@@ -825,17 +959,17 @@ select {
 	overflow: auto;
 }
 
-.object-panel-container {
+.object-panel-container, .skill-panel-container {
+	display: flex;
+	flex-direction: column;
+	min-width: 300px;
+}
+
+.object-panel-contents {
 	display: flex;
 	justify-content: space-around;
 	margin-bottom: 20px;
 	flex-wrap: wrap;
-}
-
-.skill-panel-container {
-	display: flex;
-	flex-direction: column;
-	min-width: 300px;
 }
 
 .object-text-container {
@@ -1421,7 +1555,7 @@ select {
 		border-bottom: 1px solid seagreen;
 	}
 
-	.object-info-panel {
+	.object-info-panel, .skill-info-panel {
 		width: 100%;
 		left: 5%;
 	}
@@ -1499,7 +1633,7 @@ select {
 		border-left: 2px solid seagreen;
 	}
 
-	.object-info-panel {
+	.object-info-panel, .skill-info-panel {
 		max-height: 250px;
 	}
 

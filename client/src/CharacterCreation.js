@@ -128,7 +128,7 @@ export default class CharacterCreation extends React.Component {
 
 	showSkillPanel = () => {
 		const top = `calc(50% - ${this.props.objectPanelHeight / 2}px)`;
-		const left = `calc(50% - ${this.props.objectPanelWidth / 2}px)`;
+		const left = this.props.screenData.isNarrow ? 0 : `calc(50% - ${this.props.objectPanelWidth / 2}px)`;
 		return (
 			<SkillInfoPanel
 				skillInfo={this.state.skillSelected}
@@ -144,7 +144,7 @@ export default class CharacterCreation extends React.Component {
 	}
 
 	/**
-	 * Sets whether to show object info panel
+	 * Sets whether to show skill info panel
 	 * @param needToShowSkillPanel: boolean (false when closing panel)
 	 */
 	setSkillPanelDisplayOption = (needToShowSkillPanel) => {
@@ -191,11 +191,11 @@ export default class CharacterCreation extends React.Component {
 			const skillInfo = Skills[skillId];
 			skillButtonList.push(
 				<div key={id + '-' + skillId}
-				     className='char-creation-skill'
+				     className={`char-creation-skill char-info-skill-icon skill-icon-${convertObjIdToClassId(skillId)}`}
 				     onClick={() => {
 						this.setSkillSelected({...skillInfo, id: skillId}, true);
 					 }}
-				>{skillInfo.name}</div>
+				></div>
 			)
 		});
 		return skillButtonList;
@@ -246,7 +246,7 @@ export default class CharacterCreation extends React.Component {
 						{<this.listItems id={id} />}
 					</div>
 					<p><u>Starting Skills</u></p>
-					<div>
+					<div className='char-creation-skills-container'>
 						{<this.listSkills id={id} />}
 					</div>
 				</div>
