@@ -1,6 +1,6 @@
 import React from 'react';
 import {convertObjIdToClassId, diceRoll} from './Utils';
-import {ObjectInfoPanel, SkillInfoPanel} from './UIElements';
+import {ObjectInfoPanel} from './UIElements';
 import {SoundEffect} from './Audio';
 import PlayerCharacterTypes from './data/playerCharacterTypes.json';
 import ItemTypes from './data/itemTypes.json';
@@ -129,13 +129,31 @@ export default class CharacterCreation extends React.Component {
 	showSkillPanel = () => {
 		const top = `calc(50% - ${this.props.objectPanelHeight / 2}px)`;
 		const left = this.props.screenData.isNarrow ? 0 : `calc(50% - ${this.props.objectPanelWidth / 2}px)`;
+		const panelPos= {top, left};
+		const skillInfo = this.state.skillSelected;
+		const cancelSkillPanel = () => {
+			this.setSkillSelected(null, null);
+			this.setSkillPanelDisplayOption(false);
+		}
 		return (
-			<SkillInfoPanel
-				skillInfo={this.state.skillSelected}
-				setSkillSelected={this.setSkillSelected}
-				setSkillPanelDisplayOption={this.setSkillPanelDisplayOption}
-				panelPos={{top, left}}
-			/>
+			<div className='skill-info-panel ui-panel' style={{top: panelPos.top, left: panelPos.left}}>
+				<div className='general-button' onClick={() => cancelSkillPanel()}>X</div>
+				{skillInfo &&
+					<div className='skill-panel-container'>
+						<div className='skill-panel-contents'>
+							<div className={`char-creation-skill-icon skill-icon-${convertObjIdToClassId(skillInfo.id)}`}></div>
+							<div className='skill-text-container'>
+								<div className='font-fancy'>{skillInfo.name}</div>
+								<div>{skillInfo.description}</div>
+								{/*todo: Need to show cost/bonus?*/}
+							</div>
+						</div>
+						<div className='skill-panel-buttons-container'>
+							<span className='general-button' onClick={() => cancelSkillPanel()}>Close</span>
+						</div>
+					</div>
+				}
+			</div>
 		);
 	}
 

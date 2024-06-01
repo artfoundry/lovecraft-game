@@ -634,76 +634,46 @@ function ObjectInfoPanel(props) {
 						{objectToShow.time && <div>Light remaining: {objectToShow.time} steps</div>}
 						<div>{objectToShow.description}</div>
 					</div>
-					<div className='object-panel-buttons-container'>
-						{isDraggedObject && objectToShow.stackable &&
-							<form className='object-row-with-buttons' onSubmit={(evt) => splitStack(evt)}>
-								<label htmlFor='object-split'>{objHasBeenDropped ? 'Drop' : 'Trade'} how many?</label>
-								<input type='number' id='object-split' name='object-split' size='3' defaultValue='1' min='1' max={objectToShow.amount || objectToShow.currentRounds} />
-								<button className='general-button' type='submit'>{objHasBeenDropped ? 'Drop' : 'Trade'}</button>
-							</form>
-						}
-						{isMapObj &&
-							<span className='general-button' onClick={() => updateObjToShow(null)}>Back</span>
-						}
-						{/* MAY ADD THESE BUTTONS FOR MOVING ITEMS (INSTEAD OF DRAG AND DROP) IN LATER IF NEEDED */}
+				</div>
+				<div className='object-panel-buttons-container'>
+					{isDraggedObject && objectToShow.stackable &&
+						<form className='object-row-with-buttons' onSubmit={(evt) => splitStack(evt)}>
+							<label htmlFor='object-split'>{objHasBeenDropped ? 'Drop' : 'Trade'} how many?</label>
+							<input type='number' id='object-split' name='object-split' size='3' defaultValue='1' min='1' max={objectToShow.amount || objectToShow.currentRounds} />
+							<button className='general-button' type='submit'>{objHasBeenDropped ? 'Drop' : 'Trade'}</button>
+						</form>
+					}
+					{isMapObj &&
+						<span className='general-button' onClick={() => updateObjToShow(null)}>Back</span>
+					}
+					{/* MAY ADD THESE BUTTONS FOR MOVING ITEMS (INSTEAD OF DRAG AND DROP) IN LATER IF NEEDED */}
 
-						{/*{!isMapObj && !isDraggedObject &&*/}
-						{/*	<div className='object-panel-buttons'>*/}
-						{/*		<span className='general-button' onClick={() => dropItemToEquipped(null)}>Equip Right</span>*/}
-						{/*		<span className='general-button' onClick={() => dropItemToEquipped(null)}>Equip Left</span>*/}
-						{/*		<span className='general-button' onClick={() => dropItemToInv(null)}>Unequip</span>*/}
-						{/*		<span className='general-button' onClick={() => {*/}
-						{/*			if (objectToShow.stackable) {*/}
-						{/*				setObjectPanelDisplayOption(true, null, null);*/}
-						{/*			} else {*/}
-						{/*				// don't need to pass in dropped and source counts, as it's not a stackable object*/}
-						{/*				addObjectToMap();*/}
-						{/*			}*/}
-						{/*		}}>Drop</span>*/}
-						{/*		<span className='general-button' onClick={() => {*/}
-						{/*			let recipientId = '';*/}
+					{/*{!isMapObj && !isDraggedObject &&*/}
+					{/*	<div className='object-panel-buttons'>*/}
+					{/*		<span className='general-button' onClick={() => dropItemToEquipped(null)}>Equip Right</span>*/}
+					{/*		<span className='general-button' onClick={() => dropItemToEquipped(null)}>Equip Left</span>*/}
+					{/*		<span className='general-button' onClick={() => dropItemToInv(null)}>Unequip</span>*/}
+					{/*		<span className='general-button' onClick={() => {*/}
+					{/*			if (objectToShow.stackable) {*/}
+					{/*				setObjectPanelDisplayOption(true, null, null);*/}
+					{/*			} else {*/}
+					{/*				// don't need to pass in dropped and source counts, as it's not a stackable object*/}
+					{/*				addObjectToMap();*/}
+					{/*			}*/}
+					{/*		}}>Drop</span>*/}
+					{/*		<span className='general-button' onClick={() => {*/}
+					{/*			let recipientId = '';*/}
 
-						{/*			dropItemToPC(null, recipientId);*/}
-						{/*		}}>Trade</span>*/}
-						{/*	</div>*/}
-						{/*}*/}
-						<span className='general-button' onClick={() => cancelObjPanel()}>Close</span>
-					</div>
+					{/*			dropItemToPC(null, recipientId);*/}
+					{/*		}}>Trade</span>*/}
+					{/*	</div>*/}
+					{/*}*/}
+					<span className='general-button' onClick={() => cancelObjPanel()}>Close</span>
 				</div>
 			</div>
 			}
 		</div>
 	);
-}
-
-function SkillInfoPanel(props) {
-	const {
-		skillInfo,
-		setSkillSelected,
-		setSkillPanelDisplayOption,
-		panelPos} = {...props};
-	const [skillToShow] = useState(skillInfo);
-	const cancelSkillPanel = () => {
-		setSkillSelected(null, null);
-		setSkillPanelDisplayOption(false);
-	}
-	return (
-		<div className='skill-info-panel ui-panel' style={{top: panelPos.top, left: panelPos.left}}>
-			<div className='general-button' onClick={() => cancelSkillPanel()}>X</div>
-			{skillToShow &&
-				<div className='skill-panel-container'>
-					<div className='skill-text-container'>
-						<div className='font-fancy'>{skillToShow.name}</div>
-						<div>{skillToShow.description}</div>
-						{/*Need to show cost/bonus*/}
-					</div>
-					<div className='skill-panel-buttons-container'>
-						<span className='general-button' onClick={() => cancelSkillPanel()}>Close</span>
-					</div>
-				</div>
-			}
-		</div>
-	)
 }
 
 function CreatureInfoPanel(props) {
@@ -945,4 +915,4 @@ function GameOptions(props) {
 	);
 }
 
-export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, SkillInfoPanel, ModeInfoPanel, DialogWindow, ContextMenu, HelpScreen, GameOptions};
+export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, DialogWindow, ContextMenu, HelpScreen, GameOptions};

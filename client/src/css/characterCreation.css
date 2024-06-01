@@ -66,7 +66,7 @@ h2 {
 	cursor: pointer;
 }
 
-.char-creation-button:hover, .char-creation-prof-header:hover, .char-creation-companion:hover, .char-creation-item:hover {
+.char-creation-button:hover, .char-creation-prof-header:hover, .char-creation-companion:hover, .char-creation-item:hover, .char-creation-skill:hover {
 	border-color: yellow;
 }
 
@@ -147,8 +147,14 @@ h2 {
 }
 
 .char-creation-skill {
-	font-style: italic;
 	cursor: pointer;
+}
+
+.char-creation-skill-icon {
+	width: 64px;
+	height: 64px;
+	background-position: center;
+	background-repeat: no-repeat;
 }
 
 .char-creation-companion {
@@ -163,6 +169,6 @@ h2 {
 	margin: 20px;
 }
 
-.object-text-container {
+.object-text-container, .skill-text-container {
 	text-align: left;
 }
