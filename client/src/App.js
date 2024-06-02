@@ -1286,6 +1286,8 @@ class Game extends React.Component {
 	}
 
 	render() {
+		const moveItSkill = this.state.playerCharacters[this.state.activeCharacter] ? this.state.playerCharacters[this.state.activeCharacter].skills.moveIt : null;
+		const playerMoveLimit = this.playerMovesLimit + (moveItSkill ? moveItSkill.modifier[moveItSkill.level] : 0);
 		return (
 			<div className="game" style={{width: `${this.state.screenData.width}px`, height: `${this.state.screenData.height}px`}}>
 				{!this.state.isLoggedIn &&
@@ -1368,7 +1370,7 @@ class Game extends React.Component {
 						activeCharacter={this.state.activeCharacter}
 						playerCharacters={this.state.playerCharacters}
 						actionsCompleted={{moves: this.state.activePlayerMovesCompleted, actions: this.state.activePlayerActionsCompleted}}
-						playerLimits={{moves: this.playerMovesLimit, actions: this.playerActionsLimit}}
+						playerLimits={{moves: playerMoveLimit, actions: this.playerActionsLimit}}
 						threatList={this.state.threatList}
 						inTacticalMode={this.state.inTacticalMode}
 						toggleTacticalMode={this.toggleTacticalMode}

@@ -1887,7 +1887,9 @@ class Map extends React.Component {
 	 */
 	moveCharacter = (pathData, newPos = null, followerId = null) => {
 		const newTilePos = newPos || pathData.tilePath[0];
-		if (this.props.inTacticalMode && this.props.activePlayerMovesCompleted >= this.props.playerMovesLimit) {
+		const moveItSkill = this.props.playerCharacters[this.props.activeCharacter].skills.moveIt;
+		const playerMoveLimit = this.props.playerMovesLimit + (moveItSkill ? moveItSkill.modifier[moveItSkill.level] : 0);
+		if (this.props.inTacticalMode && this.props.activePlayerMovesCompleted >= playerMoveLimit) {
 			this.props.setShowDialogProps(true, this.props.noMoreMovesDialogProps);
 			return;
 		}
