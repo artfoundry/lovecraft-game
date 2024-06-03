@@ -108,6 +108,7 @@ class UI extends React.Component {
 						checkForExtraAmmo={this.checkForExtraAmmo}
 						reloadGun={this.props.reloadGun}
 						refillLight={this.props.refillLight}
+						showDialog={this.props.showDialog}
 						setShowDialogProps={this.props.setShowDialogProps}
 						dropItemToPC={this.dropItemToPC}
 						setMapObjectSelected={this.props.setMapObjectSelected}
@@ -840,6 +841,7 @@ class UI extends React.Component {
 						toggleTacticalMode={this.props.toggleTacticalMode}
 						threatList={this.props.threatList}
 						isPartyNearby={this.props.isPartyNearby}
+						showDialog={this.props.showDialog}
 						setShowDialogProps={this.props.setShowDialogProps}
 						players={this.props.playerCharacters}
 						activeCharacter={this.props.activeCharacter}
@@ -860,6 +862,7 @@ class UI extends React.Component {
 					switchEquipment={this.switchEquipment}
 					updateCharacters={this.props.updateCharacters}
 					characterInventoryIds={this.props.selectedCharacterInfo.inventory}
+					showDialog={this.props.showDialog}
 					setShowDialogProps={this.props.setShowDialogProps}
 					setObjectSelected={this.setObjectSelected}
 					setObjectPanelDisplayOption={this.setObjectPanelDisplayOption}

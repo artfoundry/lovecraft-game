@@ -177,8 +177,25 @@ function CharacterControls(props) {
 				button = (
 					<div key={skill.skillId} className={`action-button ${shouldActionButtonShow() ? '' : 'hide'} ${skillClass} ${actionButtonState}`} onClick={() => {
 						if (skill.name === 'Quick Reload') {
-							const weapon = leftWeaponNeedsReloading ? {weaponId: equippedItems.left} : {weaponId: equippedItems.right};
-							handleWeaponClick(weapon, true, true);
+							const setWeapon = (id) => {
+								const weapon = {weaponId: id};
+								handleWeaponClick(weapon, true, true);
+							}
+							if (leftWeaponNeedsReloading && rightWeaponNeedsReloading) {
+								const dialogProps = {
+									dialogContent: 'Which weapon do you want to reload?',
+									closeButtonText: `${leftWeapon.name}`,
+									closeButtonCallback: () => {setWeapon(equippedItems.left)},
+									disableCloseButton: false,
+									actionButtonVisible: true,
+									actionButtonText: `${rightWeapon.name}`,
+									actionButtonCallback: () => {setWeapon(equippedItems.right)},
+									dialogClasses: ''
+								};
+								props.setShowDialogProps(true, dialogProps);
+							} else {
+								leftWeaponNeedsReloading ? setWeapon(equippedItems.left) : setWeapon(equippedItems.right);
+							}
 						} else if (skill.name === 'Go Ballistic') {
 							const weapon = {
 								weaponId: leftGunHasAmmo ? equippedItems.left : equippedItems.right,
@@ -249,7 +266,7 @@ function CharacterControls(props) {
 	return (
 		<div
 			id={`${(props.screenData.isSmall && props.characterId === props.selectedControlTab) ? 'control-bar-tab-1' : ''}`}
-			className='control-bar-tab-container'
+			className={`control-bar-tab-container ${props.showDialog ? 'no-click' : ''}`}
 			onDragOver={(evt) => handleItemOverDropZone(evt)}
 			onDrop={(evt) => props.dropItemToPC(evt, props.characterId)}>
 
@@ -398,7 +415,7 @@ function CharacterInfoPanel(props) {
 	const [activeTab, updateActiveTab] = useState('inv');
 
 	return (
-		<div className='character-info-container ui-panel'>
+		<div className={`character-info-container ui-panel ${props.showDialog ? 'no-click' : ''}`}>
 			<div className='char-info-header'>
 				<h3 className='font-fancy'>{props.characterInfo.name}</h3>
 				<div className='general-button' onClick={() => props.updateUnitSelectionStatus(props.characterInfo.id, 'player')}>X</div>
@@ -731,7 +748,7 @@ function ModeInfoPanel(props) {
 		props.inTacticalMode && props.threatList.length > 0 ? 'Enemies moving...' : 'Wait...';
 
 	return (
-		<div className='mode-info-container'>
+		<div className={`mode-info-container ${props.showDialog ? 'no-click' : ''}`}>
 			<div
 				className={'general-button' + (props.inTacticalMode ? ' button-tactical-mode-on' : '')}
 				onClick={() => {
@@ -778,6 +795,7 @@ function ModeInfoPanel(props) {
 function DialogWindow(props) {
 	return (
 		<div className={`dialog ui-panel ${props.classes}`}>
+			<div className='general-button dialog-button-x' onClick={() => props.closeDialogCallback()}>X</div>
 			<div className='dialog-message'>{props.dialogContent}</div>
 			<div className='dialog-buttons'>
 				{!props.disableCloseButton &&

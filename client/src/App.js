@@ -1289,7 +1289,7 @@ class Game extends React.Component {
 		const moveItSkill = this.state.playerCharacters[this.state.activeCharacter] ? this.state.playerCharacters[this.state.activeCharacter].skills.moveIt : null;
 		const playerMoveLimit = this.playerMovesLimit + (moveItSkill ? moveItSkill.modifier[moveItSkill.level] : 0);
 		return (
-			<div className="game" style={{width: `${this.state.screenData.width}px`, height: `${this.state.screenData.height}px`}}>
+			<div className={`game ${this.state.showDialog ? 'no-click' : ''}`} style={{width: `${this.state.screenData.width}px`, height: `${this.state.screenData.height}px`}}>
 				{!this.state.isLoggedIn &&
 				<div className='title-screen'>
 					<div className='title-screen-title-container'>
