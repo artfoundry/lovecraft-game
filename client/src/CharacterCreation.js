@@ -209,7 +209,7 @@ export default class CharacterCreation extends React.Component {
 			const skillInfo = Skills[skillId];
 			skillButtonList.push(
 				<div key={id + '-' + skillId}
-				     className={`char-creation-skill char-info-skill-icon skill-icon-${convertObjIdToClassId(skillId)}`}
+				     className={`char-creation-skill char-creation-skill-icon skill-icon-${convertObjIdToClassId(skillId)}`}
 				     onClick={() => {
 						this.setSkillSelected({...skillInfo, id: skillId}, true);
 					 }}
