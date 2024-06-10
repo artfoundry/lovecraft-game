@@ -261,7 +261,7 @@
     "startingHealth": 60,
     "startingSanity": 80,
     "startingSpirit": 70,
-    "skills": ["identifyRelic", "sacrificialStrike", "relicMastery", "krisKnifeExpertise"],
+    "skills": ["identifyRelic", "sacrificialStrike", "relicExpertise", "krisKnifeExpertise"],
     "weapons": {
       "krisKnife0": {
         "id": "krisKnife0",

@@ -273,8 +273,8 @@
     },
     "spirit": [30, 30, 30, 30, 30, 30]
   },
-  "relicMastery": {
-    "name": "Relic Mastery",
+  "relicExpertise": {
+    "name": "Relic Expertise",
     "skillType": "passive",
     "profession": ["occultResearcher"],
     "description": "Suffer less Sanity loss when using Relics",
