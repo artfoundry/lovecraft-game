@@ -207,6 +207,11 @@ export default class CharacterCreation extends React.Component {
 
 		pcSkillIds.forEach(skillId => {
 			const skillInfo = Skills[skillId];
+			if (skillInfo.description.includes(';')) {
+				skillInfo.description = skillInfo.description.split('; ').map(str => {
+					return <div key={str.substring(0, 5)}>{str}</div>;
+				});
+			}
 			skillButtonList.push(
 				<div key={id + '-' + skillId}
 				     className={`char-creation-skill char-creation-skill-icon skill-icon-${convertObjIdToClassId(skillId)}`}

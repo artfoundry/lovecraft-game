@@ -322,7 +322,14 @@ class Game extends React.Component {
 	toggleTacticalMode = (inTacticalMode, callback) => {
 		this.setState({inTacticalMode}, () => {
 			if (!inTacticalMode) {
-				this._resetCounters(callback);
+				const resetCounters = () => this._resetCounters(callback);
+				if (this.state.playerCharacters.thief && this.state.playerCharacters.thief.skills.stealthy.active) {
+					const updatedCharData = deepCopy(this.state.playerCharacters.thief);
+					updatedCharData.skills.stealthy.active = false;
+					this.updateCharacters('player', updatedCharData, 'thief', false, false, false, resetCounters);
+				} else {
+					resetCounters();
+				}
 			} else {
 				this.updateCurrentTurn(true, callback);
 			}
@@ -690,11 +697,25 @@ class Game extends React.Component {
 	}
 
 	/**
+	 * Callback for updateActivePlayerMoves and updateActivePlayerActions to update Spirit each time thief moves or acts
+	 * Only used in Tactical Mode
+	 */
+	updateSpiritForStealthySkill = () => {
+		const updatedCharData = deepCopy(this.state.playerCharacters.thief);
+		updatedCharData.currentSpirit = this.reduceCharSpirit('stealthy');
+		this.updateCharacters('player', updatedCharData, 'thief', false, false, false, null);
+	}
+
+	/**
 	 * Increments and sets to state the number of moves made by the active PC
 	 */
 	updateActivePlayerMoves = () => {
 		const activePlayerMovesCompleted = this.state.activePlayerMovesCompleted + 1;
-		this.setState({activePlayerMovesCompleted});
+		this.setState({activePlayerMovesCompleted}, () => {
+			if (this.state.activeCharacter === 'thief' && this.state.playerCharacters.thief.skills.stealthy.active) {
+				this.updateSpiritForStealthySkill();
+			}
+		});
 	}
 
 	/**
@@ -704,7 +725,11 @@ class Game extends React.Component {
 	updateActivePlayerActions = (completeTwoActions = false) => {
 		if (this.state.inTacticalMode) {
 			const activePlayerActionsCompleted = this.state.activePlayerActionsCompleted + (completeTwoActions ? 2 : 1);
-			this.setState({activePlayerActionsCompleted});
+			this.setState({activePlayerActionsCompleted}, () => {
+				if (this.state.activeCharacter === 'thief' && this.state.playerCharacters.thief.skills.stealthy.active) {
+					this.updateSpiritForStealthySkill();
+				}
+			});
 		}
 	}
 
@@ -1337,6 +1362,7 @@ class Game extends React.Component {
 						noMoreActionsDialogProps={this.noMoreActionsDialogProps}
 
 						logText={this.state.logText}
+						updateLog={this.updateLog}
 
 						selectedCharacterInfo={this.state.playerCharacters[this.state.selectedCharacter]}
 						selectedCreatureInfo={this.state.mapCreatures[this.state.selectedCreature]}

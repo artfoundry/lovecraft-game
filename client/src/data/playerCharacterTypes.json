@@ -233,7 +233,7 @@
     "startingHealth": 80,
     "startingSanity": 80,
     "startingSpirit": 80,
-    "skills": ["flank", "stealthy", "disarmTrap", "handgunKnowledge"],
+    "skills": ["attackFromTheShadows", "stealthy", "disarmTrap", "handgunKnowledge"],
     "weapons": {
       "knife0": {
         "id": "knife0",

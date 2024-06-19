@@ -81,6 +81,11 @@ class Character extends React.Component {
 		let skillData = {};
 		charSkills.forEach(skillId => {
 			skillData[skillId] = {...Skills[skillId], level: 0};
+			if (skillData[skillId].description.includes(';')) {
+				skillData[skillId].description = skillData[skillId].description.split('; ').map(str => {
+					return <div key={str.substring(0, 5)}>{str}</div>;
+				});
+			}
 		});
 		return skillData;
 	}
@@ -123,6 +128,7 @@ class Character extends React.Component {
 			(!pcData.skills.shotgunKnowledge && equippedGunType === 'shotgun') ||
 			(!pcData.skills.machineGunKnowledge && equippedGunType === 'machineGun') ? this.noGunKnowledgePenalty : 0;
 		const goingBallistic = itemStats.goingBallistic;
+		const attackFromTheShadowsMod = (pcData.id === 'thief' && pcData.skills.stealthy.active) ? pcData.skills.attackFromTheShadows.modifier[pcData.skills.attackFromTheShadows.level] : 0;
 
 		if (itemStats.ranged) {
 			let numOfAttacks = goingBallistic ? weaponInfo.currentRounds : 1;
@@ -164,14 +170,17 @@ class Character extends React.Component {
 			defenseRoll = diceRoll(this.defenseDie);
 			defenseTotal = targetData.defense + defenseRoll;
 			attackTotal = pcData.strength + Math.floor(pcData.agility / 2) + hitRoll;
+			attackTotal += Math.round(attackFromTheShadowsMod * attackTotal);
 			isHit = attackTotal >= defenseTotal;
 			if (isHit) {
 				const attackDifference = attackTotal - defenseTotal;
 				const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 2);
 				damageTotal = pcData.strength + itemStats.damage + damageModBasedOnAttack;
+				damageTotal += Math.round(attackFromTheShadowsMod * damageTotal);
 				damageTotal -= targetData.damageReduction <= damageTotal ? targetData.damageReduction : damageTotal;
 			}
-			updateLog(`${pcData.name} attacks with the ${weaponInfo.name}, scores ${attackTotal} to hit...and ${isHit ? `does ${damageTotal} damage!` : `misses (${targetData.name} scored ${defenseTotal} for defense).`}`);
+			const fromShadowsText = attackFromTheShadowsMod > 0 ? 'from the shadows ' : '';
+			updateLog(`${pcData.name} attacks ${fromShadowsText}with the ${weaponInfo.name}, scores ${attackTotal} to hit...and ${isHit ? `does ${damageTotal} damage!` : `misses (${targetData.name} scored ${defenseTotal} for defense).`}`);
 		}
 
 		updateCharacter('player', updatedPcData, pcData.id, false, false, false, () => {
@@ -530,6 +539,30 @@ class Character extends React.Component {
 		updateCharacter('player', updatedPcData, 'veteran', false, false, false, () => {
 			updateLog(`${updatedPcData.name} prepares for a psychic attack...`);
 			updateActivePlayerActions();
+		});
+	}
+
+	/**
+	 * Skill (Thief): When active, gives bonus to Agility, allows Attack From The Shadows skill, and reduces Spirit each move/action
+	 * Called from toggleActionButton in App
+	 * @param props: object {
+	 *     currentPcData: object,
+	 *     updateCharacter: function (App),
+	 *     updateLog: function (App),
+	 * }
+	 */
+	stealthy = (props) => {
+		const {currentPcData, updateCharacter, updateLog} = props;
+		let updatedPcData = deepCopy(currentPcData);
+		const stealthySkill = updatedPcData.skills.stealthy;
+
+		stealthySkill.active = !stealthySkill.active;
+		updateCharacter('player', updatedPcData, 'thief', false, false, false, () => {
+			if (stealthySkill.active) {
+				updateLog(`${updatedPcData.name} goes stealthy, slipping through the shadows...`);
+			} else {
+				updateLog(`${updatedPcData.name} leaves the shadows.`);
+			}
 		});
 	}
 }

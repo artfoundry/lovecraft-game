@@ -76,6 +76,7 @@ function CharacterControls(props) {
 				requiresItem: skillInfo.requiresItem,
 				requiresEquippedMeleeWeapon: skillInfo.requiresEquippedMeleeWeapon,
 				requiresBothActions: skillInfo.requiresBothActions,
+				mustNotHaveLightEquipped: skillInfo.mustNotHaveLightEquipped,
 				spirit: skillInfo.spirit,
 				level: skillInfo.level,
 				active: skillInfo.active
@@ -166,12 +167,15 @@ function CharacterControls(props) {
 					(skill.name === 'Quick Reload' && !hasAmmoForReloadSkill) ||
 					(skill.name === 'Go Ballistic' && !gunIsLoaded) ||
 					(skill.mustBeOutOfDanger && props.threatList.length > 0) ||
-					skill.active ||
+					(skill.name === 'Feel The Pain' && skill.active) ||
+					(skill.name === 'Stealthy' && !props.inTacticalMode) ||
+					(skill.mustNotHaveLightEquipped && currentPCdata.equippedLight) ||
 					(skill.requiresBothActions && props.actionsRemaining < 2)) ? 'button-inactive' :
 					(props.isActiveCharacter &&
-					props.actionButtonSelected &&
+					((props.actionButtonSelected &&
 					props.actionButtonSelected.characterId === props.characterId &&
-					props.actionButtonSelected.itemId === skill.skillId && skill.hasTarget) ? 'button-selected': '';
+					props.actionButtonSelected.itemId === skill.skillId && skill.hasTarget) ||
+					(skill.name === 'Stealthy' && skill.active))) ? 'button-selected': '';
 				let skillClass = `${convertObjIdToClassId(skill.skillId)}-action`;
 				actionButtonCount++;
 				button = (

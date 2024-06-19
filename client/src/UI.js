@@ -306,6 +306,10 @@ class UI extends React.Component {
 				}
 				this.props.setShowDialogProps(true, dialogProps);
 			}
+			if (updateData.id === 'thief' && updateData.skills.stealthy.active) {
+				updateData.skills.stealthy.active = false;
+				this.props.updateLog(`After equipping a light source, ${updateData.name} is no longer hiding in the shadows`);
+			}
 			itemBeingReplaced = updateData.equippedLight;
 			updateData.equippedLight = draggedItem.id;
 			updateData.lightRange = draggedItem.range;

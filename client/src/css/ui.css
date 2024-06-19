@@ -576,8 +576,8 @@ h3 {
 	background-image: url('../assets/ui/move-it.png');
 }
 
-.skill-icon-flank {
-	background-image: url('../assets/ui/flank.png');
+.skill-icon-attack-from-the-shadows {
+	background-image: url('../assets/ui/attack-from-the-shadows.png');
 }
 
 .skill-icon-stealthy {
@@ -1272,8 +1272,8 @@ select {
 	background-image: url('../assets/ui/move-it_sml.png');
 }
 
-.flank-action {
-	background-image: url('../assets/ui/flank_sml.png');
+.stealthy-action {
+	background-image: url('../assets/ui/stealthy_sml.png');
 }
 
 .disarm-trap-action {

@@ -59,3 +59,7 @@
 	box-sizing: border-box;
 	background-color: yellowgreen;
 }
+
+.stealthy {
+	opacity: 0.5;
+}

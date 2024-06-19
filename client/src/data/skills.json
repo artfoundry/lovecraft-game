@@ -168,8 +168,6 @@
     "skillType": "passive",
     "profession": ["doctor"],
     "description": "Improved healing with First Aid Kits",
-    "hasTarget": false,
-    "mustBeOutOfDanger": false,
     "modifier": [5, 10, 15, 20, 25]
   },
   "comfortTheFearful": {
@@ -198,6 +196,7 @@
     "skillType": "active",
     "profession": ["veteran"],
     "description": "For the next Psychic attack that reduces Sanity, Sanity reduction is converted to 2x Health damage, ignoring any health damage reductions",
+    "active": false,
     "spirit": [40, 35, 30, 25, 20]
   },
   "goBallistic": {
@@ -216,27 +215,24 @@
     "skillType": "passive",
     "profession": ["veteran"],
     "description": "Permanent increase to movement",
-    "hasTarget": false,
-    "mustBeOutOfDanger": false,
     "modifier": [1, 2, 3]
   },
-  "flank": {
-    "name": "Flank",
-    "skillType": "active",
+  "attackFromTheShadows": {
+    "name": "Attack From The Shadows",
+    "skillType": "passive",
     "profession": ["thief"],
-    "description": "Increased hit chance and damage with melee attack if another party member is next to target",
-    "hasTarget": true,
-    "mustBeOutOfDanger": false,
-    "requiresEquippedMeleeWeapon": true,
-    "modifier": [0.1, 0.2, 0.3, 0.4, 0.5],
-    "spirit": [20, 20, 20, 20, 20]
+    "description": "While Stealthy, increased hit chance and damage with melee attacks",
+    "modifier": [0.1, 0.2, 0.3, 0.4, 0.5]
   },
   "stealthy": {
     "name": "Stealthy",
-    "skillType": "passive",
+    "skillType": "active",
     "profession": ["thief"],
-    "description": "Less likely to be hit when not equipped with a light (bonus to Agility when attacked)",
-    "modifier": [1, 2, 3, 4, 5]
+    "description": "Less likely to be hit when not equipped with a light (bonus to Agility when attacked) and allows Attack From The Shadows; • Drains Spirit with each move or action; • Doesn't require an action to activate or deactivate; • Only usable in Tactical Mode",
+    "mustNotHaveLightEquipped": true,
+    "active": false,
+    "modifier": [1, 2, 3, 4, 5],
+    "spirit": [3, 3, 2, 2, 1]
   },
   "disarmTrap": {
     "name": "Disarm Trap",

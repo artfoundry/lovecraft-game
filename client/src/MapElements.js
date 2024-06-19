@@ -9,12 +9,13 @@ function Character(props) {
 	const isDyingOrCatatonicClass = !props.isHidden && (props.isDying || props.isCatatonic) ? ` ${props.idClassName}-dead` : '';
 	const isInRangeClass = !props.isHidden && props.isInRange ? ' in-range' : '';
 	const isOnTopClass = props.isOtherCharOnTop ? ' character-on-top' : '';
+	const isStealthyClass = props.isStealthy ? ' stealthy': '';
 	return (
 		<img id={props.id}
 		     ref={props.charRef}
 			 alt={props.classes}
 		     draggable={false}
-		     className={props.characterType + ' ' + props.idClassName + isHiddenClass + isSelectedClass + isDyingOrCatatonicClass + isDeadClass + isInRangeClass + isOnTopClass}
+		     className={props.characterType + ' ' + props.idClassName + isHiddenClass + isSelectedClass + isDyingOrCatatonicClass + isDeadClass + isInRangeClass + isOnTopClass + isStealthyClass}
 		     style={props.styles}
 		     data-location={props.charPos}
 			 onClick={(evt) => {

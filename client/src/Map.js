@@ -979,6 +979,7 @@ class Map extends React.Component {
 					idClassName={idConvertedToClassName}
 					isHidden={creatureIsHidden}
 					isSelected={characters[id].isSelected}
+					isStealthy={id === 'thief' && characters[id].skills.stealthy.active}
 					isDying={isDyingPc}
 					isDead={characters[id].currentHealth <= 0 && !isDyingPc}
 					isCatatonic={characters[id].currentSanity <= 0 && characters[id].currentHealth > 0}
