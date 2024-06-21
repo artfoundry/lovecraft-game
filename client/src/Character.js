@@ -129,6 +129,7 @@ class Character extends React.Component {
 			(!pcData.skills.machineGunKnowledge && equippedGunType === 'machineGun') ? this.noGunKnowledgePenalty : 0;
 		const goingBallistic = itemStats.goingBallistic;
 		const attackFromTheShadowsMod = (pcData.id === 'thief' && pcData.skills.stealthy.active) ? pcData.skills.attackFromTheShadows.modifier[pcData.skills.attackFromTheShadows.level] : 0;
+		const sacrificialStrikeSkill = itemStats.sacrificialStrike;
 
 		if (itemStats.ranged) {
 			let numOfAttacks = goingBallistic ? weaponInfo.currentRounds : 1;
@@ -171,16 +172,26 @@ class Character extends React.Component {
 			defenseTotal = targetData.defense + defenseRoll;
 			attackTotal = pcData.strength + Math.floor(pcData.agility / 2) + hitRoll;
 			attackTotal += Math.round(attackFromTheShadowsMod * attackTotal);
+			if (sacrificialStrikeSkill && attackTotal < defenseTotal) {
+				attackTotal = defenseTotal;
+			}
 			isHit = attackTotal >= defenseTotal;
 			if (isHit) {
 				const attackDifference = attackTotal - defenseTotal;
 				const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 2);
 				damageTotal = pcData.strength + itemStats.damage + damageModBasedOnAttack;
 				damageTotal += Math.round(attackFromTheShadowsMod * damageTotal);
+				if (sacrificialStrikeSkill) {
+					damageTotal = Math.round(sacrificialStrikeSkill.modifier[sacrificialStrikeSkill.level] * damageTotal);
+					updatedPcData.currentSpirit -= sacrificialStrikeSkill.spirit[sacrificialStrikeSkill.level];
+					updatedPcData.currentHealth -= sacrificialStrikeSkill.cost.health[sacrificialStrikeSkill.level];
+					updatedPcData.currentSanity -= sacrificialStrikeSkill.cost.sanity[sacrificialStrikeSkill.level];
+				}
 				damageTotal -= targetData.damageReduction <= damageTotal ? targetData.damageReduction : damageTotal;
 			}
 			const fromShadowsText = attackFromTheShadowsMod > 0 ? 'from the shadows ' : '';
-			updateLog(`${pcData.name} attacks ${fromShadowsText}with the ${weaponInfo.name}, scores ${attackTotal} to hit...and ${isHit ? `does ${damageTotal} damage!` : `misses (${targetData.name} scored ${defenseTotal} for defense).`}`);
+			const sacrificialStrikeText = sacrificialStrikeSkill ? 'sacrifices Health and Sanity and ' : '';
+			updateLog(`${pcData.name} ${sacrificialStrikeText}attacks ${fromShadowsText}with the ${weaponInfo.name}, scores ${attackTotal} to hit...and ${isHit ? `does ${damageTotal} damage!` : `misses (${targetData.name} scored ${defenseTotal} for defense).`}`);
 		}
 
 		updateCharacter('player', updatedPcData, pcData.id, false, false, false, () => {

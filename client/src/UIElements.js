@@ -189,22 +189,26 @@ function CharacterControls(props) {
 								const dialogProps = {
 									dialogContent: 'Which weapon do you want to reload?',
 									closeButtonText: `${leftWeapon.name}`,
-									closeButtonCallback: () => {setWeapon(equippedItems.left)},
+									closeButtonCallback: () => {
+										setWeapon(equippedItems.left);
+									},
 									disableCloseButton: false,
 									actionButtonVisible: true,
 									actionButtonText: `${rightWeapon.name}`,
-									actionButtonCallback: () => {setWeapon(equippedItems.right)},
+									actionButtonCallback: () => {
+										setWeapon(equippedItems.right);
+									},
 									dialogClasses: ''
 								};
 								props.setShowDialogProps(true, dialogProps);
 							} else {
 								leftWeaponNeedsReloading ? setWeapon(equippedItems.left) : setWeapon(equippedItems.right);
 							}
-						} else if (skill.name === 'Go Ballistic') {
-							const weapon = {
+						} else if (skill.name === 'Go Ballistic' || 'Sacrificial Strike') {
+							const weapon = skill.name === 'Go Ballistic' ? {
 								weaponId: leftGunHasAmmo ? equippedItems.left : equippedItems.right,
 								weaponName: leftGunHasAmmo ? leftWeapon.name : rightWeapon.name
-							};
+							} : {weaponId: 'krisKnife0', weaponName: 'Kris Knife'};
 							const handleWeaponClickCallback = () => {
 								handleWeaponClick(weapon);
 							};

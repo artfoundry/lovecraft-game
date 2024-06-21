@@ -418,47 +418,56 @@ class Game extends React.Component {
 	 * Doesn't set actionButtonSelected if action is immediate
 	 * state.actionButtonSelected gets reset in handleUnitClick (in callback after action is done) and in this.updateCurrentTurn
 	 * @param characterId: String
-	 * @param itemId: String (action button ID - ie. item, weapon, or skill ID)
-	 * @param itemName: String
+	 * @param buttonId: String (action button ID - ie. item, weapon, or skill ID)
+	 * @param buttonName: String (action button name - ie. item, weapon, or skill name)
 	 * @param buttonType: String ('weapon', 'item', or 'skill')
 	 * @param callback: Function
 	 */
-	toggleActionButton = (characterId, itemId, itemName, buttonType, callback) => {
+	toggleActionButton = (characterId, buttonId, buttonName, buttonType, callback) => {
 		let buttonState = null;
 		let isImmediateAction = false; // action takes effect without needing user to select a target
-		let stats = {};
+		let stats = null;
+		const characterData = this.state.playerCharacters[characterId];
+		const itemId = buttonId;
+		const itemName = buttonName;
 
 		// if no weapon/item selected or weapon/item selected doesn't match new weapon/item selected, set weapon/item state to new weapon/item
 		if (characterId && (!this.state.actionButtonSelected ||
-			(this.state.actionButtonSelected.characterId !== characterId || this.state.actionButtonSelected.itemId !== itemId)))
+			(this.state.actionButtonSelected.characterId !== characterId || this.state.actionButtonSelected.itemId !== buttonId)))
 		{
 			if (buttonType === 'weapon') {
-				stats = WeaponTypes[itemName];
-				if (this.state.actionButtonSelected && this.state.actionButtonSelected.stats.name === 'Go Ballistic') {
-					stats.goingBallistic = this.state.playerCharacters[characterId].skills.goBallistic;
+				stats = deepCopy(WeaponTypes[buttonName]); // copying so if modifying below, doesn't modify WeaponTypes
+				if (this.state.actionButtonSelected) {
+					if (this.state.actionButtonSelected.stats.name === 'Go Ballistic') {
+						stats.goingBallistic = characterData.skills.goBallistic;
+					} else if (this.state.actionButtonSelected.stats.name === 'Sacrificial Strike') {
+						stats.sacrificialStrike = characterData.skills.sacrificialStrike;
+					}
 				}
 			} else if (buttonType === 'item') {
-				stats = ItemTypes[itemName];
+				stats = ItemTypes[buttonName];
+			// not weapon, not item, so skill being used
 			} else {
-				stats = this.state.playerCharacters[characterId].skills[itemId];
+				stats = characterData.skills[buttonId];
 				isImmediateAction = !stats.hasTarget;
 			}
 			buttonState = {characterId, itemId, itemName, stats};
 		}
+
 		if (isImmediateAction) {
 			// skillType will either be 'create' or 'active' (except heal and resuscitate skills are called from handleUnitClick)
-			const createSkillId = itemId.substring(6); // removes 'create' from skill name
+			const createSkillId = buttonId.substring(6); // removes 'create' from skill name
 			const props = stats.skillType === 'create' ? {
 				itemType: createSkillId,
 				activeCharId: characterId,
-				currentPcData: this.state.playerCharacters[characterId],
+				currentPcData: characterData,
 				updateCharacter: this.updateCharacters,
 				updateLog: this.updateLog,
 				setShowDialogProps: this.setShowDialogProps,
 				addItemToPlayerInventory: this.addItemToPlayerInventory,
 				updateActivePlayerActions: this.updateActivePlayerActions
 			} : {
-				currentPcData: this.state.playerCharacters[characterId],
+				currentPcData: characterData,
 				partyData: this.state.playerCharacters,
 				currentRound: this.state.currentRound,
 				updateCharacter: this.updateCharacters,
@@ -466,8 +475,8 @@ class Game extends React.Component {
 				setShowDialogProps: this.setShowDialogProps,
 				updateActivePlayerActions: this.updateActivePlayerActions
 			};
-			const skillId = stats.skillType === 'create' ? 'create' : itemId;
-			this.state.playerCharacters[characterId][skillId](props);
+			const skillId = stats.skillType === 'create' ? 'create' : buttonId;
+			characterData[skillId](props);
 			if (callback) callback();
 		} else {
 			this.setState({actionButtonSelected: buttonState}, () => {
