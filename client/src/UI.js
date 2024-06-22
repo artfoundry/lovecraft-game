@@ -99,6 +99,7 @@ class UI extends React.Component {
 						invItems={playerInfo.items}
 						toggleActionButton={this.props.toggleActionButton}
 						actionButtonSelected={this.props.actionButtonSelected}
+						skillModeActive={this.props.skillModeActive}
 						isActiveCharacter={id === this.props.activeCharacter}
 						movesRemaining={this.props.playerLimits.moves - this.props.actionsCompleted.moves}
 						actionsRemaining={this.props.playerLimits.actions - this.props.actionsCompleted.actions}

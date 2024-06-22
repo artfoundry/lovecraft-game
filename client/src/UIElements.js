@@ -175,7 +175,9 @@ function CharacterControls(props) {
 					((props.actionButtonSelected &&
 					props.actionButtonSelected.characterId === props.characterId &&
 					props.actionButtonSelected.buttonId === skill.skillId && skill.hasTarget) ||
-					(skill.name === 'Stealthy' && skill.active))) ? 'button-selected': '';
+					(skill.name === 'Stealthy' && skill.active) ||
+					(skill.name === 'Go Ballistic' && props.skillModeActive === 'goBallistic') ||
+					(skill.name === 'Sacrificial Strike' && props.skillModeActive === 'sacrificialStrike'))) ? 'button-selected': '';
 				let skillClass = `${convertObjIdToClassId(skill.skillId)}-action`;
 				actionButtonCount++;
 				button = (
@@ -204,7 +206,7 @@ function CharacterControls(props) {
 							} else {
 								leftWeaponNeedsReloading ? setWeapon(equippedItems.left) : setWeapon(equippedItems.right);
 							}
-						} else if (skill.name === 'Go Ballistic' || 'Sacrificial Strike') {
+						} else if (skill.name === 'Go Ballistic' || skill.name === 'Sacrificial Strike') {
 							const weapon = skill.name === 'Go Ballistic' ? {
 								weaponId: leftGunHasAmmo ? equippedItems.left : equippedItems.right,
 								weaponName: leftGunHasAmmo ? leftWeapon.name : rightWeapon.name
@@ -212,7 +214,11 @@ function CharacterControls(props) {
 							const handleWeaponClickCallback = () => {
 								handleWeaponClick(weapon);
 							};
-							props.toggleActionButton(props.characterId, skill.skillId, skill.name, 'skill', handleWeaponClickCallback);
+							if (props.skillModeActive) {
+								props.toggleActionButton('', '', '', '', null);
+							} else {
+								props.toggleActionButton(props.characterId, skill.skillId, skill.name, 'skill', handleWeaponClickCallback);
+							}
 						} else {
 							props.toggleActionButton(props.characterId, skill.skillId, skill.name, 'skill');
 						}

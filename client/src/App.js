@@ -133,6 +133,7 @@ class Game extends React.Component {
 			selectedCharacter: '',
 			selectedCreature: '',
 			actionButtonSelected: null,
+			skillModeActive: null,
 			objectSelected: null,
 			objHasBeenDropped: false,
 			lightingHasChanged: false,
@@ -164,6 +165,7 @@ class Game extends React.Component {
 			selectedCharacter: '',
 			selectedCreature: '',
 			actionButtonSelected: null,
+			skillModeActive: null,
 			objectSelected: null,
 			objHasBeenDropped: false,
 			lightingHasChanged: false,
@@ -238,12 +240,12 @@ class Game extends React.Component {
 				const rightWeapon = equippedRight && WeaponTypes[equippedRight];
 				const equippedLeft = currentCharIsPc && currentCharIsPc.equippedItems.loadout1.left;
 				const leftWeapon = equippedLeft && WeaponTypes[equippedLeft];
-				const goingBallisticIsActive = this.state.actionButtonSelected && this.state.actionButtonSelected.stats.goingBallistic;
+				const goBallisticIsActive = this.state.actionButtonSelected && this.state.actionButtonSelected.stats.goBallistic;
 				const sacrificialStrikeIsActive = this.state.actionButtonSelected && this.state.actionButtonSelected.stats.sacrificialStrike;
 				if (lightingHasChanged) {
 					this.toggleLightingHasChanged(callback);
-				// check if either veteran, goingBallistic button is active, and just unequipped gun or occultResearcher, sacrificialStrike button is active, and just unequipped kris knife
-				} else if ((id === 'veteran' && goingBallisticIsActive && ((!rightWeapon && !leftWeapon) || (!rightWeapon.gunType && !leftWeapon.gunType))) ||
+				// check if either veteran, goBallistic button is active, and just unequipped gun or occultResearcher, sacrificialStrike button is active, and just unequipped kris knife
+				} else if ((id === 'veteran' && goBallisticIsActive && ((!rightWeapon && !leftWeapon) || (!rightWeapon.gunType && !leftWeapon.gunType))) ||
 					(id === 'occultResearcher' && sacrificialStrikeIsActive && (equippedRight !== 'krisKnife0' && equippedLeft !== 'krisKnife0')))
 				{
 					this.toggleActionButton('', '', '', '', callback);
@@ -439,6 +441,7 @@ class Game extends React.Component {
 		let buttonState = null;
 		let isImmediateAction = false; // action takes effect without needing user to select a target
 		let stats = null;
+		let skillModeActive = this.state.skillModeActive;
 		const characterData = this.state.playerCharacters[characterId];
 
 		// if no weapon/item selected or weapon/item selected doesn't match new weapon/item selected, set weapon/item state to new weapon/item
@@ -449,17 +452,23 @@ class Game extends React.Component {
 				stats = deepCopy(WeaponTypes[buttonName]); // copying so if modifying below, doesn't modify WeaponTypes
 				if (this.state.actionButtonSelected) {
 					if (this.state.actionButtonSelected.stats.name === 'Go Ballistic') {
-						stats.goingBallistic = characterData.skills.goBallistic;
+						stats.goBallistic = characterData.skills.goBallistic;
 					} else if (this.state.actionButtonSelected.stats.name === 'Sacrificial Strike') {
 						stats.sacrificialStrike = characterData.skills.sacrificialStrike;
 					}
 				}
 			} else if (buttonType === 'item') {
 				stats = ItemTypes[buttonName];
+				skillModeActive = null;
 			// not weapon, not item, so skill being used
 			} else {
 				stats = characterData.skills[buttonId];
 				isImmediateAction = !stats.hasTarget;
+				if (buttonId === 'goBallistic' || buttonId === 'sacrificialStrike') {
+					skillModeActive = buttonId;
+				} else {
+					skillModeActive = null;
+				}
 			}
 			buttonState = {characterId, buttonId, buttonName, stats};
 		}
@@ -489,7 +498,10 @@ class Game extends React.Component {
 			characterData[skillId](props);
 			if (callback) callback();
 		} else {
-			this.setState({actionButtonSelected: buttonState}, () => {
+			if (!buttonState) {
+				skillModeActive = null;
+			}
+			this.setState({actionButtonSelected: buttonState, skillModeActive}, () => {
 				if (callback) callback();
 			});
 		}
@@ -1403,6 +1415,7 @@ class Game extends React.Component {
 						mapObjects={this.state.mapObjects}
 
 						actionButtonSelected={this.state.actionButtonSelected}
+						skillModeActive={this.state.skillModeActive}
 						toggleActionButton={this.toggleActionButton}
 						reloadGun={this.reloadGun}
 						refillLight={this.refillLight}

@@ -127,16 +127,16 @@ class Character extends React.Component {
 			(!pcData.skills.handgunKnowledge && equippedGunType === 'handgun') ||
 			(!pcData.skills.shotgunKnowledge && equippedGunType === 'shotgun') ||
 			(!pcData.skills.machineGunKnowledge && equippedGunType === 'machineGun') ? this.noGunKnowledgePenalty : 0;
-		const goingBallistic = itemStats.goingBallistic;
+		const goBallistic = itemStats.goBallistic;
 		const attackFromTheShadowsMod = (pcData.id === 'thief' && pcData.skills.stealthy.active) ? pcData.skills.attackFromTheShadows.modifier[pcData.skills.attackFromTheShadows.level] : 0;
 		const sacrificialStrikeSkill = itemStats.sacrificialStrike;
 		const krisKnifeExpertiseMod = pcData.id === 'occultResearcher' ? pcData.skills.krisKnifeExpertise.modifier[pcData.skills.krisKnifeExpertise.level] : 0;
 
 		if (itemStats.ranged) {
-			let numOfAttacks = goingBallistic ? weaponInfo.currentRounds : 1;
-			if (goingBallistic) {
+			let numOfAttacks = goBallistic ? weaponInfo.currentRounds : 1;
+			if (goBallistic) {
 				updateLog(`${pcData.name} goes ballistic!`);
-				updatedPcData.currentSpirit -= goingBallistic.spirit[goingBallistic.level];
+				updatedPcData.currentSpirit -= goBallistic.spirit[goBallistic.level];
 			}
 			for (let attackNum = 1; attackNum <= numOfAttacks; attackNum++) {
 				hitRoll = diceRoll(this.hitDie);
@@ -146,11 +146,11 @@ class Character extends React.Component {
 				const sureShotModifier = sureShotSkill && equippedGunType ? sureShotSkill.modifier[sureShotSkill.level] : 0;
 				const steadyHandSkill = pcData.skills.steadyHand;
 				const steadyHandModifier = steadyHandSkill && equippedGunType === 'handgun' ? steadyHandSkill.modifier[steadyHandSkill.level] : 0;
-				const goingBallisticModifier = goingBallistic ? goingBallistic.modifier[goingBallistic.level] : 0;
+				const goBallisticModifier = goBallistic ? goBallistic.modifier[goBallistic.level] : 0;
 				let damage = 0;
 				attackTotal = hitRoll + pcData.agility + steadyHandModifier + sureShotModifier + rangedStrHitModifier;
-				// noGunKnowledgeMod and goingBallisticModifier are negative (or 0)
-				attackTotal += Math.round(noGunKnowledgeMod * attackTotal) + Math.round(goingBallisticModifier * attackTotal);
+				// noGunKnowledgeMod and goBallisticModifier are negative (or 0)
+				attackTotal += Math.round(noGunKnowledgeMod * attackTotal) + Math.round(goBallisticModifier * attackTotal);
 				isHit = attackTotal >= defenseTotal;
 				if (isHit) {
 					const attackDifference = attackTotal - defenseTotal;
