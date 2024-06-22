@@ -753,7 +753,7 @@ function ModeInfoPanel(props) {
 	}
 	const activePlayerObject = props.players[props.activeCharacter];
 	const charactersTurn = activePlayerObject && (props.inTacticalMode || !props.isPartyNearby) ? activePlayerObject.name :
-		props.inTacticalMode && props.threatList.length > 0 ? 'Enemies moving...' : 'Wait...';
+		props.inTacticalMode && props.threatList.length > 0 ? 'Enemies moving' : 'Wait...';
 
 	return (
 		<div className={`mode-info-container ${props.showDialog ? 'no-click' : ''}`}>

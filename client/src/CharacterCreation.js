@@ -312,7 +312,7 @@ export default class CharacterCreation extends React.Component {
 					<h3><u>First, create your lead investigator</u></h3>
 
 					<h3 className='font-fancy'>~ Name ~</h3>
-					<input type='text' value={this.state.name} maxLength='20' onChange={evt => this.updateValue({name: evt.target.value})} />
+					<input type='text' value={this.state.name} maxLength='15' onChange={evt => this.updateValue({name: evt.target.value})} />
 
 					<h3 className='font-fancy'>~ Gender ~</h3>
 					<label>

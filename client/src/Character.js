@@ -130,6 +130,7 @@ class Character extends React.Component {
 		const goingBallistic = itemStats.goingBallistic;
 		const attackFromTheShadowsMod = (pcData.id === 'thief' && pcData.skills.stealthy.active) ? pcData.skills.attackFromTheShadows.modifier[pcData.skills.attackFromTheShadows.level] : 0;
 		const sacrificialStrikeSkill = itemStats.sacrificialStrike;
+		const krisKnifeExpertiseMod = pcData.id === 'occultResearcher' ? pcData.skills.krisKnifeExpertise.modifier[pcData.skills.krisKnifeExpertise.level] : 0;
 
 		if (itemStats.ranged) {
 			let numOfAttacks = goingBallistic ? weaponInfo.currentRounds : 1;
@@ -171,7 +172,9 @@ class Character extends React.Component {
 			defenseRoll = diceRoll(this.defenseDie);
 			defenseTotal = targetData.defense + defenseRoll;
 			attackTotal = pcData.strength + Math.floor(pcData.agility / 2) + hitRoll;
-			attackTotal += Math.round(attackFromTheShadowsMod * attackTotal);
+			if (pcData.id === 'thief') {
+				attackTotal += Math.round(attackFromTheShadowsMod * attackTotal);
+			}
 			if (sacrificialStrikeSkill && attackTotal < defenseTotal) {
 				attackTotal = defenseTotal;
 			}
@@ -180,7 +183,11 @@ class Character extends React.Component {
 				const attackDifference = attackTotal - defenseTotal;
 				const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 2);
 				damageTotal = pcData.strength + itemStats.damage + damageModBasedOnAttack;
-				damageTotal += Math.round(attackFromTheShadowsMod * damageTotal);
+				if (pcData.id === 'thief') {
+					damageTotal += Math.round(attackFromTheShadowsMod * damageTotal);
+				} else if (pcData.id === 'occultResearcher' && itemId === 'krisKnife0') {
+					damageTotal += Math.round(krisKnifeExpertiseMod * damageTotal);
+				}
 				if (sacrificialStrikeSkill) {
 					damageTotal = Math.round(sacrificialStrikeSkill.modifier[sacrificialStrikeSkill.level] * damageTotal);
 					updatedPcData.currentSpirit -= sacrificialStrikeSkill.spirit[sacrificialStrikeSkill.level];
