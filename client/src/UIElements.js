@@ -101,9 +101,9 @@ function CharacterControls(props) {
 				let button;
 				if (weapon.isGun) {
 					actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || weapon.ammo === 0) ? 'button-inactive' :
-						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === weapon.weaponId) ? 'button-selected': '';
+						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.buttonId === weapon.weaponId) ? 'button-selected': '';
 					const reloadButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || props.actionButtonSelected || weapon.ammo === weapon.fullyLoaded || !hasExtraAmmo) ? 'button-inactive' :
-						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === weapon.weaponId) ? 'button-selected': '';
+						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.buttonId === weapon.weaponId) ? 'button-selected': '';
 					actionButtonCount += 2;
 					button = (
 						<div key={weapon.weaponId} className={`action-button-pair ${shouldActionButtonShow() ? '' : 'hide'}`}>
@@ -123,7 +123,7 @@ function CharacterControls(props) {
 					);
 				} else {
 					actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || (weapon.ammo === 0 && !hasExtraAmmo)) ? 'button-inactive' :
-						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === weapon.weaponId) ? 'button-selected': '';
+						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.buttonId === weapon.weaponId) ? 'button-selected': '';
 					actionButtonCount++;
 					button = (
 						<div
@@ -174,7 +174,7 @@ function CharacterControls(props) {
 					(props.isActiveCharacter &&
 					((props.actionButtonSelected &&
 					props.actionButtonSelected.characterId === props.characterId &&
-					props.actionButtonSelected.itemId === skill.skillId && skill.hasTarget) ||
+					props.actionButtonSelected.buttonId === skill.skillId && skill.hasTarget) ||
 					(skill.name === 'Stealthy' && skill.active))) ? 'button-selected': '';
 				let skillClass = `${convertObjIdToClassId(skill.skillId)}-action`;
 				actionButtonCount++;
@@ -231,7 +231,7 @@ function CharacterControls(props) {
 				let button = null;
 				if (item.amount === itemCount) {
 					const actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0) ? 'button-inactive' :
-						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.itemId === item.itemId) ? 'button-selected': '';
+						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.buttonId === item.itemId) ? 'button-selected': '';
 					actionButtonCount++;
 					button = (
 						<div key={item.itemId} className={`action-button ${shouldActionButtonShow() ? '' : 'hide'} ${convertObjIdToClassId(item.itemId)}-action ${actionButtonState}`} onClick={() => {

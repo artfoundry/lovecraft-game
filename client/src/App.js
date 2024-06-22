@@ -414,7 +414,7 @@ class Game extends React.Component {
 
 	/**
 	 * Updates to state what PC weapon, item, or skill button is selected in the UI
-	 * Data stored in actionButtonSelected: {characterId, itemId, itemName, stats: WeaponTypes[itemName], ItemTypes[itemName], or SkillTypes[itemName]}
+	 * Data stored in actionButtonSelected: {characterId, buttonId, buttonName, stats: WeaponTypes[buttonName], ItemTypes[buttonName], or SkillTypes[buttonName]}
 	 * Doesn't set actionButtonSelected if action is immediate
 	 * state.actionButtonSelected gets reset in handleUnitClick (in callback after action is done) and in this.updateCurrentTurn
 	 * @param characterId: String
@@ -428,12 +428,10 @@ class Game extends React.Component {
 		let isImmediateAction = false; // action takes effect without needing user to select a target
 		let stats = null;
 		const characterData = this.state.playerCharacters[characterId];
-		const itemId = buttonId;
-		const itemName = buttonName;
 
 		// if no weapon/item selected or weapon/item selected doesn't match new weapon/item selected, set weapon/item state to new weapon/item
 		if (characterId && (!this.state.actionButtonSelected ||
-			(this.state.actionButtonSelected.characterId !== characterId || this.state.actionButtonSelected.itemId !== buttonId)))
+			(this.state.actionButtonSelected.characterId !== characterId || this.state.actionButtonSelected.buttonId !== buttonId)))
 		{
 			if (buttonType === 'weapon') {
 				stats = deepCopy(WeaponTypes[buttonName]); // copying so if modifying below, doesn't modify WeaponTypes
@@ -451,7 +449,7 @@ class Game extends React.Component {
 				stats = characterData.skills[buttonId];
 				isImmediateAction = !stats.hasTarget;
 			}
-			buttonState = {characterId, itemId, itemName, stats};
+			buttonState = {characterId, buttonId, buttonName, stats};
 		}
 
 		if (isImmediateAction) {
@@ -556,7 +554,7 @@ class Game extends React.Component {
 			const selectedItemInfo = this.state.actionButtonSelected;
 			const activePC = this.state.playerCharacters[this.state.activeCharacter];
 			const actionProps = {
-				itemId: selectedItemInfo.itemId,
+				itemId: selectedItemInfo.buttonId,
 				itemStats: selectedItemInfo.stats,
 				targetData: target === 'creature' ? this.state.mapCreatures[id] : this.state.playerCharacters[id],
 				pcData: activePC,
@@ -784,7 +782,7 @@ class Game extends React.Component {
 		}
 
 		const clickedTargetId = evt.currentTarget.id;
-		const skillId = this.state.actionButtonSelected ? this.state.actionButtonSelected.itemId : null;
+		const skillId = this.state.actionButtonSelected ? this.state.actionButtonSelected.buttonId : null;
 		let otherCharacterOnTile = '';
 		let dyingChar = '';
 		let isClickedTargetDyingPc = false;

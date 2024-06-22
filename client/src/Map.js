@@ -945,7 +945,7 @@ class Map extends React.Component {
 			if (actionButtonIsSelected) {
 				actionIsItemOrSkill = this.props.actionButtonSelected.stats.itemType || this.props.actionButtonSelected.stats.skillType;
 				if (actionIsItemOrSkill && characterType === 'player') {
-					const buttonName = this.props.actionButtonSelected.itemName;
+					const buttonName = this.props.actionButtonSelected.buttonName;
 					isResuscitateSkill = buttonName && buttonName === 'Resuscitate';
 					let adjacentCompanionIsDying = false;
 					activePlayerPos = convertCoordsToPos(activeCharIsPlayer.coords);
