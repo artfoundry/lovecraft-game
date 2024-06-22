@@ -233,8 +233,20 @@ class Game extends React.Component {
 						this.updateUnitSelectionStatus(id, 'creature');
 					}
 				}
+				const currentCharIsPc = this.state.playerCharacters[this.state.activeCharacter];
+				const equippedRight = currentCharIsPc && currentCharIsPc.equippedItems.loadout1.right;
+				const rightWeapon = equippedRight && WeaponTypes[equippedRight];
+				const equippedLeft = currentCharIsPc && currentCharIsPc.equippedItems.loadout1.left;
+				const leftWeapon = equippedLeft && WeaponTypes[equippedLeft];
+				const goingBallisticIsActive = this.state.actionButtonSelected && this.state.actionButtonSelected.stats.goingBallistic;
+				const sacrificialStrikeIsActive = this.state.actionButtonSelected && this.state.actionButtonSelected.stats.sacrificialStrike;
 				if (lightingHasChanged) {
 					this.toggleLightingHasChanged(callback);
+				// check if either veteran, goingBallistic button is active, and just unequipped gun or occultResearcher, sacrificialStrike button is active, and just unequipped kris knife
+				} else if ((id === 'veteran' && goingBallisticIsActive && ((!rightWeapon && !leftWeapon) || (!rightWeapon.gunType && !leftWeapon.gunType))) ||
+					(id === 'occultResearcher' && sacrificialStrikeIsActive && (equippedRight !== 'krisKnife0' && equippedLeft !== 'krisKnife0')))
+				{
+					this.toggleActionButton('', '', '', '', callback);
 				} else if (updateData.isDeadOrInsane) {
 					this._removeDeadPCFromGame(id, callback);
 				} else if (callback) callback();
