@@ -8,7 +8,7 @@ class Character extends React.Component {
 	constructor(props) {
 		super(props);
 
-		this.noGunKnowledgePenalty = -0.5;
+		this.noGunKnowledgePenalty = 0.5;
 		this.hitDie = 10;
 		this.defenseDie = 4;
 
@@ -149,8 +149,7 @@ class Character extends React.Component {
 				const goBallisticModifier = goBallistic ? goBallistic.modifier[goBallistic.level] : 0;
 				let damage = 0;
 				attackTotal = hitRoll + pcData.agility + steadyHandModifier + sureShotModifier + rangedStrHitModifier;
-				// noGunKnowledgeMod and goBallisticModifier are negative (or 0)
-				attackTotal += Math.round(noGunKnowledgeMod * attackTotal) + Math.round(goBallisticModifier * attackTotal);
+				attackTotal -= (Math.round(noGunKnowledgeMod * attackTotal) + Math.round(goBallisticModifier * attackTotal));
 				isHit = attackTotal >= defenseTotal;
 				if (isHit) {
 					const attackDifference = attackTotal - defenseTotal;
@@ -235,8 +234,8 @@ class Character extends React.Component {
 		let updatedTargetData = targetData.id !== pcData.id ? deepCopy(targetData) : updatedHealerData;
 		const medicalExpertSkill = updatedHealerData.skills.medicalExpertise;
 
-		if (medicalExpertSkill) {
-			healAmount += medicalExpertSkill.modifier[medicalExpertSkill.level];
+		if (medicalExpertSkill + itemStats.healingType === 'health') {
+			healAmount += Math.round(medicalExpertSkill.modifier[medicalExpertSkill.level] * healAmount);
 		}
 		if (isChemistSkill) {
 			const skillData = pcData.skills.betterLivingThroughChemicals;

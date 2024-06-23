@@ -53,13 +53,12 @@ class Creature extends React.Component {
 			const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 2);
 			damageTotal = this.strength + this.damage + damageModBasedOnAttack - targetData.damageReduction;
 		} else if (this.attackType === 'psychic') {
-			// sanityBuff modifier from comfortTheFearful is negative
 			const damageAdjustment = targetData.statuses.sanityBuff ? targetData.statuses.sanityBuff.modifier : 0;
 			hitTotal = this.mentalAcuity + hitRoll;
 			defenseTotal = targetData.mentalAcuity + defenseRoll;
 			const attackDifference = hitTotal - defenseTotal;
 			const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 2);
-			damageTotal = this.mentalAcuity + damageModBasedOnAttack + damageAdjustment;
+			damageTotal = this.mentalAcuity + damageModBasedOnAttack - damageAdjustment;
 			logAttackMessage = `A ${this.name} psychically attacks ${targetData.name}...`;
 			logDamageMessage = `The ${this.name} fails to penetrate ${targetData.name}'s mind.`;
 		}

@@ -337,6 +337,7 @@ function CharacterInfoPanel(props) {
 	const skillList = Object.entries(props.characterInfo.skills).map(skillInfo => {
 		const skillId = skillInfo[0];
 		const skill = skillInfo[1];
+		// list of components if they exist
 		const compList = skill.cost ? Object.entries(skill.cost).map(cost => {
 			const compKey = cost[0];
 			let compVal = cost[1];
@@ -348,7 +349,7 @@ function CharacterInfoPanel(props) {
 		}) : null;
 		const skillModValue = skill.modifier ? skill.modifier[skill.level] : null;
 		// if modifier is between 1 and -1 and is a decimal, it needs to be displayed as a percentage
-		const modifier = skillModValue && ((skillModValue < 1) && (skillModValue > -1) && (skillModValue - Math.floor(skillModValue)) !== 0) ? skillModValue * 100 + '%' : skillModValue;
+		const modifier = skillModValue && ((skillModValue < 1) && (skillModValue > -1) && (skillModValue - Math.floor(skillModValue)) !== 0) ? skillModValue * 100 : skillModValue;
 		return (
 			<div key={skill.name + Math.random()} className='char-info-skills-skill-container'>
 				<div className='char-info-skill-icon-column'>
@@ -358,7 +359,7 @@ function CharacterInfoPanel(props) {
 					<div className='char-info-skill-name'>{skill.name}</div>
 					<div>{skill.description}</div>
 					<div>Skill level: {skill.level +1}</div>
-					{skill.modifier ? <div>Modifier: {modifier}</div> : null}
+					{skill.modifier ? <div>Effect: {skill.modType}{modifier}{skill.affects}</div> : null}
 					{skill.mustBeOutOfDanger ? <div>Can't be used during combat</div> : null}
 					{skill.cost && skill.name !== 'Sacrificial Strike' ? <div>Required components: {compList}</div> : null}
 					{skill.cost && skill.name === 'Sacrificial Strike' ? <div>Cost: {compList}</div> : null}
