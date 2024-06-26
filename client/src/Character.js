@@ -64,7 +64,7 @@ class Character extends React.Component {
 		const fullItemData = type === 'weapon' ? WeaponTypes : ItemTypes;
 		let allInfo = {};
 		for (const [id, info] of Object.entries(objects)) {
-			allInfo[id] = {...info, ...fullItemData[info.name]};
+			allInfo[id] = {...info, ...fullItemData[info.name], identified: true};
 			if (id !== equipped.right && id !== equipped.left && id !== equipped.armor) {
 				const firstEmptyBoxId = this.inventory.indexOf(null);
 				this.inventory.splice(firstEmptyBoxId, 1, id);
@@ -107,13 +107,13 @@ class Character extends React.Component {
 	 *  itemStats: object,
 	 *  targetData: object,
 	 *  pcData: object,
-	 *  updateCharacter: function (from App),
+	 *  updateCharacters: function (from App),
 	 *  updateLog: function (from App),
 	 *  callback: function (from App - calls toggleWeapon, _removeDeadFromTurnOrder if creature dies, then _updateActivePlayerActions)
 	 * )
 	 */
 	attack = (props) => {
-		const {itemId, itemStats, targetData, pcData, updateCharacter, updateLog, callback} = props;
+		const {itemId, itemStats, targetData, pcData, updateCharacters, updateLog, callback} = props;
 		let attackTotal, hitRoll, defenseRoll, defenseTotal;
 		let isHit = false;
 		let damageTotal = 0;
@@ -200,10 +200,10 @@ class Character extends React.Component {
 			updateLog(`${pcData.name} ${sacrificialStrikeText}attacks ${fromShadowsText}with the ${weaponInfo.name}, scores ${attackTotal} to hit...and ${isHit ? `does ${damageTotal} damage!` : `misses (${targetData.name} scored ${defenseTotal} for defense).`}`);
 		}
 
-		updateCharacter('player', updatedPcData, pcData.id, false, false, false, () => {
+		updateCharacters('player', updatedPcData, pcData.id, false, false, false, () => {
 			if (damageTotal > 0) {
 				updatedCreatureData.currentHealth -= damageTotal;
-				updateCharacter('creature', updatedCreatureData, targetData.id, false, false, false, callback);
+				updateCharacters('creature', updatedCreatureData, targetData.id, false, false, false, callback);
 			} else if (callback) {
 				callback();
 			}
@@ -217,14 +217,14 @@ class Character extends React.Component {
 	 *  itemStats: object,
 	 *  targetData: object,
 	 *  pcData: object,
-	 *  updateCharacter: function (from App),
+	 *  updateCharacters: function (from App),
 	 *  updateLog: function (from App),
 	 *  isChemistSkill: boolean (used for betterLivingThroughChemicals skill)
 	 *  callback: function (from App - calls toggleWeapon, _removeDeadFromTurnOrder if creature dies, then _updateActivePlayerActions)
 	 * )
 	 */
 	heal = (props) => {
-		const {itemId, itemStats, targetData, pcData, updateCharacter, updateLog, isChemistSkill, callback} = props;
+		const {itemId, itemStats, targetData, pcData, updateCharacters, updateLog, isChemistSkill, callback} = props;
 		const healItem = pcData.items[itemId].name;
 		const targetStat = itemStats.healingType === 'health' ? 'currentHealth' : 'currentSanity';
 		const startingStatValue = itemStats.healingType === 'health' ? targetData.startingHealth : targetData.startingSanity;
@@ -252,11 +252,11 @@ class Character extends React.Component {
 		} else {
 			updatedHealerData.items[itemId].amount--;
 		}
-		updateCharacter('player', updatedTargetData, targetData.id, false, false, false, () => {
+		updateCharacters('player', updatedTargetData, targetData.id, false, false, false, () => {
 			const target = pcData.name === targetData.name ? (targetData.gender === 'Male' ? 'his' : 'her') : targetData.name + "'s";
 			updateLog(`${pcData.name} uses ${healItem} to recover ${target} ${targetStat.substring(7)}`);
 			if (targetData.id !== pcData.id) {
-				updateCharacter('player', updatedHealerData, pcData.id, false, false, false, callback);
+				updateCharacters('player', updatedHealerData, pcData.id, false, false, false, callback);
 			} else {
 				callback();
 			}
@@ -272,7 +272,7 @@ class Character extends React.Component {
 	 *     itemType: string ('firstAidKit', 'molotovCocktail', 'torch', 'acidConcoction', 'pharmaceuticals', 'holyWater'),
 	 *     activeCharId: string,
 	 *     currentPcData: object,
-	 *     updateCharacter: function (from App),
+	 *     updateCharacters: function (from App),
 	 *     updateLog: function (from App),
 	 *     setShowDialogProps: function (from App),
 	 *     addItemToPlayerInventory: function (from App),
@@ -280,14 +280,19 @@ class Character extends React.Component {
 	 * }
 	 */
 	create = (props) => {
-		const {itemType, activeCharId, currentPcData, updateCharacter, updateLog, setShowDialogProps, addItemToPlayerInventory, updateActivePlayerActions} = props;
-		const materialCosts = currentPcData.skills[itemType].cost;
-		const lightCost = currentPcData.skills[itemType].light[0];
-		const itemName = currentPcData.skills[itemType].name;
-		let updatedPcData = deepCopy(currentPcData);
-		let activeCharItems = updatedPcData.items;
+		const {itemType, activeCharId, partyData, updateCharacters, updateLog, setShowDialogProps, addItemToPlayerInventory, updateActivePlayerActions, calcPcLightChanges} = props;
+		const currentPcData = partyData[activeCharId];
+		const createSkill = currentPcData.skills[itemType];
+		const materialCosts = createSkill.cost;
+		const lightCost = createSkill.light[createSkill.level];
+		const itemName = createSkill.name.substring(7); // removes "Create "
+		let updatedPartyData = deepCopy(partyData);
+		let activeCharItems = updatedPartyData[activeCharId].items;
+		let lightingHasChanged = false;
+		const notEnoughMaterialsMessage = `${currentPcData.name} doesn't have enough materials to create that item.`;
+		const notEnoughLightMessage = `${currentPcData.name} needs to equip a light with enough time left to create that item.`;
 		const notEnoughMatsDialogProps = {
-			dialogContent: "That character doesn't have enough materials to create that item.",
+			dialogContent: '',
 			closeButtonText: 'Ok',
 			closeButtonCallback: null,
 			disableCloseButton: false,
@@ -296,11 +301,19 @@ class Character extends React.Component {
 			actionButtonCallback: null,
 			dialogClasses: ''
 		};
+
+		if (!currentPcData.equippedLight || currentPcData.lightTime < lightCost) {
+			notEnoughMatsDialogProps.dialogContent = notEnoughLightMessage;
+			setShowDialogProps(true, notEnoughMatsDialogProps);
+			return;
+		}
+
 		for (const [material, reqAmount] of Object.entries(materialCosts)) {
 			// need to remove the 0 in the inventory item key
 			const materialItemKey = material + '0';
 			// if not enough materials to create, show dialog and exit
 			if (!currentPcData.items[materialItemKey] || currentPcData.items[materialItemKey].amount < reqAmount) {
+				notEnoughMatsDialogProps.dialogContent = notEnoughMaterialsMessage;
 				setShowDialogProps(true, notEnoughMatsDialogProps);
 				return;
 			// otherwise, delete materials from inv
@@ -308,39 +321,43 @@ class Character extends React.Component {
 				activeCharItems[materialItemKey].amount -= reqAmount;
 				if (activeCharItems[materialItemKey].amount === 0) {
 					delete activeCharItems[materialItemKey];
-					const materialInvIndex = updatedPcData.inventory.indexOf(materialItemKey);
-					updatedPcData.inventory.splice(materialInvIndex, 1, null);
+					const materialInvIndex = updatedPartyData[activeCharId].inventory.indexOf(materialItemKey);
+					updatedPartyData[activeCharId].inventory.splice(materialInvIndex, 1, null);
 				}
 			}
 		}
-		if (updatedPcData.equippedLight) {
-			const timeSpent = lightCost > updatedPcData.lightTime ? updatedPcData.lightTime : lightCost;
-			const equippedLight = updatedPcData.equippedLight;
-			updatedPcData.items[equippedLight].time -= timeSpent;
-			updatedPcData.lightTime -= timeSpent;
+
+		for (const charData of Object.values(updatedPartyData)) {
+			if (charData.equippedLight && charData.lightTime > 0) {
+				const {equippedLightItem, lightTime, lightRange, hasLightChanged} = calcPcLightChanges(charData.id, lightCost);
+				charData.items[charData.equippedLight] = {...equippedLightItem};
+				charData.lightTime = lightTime;
+				charData.lightRange = lightRange;
+				lightingHasChanged = hasLightChanged;
+			}
 		}
 
 		let itemId = itemType + '0';
-		const itemCategory = currentPcData.skills[itemType].itemCategory;
+		const itemCategory = createSkill.itemCategory;
 		let itemData = {};
 		if (itemCategory === 'items') {
 			itemData = {...ItemTypes[itemName]};
 		} else if (itemCategory === 'weapons') {
 			itemData = {...WeaponTypes[itemName]};
 		}
-		if ((updatedPcData.items[itemId] || updatedPcData.weapons[itemId]) && itemData.stackable) {
+		if ((activeCharItems[itemId] || updatedPartyData[activeCharId].weapons[itemId]) && itemData.stackable) {
 			if (itemCategory === 'items') {
-				updatedPcData.items[itemId].amount++;
+				activeCharItems[itemId].amount++;
 			} else if (itemCategory === 'weapons') {
-				updatedPcData.weapons[itemId].currentRounds++;
+				updatedPartyData[activeCharId].weapons[itemId].currentRounds++;
 			}
 		}
 
-		updateLog(`${currentPcData.name} creates a${itemType === 'acidConcoction' ? 'n' : ''} ${itemName}.`);
+		updateLog(`${currentPcData.name} spends time to create a${itemType === 'acidConcoction' ? 'n' : ''} ${itemName}.`);
 		// update stackable counts if applicable and remove used materials
-		updateCharacter('player', updatedPcData, activeCharId, false, false, false, () => {
+		updateCharacters('player', updatedPartyData, null, lightingHasChanged, false, false, () => {
 			// if item is new (not stackable or is stackable but id not in items/weapons), add to items/weapons and inventory
-			if (!itemData.stackable || (!updatedPcData.items[itemId] && !updatedPcData.weapons[itemId])) {
+			if (!itemData.stackable || (!activeCharItems[itemId] && !updatedPartyData[activeCharId].weapons[itemId])) {
 				// For stackable items (5 of the 6 items currently), ID will be coerced to 0 in App.addItemToPlayerInventory, so loop below isn't needed
 				// but if other nonstackable item create skills are added, then this loop will be needed for those
 				let greatestItemNumInInv = 0;
@@ -388,14 +405,14 @@ class Character extends React.Component {
 	 * Called from toggleActionButton in App
 	 * @param props: object {
 	 *     currentPcData: object,
-	 *     updateCharacter: function (App),
+	 *     updateCharacters: function (App),
 	 *     updateLog: function (App),
 	 *     setShowDialogProps: function (App),
 	 *     updateActivePlayerActions: function (App)
 	 * }
 	 */
 	betterLivingThroughChemicals = (props) => {
-		const {currentPcData, updateCharacter, updateLog, setShowDialogProps, updateActivePlayerActions} = props;
+		const {currentPcData, updateCharacters, updateLog, setShowDialogProps, updateActivePlayerActions} = props;
 
 		if (currentPcData.currentSanity === currentPcData.startingSanity) {
 			const fullSanityDialogProps = {
@@ -418,7 +435,7 @@ class Character extends React.Component {
 			isChemistSkill: true,
 			targetData: currentPcData,
 			pcData: currentPcData,
-			updateCharacter,
+			updateCharacters,
 			updateLog,
 			callback: updateActivePlayerActions
 		}
@@ -431,14 +448,14 @@ class Character extends React.Component {
 	 * @param props: object {
 	 *     targetData: object
 	 *     pcData: object,
-	 *     updateCharacter: function (App),
+	 *     updateCharacters: function (App),
 	 *     updateLog: function (App),
 	 *     setShowDialogProps: function (App),
 	 *     callback: function
 	 * }
 	 */
 	resuscitate = (props) => {
-		const {targetData, pcData, updateCharacter, updateLog, setShowDialogProps, callback} = props;
+		const {targetData, pcData, updateCharacters, updateLog, setShowDialogProps, callback} = props;
 		if (targetData.isDeadOrInsane) {
 			const dialogProps = {
 				dialogContent: `${targetData.name} has been dead for too long and can't be revived!`,
@@ -459,9 +476,9 @@ class Character extends React.Component {
 		updatedTargetData.currentHealth = resusSkillData.modifier[resusSkillData.level];
 		updatedTargetData.turnsSinceDeath = 0;
 		updatedHealerData.currentSpirit -= resusSkillData.spirit[resusSkillData.level];
-		updateCharacter('player', updatedTargetData, targetData.id, false, false, false, () => {
+		updateCharacters('player', updatedTargetData, targetData.id, false, false, false, () => {
 			updateLog(`${pcData.name} resuscitates  ${targetData.name} back to life!`);
-			updateCharacter('player', updatedHealerData, pcData.id, false, false, false, callback);
+			updateCharacters('player', updatedHealerData, pcData.id, false, false, false, callback);
 		});
 	}
 
@@ -483,13 +500,13 @@ class Character extends React.Component {
 	 * @param props: object {
 	 *     partyData: object,
 	 *     currentRound: number,
-	 *     updateCharacter: function (App),
+	 *     updateCharacters: function (App),
 	 *     updateLog: function (App),
 	 *     updateActivePlayerActions: function (App)
 	 * }
 	 */
 	comfortTheFearful = (props) => {
-		const {partyData, currentRound, updateCharacter, updateLog, updateActivePlayerActions} = props;
+		const {partyData, currentRound, updateCharacters, updateLog, updateActivePlayerActions} = props;
 		let updatedPartyData = deepCopy(partyData);
 		const comfortSkillData = updatedPartyData.priest.skills.comfortTheFearful;
 
@@ -504,7 +521,7 @@ class Character extends React.Component {
 			updatedPartyData[id].statuses = this.updateStatus(charData.statuses, statusData);
 		}
 		updatedPartyData.priest.currentSpirit -= comfortSkillData.spirit[comfortSkillData.level];
-		updateCharacter('player', updatedPartyData, null, false, false, false, () => {
+		updateCharacters('player', updatedPartyData, null, false, false, false, () => {
 			updateLog(`${updatedPartyData.priest.name} comforts the party, easing their minds from the horrors around them!`);
 			updateActivePlayerActions();
 		});
@@ -515,13 +532,13 @@ class Character extends React.Component {
 	 * Called from toggleActionButton in App
 	 * @param props: object {
 	 *     partyData: object,
-	 *     updateCharacter: function (App),
+	 *     updateCharacters: function (App),
 	 *     updateLog: function (App),
 	 *     updateActivePlayerActions: function (App)
 	 * }
 	 */
 	spiritualInspiration = (props) => {
-		const {partyData, updateCharacter, updateLog, updateActivePlayerActions} = props;
+		const {partyData, updateCharacters, updateLog, updateActivePlayerActions} = props;
 		let updatedPartyData = deepCopy(partyData);
 		const inspireSkillData = updatedPartyData.priest.skills.spiritualInspiration;
 		const inspireModifier = inspireSkillData.modifier[inspireSkillData.level];
@@ -530,7 +547,7 @@ class Character extends React.Component {
 			const modifiedSpirit = updatedPartyData[id].currentSpirit + inspireModifier;
 			updatedPartyData[id].currentSpirit = modifiedSpirit > updatedPartyData[id].startingSpirit ? updatedPartyData[id].startingSpirit : modifiedSpirit;
 		}
-		updateCharacter('player', updatedPartyData, null, false, false, false, () => {
+		updateCharacters('player', updatedPartyData, null, false, false, false, () => {
 			updateLog(`${updatedPartyData.priest.name} inspires the party, filling them with spiritual energy!`);
 			updateActivePlayerActions(true);
 		});
@@ -541,19 +558,19 @@ class Character extends React.Component {
 	 * Called from toggleActionButton in App
 	 * @param props: object {
 	 *     currentPcData: object,
-	 *     updateCharacter: function (App),
+	 *     updateCharacters: function (App),
 	 *     updateLog: function (App),
 	 *     updateActivePlayerActions: function (App)
 	 * }
 	 */
 	feelThePain = (props) => {
-		const {currentPcData, updateCharacter, updateLog, updateActivePlayerActions} = props;
+		const {currentPcData, updateCharacters, updateLog, updateActivePlayerActions} = props;
 		let updatedPcData = deepCopy(currentPcData);
 		const feelThePainSkill = updatedPcData.skills.feelThePain;
 
 		feelThePainSkill.active = true;
 		updatedPcData.currentSpirit -= feelThePainSkill.spirit[feelThePainSkill.level];
-		updateCharacter('player', updatedPcData, 'veteran', false, false, false, () => {
+		updateCharacters('player', updatedPcData, 'veteran', false, false, false, () => {
 			updateLog(`${updatedPcData.name} prepares for a psychic attack...`);
 			updateActivePlayerActions();
 		});
@@ -564,23 +581,80 @@ class Character extends React.Component {
 	 * Called from toggleActionButton in App
 	 * @param props: object {
 	 *     currentPcData: object,
-	 *     updateCharacter: function (App),
+	 *     updateCharacters: function (App),
 	 *     updateLog: function (App),
 	 * }
 	 */
 	stealthy = (props) => {
-		const {currentPcData, updateCharacter, updateLog} = props;
+		const {currentPcData, updateCharacters, updateLog} = props;
 		let updatedPcData = deepCopy(currentPcData);
 		const stealthySkill = updatedPcData.skills.stealthy;
 
 		stealthySkill.active = !stealthySkill.active;
-		updateCharacter('player', updatedPcData, 'thief', false, false, false, () => {
+		updateCharacters('player', updatedPcData, 'thief', false, false, false, () => {
 			if (stealthySkill.active) {
 				updateLog(`${updatedPcData.name} goes stealthy, slipping through the shadows...`);
 			} else {
 				updateLog(`${updatedPcData.name} leaves the shadows.`);
 			}
 		});
+	}
+
+	identifyRelic = (props) => {
+		const {partyData, updateCharacters, updateLog, setShowDialogProps, calcPcLightChanges} = props;
+		let updatedPartyData = deepCopy(partyData);
+		const currentPcData = updatedPartyData.occultResearcher;
+		const identifyRelicSkill = currentPcData.skills.identifyRelic;
+		const allItems = Object.values(currentPcData.items);
+		let index = 0;
+		let itemFound = false;
+		let lightingHasChanged = false;
+		const lightCost = identifyRelicSkill.light[identifyRelicSkill.level];
+		const notEnoughLightMessage = `${currentPcData.name} needs to equip a light with enough time left to identify a Relic.`;
+		const noRelicsMessage = `There are no Relics in ${currentPcData.name}'s inventory.`;
+		const notEnoughLightDialogProps = {
+			dialogContent: '',
+			closeButtonText: 'Ok',
+			closeButtonCallback: null,
+			disableCloseButton: false,
+			actionButtonVisible: false,
+			actionButtonText: '',
+			actionButtonCallback: null,
+			dialogClasses: ''
+		};
+
+		if (!currentPcData.equippedLight || currentPcData.lightTime < lightCost) {
+			notEnoughLightDialogProps.dialogContent = notEnoughLightMessage;
+			setShowDialogProps(true, notEnoughLightDialogProps);
+			return;
+		}
+
+		while (!itemFound && index < allItems.length) {
+			const itemData = allItems[index];
+			if (itemData.itemType === 'Relic' && !itemData.identified) {
+				itemData.identified = true;
+				itemFound = itemData;
+			}
+			index++;
+		}
+		if (itemFound) {
+			for (const charData of Object.values(updatedPartyData)) {
+				if (charData.equippedLight && charData.lightTime > 0) {
+					const {equippedLightItem, lightTime, lightRange, hasLightChanged} = calcPcLightChanges(charData.id, lightCost);
+					charData.items[charData.equippedLight] = {...equippedLightItem};
+					charData.lightTime = lightTime;
+					charData.lightRange = lightRange;
+					lightingHasChanged = hasLightChanged;
+				}
+			}
+			updatedPartyData.occultResearcher.currentSpirit -= identifyRelicSkill.spirit[identifyRelicSkill.level];
+			updateCharacters('player', updatedPartyData, null, lightingHasChanged, false, false, () => {
+				updateLog(`${currentPcData.name} spends time examining a Relic and identifies it as the ${itemFound.name}!`);
+			});
+		} else {
+			notEnoughLightDialogProps.dialogContent = noRelicsMessage;
+			setShowDialogProps(true, notEnoughLightDialogProps);
+		}
 	}
 }
 

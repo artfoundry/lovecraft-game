@@ -44,11 +44,6 @@ class Map extends React.Component {
 		};
 		this.creatureSurvivalHpPercent = 0.25;
 		this.movementDelay = 50;
-		this.lightRanges = {
-			'Torch': ItemTypes['Torch'].range,
-			'Lantern': ItemTypes['Lantern'].range,
-			'Electric Torch': ItemTypes['Electric Torch'].range
-		};
 		this.maxLightStrength = 5;
 		this.numMapPieceTwoDoorHalls = 6;
 
@@ -672,13 +667,14 @@ class Map extends React.Component {
 						mapItems[itemID] = {
 							...itemInfo,
 							name: itemName,
+							identified: objectType !== 'Relic',
 							currentRounds: weaponCurrentRounds,
 							coords
 						};
 						mapItems[itemID].amount =
 							objectType === 'Ammo' ? Math.floor(Math.random() * 10) + 2 :
 							itemName === 'Oil' ? Math.floor(Math.random() * 90) + 10 :
-							objectType === 'Medicine' || objectType === 'Component' || objectType === 'Relic' ? 1 : null;
+							objectType === 'Medicine' || objectType === 'Component' ? 1 : null;
 						itemCoords[itemID] = coords;
 					}
 				}
@@ -1931,21 +1927,17 @@ class Map extends React.Component {
 
 		let updateData = {coords: newCoords};
 		const activePlayerData = this.props.playerCharacters[activePC];
+		let lightingHasChanged = false;
 		// reduce light time remaining and range if time is really low
-		if (activePlayerData.equippedLight) {
+		if (activePlayerData.equippedLight && activePlayerData.lightTime > 0) {
 			updateData.items = activePlayerData.items;
-			let equippedLight = updateData.items[activePlayerData.equippedLight];
-			if (activePlayerData.lightTime > 0) {
-				equippedLight.time = activePlayerData.lightTime - 1;
-				updateData.lightTime = activePlayerData.lightTime - 1;
-				if (activePlayerData.lightTime <= (equippedLight.maxTime * 0.1)) {
-					updateData.lightRange = this.lightRanges[equippedLight.name] - 2;
-				} else if (activePlayerData.lightTime <= (equippedLight.maxTime * 0.2)) {
-					updateData.lightRange = this.lightRanges[equippedLight.name] - 1;
-				}
-			}
+			const {equippedLightItem, lightTime, lightRange, hasLightChanged} = this.props.calcPcLightChanges(activePC);
+			updateData.items[activePlayerData.equippedLight] = {...equippedLightItem};
+			updateData.lightTime = lightTime;
+			updateData.lightRange = lightRange;
+			lightingHasChanged = hasLightChanged;
 		}
-		this.props.updateCharacters('player', updateData, activePC, false, false, false, () => {
+		this.props.updateCharacters('player', updateData, activePC, lightingHasChanged, false, false, () => {
 			this._calculateLighting(() => {
 				if (activePC === this.props.activeCharacter && this.isActivePlayerNearWindowEdge()) {
 					this._moveMap();

@@ -364,7 +364,7 @@ class UI extends React.Component {
 				loadout1.right = '';
 				hand = 'right';
 			}
-			itemBeingReplaced = loadout1[hand];
+			itemBeingReplaced = lightBeingSwapped || loadout1[hand];
 			loadout1[hand] = draggedItem.id;
 		// or we're equipping a body item
 		} else if (destination === 'body') {

@@ -191,3 +191,11 @@ as box-shadow greatly dims the lighting */
 .wood {
 	content: url('../assets/objects/wood_sml.png');
 }
+
+.elder-sign {
+	content: url('../assets/objects/elderSign_sml.png');
+}
+
+.necronomicon {
+	content: url('../assets/objects/necronomicon_sml.png');
+}

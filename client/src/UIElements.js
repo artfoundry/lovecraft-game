@@ -593,7 +593,7 @@ function ObjectInfoPanel(props) {
 						<div className='object-row-with-buttons'>
 							<div className={`inv-object ${convertObjIdToClassId(obj.id)}`}></div>
 							<div>
-								<div className='font-fancy object-list-objname'>{obj.name}</div>
+								<div className='font-fancy object-list-objname'>{obj.identified ? obj.name : '???'}</div>
 								<div>{obj.description}</div>
 							</div>
 							{isPickUpAction &&
@@ -656,7 +656,7 @@ function ObjectInfoPanel(props) {
 				<div className='object-panel-contents'>
 					<div className={`inv-object ${convertObjIdToClassId(objectToShow.id)}-inv`}></div>
 					<div className='object-text-container'>
-						<div className='font-fancy'>{objectToShow.name}</div>
+						<div className='font-fancy'>{objectToShow.identified ? objectToShow.name : '???'}</div>
 						<div>{objectToShow.itemType ? objectToShow.itemType : (objectToShow.ranged ? 'Ranged' : 'Melee') + ' weapon'}</div>
 						{objectToShow.rounds && <div>Capacity: {objectToShow.rounds} rounds</div>}
 						{objectToShow.amount && <div>Amount: {objectToShow.amount}</div>}
@@ -665,7 +665,10 @@ function ObjectInfoPanel(props) {
 						{objectToShow.damage && <div>Base damage: {objectToShow.damage}</div>}
 						{objectToShow.time && <div>Light remaining: {objectToShow.time} steps</div>}
 						<div>{objectToShow.description}</div>
-					</div>
+						{objectToShow.identified && <div>{objectToShow.furtherInfo}</div>}
+						{objectToShow.identified && <div>Effect: {objectToShow.effect}</div>}
+						{objectToShow.identified && objectToShow.sanityCost && <div>Cost: -{objectToShow.sanityCost} Sanity</div>}
+						</div>
 				</div>
 				<div className='object-panel-buttons-container'>
 					{isDraggedObject && objectToShow.stackable &&

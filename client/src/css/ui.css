@@ -294,7 +294,7 @@ h3 {
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
-	min-width: 190px;
+	min-width: 200px;
 	padding: 10px;
 	border-left: 1px solid seagreen;
 	border-right: 1px solid seagreen;
@@ -953,6 +953,7 @@ select {
 .object-info-panel, .skill-info-panel {
 	position: fixed;
 	width: 400px;
+	max-height: 350px;
 	padding: 10px;
 	background-color: #225555;
 	font-family: "Century Gothic", sans-serif;
@@ -1140,6 +1141,14 @@ select {
 
 .wood-inv {
 	background-image: url('../assets/objects/wood_lrg.png');
+}
+
+.elder-sign-inv {
+	background-image: url('../assets/objects/elderSign_lrg.png');
+}
+
+.necronomicon-inv {
+	background-image: url('../assets/objects/necronomicon_lrg.png');
 }
 
 /* ACTION BUTTON ICONS */
@@ -1357,6 +1366,7 @@ select {
 	}
 
 	.mode-info-container, .log-container {
+		min-width: 185px;
 		padding: 5px;
 	}
 
@@ -1559,6 +1569,8 @@ select {
 
 	.object-info-panel, .skill-info-panel {
 		width: 100%;
+		max-height: 300px;
+		overflow: scroll;
 		left: 5%;
 	}
 
@@ -1637,6 +1649,7 @@ select {
 
 	.object-info-panel, .skill-info-panel {
 		max-height: 250px;
+		overflow: scroll;
 	}
 
 	.object-panel-container {

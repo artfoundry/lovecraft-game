@@ -26,6 +26,13 @@ class Game extends React.Component {
 		this.playerActionsLimit = 2;
 		this.playerInventoryLimit = 12;
 		this.maxTurnsToReviveDeadPlayer = 3;
+		this.minimalLightThreshold = 0.1;
+		this.lowLightThreshold = 0.2;
+		this.lightRanges = {
+			'Torch': ItemTypes['Torch'].range,
+			'Lantern': ItemTypes['Lantern'].range,
+			'Electric Torch': ItemTypes['Electric Torch'].range
+		};
 
 		this.minScreenWidthForSmall = 1000;
 		this.minScreenWidthForNarrow = 768;
@@ -475,24 +482,25 @@ class Game extends React.Component {
 
 		if (isImmediateAction) {
 			// skillType will either be 'create' or 'active' (except heal and resuscitate skills are called from handleUnitClick)
-			const createSkillId = buttonId.substring(6); // removes 'create' from skill name
 			const props = stats.skillType === 'create' ? {
-				itemType: createSkillId,
+				itemType: buttonId,
 				activeCharId: characterId,
-				currentPcData: characterData,
-				updateCharacter: this.updateCharacters,
+				partyData: this.state.playerCharacters,
+				updateCharacters: this.updateCharacters,
 				updateLog: this.updateLog,
 				setShowDialogProps: this.setShowDialogProps,
 				addItemToPlayerInventory: this.addItemToPlayerInventory,
-				updateActivePlayerActions: this.updateActivePlayerActions
+				updateActivePlayerActions: this.updateActivePlayerActions,
+				calcPcLightChanges: this.calcPcLightChanges
 			} : {
 				currentPcData: characterData,
 				partyData: this.state.playerCharacters,
 				currentRound: this.state.currentRound,
-				updateCharacter: this.updateCharacters,
+				updateCharacters: this.updateCharacters,
 				updateLog: this.updateLog,
 				setShowDialogProps: this.setShowDialogProps,
-				updateActivePlayerActions: this.updateActivePlayerActions
+				updateActivePlayerActions: this.updateActivePlayerActions,
+				calcPcLightChanges: this.calcPcLightChanges
 			};
 			const skillId = stats.skillType === 'create' ? 'create' : buttonId;
 			characterData[skillId](props);
@@ -523,6 +531,7 @@ class Game extends React.Component {
 		updatedPcData.items[gunType + 'Ammo0'].amount = availAmmo - resupplyAmmo;
 		if (updatedPcData.items[gunType + 'Ammo0'].amount === 0) {
 			delete updatedPcData.items[gunType + 'Ammo0'];
+			updatedPcData.inventory.splice(updatedPcData.inventory.indexOf(gunType + 'Ammo0'), 1, null);
 		}
 		if (isQuickReload) {
 			updatedPcData.currentSpirit = this.reduceCharSpirit('quickReload');
@@ -547,10 +556,39 @@ class Game extends React.Component {
 		oil.amount -= oil.amount < oilNeeded ? oil.amount : oilNeeded;
 		if (oil.amount <= 0) {
 			delete activePcData.items.oil0;
+			activePcData.inventory.splice(activePcData.inventory.indexOf('oil0'), 1, null);
 		}
 		this.updateCharacters('player', activePcData, this.state.activeCharacter, true, false, false, () => {
 			this.updateActivePlayerActions();
 		});
+	}
+
+	/**
+	 * charData obj passed in is modified to reduce light time (from moving, using skills, etc.) and range if time gets low enough
+	 * whether lighting has changed (light range) is returned to determine if lighting needs to be recalculated
+	 * charData doesn't need to be returned (pointer to orig object from calling function)
+	 * @param charId: string (pc ID)
+	 * @param lightCost: integer (how much to reduce lightTime)
+	 * @returns object: (equippedLight, lightTime, lightRange, lightingHasChanged)
+	 */
+	calcPcLightChanges = (charId, lightCost = 1) => {
+		const charData = this.state.playerCharacters[charId];
+		let equippedLightItem = {...charData.items[charData.equippedLight]}; // shouldn't be any nested data in light obj
+		let lightTime = charData.lightTime;
+		let lightRange = charData.lightRange;
+		let lightingHasChanged = false;
+		const timeSpent = lightCost > lightTime ? lightTime : lightCost;
+
+		equippedLightItem.time -= timeSpent;
+		lightTime -= timeSpent;
+		if (lightTime <= (equippedLightItem.maxTime * this.minimalLightThreshold)) {
+			lightRange = this.lightRanges[equippedLightItem.name] - 2;
+			lightingHasChanged = true;
+		} else if (lightTime <= (equippedLightItem.maxTime * this.lowLightThreshold)) {
+			lightRange = this.lightRanges[equippedLightItem.name] - 1;
+			lightingHasChanged = true;
+		}
+		return {equippedLightItem, lightTime, lightRange, lightingHasChanged};
 	}
 
 	/**
@@ -582,7 +620,7 @@ class Game extends React.Component {
 				itemStats: selectedItemInfo.stats,
 				targetData: target === 'creature' ? this.state.mapCreatures[id] : this.state.playerCharacters[id],
 				pcData: activePC,
-				updateCharacter: this.updateCharacters,
+				updateCharacters: this.updateCharacters,
 				updateLog: this.updateLog,
 				setShowDialogProps: this.setShowDialogProps,
 				callback: () => {
@@ -1459,6 +1497,7 @@ class Game extends React.Component {
 						updateActivePlayerMoves={this.updateActivePlayerMoves}
 						mapCreatures={this.state.mapCreatures}
 						updateCharacters={this.updateCharacters}
+						calcPcLightChanges={this.calcPcLightChanges}
 
 						updateMapObjects={this.updateMapObjects}
 						mapObjects={this.state.mapObjects}

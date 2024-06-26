@@ -275,7 +275,6 @@
     "skillType": "active",
     "profession": ["occultResearcher"],
     "description": "Discern what a Relic does (item must be in inventory)",
-    "hasTarget": true,
     "mustBeOutOfDanger": true,
     "light": [30, 25, 20, 15, 10],
     "spirit": [30, 25, 20, 15, 10]

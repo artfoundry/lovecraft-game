@@ -237,6 +237,7 @@ export default class CharacterCreation extends React.Component {
 						const object = this.itemTypes[itemInfo.name] || this.weaponTypes[itemInfo.name];
 						object.id = itemId;
 						object.name = itemInfo.name;
+						object.identified = true;
 						this.setObjectSelected(object, true);
 					 }}
 				></div>
