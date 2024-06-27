@@ -1297,6 +1297,10 @@ select {
 	background-image: url('../assets/ui/sacrificial-strike_sml.png');
 }
 
+.necronomicon-action {
+	background-image: url('../assets/ui/necronomicon_sml.png');
+}
+
 
 /* Audio */
 

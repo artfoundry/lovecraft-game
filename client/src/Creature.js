@@ -10,6 +10,7 @@ class Creature extends React.Component {
 		this.id = props.creatureId;
 		this.name = props.name;
 		this.type = props.type;
+		this.isOldOne = props.isOldOne;
 		this.level = props.level;
 		this.strength = props.strength;
 		this.agility = props.agility;
@@ -28,6 +29,8 @@ class Creature extends React.Component {
 		this.perception = props.perception;
 		this.skills = props.skills;
 		this.coords = props.coords;
+		this.statuses = {};
+		this.isRemoved = false;
 	}
 
 	attack = (targetData, updateTarget, updateLog, updateTurnCallback = null) => {
@@ -95,6 +98,7 @@ class Creature extends React.Component {
 			updateTurnCallback();
 		}
 	}
+
 }
 
 export default Creature;

@@ -94,15 +94,22 @@
   },
   "Elder Sign": {
     "itemType": "Relic",
+    "name": "Elder Sign",
     "description": "A small tablet of an unknown material with a symbol on it showing an asymmetrical five point star with a flame in the center.",
     "furtherInfo": "Not of this Earth, this object emanates a strange, barely audible noise and simultaneously makes the wielder feel at ease and gives them a sense of foreboding.",
-    "effect": "Protects the wielder from the effects of the Old Ones. May have other properties..."
+    "effect": "Protects the wielder from the effects of the Old Ones. May have other properties...",
+    "useType": "passive"
   },
   "Necronomicon": {
     "itemType": "Relic",
+    "name": "Necronomicon",
     "description": "An ancient book, bound in leather with iron clasps.",
     "furtherInfo": "Translated into Greek from the original, which was written in Arabic by Abdul Alhazred, who was thought to be a mad man from the early 700s CE. It purportedly accounts the details of the Old Ones and the means to summon or banish them, but none who have tried have survived or maintained their sanity.",
     "effect": "With the Elder Sign, it can be used to banish an Old One to its original dimension, at great cost to the wielder's Sanity.",
-    "sanityCost": 50
+    "useType": "active",
+    "hasTarget": true,
+    "sanityCost": 50,
+    "spiritCost": 50,
+    "result": "remove"
   }
 }

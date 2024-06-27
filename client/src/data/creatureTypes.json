@@ -3,6 +3,7 @@
     "name": "Elder Thing",
     "type": "creature",
     "race": "Creator",
+    "isOldOne": true,
     "level": 10,
     "strength": 4,
     "agility": 7,

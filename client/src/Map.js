@@ -726,7 +726,7 @@ class Map extends React.Component {
 	 * @private
 	 */
 	_calculateLighting(callback) {
-		const playerPositions = this.props.getAllCharactersPos('player', 'pos', true);
+		const playerPositions = this.props.getAllCharactersPos('player', 'pos');
 		let mapLights = this.findMapLights();
 		let allLightPos = [...playerPositions, ...mapLights];
 		const lightStrengthByTile = {};
@@ -912,7 +912,6 @@ class Map extends React.Component {
 			let companionIsAdjacent = false;
 			let activePlayerPos = '';
 			let adjacentTiles = {};
-			let actionIsItemOrSkill = false;
 			let isResuscitateSkill = false;
 			let otherCharisOnTopOfPc = false;
 
@@ -929,7 +928,7 @@ class Map extends React.Component {
 			let pcCounter = 0;
 			while (!otherCharisOnTopOfPc && pcCounter < pcData.length) {
 				if (characterPos === convertCoordsToPos(pcData[pcCounter].coords) &&
-					characters[id].currentHealth > 0 && characters[id].currentSanity > 0 &&
+					characters[id].currentHealth > 0 &&
 					(pcData[pcCounter].currentHealth <= 0 || pcData[pcCounter].currentSanity <= 0))
 				{
 					otherCharisOnTopOfPc = true;
@@ -939,8 +938,10 @@ class Map extends React.Component {
 			}
 
 			if (actionButtonIsSelected) {
-				actionIsItemOrSkill = this.props.actionButtonSelected.stats.itemType || this.props.actionButtonSelected.stats.skillType;
-				if (actionIsItemOrSkill && characterType === 'player') {
+				const actionItemType = this.props.actionButtonSelected.stats.itemType;
+				const actionSkillType = this.props.actionButtonSelected.stats.skillType;
+				// currentCharType is player and action is either skill or non-Relic item
+				if (characterType === 'player' && (actionSkillType || (actionItemType && actionItemType !== 'Relic'))) {
 					const buttonName = this.props.actionButtonSelected.buttonName;
 					isResuscitateSkill = buttonName && buttonName === 'Resuscitate';
 					let adjacentCompanionIsDying = false;
@@ -959,8 +960,11 @@ class Map extends React.Component {
 						((activePlayerPos === characterPos || companionIsAdjacent) && (pcNeedsHealth || pcNeedsSanity)) ||
 						(companionIsAdjacent && ((!isResuscitateSkill && !isHealTypeSkill) || (isResuscitateSkill && adjacentCompanionIsDying))) ||
 						(!isResuscitateSkill && !isHealTypeSkill && activePlayerPos === characterPos));
-				} else if (!actionIsItemOrSkill && characterType === 'creature') {
-					targetIsInRange = activeCharIsPlayer && characters[id].currentHealth > 0 && this.isCreatureInRange(id, this.props.actionButtonSelected);
+				// either attacking a creature or using a Relic on an old one
+				} else if (characterType === 'creature' && !actionSkillType && (!actionItemType || (actionItemType && actionItemType === 'Relic' && characters[id].isOldOne))) {
+					targetIsInRange = activeCharIsPlayer &&
+						characters[id].currentHealth > 0 &&
+						this.isCreatureInRange(id, this.props.actionButtonSelected);
 				}
 			}
 
@@ -973,7 +977,7 @@ class Map extends React.Component {
 					charRef={this.charRefs[id]}
 					characterType={characterType}
 					idClassName={idConvertedToClassName}
-					isHidden={creatureIsHidden}
+					isHidden={creatureIsHidden || characters[id].isRemoved}
 					isSelected={characters[id].isSelected}
 					isStealthy={id === 'thief' && characters[id].skills.stealthy.active}
 					isDying={isDyingPc}

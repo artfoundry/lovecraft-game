@@ -292,20 +292,22 @@ class Game extends React.Component {
 	}
 
 	/**
-	 * Gets the positions for each LIVING character of a genre, player, creature, or all
+	 * Gets the positions for each LIVING character of a type: player, creature, or all
 	 * @param type: String ('player', 'creature' or 'all')
 	 * @param format: String ('pos' (string) or 'coords' (object))
-	 * @param includeDead: Boolean (mainly for calculating lighting)
 	 * @returns Array (of Objects {id: coords})
 	 */
-	getAllCharactersPos = (type, format, includeDead = false) => {
+	getAllCharactersPos = (type, format) => {
 		const allCharactersPos = [];
 		const collection =
 			type === 'player' ? this.state.playerCharacters :
 			type === 'creature' ? this.state.mapCreatures :
 			Object.assign({}, this.state.playerCharacters, this.state.mapCreatures); // copy all to empty object to avoid modifying originals
+
 		for (const [id, characterData] of Object.entries(collection)) {
-			if ((characterData.currentHealth > 0 && (type === 'creature' || characterData.currentSanity > 0)) || includeDead) {
+			const isLivingCreature = type === 'creature' && characterData.currentHealth > 0;
+			const isLivingPc = type === 'player' && !characterData.isDeadOrInsane;
+			if (isLivingCreature || isLivingPc) {
 				let coords = format === 'pos' ? `${characterData.coords.xPos}-${characterData.coords.yPos}` : characterData.coords;
 				allCharactersPos.push({id, [format]: coords});
 			}
@@ -368,7 +370,7 @@ class Game extends React.Component {
 			const allPcPositions = this.getAllCharactersPos('player', 'pos');
 			const mainPcPos = allPcPositions[0].pos;
 			const secPcPos = allPcPositions[1].pos;
-			const thirdPcPos = allPcPositions[2].pos;
+			const thirdPcPos = allPcPositions[2] && allPcPositions[2].pos;
 			if (this.state.partyIsNearby && (!checkLineOfSightToParty(mainPcPos, secPcPos, false) ||
 				(thirdPcPos && (!checkLineOfSightToParty(mainPcPos, thirdPcPos, false) || !checkLineOfSightToParty(secPcPos, thirdPcPos, false))) ))
 			{
@@ -626,6 +628,11 @@ class Game extends React.Component {
 				callback: () => {
 					this.toggleActionButton('', '', '', '', () => {
 						if (target === 'creature' && this.state.mapCreatures[id].currentHealth <= 0) {
+							if (this.state.mapCreatures[id].isRemoved) {
+								this.updateLog(`The ${this.state.mapCreatures[id].name} has been banished to another dimension!`);
+							} else {
+								this.updateLog(`The ${this.state.mapCreatures[id].name} is dead!`);
+							}
 							this._removeDeadFromTurnOrder(id, this.updateActivePlayerActions, checkLineOfSightToParty);
 						} else {
 							this.updateActivePlayerActions();
@@ -633,8 +640,18 @@ class Game extends React.Component {
 					});
 				}
 			};
-			// if target is creature, attack, or if Resuscitate skill button was activated, resuscitate, otherwise, heal
-			target === 'creature' ? activePC.attack(actionProps) : (selectedItemInfo.stats.name && selectedItemInfo.stats.name === 'Resuscitate') ? activePC.resuscitate(actionProps) : activePC.heal(actionProps);
+
+			if (target === 'creature') {
+				if (selectedItemInfo.stats.itemType && selectedItemInfo.stats.itemType === 'Relic') {
+					activePC.useRelic(actionProps);
+				} else {
+					activePC.attack(actionProps);
+				}
+			} else if (selectedItemInfo.stats.name && selectedItemInfo.stats.name === 'Resuscitate') {
+				activePC.resuscitate(actionProps);
+			} else {
+				activePC.heal(actionProps);
+			}
 		} else {
 			// clicked unit is just being selected/deselected
 			this.updateUnitSelectionStatus(id, target);
@@ -719,9 +736,9 @@ class Game extends React.Component {
 			if (nextActiveChar.currentHealth <= 0 && nextActiveChar.turnsSinceDeath < this.maxTurnsToReviveDeadPlayer) {
 				nextActiveChar.turnsSinceDeath++;
 				if (nextActiveChar.turnsSinceDeath < this.maxTurnsToReviveDeadPlayer) {
-					updateOrRemoveChar = 'update';
+					updateOrRemoveChar = 'isDying';
 				} else {
-					updateOrRemoveChar = 'remove';
+					updateOrRemoveChar = true;
 					nextActiveChar.isDeadOrInsane = true;
 				}
 			}
@@ -749,16 +766,10 @@ class Game extends React.Component {
 				}
 			}
 			if (updateOrRemoveChar) {
-				if (updateOrRemoveChar === 'update') {
+				if (updateOrRemoveChar === 'isDying') {
 					this.updateLog(`${nextActiveChar.name} is dying and has ${this.maxTurnsToReviveDeadPlayer - nextActiveChar.turnsSinceDeath} turns to be resuscitated!`);
 				}
-				this.updateCharacters('player', nextActiveChar, nextActiveCharId, false, false, false, () => {
-					if (updateOrRemoveChar === 'remove') {
-						this._removeDeadPCFromGame(nextActiveCharId, updateActiveChar);
-					} else {
-						updateActiveChar();
-					}
-				});
+				this.updateCharacters('player', nextActiveChar, nextActiveCharId, false, false, false, updateActiveChar);
 			} else {
 				updateActiveChar();
 			}
@@ -1289,13 +1300,10 @@ class Game extends React.Component {
 			} else if (deadPc.currentSanity <= 0) {
 				this.updateLog(`The horrors are too much for ${deadPc.name}, and ${deadPc.gender === 'Male' ? 'he' : 'she'} has gone insane and become catatonic!`);
 			}
-			//check for this.state.createdCharData is done so game doesn't crash when char creation is turned off
+			//check for this.state.createdCharData is active so game doesn't crash when char creation is turned off
 			if (this.state.createdCharData && id === this.state.createdCharData.id) {
 				this._endGame();
 			} else {
-				// let playerChars = deepCopy(this.state.playerCharacters);
-				// delete playerChars[id];
-				// this.updateCharacters('player', playerChars, null, false, false, false, callback);
 				this._removeDeadFromTurnOrder(id, callback);
 			}
 		} else if (callback) callback();
@@ -1321,10 +1329,17 @@ class Game extends React.Component {
 			index++;
 		}
 		this.setState({unitsTurnOrder}, () => {
+			// if creature died
 			if (checkLineOfSightToParty) {
-				this.updateLog(`The ${this.state.mapCreatures[id].name} is dead!`);
 				this.updateThreatList([], [id], callback, checkLineOfSightToParty);
-			} else if (callback) callback();
+			// otherwise player died
+			} else {
+				let playerFollowOrder = [...this.state.playerFollowOrder];
+				playerFollowOrder.splice(this.state.playerFollowOrder.indexOf(id), 1);
+				let followModePositions = [...this.state.followModePositions];
+				followModePositions.splice(this.state.followModePositions.indexOf(id), 1);
+				this.setState({playerFollowOrder, followModePositions}, callback);
+			}
 		});
 	}
 

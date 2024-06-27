@@ -30,7 +30,7 @@ function CharacterControls(props) {
 		}
 	};
 	const hasExtraAmmo = props.checkForExtraAmmo(currentPCdata);
-	const actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0) ? 'button-inactive' : '';
+	let actionButtonState = '';
 
 	// add all equipped weapons to actionableItems.weapons
 	for (const itemId of Object.values(equippedItems)) {
@@ -41,24 +41,52 @@ function CharacterControls(props) {
 			if (weaponInfo.ranged) {
 				const weaponButtonIndex = actionableItems.weapons.findIndex(listItem => listItem.weaponName === weaponInfo.name);
 				if (weaponInfo.gunType) {
-					actionableItems.weapons.push({weaponId: itemId, gunType: weaponInfo.gunType, weaponName: weaponInfo.name, isGun: true, ammo: weaponInfo.currentRounds, fullyLoaded: weaponInfo.rounds});
+					actionableItems.weapons.push({
+						weaponId: itemId,
+						gunType: weaponInfo.gunType,
+						weaponName: weaponInfo.name,
+						isGun: true,
+						ammo: weaponInfo.currentRounds,
+						fullyLoaded: weaponInfo.rounds
+					});
 				// check to make sure this stackable weapon isn't already in the controls and has some ammo
 				} else if (weaponButtonIndex === -1 && weaponInfo.stackable && weaponInfo.currentRounds > 0) {
-					actionableItems.weapons.push({weaponId: itemId, weaponName: weaponInfo.name, ammo: weaponInfo.currentRounds});
+					actionableItems.weapons.push({
+						weaponId: itemId,
+						weaponName: weaponInfo.name,
+						ammo: weaponInfo.currentRounds
+					});
 				// stackable weapon is already added, so we just need to update its ammo count (this is in case there are multiple stacks under different IDs)
 				} else if (weaponButtonIndex >= 0 && weaponInfo.stackable) {
 					actionableItems.weapons[weaponButtonIndex].ammo += weaponInfo.currentRounds;
 				}
 			} else {
-				actionableItems.weapons.push({weaponId: itemId, weaponName: weaponInfo.name, ammo: null});
+				actionableItems.weapons.push({
+					weaponId: itemId,
+					weaponName: weaponInfo.name,
+					ammo: null
+				});
 			}
 		}
 	}
 
-	// add all inv medicine items to actionableItems.medicine
+	// add all inv medicine items to actionableItems.medicine or Relics to actionableItems.misc
 	for (const [itemId, itemInfo] of Object.entries(invItems)) {
 		if (itemInfo.itemType === 'Medicine') {
-			actionableItems.medicine.push({itemId, name: itemInfo.name, amount: itemInfo.amount});
+			actionableItems.medicine.push({
+				itemId,
+				name: itemInfo.name,
+				amount: itemInfo.amount
+			});
+		} else if (itemInfo.itemType === 'Relic' && itemInfo.useType === 'active') {
+			actionableItems.misc.push({
+				itemId,
+				name: itemInfo.name,
+				itemType: itemInfo.itemType,
+				hasTarget: itemInfo.hasTarget,
+				sanityCost: itemInfo.sanityCost,
+				spiritCost: itemInfo.spiritCost
+			});
 		}
 	}
 
@@ -97,7 +125,6 @@ function CharacterControls(props) {
 	const weaponButtons = (
 		<div className='weapon-buttons-container'>
 			{actionableItems.weapons.map(weapon => {
-				let actionButtonState = '';
 				let button;
 				if (weapon.isGun) {
 					actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || weapon.ammo === 0) ? 'button-inactive' :
@@ -160,7 +187,7 @@ function CharacterControls(props) {
 				const gunIsLoaded = skill.requiresEquippedGunType && hasNeededItem && (leftGunHasAmmo || rightGunHasAmmo);
 				// all active and only active skills require spirit
 				const hasEnoughSpirit = skill.spirit && currentPCdata.currentSpirit >= skill.spirit[skill.level];
-				const actionButtonState =
+				actionButtonState =
 					(!props.isActiveCharacter ||
 					(props.actionsRemaining === 0 && skill.name !== 'Quick Reload') ||
 					(skill.spirit && !hasEnoughSpirit) || (requiresItemOrWeapon && !hasNeededItem) ||
@@ -236,7 +263,7 @@ function CharacterControls(props) {
 				const itemCount = actionableItems.medicine[lastItemIndex].amount;
 				let button = null;
 				if (item.amount === itemCount) {
-					const actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0) ? 'button-inactive' :
+					actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0) ? 'button-inactive' :
 						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.buttonId === item.itemId) ? 'button-selected': '';
 					actionButtonCount++;
 					button = (
@@ -254,6 +281,12 @@ function CharacterControls(props) {
 		<div className='misc-action-buttons-container'>
 			{actionableItems.misc.map((item, index) => {
 				let button = null;
+				actionButtonState = (!props.isActiveCharacter ||
+					props.actionsRemaining === 0 ||
+					(item.spiritCost && currentPCdata.currentSpirit < item.spiritCost)) ? 'button-inactive' :
+					(props.actionButtonSelected &&
+					props.actionButtonSelected.characterId === props.characterId &&
+					(props.actionButtonSelected.buttonId === item.itemId && item.hasTarget)) ? 'button-selected' : '';
 				actionButtonCount++;
 				if (item === 'pickup') {
 					button = <div
@@ -265,6 +298,11 @@ function CharacterControls(props) {
 						key={item + index}
 						className={`action-button refill-action ${shouldActionButtonShow() ? '' : 'hide'} ${actionButtonState}`}
 						onClick={props.refillLight}></div>;
+				} else if (typeof item === 'object' && item.itemType === 'Relic') {
+					button = <div
+						key={item + index}
+						className={`action-button ${convertObjIdToClassId(item.itemId)}-action ${shouldActionButtonShow() ? '' : 'hide'} ${actionButtonState}`}
+						onClick={(evt) => props.toggleActionButton(props.characterId, item.itemId, item.name, 'item')}></div>;
 				}
 				return button;
 			})}
@@ -667,7 +705,8 @@ function ObjectInfoPanel(props) {
 						<div>{objectToShow.description}</div>
 						{objectToShow.identified && <div>{objectToShow.furtherInfo}</div>}
 						{objectToShow.identified && <div>Effect: {objectToShow.effect}</div>}
-						{objectToShow.identified && objectToShow.sanityCost && <div>Cost: -{objectToShow.sanityCost} Sanity</div>}
+						{objectToShow.identified && objectToShow.sanityCost && <div>Cost to Sanity: -{objectToShow.sanityCost}</div>}
+						{objectToShow.identified && objectToShow.spirit && <div>Required Spirit: -{objectToShow.spirit}</div>}
 						</div>
 				</div>
 				<div className='object-panel-buttons-container'>
@@ -737,12 +776,25 @@ function ModeInfoPanel(props) {
 	const ListOptions = () => {
 		let list = [];
 		for (const [id, player] of Object.entries(props.players)) {
-			list.push(<option key={id} value={id}>{player.name}</option>);
+			if (!player.isDeadOrInsane) {
+				list.push(<option key={id} value={id}>{player.name}</option>);
+			}
 		}
 		return list;
 	};
-	const enemiesNearbyDialog = {
-		dialogContent: "You can't disable Tactical Mode with creatures still about!",
+	let dyingPcName = '';
+	let dyingPcGender = '';
+	for (const player of Object.values(props.players)) {
+		if (player.currentHealth <= 0 && !player.isDeadOrInsane) {
+			dyingPcName = player.name;
+			dyingPcGender = player.gender === 'Male' ? 'him' : 'her';
+		}
+	}
+	const enemiesNearbyDialog = "You can't disable Tactical Mode with creatures still about!";
+	const partyNotNearbyDialog = 'Your party must all be in sight of each other to enable Follow mode';
+	const pcIsDyingDialog = `You can't enter Follow Mode while ${dyingPcName} is dying. Either resuscitate ${dyingPcGender} or End Turn enough times to let death take its course.`
+	const dialogProps = {
+		dialogContent: '',
 		closeButtonText: 'Ok',
 		closeButtonCallback: null,
 		disableCloseButton: false,
@@ -751,16 +803,6 @@ function ModeInfoPanel(props) {
 		actionButtonCallback:  null,
 		dialogClasses: ''
 	};
-	const partyNotNearbyDialog = {
-		dialogContent: "Your party must all be in sight of each other to enable Follow mode",
-		closeButtonText: 'Ok',
-		closeButtonCallback: null,
-		disableCloseButton: false,
-		actionButtonVisible: false,
-		actionButtonText: '',
-		actionButtonCallback:  null,
-		dialogClasses: ''
-	}
 	const activePlayerObject = props.players[props.activeCharacter];
 	const charactersTurn = activePlayerObject && (props.inTacticalMode || !props.isPartyNearby) ? activePlayerObject.name :
 		props.inTacticalMode && props.threatList.length > 0 ? 'Enemies moving' : 'Wait...';
@@ -772,14 +814,20 @@ function ModeInfoPanel(props) {
 				onClick={() => {
 					if (props.inTacticalMode) {
 						if (props.threatList.length > 0) {
-							props.setShowDialogProps(true, enemiesNearbyDialog);
+							dialogProps.dialogContent = enemiesNearbyDialog
+							props.setShowDialogProps(true, dialogProps);
 						} else if (!props.isPartyNearby) {
-							props.setShowDialogProps(true, partyNotNearbyDialog);
+							dialogProps.dialogContent = partyNotNearbyDialog;
+							props.setShowDialogProps(true, dialogProps);
+						} else if (dyingPcName) {
+							dialogProps.dialogContent = pcIsDyingDialog;
+							props.setShowDialogProps(true, dialogProps);
 						} else {
 							props.toggleTacticalMode(false);
 						}
 					} else if (!props.isPartyNearby) {
-						props.setShowDialogProps(true, partyNotNearbyDialog);
+						dialogProps.dialogContent = partyNotNearbyDialog;
+						props.setShowDialogProps(true, dialogProps);
 					} else {
 						props.toggleTacticalMode(true);
 					}

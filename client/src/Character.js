@@ -483,18 +483,6 @@ class Character extends React.Component {
 	}
 
 	/**
-	 * Simple helper function to format status data to save to pc data
-	 * @param charStatuses: object (status data from a pc)
-	 * @param statusData: object (status data to be applied)
-	 * @returns {*}
-	 */
-	updateStatus = (charStatuses, statusData) => {
-		const {attribute, startingRound, turnsLeft, modifier} = statusData;
-		charStatuses[statusData.name] = {attribute, startingRound, turnsLeft, modifier};
-		return charStatuses;
-	}
-
-	/**
 	 * Skill (Priest): provide buff to party, reducing sanity loss until
 	 * Called from toggleActionButton in App
 	 * @param props: object {
@@ -510,15 +498,13 @@ class Character extends React.Component {
 		let updatedPartyData = deepCopy(partyData);
 		const comfortSkillData = updatedPartyData.priest.skills.comfortTheFearful;
 
-		for (const [id, charData] of Object.entries(partyData)) {
-			const statusData = {
-				name: 'sanityBuff',
+		for (const id of Object.keys(partyData)) {
+			updatedPartyData[id].statuses.sanityBuff = {
 				attribute: 'sanity',
 				startingRound: currentRound,
 				turnsLeft: comfortSkillData.turnsLeft[comfortSkillData.level],
 				modifier: comfortSkillData.modifier[comfortSkillData.level]
 			}
-			updatedPartyData[id].statuses = this.updateStatus(charData.statuses, statusData);
 		}
 		updatedPartyData.priest.currentSpirit -= comfortSkillData.spirit[comfortSkillData.level];
 		updateCharacters('player', updatedPartyData, null, false, false, false, () => {
@@ -655,6 +641,30 @@ class Character extends React.Component {
 			notEnoughLightDialogProps.dialogContent = noRelicsMessage;
 			setShowDialogProps(true, notEnoughLightDialogProps);
 		}
+	}
+
+	useRelic = (props) => {
+		const {itemStats, targetData, pcData, updateCharacters, updateLog, callback} = props;
+		let updatedPcData = deepCopy(pcData);
+		let updatedCreatureData = deepCopy(targetData);
+		const relicExpertSkillMod = pcData.id === 'occultResearcher' ? pcData.skills.relicExpertise.modifier[pcData.skills.relicExpertise.level] : 0;
+		let sanityReduction = 0;
+
+		//todo: need to decide what each relic will do
+
+		updatedPcData.currentSpirit -= itemStats.spiritCost > updatedPcData.currentSpirit ? updatedPcData.currentSpirit : itemStats.spiritCost;
+		sanityReduction = itemStats.sanityCost - (relicExpertSkillMod * itemStats.sanityCost);
+		updatedPcData.currentSanity -= sanityReduction > updatedPcData.currentSanity ? updatedPcData.currentSanity : sanityReduction;
+
+		if (itemStats.result === 'remove') {
+			updatedCreatureData.currentHealth = 0;
+			updatedCreatureData.isRemoved = true;
+		}
+
+		updateCharacters('player', updatedPcData, pcData.id, false, false, false, () => {
+		    updateLog(`${pcData.name} uses the ${itemStats.name}, wreaking havoc on the ${targetData.name} but driving ${pcData.gender === 'Male' ? 'him' : 'her'}self closer to madness!`);
+			updateCharacters('creature', updatedCreatureData, targetData.id, false, false, false, callback);
+		});
 	}
 }
 
