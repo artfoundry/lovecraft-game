@@ -531,16 +531,16 @@ class UI extends React.Component {
 		}
 		this.updateSourcePcInvAfterTransfer(invObjectCategory, sourceItemCount, sourcePcData, false, () => {
 			const mapObjects = deepCopy(this.props.mapObjects);
-			const draggedObjGenericId = draggedObject.id.match(/\D+/);
+			const draggedObjGenericId = draggedObject.id.match(/\D+/)[0];
 			let highestIdNum = 0;
 			for (const id of Object.keys(mapObjects)) {
 				if (id.includes(draggedObjGenericId)) {
-					const idNum = +id.match(/\d+/);
+					const idNum = +id.match(/\d+/)[0];
 					highestIdNum = idNum > highestIdNum ? idNum : highestIdNum;
 				}
 			}
 			const newMapObjId = draggedObjGenericId + (highestIdNum + 1);
-			draggedObject.id = newMapObjId;
+			delete draggedObject.id;
 			mapObjects[newMapObjId] = {
 				...draggedObject,
 				coords: sourcePcData.coords

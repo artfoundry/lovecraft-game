@@ -1037,7 +1037,7 @@ class Game extends React.Component {
 	}
 
 	/**
-	 * Called from Map when player drags object to map
+	 * Called from UIElements when player drags object to item drop zone in pc inv panel
 	 * @param props: {objHasBeenDropped (boolean), evt (event object)}
 	 */
 	setHasObjBeenDropped = (props) => {
@@ -1079,9 +1079,6 @@ class Game extends React.Component {
 			invObjects[modifiedObjId] = {...itemData};
 			invObjects[modifiedObjId].id  = modifiedObjId; // replace original id with inventory specific id for stackable items
 			invObjects[modifiedObjId].amount = currentAmmoCount + itemData.amount;
-		} else if (objectType === 'Light') {
-			invObjects[objId] = {...itemData};
-			invObjects[objId].time = itemData.maxTime;
 		} else if (itemData.stackable) {
 			modifiedObjId = objId.replace(/\d+$/, '0');
 			if (!invObjects[modifiedObjId]) {
@@ -1094,7 +1091,21 @@ class Game extends React.Component {
 				invObjects[modifiedObjId].amount += itemData.amount;
 			}
 		} else {
-			invObjects[objId] = {...itemData};
+			if (invObjects[objId]) {
+				const objGenericId = objId.match(/\D+/)[0];
+				let highestIdNum = 0;
+				for (const invObjId of Object.keys(invObjects)) {
+					if (invObjId.includes(objGenericId)) {
+						const idNum = +invObjId.match(/\d+/)[0];
+						highestIdNum = idNum > highestIdNum ? idNum : highestIdNum;
+					}
+				}
+				modifiedObjId = objGenericId + (highestIdNum + 1);
+				itemData.id = modifiedObjId;
+				invObjects[modifiedObjId] = {...itemData};
+			} else {
+				invObjects[objId] = {...itemData};
+			}
 		}
 
 		let updatedData = {[invObjectCategory]: invObjects};
@@ -1117,6 +1128,39 @@ class Game extends React.Component {
 				this.updateActivePlayerActions();
 			}
 		});
+	}
+
+	/**
+	 * Removes all items (equipped and unequipped) from a pc and drops them on the same map tile where pc is
+	 * Mainly used when pc dies/goes insane
+	 * @param pcId: string
+	 * @param callback: function
+	 */
+	dropAllItemsInPcInventory = (pcId, callback) => {
+		const pcData = this.state.playerCharacters[pcId];
+		let allInvItems = {...deepCopy(pcData.items), ...deepCopy(pcData.weapons)};
+		let mapObjects = deepCopy(this.state.mapObjects);
+		let lightingChanged = false;
+
+		for (const [objId, objInfo] of Object.entries(allInvItems)) {
+			const objGenericId = objId.match(/\D+/)[0];
+			let highestIdNum = 0;
+			for (const mapObjId of Object.keys(mapObjects)) {
+				if (mapObjId.includes(objGenericId)) {
+					const idNum = +mapObjId.match(/\d+/)[0];
+					highestIdNum = idNum > highestIdNum ? idNum : highestIdNum;
+				}
+			}
+			const newMapObjId = objGenericId + (highestIdNum + 1);
+			mapObjects[newMapObjId] = {
+				...objInfo,
+				coords: pcData.coords
+			}
+			if (!lightingChanged && objInfo.itemType && objInfo.itemType === 'Light') {
+				lightingChanged = true;
+			}
+		}
+		this.updateMapObjects(mapObjects, lightingChanged, callback);
 	}
 
 	toggleCenterOnPlayer = () => {
@@ -1304,7 +1348,9 @@ class Game extends React.Component {
 			if (this.state.createdCharData && id === this.state.createdCharData.id) {
 				this._endGame();
 			} else {
-				this._removeDeadFromTurnOrder(id, callback);
+				this.dropAllItemsInPcInventory(id, () => {
+					this._removeDeadFromTurnOrder(id, callback);
+				});
 			}
 		} else if (callback) callback();
 	}
@@ -1352,7 +1398,7 @@ class Game extends React.Component {
 
 	_endGame() {
 		const dialogProps = {
-			dialogContent: 'The main character has died, so the game is over.  Try again!',
+			dialogContent: 'The main character has died or gone insane, so the game is over.  Try again!',
 			closeButtonText: 'Ok',
 			closeButtonCallback: null,
 			disableCloseButton: false,
@@ -1361,7 +1407,7 @@ class Game extends React.Component {
 			actionButtonCallback: null,
 			dialogClasses: ''
 		}
-		this.setShowDialogProps(dialogProps);
+		this.setShowDialogProps(true, dialogProps);
 	}
 
 
