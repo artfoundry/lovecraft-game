@@ -12,7 +12,7 @@ class Tool extends React.Component {
 	constructor() {
 		super();
 
-		this.tileSize = 32;
+		this.tileSize = 64;
 		this.tileData = {
 			'top-left-wall': {
 				classes: 'top-left-wall',

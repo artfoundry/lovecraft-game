@@ -27,7 +27,7 @@
 /* FLOORS */
 
 .floor {
-	object-position: -128px -160px;
+	object-position: -256px -320px;
 	object-fit: none;
 }
 
@@ -39,62 +39,62 @@
 }
 
 .top-wall {
-	object-position: -32px 0;
+	object-position: -64px 0;
 	object-fit: none;
 }
 
 .top-right-wall {
-	object-position: -160px 0;
+	object-position: -320px 0;
 	object-fit: none;
 }
 
 .left-wall {
-	object-position: 0 -32px;
-	object-fit: none;
-}
-
-.right-wall {
-	object-position: -160px -32px;
-	object-fit: none;
-}
-
-.bottom-left-wall {
 	object-position: 0 -64px;
 	object-fit: none;
 }
 
+.right-wall {
+	object-position: -320px -64px;
+	object-fit: none;
+}
+
+.bottom-left-wall {
+	object-position: 0 -128px;
+	object-fit: none;
+}
+
 .bottom-wall {
-	object-position: -32px -64px;
+	object-position: -64px -128px;
 	object-fit: none;
 }
 
 .bottom-right-wall {
-	object-position: -160px -64px;
+	object-position: -320px -128px;
 	object-fit: none;
 }
 
 .bottom-left-inverse-wall {
-	object-position: 0 -96px;
+	object-position: 0 -192px;
 	object-fit: none;
 }
 
 .bottom-right-inverse-wall {
-	object-position: -32px -96px;
+	object-position: -64px -192px;
 	object-fit: none;
 }
 
 .top-left-inverse-wall {
-	object-position: -64px -96px;
+	object-position: -128px -192px;
 	object-fit: none;
 }
 
 .top-right-inverse-wall {
-	object-position: -96px -96px;
+	object-position: -192px -192px;
 	object-fit: none;
 }
 
 .T-shaped-wall {
-	object-position: -128px -96px;
+	object-position: -256px -192px;
 	object-fit: none;
 }
 
@@ -102,16 +102,16 @@
 /* DOORS */
 
 .left-doorway {
-	object-position: -192px 0;
+	object-position: -384px 0;
 	object-fit: none;
 }
 
 .right-doorway {
-	object-position: -224px 0;
+	object-position: -448px 0;
 	object-fit: none;
 }
 
 .top-bottom-doorway {
-	object-position: -192px -32px;
+	object-position: -384px -64px;
 	object-fit: none;
 }
