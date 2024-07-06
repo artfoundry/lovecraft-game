@@ -7,7 +7,7 @@ Current demo: https://lovecraft-oldones.web.app/
 
 *WIP*
 
-*CURRENT WORKING BRANCH: bug-fixes*
+*CURRENT WORKING BRANCH: adding-characters*
 
 ---
 #### Current status:
