@@ -7,7 +7,7 @@ h3 {
 	display: grid;
 	gap: 10px;
 	grid-template-columns: auto 960px auto;
-	grid-template-rows: 220px 170px auto;
+	grid-template-rows: 210px 170px auto;
 	grid-template-areas:
     "pieces tiles tiles"
     "pieces grid piece-options"

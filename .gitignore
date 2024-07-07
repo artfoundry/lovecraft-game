@@ -19,7 +19,7 @@
 /asset_sources/
 dev_notes
 test_notes
-/mapLayoutTool/mapData_*_backup.json
+/mapLayoutTool/mapData_*.json
 client_secret*
 .idea
 
