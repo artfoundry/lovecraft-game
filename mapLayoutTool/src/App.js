@@ -12,7 +12,7 @@ class Tool extends React.Component {
 	constructor() {
 		super();
 
-		this.tileSize = 32;
+		this.tileSize = 64;
 		this.tileData = {
 			'top-left-wall': {
 				classes: 'top-left-wall',
@@ -454,7 +454,10 @@ class Tool extends React.Component {
 					leftSide: tileData.leftSide,
 					classes: tileData.classes || 'floor',
 					altClasses: tileData.altClasses || {},
-					neighbors: tileData.neighbors || {}
+					neighbors: tileData.neighbors || {},
+					canHaveObject: tileData.canHaveObject || false,
+					objectMustBePassable: tileData.objectMustBePassable || false,
+					objectCanBeImpassable: tileData.objectCanBeImpassable || false
 				}
 			},
 			tileNameSelected: '',
@@ -684,7 +687,7 @@ class Tool extends React.Component {
 												   });
 											   }
 									       }}/>
-									<label htmlFor="set-opening-one"><b>Opening one: </b></label>
+									<label htmlFor="set-opening-one"><b>Piece opening one: </b></label>
 									<span>{this.state.altClassOpeningOneSelected} </span>
 								</div>
 								<div className="alt-class-opening-two">
@@ -700,7 +703,7 @@ class Tool extends React.Component {
 											       });
 											   }
 									       }}/>
-									<label htmlFor="set-opening-two"><b>Opening two: </b></label>
+									<label htmlFor="set-opening-two"><b>Piece opening two: </b></label>
 									<span>{this.state.altClassOpeningTwoSelected} </span>
 								</div>
 								<div className="alt-class-opening-both">
@@ -747,6 +750,64 @@ class Tool extends React.Component {
 										}}>
 									Select alts
 								</button>
+							</fieldset>
+						</div>
+						<div className="subsection">
+							<fieldset>
+								<legend>Set object options:</legend>
+								<div>
+									<input id="set-can-have-object"
+									       type="checkbox" name="set-object-options" value=""
+									       checked={this.state.gridTileIdSelected ? this.state.gridPieceData[this.state.gridTileIdSelected].canHaveObject : false}
+									       onChange={() => {
+										       this.setState(prevState => ({
+											       gridPieceData: {
+												       ...prevState.gridPieceData,
+												       [this.state.gridTileIdSelected]: {
+													       ...prevState.gridPieceData[this.state.gridTileIdSelected],
+													       canHaveObject: !prevState.gridPieceData[this.state.gridTileIdSelected].canHaveObject
+												       }
+											       }
+											   }));
+									       }}/>
+									<label htmlFor="set-can-have-object">Can have an object</label>
+								</div>
+								<div>
+									<input id="set-object-must-be-passable"
+									       type="checkbox" name="set-object-options" value=""
+									       checked={this.state.gridTileIdSelected ? this.state.gridPieceData[this.state.gridTileIdSelected].objectMustBePassable : false}
+									       disabled={!this.state.gridTileIdSelected || !this.state.gridPieceData[this.state.gridTileIdSelected].canHaveObject || this.state.gridPieceData[this.state.gridTileIdSelected].objectCanBeImpassable}
+									       onChange={() => {
+										       this.setState(prevState => ({
+											       gridPieceData: {
+												       ...prevState.gridPieceData,
+												       [this.state.gridTileIdSelected]: {
+													       ...prevState.gridPieceData[this.state.gridTileIdSelected],
+													       objectMustBePassable: !prevState.gridPieceData[this.state.gridTileIdSelected].objectMustBePassable
+												       }
+											       }
+										       }));
+									       }}/>
+									<label htmlFor="set-object-must-be-passable">Object must be passable</label>
+								</div>
+								<div>
+									<input id="set-object-can-be-impassable"
+									       type="checkbox" name="set-object-options" value=""
+									       checked={this.state.gridTileIdSelected ? this.state.gridPieceData[this.state.gridTileIdSelected].objectCanBeImpassable : false}
+									       disabled={!this.state.gridTileIdSelected || !this.state.gridPieceData[this.state.gridTileIdSelected].canHaveObject || this.state.gridPieceData[this.state.gridTileIdSelected].objectMustBePassable}
+									       onChange={() => {
+										       this.setState(prevState => ({
+											       gridPieceData: {
+												       ...prevState.gridPieceData,
+												       [this.state.gridTileIdSelected]: {
+													       ...prevState.gridPieceData[this.state.gridTileIdSelected],
+													       objectCanBeImpassable: !prevState.gridPieceData[this.state.gridTileIdSelected].objectCanBeImpassable
+												       }
+											       }
+										       }));
+									       }}/>
+									<label htmlFor="set-object-can-be-impassable">Object can be impassable</label>
+								</div>
 							</fieldset>
 						</div>
 						<button className="delete-button"

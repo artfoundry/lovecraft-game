@@ -117,4 +117,13 @@ Make sure to save the piece to keep your changes!
 - Click the Select alts button again to exit alt class settings. Your settings will be stored in the tiles
   on the grid.
 
+#### Object options
+
+- Select tile on the grid (don't place objects in doorways or tiles on either side of a doorway)
+- Click 'Can have object'
+- Select either 'Object must be passable' or 'Object can be impassable' - can't be both
+- Objects must be passable if they would block pathing
+- Objects can only be impassable if there is at least one way around - game engine will check surrounding tiles to ensure no impassable objects next to each other
+- Options will remain checked as long as another piece isn't selected before saving current piece (selecting other tiles won't erase options)
+
 Make sure to save the piece to keep your changes!
