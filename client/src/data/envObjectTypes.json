@@ -1,0 +1,50 @@
+{
+  "spikeTrap": {
+    "name": "Trap",
+    "description": "A floor trap of some sort, that seems to be triggered by stepping on it. If it can't be disarmed, probably best to go around...",
+    "type": "trap",
+    "isHidden": true,
+    "isPassable": true,
+    "isDestructible": false,
+    "damage": {
+      "dieType": 6,
+      "dieCount": 2
+    }
+  },
+  "rockyMound": {
+    "name": "Rocky mound",
+    "description": "A large mound of dirt and rock protrudes through the ground. May have valuable minerals in it if it can be mined.",
+    "type": "mineable",
+    "isHidden": false,
+    "isPassable": false,
+    "isDestructible": true,
+    "mayContain": {
+      "Gems": {
+        "min": 0,
+        "max": 10
+      }
+    }
+  },
+  "coffin": {
+    "name": "Coffin",
+    "description": "A large stone coffin. Could contain some valuables, or just old bones. Or something else...",
+    "type": "container",
+    "isHidden": false,
+    "isPassable": false,
+    "isDestructible": false,
+    "mayContain": {
+      "Gems": {
+        "min": 1,
+        "max": 4
+      },
+      "Alcohol": {
+        "min": 1,
+        "max": 2
+      },
+      "Cloth": {
+        "min": 1,
+        "max": 3
+      }
+    }
+  }
+}

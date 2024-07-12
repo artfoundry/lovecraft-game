@@ -121,9 +121,8 @@ Make sure to save the piece to keep your changes!
 
 - Select tile on the grid (don't place objects in doorways or tiles on either side of a doorway)
 - Click 'Can have object'
-- Select either 'Object must be passable' or 'Object can be impassable' - can't be both
-- Objects must be passable if they would block pathing
-- Objects can only be impassable if there is at least one way around - game engine will check surrounding tiles to ensure no impassable objects next to each other
+- Select 'Object must be passable' if an impassable object in that tile would block pathing
+- Game engine will check surrounding tiles to ensure no impassable objects next to each other
 - Options will remain checked as long as another piece isn't selected before saving current piece (selecting other tiles won't erase options)
 
 Make sure to save the piece to keep your changes!

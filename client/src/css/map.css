@@ -30,6 +30,14 @@
 .objects {
 	position: relative;
 	margin: auto;
+	z-index: 2;
+	transition: transform 0.5s;
+	cursor: pointer;
+}
+
+.env-objects {
+	position: relative;
+	margin: auto;
 	z-index: 1;
 	transition: transform 0.5s;
 	cursor: pointer;

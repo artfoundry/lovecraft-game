@@ -126,6 +126,29 @@
 					}
 				}
 			}
+		},
+		"envObjects": {
+			"coffin": {
+				"countPerFloor": {
+					"1": 10,
+					"2": 8,
+					"3": 6
+				}
+			},
+			"spikeTrap": {
+				"countPerFloor": {
+					"1": 6,
+					"2": 6,
+					"3": 6
+				}
+			},
+			"rockyMound": {
+				"countPerFloor": {
+					"1": 6,
+					"2": 8,
+					"3": 10
+				}
+			}
 		}
 	}
 }

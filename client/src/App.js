@@ -129,6 +129,7 @@ class Game extends React.Component {
 			// these need resetting on floor change
 			mapCreatures: {},
 			mapObjects: {},
+			envObjects: {},
 			unitsTurnOrder: [],
 			currentTurn: 0,
 			activeCharacter: !this.showCharacterCreation ? this.startingPlayerCharacters[0] : null,
@@ -161,6 +162,7 @@ class Game extends React.Component {
 		this.setState({
 			mapCreatures: {},
 			mapObjects: {},
+			envObjects: {},
 			unitsTurnOrder: [],
 			currentTurn: 0,
 			activeCharacter: this.startingPlayerCharacters[0],
@@ -286,6 +288,19 @@ class Game extends React.Component {
 			if (lightingHasChanged) {
 				this.toggleLightingHasChanged(callback);
 			} else if (callback) {
+				callback();
+			}
+		});
+	}
+
+	/**
+	 * Updates collection of envObjects in state during map init or if obj has been opened, found, triggered, destroyed
+	 * @param envObjects: object (modified copy of this.state.envObjects)
+	 * @param callback
+	 */
+	updateMapEnvObjects = (envObjects, callback) => {
+		this.setState({envObjects}, () => {
+			if (callback) {
 				callback();
 			}
 		});
@@ -1561,7 +1576,9 @@ class Game extends React.Component {
 						calcPcLightChanges={this.calcPcLightChanges}
 
 						updateMapObjects={this.updateMapObjects}
+						updateMapEnvObjects={this.updateMapEnvObjects}
 						mapObjects={this.state.mapObjects}
+						envObjects={this.state.envObjects}
 						setHasObjBeenDropped={this.setHasObjBeenDropped}
 						lightingHasChanged={this.state.lightingHasChanged}
 						toggleLightingHasChanged={this.toggleLightingHasChanged}

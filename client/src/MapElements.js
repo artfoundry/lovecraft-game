@@ -34,7 +34,7 @@ function Exit(props) {
 	return (
 		<img alt='exit'
 		     draggable={false}
-		     className='object exit'
+		     className='exit'
 		     style={props.styleProp} />
 	)
 }
@@ -79,6 +79,23 @@ function Item(props) {
 	)
 }
 
+function EnvObject(props) {
+	const isHiddenClass = (!props.tileIsVisible || props.isHidden) ? ' hidden' : '';
+	return (
+		<img
+			alt={props.name}
+			className={`env-object ${props.name}${isHiddenClass}`}
+			style={props.styles}
+			draggable={false}
+			onClick={(evt) => {
+				if (props.tileIsVisible) {
+					props.updateContextMenu('examine', props.tilePos, evt, {objectInfo: [props.objectInfo], selectionEvt: evt});
+				}
+			}}
+		/>
+	)
+}
+
 function LightElement(props) {
 	return (
 		<div className={props.classes}
@@ -94,4 +111,4 @@ function MapCover(props) {
 	)
 }
 
-export {Character, Exit, Tile, Door, Item, LightElement, MapCover};
+export {Character, Exit, Tile, Door, Item, EnvObject, LightElement, MapCover};

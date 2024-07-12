@@ -131,7 +131,7 @@
 }
 
 
-/* OBJECTS */
+/* ENV OBJECTS */
 
 .front-door {
 	background-position: calc(var(--tile-size) * 6) calc(var(--tile-size) * 2); /* -384px -128px at 64px tile size */
@@ -159,6 +159,7 @@
 	object-fit: none;
 	object-position: calc(var(--tile-size) * 7) calc(var(--tile-size) * 6); /* -448px -384px at 64px tile size */
 	z-index: 0;
+	user-select: none;
 	pointer-events: none;
 	cursor: pointer;
 }

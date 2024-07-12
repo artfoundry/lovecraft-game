@@ -4,12 +4,6 @@
 	box-sizing: border-box;
 }
 
-.door {
-	z-index: 1;
-	pointer-events: none;
-	user-select: none;
-}
-
 .map-cover {
 	position: fixed;
 	top: 0;
@@ -198,4 +192,33 @@ as box-shadow greatly dims the lighting */
 
 .necronomicon {
 	content: url('../assets/objects/necronomicon_sml.png');
+}
+
+/* MAP ENV OBJECTS */
+
+.env-object {
+	position: absolute;
+	user-select: none;
+	filter: drop-shadow(1px 1px 1px black);
+}
+
+.door {
+	pointer-events: none;
+	user-select: none;
+}
+
+.coffin {
+	content: url('../assets/objects/coffin.png');
+}
+
+.spike-trap {
+	content: url('../assets/objects/spike-trap.png');
+}
+
+.spike-trap-triggered {
+	content: url('../assets/objects/spike-trap-triggered.png');
+}
+
+.rocky-mound {
+	content: url('../assets/objects/rocky-mound.png');
 }

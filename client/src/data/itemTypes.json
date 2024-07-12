@@ -73,27 +73,32 @@
   "Alcohol": {
     "itemType": "Component",
     "stackable": true,
-    "description": "Component for making First Aid Kits, Pharmaceuticals, Molotov Cocktails, and Torches (requires create skill for the appropriate item)"
+    "description": "Component for making First Aid Kits, Pharmaceuticals, Molotov Cocktails, and Torches (requires create skill for the appropriate item)."
   },
   "Chemical": {
     "itemType": "Component",
     "stackable": true,
-    "description": "Component for making Pharmaceuticals and Acid Concoctions (requires create skill for the appropriate item)"
+    "description": "Component for making Pharmaceuticals and Acid Concoctions (requires create skill for the appropriate item)."
   },
   "Cloth": {
     "itemType": "Component",
     "stackable": true,
-    "description": "Component for making First Aid Kits, Molotov Cocktails, and Torches (requires create skill for the appropriate item)"
+    "description": "Component for making First Aid Kits, Molotov Cocktails, and Torches (requires create skill for the appropriate item)."
   },
   "Water": {
     "itemType": "Component",
     "stackable": true,
-    "description": "Component for making Holy Water (requires Holy Water create skill)"
+    "description": "Component for making Holy Water (requires Holy Water create skill)."
   },
   "Wood": {
     "itemType": "Component",
     "stackable": true,
-    "description": "Component for making Torches (requires Torch create skill)"
+    "description": "Component for making Torches (requires Torch create skill)."
+  },
+  "Gems": {
+    "itemType": "Valuable",
+    "stackable": true,
+    "description": "Precious gems that can be sold for money."
   },
   "Elder Sign": {
     "itemType": "Relic",

@@ -456,8 +456,7 @@ class Tool extends React.Component {
 					altClasses: tileData.altClasses || {},
 					neighbors: tileData.neighbors || {},
 					canHaveObject: tileData.canHaveObject || false,
-					objectMustBePassable: tileData.objectMustBePassable || false,
-					objectCanBeImpassable: tileData.objectCanBeImpassable || false
+					objectMustBePassable: tileData.objectMustBePassable || false
 				}
 			},
 			tileNameSelected: '',
@@ -776,7 +775,7 @@ class Tool extends React.Component {
 									<input id="set-object-must-be-passable"
 									       type="checkbox" name="set-object-options" value=""
 									       checked={this.state.gridTileIdSelected ? this.state.gridPieceData[this.state.gridTileIdSelected].objectMustBePassable : false}
-									       disabled={!this.state.gridTileIdSelected || !this.state.gridPieceData[this.state.gridTileIdSelected].canHaveObject || this.state.gridPieceData[this.state.gridTileIdSelected].objectCanBeImpassable}
+									       disabled={!this.state.gridTileIdSelected || !this.state.gridPieceData[this.state.gridTileIdSelected].canHaveObject}
 									       onChange={() => {
 										       this.setState(prevState => ({
 											       gridPieceData: {
@@ -789,24 +788,6 @@ class Tool extends React.Component {
 										       }));
 									       }}/>
 									<label htmlFor="set-object-must-be-passable">Object must be passable</label>
-								</div>
-								<div>
-									<input id="set-object-can-be-impassable"
-									       type="checkbox" name="set-object-options" value=""
-									       checked={this.state.gridTileIdSelected ? this.state.gridPieceData[this.state.gridTileIdSelected].objectCanBeImpassable : false}
-									       disabled={!this.state.gridTileIdSelected || !this.state.gridPieceData[this.state.gridTileIdSelected].canHaveObject || this.state.gridPieceData[this.state.gridTileIdSelected].objectMustBePassable}
-									       onChange={() => {
-										       this.setState(prevState => ({
-											       gridPieceData: {
-												       ...prevState.gridPieceData,
-												       [this.state.gridTileIdSelected]: {
-													       ...prevState.gridPieceData[this.state.gridTileIdSelected],
-													       objectCanBeImpassable: !prevState.gridPieceData[this.state.gridTileIdSelected].objectCanBeImpassable
-												       }
-											       }
-										       }));
-									       }}/>
-									<label htmlFor="set-object-can-be-impassable">Object can be impassable</label>
 								</div>
 							</fieldset>
 						</div>
