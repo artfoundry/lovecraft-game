@@ -128,21 +128,21 @@
 			}
 		},
 		"envObjects": {
-			"coffin": {
+			"Sarcophagus": {
 				"countPerFloor": {
 					"1": 10,
 					"2": 8,
 					"3": 6
 				}
 			},
-			"spikeTrap": {
+			"Spike Trap": {
 				"countPerFloor": {
 					"1": 6,
 					"2": 6,
 					"3": 6
 				}
 			},
-			"rockyMound": {
+			"Rocky Mound": {
 				"countPerFloor": {
 					"1": 6,
 					"2": 8,

@@ -662,7 +662,7 @@ class Map extends React.Component {
 						mapItems[itemID] = {
 							...itemInfo,
 							name: itemName,
-							identified: objectType !== 'Relic',
+							isIdentified: objectType !== 'Relic',
 							currentRounds: weaponCurrentRounds,
 							coords
 						};
@@ -690,13 +690,34 @@ class Map extends React.Component {
 		let itemCoords = {};
 		for (const [itemId, appearanceInfo] of Object.entries(this.currentMapData.envObjects)) {
 			for (let i=0; i < appearanceInfo.countPerFloor[this.props.currentFloor]; i++) {
-				const itemInfo = EnvObjectTypes[itemId];
-				const uniqueItemId = itemId + (i + 1);
-				const envObjAttrs = {isPassable: itemInfo.isPassable, isDestructible: itemInfo.isDestructible};
+				const envItemInfo = EnvObjectTypes[itemId];
+				const lowerCaseName = itemId.slice(0, 1).toLowerCase() + itemId.slice(1, itemId.length).replaceAll(' ', '');
+				const uniqueItemId = lowerCaseName + (i + 1);
+				const envObjAttrs = {isPassable: envItemInfo.isPassable, isDestructible: envItemInfo.isDestructible};
 				const coords = convertPosToCoords(this._generateRandomLocation(itemCoords, 'floor', true, envObjAttrs)); // this.props.playerCharacters['privateEye'].coords (to easily test objects)
+				let containerContents = null;
+				if (envItemInfo.type === 'container') {
+					const itemNames = Object.keys(envItemInfo.mayContain);
+					const selectedItemIndex = diceRoll(itemNames.length) - 1;
+					const selectedItemName = itemNames[selectedItemIndex];
+					const selectedItemUniqueId = selectedItemName.slice(0, 1).toLowerCase() + selectedItemName.slice(1, selectedItemName.length).replaceAll(' ', '') + '0';
+					const selectedItemInfo = ItemTypes[selectedItemName];
+					containerContents = [{
+						...selectedItemInfo,
+						id: selectedItemUniqueId,
+						name: selectedItemName,
+						isIdentified: selectedItemInfo.itemType !== 'Relic',
+						amount: diceRoll(envItemInfo.mayContain[selectedItemName].max),
+						coords
+					}];
+				}
 				envObjects[uniqueItemId] = {
-					...itemInfo,
-					isDiscovered: !itemInfo.isHidden,
+					...envItemInfo,
+					name: itemId,
+					isDiscovered: !envItemInfo.isHidden,
+					isIdentified: !envItemInfo.isNotisIdentified,
+					containerContents,
+					isOpen: envItemInfo.type === 'container' ? false : null,
 					coords
 				};
 				itemCoords[uniqueItemId] = coords;
@@ -1176,6 +1197,7 @@ class Map extends React.Component {
 				tilePos={convertCoordsToPos(info.coords)}
 				tileIsVisible={tileIsVisible}
 				isHidden={!info.isDiscovered}
+				isContainerOpen={info.isOpen}
 				updateContextMenu={this.checkForDragging}
 				styles={{
 					transform: `translate(${this._calculateObjectTransform(info.coords.xPos, info.coords.yPos)})`,

@@ -116,6 +116,9 @@ function CharacterControls(props) {
 	if (props.mapObjectsOnPcTiles.length > 0) {
 		actionableItems.misc.push('pickup');
 	}
+	if (props.envObjectsNextToPc.length > 0) {
+		actionableItems.misc.push('open-container');
+	}
 	if ((currentPCdata.equippedLight && (currentPCdata.equippedLight.includes('lantern') || currentPCdata.equippedLight.includes('torch'))) &&
 		currentPCdata.lightTime < currentPCdata.items[currentPCdata.equippedLight].maxTime && currentPCdata.items.oil0)
 	{
@@ -291,12 +294,17 @@ function CharacterControls(props) {
 				if (item === 'pickup') {
 					button = <div
 						key={item + index}
-						className={`action-button pickup-action ${shouldActionButtonShow() ? '' : 'hide'} ${actionButtonState}`}
+						className={`action-button ${item}-action ${shouldActionButtonShow() ? '' : 'hide'} ${actionButtonState}`}
 						onClick={(evt) => props.setMapObjectSelected(props.mapObjectsOnPcTiles, evt, true)}></div>;
+				} else if (item === 'open-container') {
+					button = <div
+						key={item + index}
+						className={`action-button ${item}-action ${shouldActionButtonShow() ? '' : 'hide'} ${actionButtonState}`}
+						onClick={(evt) => props.setMapObjectSelected(props.envObjectsNextToPc, evt, true)}></div>;
 				} else if (item === 'refill') {
 					button = <div
 						key={item + index}
-						className={`action-button refill-action ${shouldActionButtonShow() ? '' : 'hide'} ${actionButtonState}`}
+						className={`action-button ${item}-action ${shouldActionButtonShow() ? '' : 'hide'} ${actionButtonState}`}
 						onClick={props.refillLight}></div>;
 				} else if (typeof item === 'object' && item.itemType === 'Relic') {
 					button = <div
@@ -607,8 +615,10 @@ function ObjectInfoPanel(props) {
 		dialogProps,
 		setShowDialogProps,
 		creatureCoords,
-		activePc} = {...props};
+		activePc,
+		setContainerOpenState} = {...props};
 	const [origObjectList, updateOrigObjectList] = useState(objectInfo);
+	const [containerId, updateContainerId] = useState(null);
 	const [objectToShow, updateObjToShow] = useState(isMapObj ? null : objectInfo);
 	const splitStack = (evt) => {
 		evt.preventDefault();
@@ -622,53 +632,80 @@ function ObjectInfoPanel(props) {
 		}
 		cancelObjPanel();
 	};
+	const openContainer = (container) => {
+		setContainerOpenState(container.id);
+		updateContainerId(container.id);
+		updateOrigObjectList(container.containerContents);
+	};
+	// list can be items on the ground or items in a container
 	const objectList = () => {
 		const list = [];
-		origObjectList.forEach((obj, index) => {
-			if (obj) {
-				list.push(
-					<div key={obj.id}>
-						<div className='object-row-with-buttons'>
-							<div className={`inv-object ${convertObjIdToClassId(obj.id)}`}></div>
-							<div>
-								<div className='font-fancy object-list-objname'>{obj.identified ? obj.name : '???'}</div>
-								<div>{obj.description}</div>
-							</div>
-							{isPickUpAction &&
-								<div className='general-button' onClick={() => updateObjToShow(obj)}>Show</div>
-							}
-							{isPickUpAction &&
-							<div className='general-button' onClick={() => {
-								if (dialogProps) {
-									setShowDialogProps(true, dialogProps);
-								} else if (creatureCoords.find(creature => creature.coords.xPos === obj.coords.xPos && creature.coords.yPos === obj.coords.yPos)) {
-									const guardedDialogProps = {
-										dialogContent: "That item can't be picked up, as it's being guarded by something horrid!",
-										closeButtonText: 'Ok',
-										closeButtonCallback: null,
-										disableCloseButton: false,
-										actionButtonVisible: false,
-										actionButtonText: '',
-										actionButtonCallback: null,
-										dialogClasses: ''
-									}
-									setShowDialogProps(true, guardedDialogProps);
-								} else {
-									addItemToPlayerInventory(obj, obj.id, activePc, isPickUpAction, false);
-									const updatedList = origObjectList;
-									updatedList[index] = undefined;
-									updateOrigObjectList(updatedList);
-									if (updatedList.every(obj => obj === undefined)) {
-										cancelObjPanel();
-									}
-								}
-							}}>Pick up</div>
-							}
-						</div>
+		if (origObjectList.length === 0) {
+			list.push(
+				<div key={0}>
+					<div className='object-row-with-buttons'>
+						<div></div>
+						<div>Empty</div>
 					</div>
-				)
-			}
-		});
+				</div>
+			)
+		} else {
+			origObjectList.forEach((obj, index) => {
+				const isEnvObject = obj.isEnvObject;
+				if (obj) {
+					list.push(
+						<div key={obj.id}>
+							<div className='object-row-with-buttons'>
+								<div className={`inv-object ${convertObjIdToClassId(obj.id)}`}></div>
+								<div>
+									<div className='font-fancy object-list-objname'>{obj.isIdentified ? obj.name : '???'}</div>
+									<div>{obj.description}</div>
+								</div>
+								{isPickUpAction && !isEnvObject &&
+									<div className='general-button' onClick={() => updateObjToShow(obj)}>Show</div>
+								}
+								{isPickUpAction && !isEnvObject &&
+								<div className='general-button' onClick={() => {
+									if (dialogProps) {
+										setShowDialogProps(true, dialogProps);
+									} else if (creatureCoords.find(creature => creature.coords.xPos === obj.coords.xPos && creature.coords.yPos === obj.coords.yPos)) {
+										const guardedDialogProps = {
+											dialogContent: "That item can't be picked up, as it's being guarded by something horrid!",
+											closeButtonText: 'Ok',
+											closeButtonCallback: null,
+											disableCloseButton: false,
+											actionButtonVisible: false,
+											actionButtonText: '',
+											actionButtonCallback: null,
+											dialogClasses: ''
+										}
+										setShowDialogProps(true, guardedDialogProps);
+									} else {
+										addItemToPlayerInventory(obj, obj.id, activePc, isPickUpAction, false, containerId);
+										const updatedList = origObjectList;
+										updatedList[index] = undefined;
+										updateOrigObjectList(updatedList);
+										if (updatedList.every(obj => obj === undefined)) {
+											cancelObjPanel();
+										}
+									}
+								}}>Pick up</div>
+								}
+								{isPickUpAction && isEnvObject &&
+									<div className='general-button' onClick={() => {
+										if (dialogProps) {
+											setShowDialogProps(true, dialogProps);
+										} else {
+											openContainer(obj);
+										}
+									}}>Open</div>
+								}
+							</div>
+						</div>
+					)
+				}
+			});
+		}
 		return list;
 	}
 	const cancelObjPanel = () => {
@@ -694,7 +731,7 @@ function ObjectInfoPanel(props) {
 				<div className='object-panel-contents'>
 					<div className={`inv-object ${convertObjIdToClassId(objectToShow.id)}-inv`}></div>
 					<div className='object-text-container'>
-						<div className='font-fancy'>{objectToShow.identified ? objectToShow.name : '???'}</div>
+						<div className='font-fancy'>{objectToShow.isIdentified ? objectToShow.name : '???'}</div>
 						<div>{objectToShow.itemType ? objectToShow.itemType : (objectToShow.ranged ? 'Ranged' : 'Melee') + ' weapon'}</div>
 						{objectToShow.rounds && <div>Capacity: {objectToShow.rounds} rounds</div>}
 						{objectToShow.amount && <div>Amount: {objectToShow.amount}</div>}
@@ -703,10 +740,10 @@ function ObjectInfoPanel(props) {
 						{objectToShow.damage && <div>Base damage: {objectToShow.damage}</div>}
 						{objectToShow.time && <div>Light remaining: {objectToShow.time} steps</div>}
 						<div>{objectToShow.description}</div>
-						{objectToShow.identified && <div>{objectToShow.furtherInfo}</div>}
-						{objectToShow.identified && <div>Effect: {objectToShow.effect}</div>}
-						{objectToShow.identified && objectToShow.sanityCost && <div>Cost to Sanity: -{objectToShow.sanityCost}</div>}
-						{objectToShow.identified && objectToShow.spirit && <div>Required Spirit: -{objectToShow.spirit}</div>}
+						{objectToShow.isIdentified && <div>{objectToShow.furtherInfo}</div>}
+						{objectToShow.isIdentified && <div>Effect: {objectToShow.effect}</div>}
+						{objectToShow.isIdentified && objectToShow.sanityCost && <div>Cost to Sanity: -{objectToShow.sanityCost}</div>}
+						{objectToShow.isIdentified && objectToShow.spirit && <div>Required Spirit: -{objectToShow.spirit}</div>}
 						</div>
 				</div>
 				<div className='object-panel-buttons-container'>

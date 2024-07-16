@@ -90,7 +90,7 @@ class Game extends React.Component {
 				fxVolume: 1,
 				playFx: true,
 				musicVolume: 1,
-				playMusic: false,
+				playMusic: true,
 				songName: '',
 				screenZoom: 1.0
 			},
@@ -236,7 +236,7 @@ class Game extends React.Component {
 			this.setState(prevState => ({
 				[collection]: {
 					...prevState[collection],
-					[id]: {...prevState[collection][id], ...updateData}
+					[id]: {...prevState[collection][id], ...deepCopy(updateData)}
 				}
 			}), () => {
 				if (this.state.selectedCreature === id) {
@@ -263,7 +263,7 @@ class Game extends React.Component {
 				} else if (callback) callback();
 			});
 		} else {
-			this.setState({[collection]: updateData}, () => {
+			this.setState({[collection]: deepCopy(updateData)}, () => {
 				if (isInitialCharacterSetup) {
 					this._setAllUnitsTurnOrder('playerCharacters', callback);
 				} else if (isInitialCreatureSetup) {
@@ -924,7 +924,7 @@ class Game extends React.Component {
 				};
 			}
 		// ...or if clicked target is a torch
-		} else if (actionType === 'examine' && actionInfo.objectInfo[0].name === 'Torch') {
+		} else if (actionType === 'examine' && (actionInfo.objectInfo[0].name === 'Torch' || actionInfo.objectInfo[0].isEnvObject)) {
 			contextMenuNeeded = {
 				menuNeeded: false,
 				actionToProcess: () => this.setMapObjectSelected(actionInfo.objectInfo, actionInfo.selectionEvt, actionInfo.isPickUpAction)
@@ -1076,8 +1076,9 @@ class Game extends React.Component {
 	 * @param recipientId: string (id of pc that's receiving the item
 	 * @param isPickUpAction: boolean (item was picked up using action button)
 	 * @param isCreateAction: boolean (item created using skill)
+	 * @param containerId: string (container env object id that item was taken from)
 	 */
-	addItemToPlayerInventory = (itemData, objId, recipientId, isPickUpAction, isCreateAction) => {
+	addItemToPlayerInventory = (itemData, objId, recipientId, isPickUpAction, isCreateAction, containerId = null) => {
 		const player = this.state.playerCharacters[recipientId];
 		const objectType = itemData.itemType ? itemData.itemType : 'Weapon';
 		const invObjectCategory = objectType === 'Weapon' ? 'weapons' : 'items';
@@ -1137,7 +1138,7 @@ class Game extends React.Component {
 		}
 		this.updateCharacters('player', updatedData, recipientId, false, false, false, () => {
 			if (isPickUpAction) {
-				this._removeItemFromMap(objId);
+				this._removeItemFromMap(objId, containerId);
 				this.updateActivePlayerActions();
 			} else if (isCreateAction) {
 				this.updateActivePlayerActions();
@@ -1404,11 +1405,19 @@ class Game extends React.Component {
 		});
 	}
 
-	_removeItemFromMap(id) {
-		const updatedObjects = deepCopy(this.state.mapObjects);
-		const lightingHasChanged = updatedObjects[id].itemType && updatedObjects[id].itemType === 'Light';
-		delete updatedObjects[id];
-		this.updateMapObjects(updatedObjects, lightingHasChanged);
+	_removeItemFromMap(id, containerId) {
+		if (containerId) {
+			let updatedObjects = deepCopy(this.state.envObjects);
+			const contents = updatedObjects[containerId].containerContents;
+			const itemIndex = contents.find(item => item.id === id);
+			contents.splice(itemIndex, 1);
+			this.updateMapEnvObjects(updatedObjects);
+		} else {
+			const updatedObjects = deepCopy(this.state.mapObjects);
+			const lightingHasChanged = updatedObjects[id].itemType && updatedObjects[id].itemType === 'Light';
+			delete updatedObjects[id];
+			this.updateMapObjects(updatedObjects, lightingHasChanged);
+		}
 	}
 
 	_endGame() {
@@ -1527,6 +1536,8 @@ class Game extends React.Component {
 
 						updateMapObjects={this.updateMapObjects}
 						mapObjects={this.state.mapObjects}
+						updateMapEnvObjects={this.updateMapEnvObjects}
+						envObjects={this.state.envObjects}
 
 						actionButtonSelected={this.state.actionButtonSelected}
 						skillModeActive={this.state.skillModeActive}

@@ -64,7 +64,7 @@ class Character extends React.Component {
 		const fullItemData = type === 'weapon' ? WeaponTypes : ItemTypes;
 		let allInfo = {};
 		for (const [id, info] of Object.entries(objects)) {
-			allInfo[id] = {...info, ...fullItemData[info.name], identified: true};
+			allInfo[id] = {...info, ...fullItemData[info.name], isIdentified: true};
 			if (id !== equipped.right && id !== equipped.left && id !== equipped.armor) {
 				const firstEmptyBoxId = this.inventory.indexOf(null);
 				this.inventory.splice(firstEmptyBoxId, 1, id);
@@ -617,8 +617,8 @@ class Character extends React.Component {
 
 		while (!itemFound && index < allItems.length) {
 			const itemData = allItems[index];
-			if (itemData.itemType === 'Relic' && !itemData.identified) {
-				itemData.identified = true;
+			if (itemData.itemType === 'Relic' && !itemData.isIdentified) {
+				itemData.isIdentified = true;
 				itemFound = itemData;
 			}
 			index++;

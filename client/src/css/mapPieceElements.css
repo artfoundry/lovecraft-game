@@ -207,8 +207,12 @@ as box-shadow greatly dims the lighting */
 	user-select: none;
 }
 
-.coffin {
-	content: url('../assets/objects/coffin.png');
+.sarcophagus {
+	content: url('../assets/objects/sarcophagus.png');
+}
+
+.sarcophagus-open {
+	content: url('../assets/objects/sarcophagus-open.png');
 }
 
 .spike-trap {

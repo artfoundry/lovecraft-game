@@ -81,10 +81,11 @@ function Item(props) {
 
 function EnvObject(props) {
 	const isHiddenClass = (!props.tileIsVisible || props.isHidden) ? ' hidden' : '';
+	const objNameClass = props.isContainerOpen ? props.name + '-open' : props.name;
 	return (
 		<img
 			alt={props.name}
-			className={`env-object ${props.name}${isHiddenClass}`}
+			className={`env-object ${objNameClass}${isHiddenClass}`}
 			style={props.styles}
 			draggable={false}
 			onClick={(evt) => {

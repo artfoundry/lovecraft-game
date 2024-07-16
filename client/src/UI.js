@@ -80,12 +80,19 @@ class UI extends React.Component {
 
 		for (const [id, playerInfo] of Object.entries(this.props.playerCharacters)) {
 			if (!playerInfo.isDeadOrInsane) {
+				// for setting up Pickup action and Open container action buttons
 				let mapObjectsOnPcTiles = [];
-				for (const [objId, objInfo] of Object.entries(this.props.mapObjects)) {
+				let envObjectsNextToPc = [];
+				const allObjects = {...this.props.mapObjects, ...this.props.envObjects};
+				for (const [objId, objInfo] of Object.entries(allObjects)) {
 					const xDelta = Math.abs(playerInfo.coords.xPos - objInfo.coords.xPos);
 					const yDelta = Math.abs(playerInfo.coords.yPos - objInfo.coords.yPos);
 					if (xDelta <= 1 && yDelta <= 1) {
-						mapObjectsOnPcTiles.push({...objInfo, id: objId});
+						if (objInfo.isEnvObject && objInfo.type === 'container') {
+							envObjectsNextToPc.push({...objInfo, id: objId});
+						} else if (!objInfo.isEnvObject) {
+							mapObjectsOnPcTiles.push({...objInfo, id: objId});
+						}
 					}
 				}
 
@@ -114,6 +121,7 @@ class UI extends React.Component {
 						dropItemToPC={this.dropItemToPC}
 						setMapObjectSelected={this.props.setMapObjectSelected}
 						mapObjectsOnPcTiles={mapObjectsOnPcTiles}
+						envObjectsNextToPc={envObjectsNextToPc}
 						screenData={this.props.screenData}
 						selectedControlTab={this.state.selectedControlTab}
 						setSelectedControlTab={this.setSelectedControlTab}
@@ -569,6 +577,12 @@ class UI extends React.Component {
 		});
 	}
 
+	setContainerOpenState = (envObjectId, callback) => {
+		let envObjects = deepCopy(this.props.envObjects);
+		envObjects[envObjectId].isOpen = true;
+		this.props.updateMapEnvObjects(envObjects, callback);
+	}
+
 	/**
 	 * Determines position for object info panel or contextual menu
 	 * @param x
@@ -645,6 +659,7 @@ class UI extends React.Component {
 				setShowDialogProps={this.props.setShowDialogProps}
 				creatureCoords={creatureCoords}
 				activePc={this.props.activeCharacter}
+				setContainerOpenState={this.setContainerOpenState}
 			/>
 		);
 	}
@@ -743,14 +758,16 @@ class UI extends React.Component {
 	}
 
 	/**
-	 *
-	 * @param clickedObjPos
+	 * When user clicks on tile with object(s) on it or pickup action button, gathers list of objects, then calls functions to
+	 * set object info panel to closed (in case it was open for another tile), store the objects that are selected, and then open object info panel
+	 * @param clickedObjPos: string
 	 */
 	processTileClick = (clickedObjPos) => {
 		// if object was clicked on on the map, check if any other objects are on the same tile
 		let clickedObjects = [];
+		const allObjects = {...this.props.mapObjects, ...this.props.envObjects};
 		if (!this.props.objectSelected.isPickUpAction) {
-			for (const [objId, objInfo] of Object.entries(this.props.mapObjects)) {
+			for (const [objId, objInfo] of Object.entries(allObjects)) {
 				const objPos = convertCoordsToPos(objInfo.coords);
 				if (clickedObjPos === objPos) {
 					clickedObjects.push({...objInfo, id: objId});
