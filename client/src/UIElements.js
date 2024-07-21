@@ -651,8 +651,8 @@ function ObjectInfoPanel(props) {
 			)
 		} else {
 			origObjectList.forEach((obj, index) => {
-				const isEnvObject = obj.isEnvObject;
 				if (obj) {
+					const isEnvObject = obj.isEnvObject;
 					list.push(
 						<div key={obj.id}>
 							<div className='object-row-with-buttons'>

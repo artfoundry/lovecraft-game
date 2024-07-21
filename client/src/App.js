@@ -90,7 +90,7 @@ class Game extends React.Component {
 				fxVolume: 1,
 				playFx: true,
 				musicVolume: 1,
-				playMusic: true,
+				playMusic: false,
 				songName: '',
 				screenZoom: 1.0
 			},
