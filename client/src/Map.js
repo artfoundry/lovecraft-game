@@ -688,28 +688,38 @@ class Map extends React.Component {
 	_setInitialEnvObjectData(callback) {
 		let envObjects = {};
 		let itemCoords = {};
+
 		for (const [itemId, appearanceInfo] of Object.entries(this.currentMapData.envObjects)) {
 			for (let i=0; i < appearanceInfo.countPerFloor[this.props.currentFloor]; i++) {
 				const envItemInfo = EnvObjectTypes[itemId];
 				const lowerCaseName = itemId.slice(0, 1).toLowerCase() + itemId.slice(1, itemId.length).replaceAll(' ', '');
 				const uniqueItemId = lowerCaseName + (i + 1);
-				const envObjAttrs = {isPassable: envItemInfo.isPassable, isDestructible: envItemInfo.isDestructible};
-				const coords = convertPosToCoords(this._generateRandomLocation(itemCoords, 'floor', true, envObjAttrs)); // this.props.playerCharacters['privateEye'].coords (to easily test objects)
-				let containerContents = null;
+				const coords = convertPosToCoords(this._generateRandomLocation(itemCoords, 'floor', true, envItemInfo.isPassable)); // this.props.playerCharacters['privateEye'].coords (to easily test objects)
+				let containerContents = [];
 				if (envItemInfo.type === 'container') {
-					const itemNames = Object.keys(envItemInfo.mayContain);
+					// adding null option so container could have nothing
+					const itemNames = [...Object.keys(envItemInfo.mayContain), null];
 					const selectedItemIndex = diceRoll(itemNames.length) - 1;
-					const selectedItemName = itemNames[selectedItemIndex];
-					const selectedItemUniqueId = selectedItemName.slice(0, 1).toLowerCase() + selectedItemName.slice(1, selectedItemName.length).replaceAll(' ', '') + '0';
-					const selectedItemInfo = ItemTypes[selectedItemName];
-					containerContents = [{
-						...selectedItemInfo,
-						id: selectedItemUniqueId,
-						name: selectedItemName,
-						isIdentified: selectedItemInfo.itemType !== 'Relic',
-						amount: diceRoll(envItemInfo.mayContain[selectedItemName].max),
-						coords
-					}];
+					if (itemNames[selectedItemIndex]) {
+						const selectedItemName = itemNames[selectedItemIndex];
+						const selectedItemUniqueId = selectedItemName.slice(0, 1).toLowerCase() + selectedItemName.slice(1, selectedItemName.length).replaceAll(' ', '') + '0';
+						const objectType = ItemTypes[selectedItemName] ? 'item' : 'weapon';
+						const selectedItemBaseInfo = objectType === 'item' ? ItemTypes[selectedItemName] : WeaponTypes[selectedItemName];
+						let selectedItemInfo = {
+							...selectedItemBaseInfo,
+							id: selectedItemUniqueId,
+							name: selectedItemName,
+							isIdentified: selectedItemBaseInfo.itemType !== 'Relic',
+							coords
+						};
+						const count = diceRoll(envItemInfo.mayContain[selectedItemName].max);
+						if (objectType === 'item' && selectedItemBaseInfo.stackable) {
+							selectedItemInfo.amount = count;
+						} else if (objectType === 'weapon' && (selectedItemBaseInfo.stackable || selectedItemBaseInfo.rounds)) {
+							selectedItemInfo.currentRounds = count
+						}
+						containerContents = [selectedItemInfo];
+					}
 				}
 				envObjects[uniqueItemId] = {
 					...envItemInfo,
@@ -738,11 +748,11 @@ class Map extends React.Component {
 	 * @param objectCoords: Object
 	 * @param tileType: String (either 'floor' or 'wall')
 	 * @param isEnvObj: Boolean
-	 * @param envObjAttrs: Object (isPassable and isDestructible)
+	 * @param isPassable: Boolean (true if object can be walked over)
 	 * @returns {string}
 	 * @private
 	 */
-	_generateRandomLocation(objectCoords = {}, tileType = 'floor', isEnvObj = false, envObjAttrs) {
+	_generateRandomLocation(objectCoords = {}, tileType = 'floor', isEnvObj = false, isPassable) {
 		let emptyLocFound = false;
 		// list of available floor tiles, in str format, on which to place stuff
 		let tileList = Object.keys(this.state.mapLayout).filter(tilePos => {
@@ -756,7 +766,7 @@ class Map extends React.Component {
 		let tilePos = '';
 		const exitPos = Object.values(this.state.exitPosition).length > 0 ? convertCoordsToPos(this.state.exitPosition) : null;
 		let allCharacterPos = [];
-		let allItemPos = [];
+		const listOfMapObjectsPos = isEnvObj ? Object.values(this.props.mapObjects).map(object => convertCoordsToPos(object.coords)) : null;
 
 		if (Object.keys(this.props.playerCharacters).length > 0) {
 			this.props.getAllCharactersPos('player', 'pos').forEach(player => {
@@ -768,16 +778,13 @@ class Map extends React.Component {
 				allCharacterPos.push(creature.pos);
 			});
 		}
-		for (const mapObjData of Object.values(this.props.mapObjects)) {
-			allItemPos.push(convertCoordsToPos(mapObjData.coords));
-		}
-
 		while (!emptyLocFound && tileList.length > 0) {
 			randomIndex = Math.floor(Math.random() * tileList.length);
 			tilePos = tileList[randomIndex];
 			const canHaveObject = this.state.mapLayout[tilePos].canHaveObject;
 			const objectMustBePassable = this.state.mapLayout[tilePos].objectMustBePassable;
 			let noAdjacentImpassables = true;
+			const tileHasNoMapObjects = isEnvObj ? !listOfMapObjectsPos.includes(tilePos) : null;
 
 			if (isEnvObj && newObjectList) {
 				const adjacentTiles = this._getAllSurroundingTilesToRange(tilePos, 1)['1Away'];
@@ -792,14 +799,20 @@ class Map extends React.Component {
 			}
 
 			// If tilePos is not the exit, not where an obj is, not where a character is, obj either isn't env obj,
-			// or if it is env obj, and no other env objs adjacent and obj passability matches tile passibility attr,
+			// or if it is env obj, and tile is allowed to have an env obj, and tile has no items, and
+			// no other env objs adjacent, and obj passability matches tile passibility attr,
 			// then loc is good to use
-			// Comparisons formatted this way because 'null && false' equals null, not false, while '!(null && true)' equals true
-			if (!(exitPos && tilePos === exitPos) &&
-				!(newObjectList && newObjectList.includes(tilePos)) &&
+			// First two comparisons formatted like !(a && b) because 'null && false' equals null, not false, while '!(null && true)' equals true
+			if ((!exitPos || tilePos !== exitPos) &&
+				(!newObjectList || !newObjectList.includes(tilePos)) &&
 				!allCharacterPos.includes(tilePos) &&
-				(!isEnvObj || (isEnvObj && canHaveObject && noAdjacentImpassables && !allItemPos.includes(tilePos) && ((objectMustBePassable && envObjAttrs.isPassable) || !objectMustBePassable))))
-			{
+				(!isEnvObj ||
+					(isEnvObj &&
+					canHaveObject &&
+					tileHasNoMapObjects &&
+					noAdjacentImpassables &&
+					((objectMustBePassable && isPassable) || !objectMustBePassable)))
+			) {
 				emptyLocFound = true;
 			} else {
 				// remove tile from list of available locations

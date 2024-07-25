@@ -41,6 +41,12 @@
       },
       "Cloth": {
         "max": 3
+      },
+      "Holy Water": {
+        "max": 1
+      },
+      "Knife": {
+        "max": 1
       }
     }
   }

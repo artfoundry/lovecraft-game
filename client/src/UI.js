@@ -88,7 +88,7 @@ class UI extends React.Component {
 					const xDelta = Math.abs(playerInfo.coords.xPos - objInfo.coords.xPos);
 					const yDelta = Math.abs(playerInfo.coords.yPos - objInfo.coords.yPos);
 					if (xDelta <= 1 && yDelta <= 1) {
-						if (objInfo.isEnvObject && objInfo.type === 'container') {
+						if (objInfo.isEnvObject && objInfo.type === 'container' && (!objInfo.isOpen || objInfo.containerContents.length > 0)) {
 							envObjectsNextToPc.push({...objInfo, id: objId});
 						} else if (!objInfo.isEnvObject) {
 							mapObjectsOnPcTiles.push({...objInfo, id: objId});

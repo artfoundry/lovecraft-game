@@ -741,7 +741,7 @@ function ObjectInfoPanel(props) {
 						{objectToShow.time && <div>Light remaining: {objectToShow.time} steps</div>}
 						<div>{objectToShow.description}</div>
 						{objectToShow.isIdentified && <div>{objectToShow.furtherInfo}</div>}
-						{objectToShow.isIdentified && <div>Effect: {objectToShow.effect}</div>}
+						{objectToShow.isIdentified && objectToShow.effect && <div>Effect: {objectToShow.effect}</div>}
 						{objectToShow.isIdentified && objectToShow.sanityCost && <div>Cost to Sanity: -{objectToShow.sanityCost}</div>}
 						{objectToShow.isIdentified && objectToShow.spirit && <div>Required Spirit: -{objectToShow.spirit}</div>}
 						</div>
