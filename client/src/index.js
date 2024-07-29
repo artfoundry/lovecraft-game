@@ -7,7 +7,7 @@ import 'drag-drop-touch';
 const root = ReactDOM.createRoot(document.getElementById('root'));
 const testAttributes = {
     showLogin: false,
-    showCharacterCreation: true,
+    showCharacterCreation: false,
     startingCharacters: ['privateEye', 'chemist', 'archaeologist'],
     startingLocation: 'catacombs'
 };

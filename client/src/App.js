@@ -4,11 +4,12 @@ import CharacterCreation from './CharacterCreation';
 import Map from './Map';
 import Character from './Character';
 import PlayerCharacterTypes from './data/playerCharacterTypes.json';
+import CreatureTypes from './data/creatureTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
 import ItemTypes from './data/itemTypes.json';
 import UI from './UI';
 import './css/app.css';
-import {diceRoll, deepCopy, convertCoordsToPos} from './Utils';
+import {diceRoll, deepCopy, convertCoordsToPos, convertPosToCoords} from './Utils';
 
 class Game extends React.Component {
 	constructor(props) {
@@ -117,7 +118,7 @@ class Game extends React.Component {
 			currentRound: 1, // starts on 1 because always enter a new area in tactical mode but updateCurrentTurn isn't called on entry
 			showDialog: false,
 			dialogProps: {
-			dialogContent: this.initialDialogContent,
+				dialogContent: this.initialDialogContent,
 				closeButtonText: 'Close',
 				closeButtonCallback: null,
 				disableCloseButton: false,
@@ -137,7 +138,6 @@ class Game extends React.Component {
 			activePlayerActionsCompleted: 0,
 			characterIsSelected: false,
 			creatureIsSelected: false,
-			creatureCoordsUpdate: null,
 			selectedCharacter: '',
 			selectedCreature: '',
 			actionButtonSelected: null,
@@ -170,7 +170,6 @@ class Game extends React.Component {
 			activePlayerActionsCompleted: 0,
 			characterIsSelected: false,
 			creatureIsSelected: false,
-			creatureCoordsUpdate: null,
 			selectedCharacter: '',
 			selectedCreature: '',
 			actionButtonSelected: null,
@@ -328,6 +327,45 @@ class Game extends React.Component {
 			}
 		}
 		return allCharactersPos;
+	}
+
+	spawnCreature = (unitId, spawnPos, callback) => {
+		let creature = CreatureTypes[unitId];
+		let allThingsPos = [];
+		const allCharsPos = this.getAllCharactersPos('all', 'pos');
+		const spawnCoords = convertPosToCoords(spawnPos);
+		let testPos = '';
+		let freeTileFound = null;
+		let tileDiff = 1;
+
+		allCharsPos.forEach(charPos => {
+			allThingsPos.push(Object.values(charPos)[0]);
+		});
+		for (const envObjInfo of Object.values(this.state.envObjects)) {
+			allThingsPos.push(envObjInfo.coords);
+		}
+		// search around spawnPos for available tile (that doesn't have envObj, pc, or creature)
+		while (!freeTileFound) {
+			for (let xPos= -tileDiff; xPos <= tileDiff; xPos++) {
+				for (let yPos=-tileDiff; yPos <= tileDiff; yPos++) {
+					if (Math.abs(xPos) === tileDiff || Math.abs(yPos) === tileDiff) {
+						testPos = `${spawnCoords.xPos + xPos}-${spawnCoords.yPos + yPos}`;
+						if (testPos !== spawnPos && this.state.mapLayout[testPos] && !allThingsPos.includes(testPos)) {
+							freeTileFound = {xPos, yPos};
+						}
+					}
+				}
+			}
+		}
+		// need to:
+		// add to this.state.mapCreatures
+		// call _rollCharInitiative to set init
+		// call _sortInitiatives to add unit to this.state.unitsTurnOrder
+		// call updateThreatList to add to this.state.threatList
+		// check if in tactical mode, and if not, call toggleTacticalMode and pass in true
+		// call toggleLightingHasChanged if creature projects light
+		// call updateLog to announce spawn
+		// call this function from setContainerOpenState in UI
 	}
 
 	/**
@@ -1317,6 +1355,10 @@ class Game extends React.Component {
 		}
 	}
 
+	_rollCharInitiative(baseInit) {
+		return baseInit + diceRoll(6);
+	}
+
 	/**
 	 * Calculates initiative values for each PC and NPC in map,
 	 * then saves turn order array to state,
@@ -1328,7 +1370,7 @@ class Game extends React.Component {
 		let unitsTurnOrder = this.state.unitsTurnOrder;
 
 		for (const [id, charData] of Object.entries(this.state[unitType])) {
-			const unitInitiative = charData.initiative + diceRoll(6);
+			const unitInitiative = this._rollCharInitiative(charData.initiative);
 			this._sortInitiatives(unitsTurnOrder, id, unitInitiative, unitType);
 		}
 
