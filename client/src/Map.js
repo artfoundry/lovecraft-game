@@ -1,5 +1,5 @@
 import React from 'react';
-import {useRef} from 'react';
+import {createRef} from 'react';
 import MapData from './data/mapData.json';
 import GameLocations from './data/gameLocations.json';
 import CreatureData from './data/creatureTypes.json';
@@ -617,13 +617,13 @@ class Map extends React.Component {
 	_setInitialCreatureData(callback) {
 		let mapCreatures = {};
 		let creatureCoords = {};
-		for (const [name, stats] of Object.entries(this.currentMapData.creatures)) {
+		for (const [genericId, stats] of Object.entries(this.currentMapData.creatures)) {
 	//TODO: change this logic and data in gameLocations.json to use same level/count format as objects
 			for (let i=0; i < stats.count; i++) {
 				const coords = convertPosToCoords(this._generateRandomLocation(creatureCoords));
-				const creatureId = name + i;
-				CreatureData[name].creatureId = creatureId;
-				mapCreatures[creatureId] = new Creature(CreatureData[name]);
+				const creatureId = genericId + i;
+				CreatureData[genericId].creatureId = creatureId;
+				mapCreatures[creatureId] = new Creature(CreatureData[genericId]);
 				mapCreatures[creatureId].coords = coords;
 				creatureCoords[creatureId] = coords;
 			}
@@ -1105,7 +1105,7 @@ class Map extends React.Component {
 				}
 			}
 
-			this.charRefs[id] = useRef(null);
+			this.charRefs[id] = createRef();
 			const idConvertedToClassName = convertObjIdToClassId(id);
 			characterList.push(
 				<Character
@@ -1854,16 +1854,16 @@ class Map extends React.Component {
 
 	/**
 	 * Find all tiles out to 'range' number of rings surrounding center
+	 * Includes all tile types
 	 * @param centerPos: string
 	 * @param range: number
-	 * @returns object: {
+	 * @returns object:
 	 *  {
 	 *      '1Away': [tilePosStrings],
 	 *      '2Away': [tilePosStrings],
 	 *      '3Away': [tilePosStrings],
 	 *      etc
 	 *  }
-	 * }
 	 * @private
 	 */
 	_getAllSurroundingTilesToRange(centerPos, range) {
@@ -1885,6 +1885,36 @@ class Map extends React.Component {
 			}
 		}
 		return surroundingTiles;
+	}
+
+	findNearestTileForSpawn = () => {
+		const maxRangeToLook = 2;
+		const surroundingTiles = this._getAllSurroundingTilesToRange(this.props.creatureSpawnInfo.pos, maxRangeToLook);
+		const allCharsPos = this.props.getAllCharactersPos('all', 'pos');
+		let allThingsPos = [];
+		let freeTileFound = null;
+
+		allCharsPos.forEach(posInfo => {
+			allThingsPos.push(posInfo.pos);
+		});
+		for (const envObjInfo of Object.values(this.props.envObjects)) {
+			allThingsPos.push(convertCoordsToPos(envObjInfo.coords));
+		}
+		let distance = 1;
+		let posIndex = 0;
+		while (!freeTileFound && distance <= maxRangeToLook) {
+			let newPos = surroundingTiles[distance + 'Away'][posIndex];
+			if (!allThingsPos.includes(newPos) && this.state.mapLayout[newPos].type === 'floor') {
+				freeTileFound = newPos;
+			} else {
+				posIndex++;
+				if (posIndex === surroundingTiles[distance + 'Away'].length) {
+					distance++;
+					posIndex = 0;
+				}
+			}
+		}
+		this.props.spawnCreature(freeTileFound);
 	}
 
 	/**
@@ -2049,7 +2079,7 @@ class Map extends React.Component {
 		}
 
 		let updateData = {coords: newCoords};
-		const activePlayerData = this.props.playerCharacters[activePC];
+		const activePlayerData = deepCopy(this.props.playerCharacters[activePC]);
 		let lightingHasChanged = false;
 		// reduce light time remaining and range if time is really low
 		if (activePlayerData.equippedLight && activePlayerData.lightTime > 0) {
@@ -2691,6 +2721,9 @@ class Map extends React.Component {
 			prevProps.gameOptions.screenZoom !== this.props.gameOptions.screenZoom)
 		{
 			this._moveMap();
+		}
+		if (this.props.creatureSpawnInfo && prevProps.creatureSpawnInfo !== this.props.creatureSpawnInfo) {
+			this.findNearestTileForSpawn();
 		}
 	}
 

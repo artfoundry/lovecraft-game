@@ -1150,6 +1150,10 @@ select {
 	background-image: url('../assets/objects/necronomicon_lrg.png');
 }
 
+.gems-inv {
+	background-image: url('../assets/objects/gems_lrg.png');
+}
+
 /* ACTION BUTTON ICONS */
 
 .first-aid-kit-action {

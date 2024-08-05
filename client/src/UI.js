@@ -155,6 +155,7 @@ class UI extends React.Component {
 
 	/**
 	 * Remove dragged item from source pc inv if it's a single object or an entire stack (of ammo, oil, etc.)
+	 * note: sourcePCdata that's passed in and gets updated directly is deepCopy of data sent from calling functions
 	 * @param invObjectCategory: string
 	 * @param sourceItemCount: number
 	 * @param sourcePCdata: object
@@ -281,7 +282,7 @@ class UI extends React.Component {
 
 		let hand = '';
 		let oppositeHand = '';
-		const updateData = deepCopy(this.props.selectedCharacterInfo);
+		let updateData = deepCopy(this.props.selectedCharacterInfo);
 		const sourceBoxIndex = draggedObjectMetaData.sourceLoc.match(/\d+/);
 		const loadout1 = updateData.equippedItems.loadout1;
 		let lightBeingSwapped = null;
@@ -415,7 +416,7 @@ class UI extends React.Component {
 			return;
 		}
 
-		const updateData = deepCopy(this.props.selectedCharacterInfo);
+		let updateData = deepCopy(this.props.selectedCharacterInfo);
 		const equippedItems = updateData.equippedItems;
 		let lightingChanged = false;
 
@@ -476,9 +477,9 @@ class UI extends React.Component {
 		if (!draggedItem) return;
 
 		const allPCdata = deepCopy(this.props.playerCharacters);
-		const sourcePCdata = allPCdata[draggedObjectMetaData.sourcePC];
+		let sourcePCdata = allPCdata[draggedObjectMetaData.sourcePC];
 		const recipientId = this.state.draggedObjRecipient;
-		const currentPCdata = allPCdata[recipientId];
+		let currentPCdata = allPCdata[recipientId];
 		const invObjectCategory = draggedItem.itemType ? 'items' : 'weapons';
 		const invId = draggedItem.id;
 
@@ -577,10 +578,12 @@ class UI extends React.Component {
 		});
 	}
 
-	setContainerOpenState = (envObjectId, callback) => {
+	setContainerOpenState = (envObjectId) => {
 		let envObjects = deepCopy(this.props.envObjects);
 		envObjects[envObjectId].isOpen = true;
-		this.props.updateMapEnvObjects(envObjects, callback);
+		this.props.updateMapEnvObjects(envObjects, () => {
+			this.props.determineIfShouldSpawnCreature(envObjectId);
+		});
 	}
 
 	/**
@@ -634,12 +637,6 @@ class UI extends React.Component {
 	}
 
 	showObjectPanel = () => {
-		let dialogProps = null;
-		if ((this.props.playerLimits.actions - this.props.actionsCompleted.actions) === 0) {
-			dialogProps = this.props.noMoreActionsDialogProps;
-		} else if (notEnoughSpaceInInventory(1, 0, this.props.playerCharacters[this.props.activeCharacter])) {
-			dialogProps = this.props.notEnoughSpaceDialogProps;
-		}
 		const creatureCoords = this.props.getAllCharactersPos('creature', 'coords');
 		return (
 			<ObjectInfoPanel
@@ -655,10 +652,11 @@ class UI extends React.Component {
 				addItemToPlayerInventory={this.props.addItemToPlayerInventory}
 				isPickUpAction={this.state.isPickUpAction}
 				isMapObj={this.state.isMapObj}
-				dialogProps={dialogProps}
+				notEnoughSpaceDialogProps={this.props.notEnoughSpaceDialogProps}
 				setShowDialogProps={this.props.setShowDialogProps}
 				creatureCoords={creatureCoords}
 				activePc={this.props.activeCharacter}
+				activePcInfo={this.props.playerCharacters[this.props.activeCharacter]}
 				setContainerOpenState={this.setContainerOpenState}
 			/>
 		);
@@ -689,13 +687,13 @@ class UI extends React.Component {
 				updateData.inventory.splice(itemBox, 1, itemId);
 			}
 		}
-		const updatedData = {
+		const updatedEquipmentData = {
 			equippedItems: updateData.equippedItems,
 			equippedLight: updateData.equippedLight,
 			lightRange: updateData.lightRange,
 			inventory: updateData.inventory
 		};
-		this.props.updateCharacters('player', updatedData, id, lightingChanged, false, false);
+		this.props.updateCharacters('player', updatedEquipmentData, id, lightingChanged, false, false);
 	}
 
 	/**

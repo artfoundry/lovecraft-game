@@ -294,12 +294,12 @@ function CharacterControls(props) {
 				if (item === 'pickup') {
 					button = <div
 						key={item + index}
-						className={`action-button ${item}-action ${shouldActionButtonShow() ? '' : 'hide'} ${actionButtonState}`}
+						className={`action-button ${item}-action ${shouldActionButtonShow() ? '' : 'hide'}`}
 						onClick={(evt) => props.setMapObjectSelected(props.mapObjectsOnPcTiles, evt, true)}></div>;
 				} else if (item === 'open-container') {
 					button = <div
 						key={item + index}
-						className={`action-button ${item}-action ${shouldActionButtonShow() ? '' : 'hide'} ${actionButtonState}`}
+						className={`action-button ${item}-action ${shouldActionButtonShow() ? '' : 'hide'}`}
 						onClick={(evt) => props.setMapObjectSelected(props.envObjectsNextToPc, evt, true)}></div>;
 				} else if (item === 'refill') {
 					button = <div
@@ -322,7 +322,10 @@ function CharacterControls(props) {
 	const sanityLevel = (currentPCdata.currentSanity / currentPCdata.startingSanity) * 100;
 	const spiritLevel = (currentPCdata.currentSpirit / currentPCdata.startingSpirit) * 100;
 	const skillPageTotal = Math.ceil(actionButtonCount / actionButtonMax);
-
+	// if a button has been removed and was the only button on that buttons page, reduce current page num
+	if (skillPageTotal < skillPaginationNum) {
+		updateSkillPageNum(skillPageTotal);
+	}
 	return (
 		<div
 			id={`${(props.screenData.isSmall && props.characterId === props.selectedControlTab) ? 'control-bar-tab-1' : ''}`}
@@ -612,10 +615,11 @@ function ObjectInfoPanel(props) {
 		addItemToPlayerInventory,
 		isPickUpAction,
 		isMapObj,
-		dialogProps,
+		notEnoughSpaceDialogProps,
 		setShowDialogProps,
 		creatureCoords,
 		activePc,
+		activePcInfo,
 		setContainerOpenState} = {...props};
 	const [origObjectList, updateOrigObjectList] = useState(objectInfo);
 	const [containerId, updateContainerId] = useState(null);
@@ -633,7 +637,11 @@ function ObjectInfoPanel(props) {
 		cancelObjPanel();
 	};
 	const openContainer = (container) => {
-		setContainerOpenState(container.id);
+		if (!container.isOpen) {
+			setContainerOpenState(container.id);
+		}
+		// container id needed when taking item from container, and id needs to be saved to state because
+		// info panel is re-rendered on opening (to show contents)
 		updateContainerId(container.id);
 		updateOrigObjectList(container.containerContents);
 	};
@@ -653,56 +661,56 @@ function ObjectInfoPanel(props) {
 			origObjectList.forEach((obj, index) => {
 				if (obj) {
 					const isEnvObject = obj.isEnvObject;
-					list.push(
-						<div key={obj.id}>
-							<div className='object-row-with-buttons'>
-								<div className={`inv-object ${convertObjIdToClassId(obj.id)}`}></div>
-								<div>
-									<div className='font-fancy object-list-objname'>{obj.isIdentified ? obj.name : '???'}</div>
-									<div>{obj.description}</div>
-								</div>
-								{isPickUpAction && !isEnvObject &&
-									<div className='general-button' onClick={() => updateObjToShow(obj)}>Show</div>
-								}
-								{isPickUpAction && !isEnvObject &&
-								<div className='general-button' onClick={() => {
-									if (dialogProps) {
-										setShowDialogProps(true, dialogProps);
-									} else if (creatureCoords.find(creature => creature.coords.xPos === obj.coords.xPos && creature.coords.yPos === obj.coords.yPos)) {
-										const guardedDialogProps = {
-											dialogContent: "That item can't be picked up, as it's being guarded by something horrid!",
-											closeButtonText: 'Ok',
-											closeButtonCallback: null,
-											disableCloseButton: false,
-											actionButtonVisible: false,
-											actionButtonText: '',
-											actionButtonCallback: null,
-											dialogClasses: ''
-										}
-										setShowDialogProps(true, guardedDialogProps);
-									} else {
-										addItemToPlayerInventory(obj, obj.id, activePc, isPickUpAction, false, containerId);
-										const updatedList = origObjectList;
-										updatedList[index] = undefined;
-										updateOrigObjectList(updatedList);
-										if (updatedList.every(obj => obj === undefined)) {
-											cancelObjPanel();
-										}
+					if (isEnvObject && obj.isOpen) {
+						openContainer(obj);
+					} else {
+						list.push(
+							<div key={obj.id}>
+								<div className='object-row-with-buttons'>
+									<div className={`inv-object ${convertObjIdToClassId(obj.id)}`}></div>
+									<div>
+										<div className='font-fancy object-list-objname'>{obj.isIdentified ? obj.name : '???'}</div>
+										<div>{obj.description}</div>
+									</div>
+									{isPickUpAction && !isEnvObject &&
+										<div className='general-button' onClick={() => updateObjToShow(obj)}>Show</div>
 									}
-								}}>Pick up</div>
-								}
-								{isPickUpAction && isEnvObject &&
+									{isPickUpAction && !isEnvObject &&
 									<div className='general-button' onClick={() => {
-										if (dialogProps) {
-											setShowDialogProps(true, dialogProps);
+										if (creatureCoords.find(creature => creature.coords.xPos === obj.coords.xPos && creature.coords.yPos === obj.coords.yPos)) {
+											const guardedDialogProps = {
+												dialogContent: "That item can't be picked up, as it's being guarded by something horrid!",
+												closeButtonText: 'Ok',
+												closeButtonCallback: null,
+												disableCloseButton: false,
+												actionButtonVisible: false,
+												actionButtonText: '',
+												actionButtonCallback: null,
+												dialogClasses: ''
+											}
+											setShowDialogProps(true, guardedDialogProps);
+										} else if (notEnoughSpaceInInventory(1, 0, activePcInfo)) {
+											setShowDialogProps(true, notEnoughSpaceDialogProps);
 										} else {
-											openContainer(obj);
+											addItemToPlayerInventory(obj, obj.id, activePc, isPickUpAction, false, containerId);
+											const updatedList = origObjectList;
+											updatedList[index] = undefined;
+											updateOrigObjectList(updatedList);
+											if (updatedList.every(obj => obj === undefined)) {
+												cancelObjPanel();
+											}
 										}
-									}}>Open</div>
-								}
+									}}>Pick up</div>
+									}
+									{isPickUpAction && isEnvObject &&
+										<div className='general-button' onClick={() => {
+											openContainer(obj);
+										}}>Open</div>
+									}
+								</div>
 							</div>
-						</div>
-					)
+						)
+					}
 				}
 			});
 		}

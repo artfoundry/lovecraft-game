@@ -194,6 +194,10 @@ as box-shadow greatly dims the lighting */
 	content: url('../assets/objects/necronomicon_sml.png');
 }
 
+.gems {
+	content: url('../assets/objects/gems_sml.png');
+}
+
 /* MAP ENV OBJECTS */
 
 .env-object {

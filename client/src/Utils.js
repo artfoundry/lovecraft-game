@@ -17,6 +17,13 @@ export function convertCoordsToPos(coords) {
 	return `${coords.xPos}-${coords.yPos}`;
 }
 
+export function articleType(word, isCapital = false) {
+	const vowels = ['a', 'e', 'i', 'o', 'u'];
+	const firstLetter = word.substring(0,1);
+	const articleFirstLetter = isCapital ? 'A' : 'a';
+	return articleFirstLetter + (vowels.includes(firstLetter) ? 'n' : '');
+}
+
 export function diceRoll(range) {
 	return Math.ceil(Math.random() * range);
 }

@@ -3,12 +3,14 @@ import Firebase from './Firebase';
 import CharacterCreation from './CharacterCreation';
 import Map from './Map';
 import Character from './Character';
+import Creature from './Creature';
 import PlayerCharacterTypes from './data/playerCharacterTypes.json';
+import CreatureTypes from './data/creatureTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
 import ItemTypes from './data/itemTypes.json';
 import UI from './UI';
 import './css/app.css';
-import {diceRoll, deepCopy, convertCoordsToPos} from './Utils';
+import {diceRoll, deepCopy, convertCoordsToPos, convertPosToCoords, articleType} from './Utils';
 
 class Game extends React.Component {
 	constructor(props) {
@@ -26,6 +28,7 @@ class Game extends React.Component {
 		this.playerActionsLimit = 2;
 		this.playerInventoryLimit = 12;
 		this.maxTurnsToReviveDeadPlayer = 3;
+		this.chanceToSpawnCreature = 2; // spawns on this or lower on roll of d4
 		this.minimalLightThreshold = 0.1;
 		this.lowLightThreshold = 0.2;
 		this.lightRanges = {
@@ -117,7 +120,7 @@ class Game extends React.Component {
 			currentRound: 1, // starts on 1 because always enter a new area in tactical mode but updateCurrentTurn isn't called on entry
 			showDialog: false,
 			dialogProps: {
-			dialogContent: this.initialDialogContent,
+				dialogContent: this.initialDialogContent,
 				closeButtonText: 'Close',
 				closeButtonCallback: null,
 				disableCloseButton: false,
@@ -130,6 +133,7 @@ class Game extends React.Component {
 			mapCreatures: {},
 			mapObjects: {},
 			envObjects: {},
+			creatureSpawnInfo: null,
 			unitsTurnOrder: [],
 			currentTurn: 0,
 			activeCharacter: !this.showCharacterCreation ? this.startingPlayerCharacters[0] : null,
@@ -137,7 +141,6 @@ class Game extends React.Component {
 			activePlayerActionsCompleted: 0,
 			characterIsSelected: false,
 			creatureIsSelected: false,
-			creatureCoordsUpdate: null,
 			selectedCharacter: '',
 			selectedCreature: '',
 			actionButtonSelected: null,
@@ -163,6 +166,7 @@ class Game extends React.Component {
 			mapCreatures: {},
 			mapObjects: {},
 			envObjects: {},
+			creatureSpawnInfo: null,
 			unitsTurnOrder: [],
 			currentTurn: 0,
 			activeCharacter: this.startingPlayerCharacters[0],
@@ -170,7 +174,6 @@ class Game extends React.Component {
 			activePlayerActionsCompleted: 0,
 			characterIsSelected: false,
 			creatureIsSelected: false,
-			creatureCoordsUpdate: null,
 			selectedCharacter: '',
 			selectedCreature: '',
 			actionButtonSelected: null,
@@ -220,7 +223,7 @@ class Game extends React.Component {
 	 * Updates either creature or player character data collection to state
 	 * If id is passed in, updating only one creature; otherwise updating all
 	 * @param type: String ('player' or 'creature')
-	 * @param updateData: Object (can be any number of data objects unless updating all characters of a type, then must be all data)
+	 * @param updateData: Object (always a deepCopy is passed in; can be any number of data objects unless updating all characters of a type, then must be all data)
 	 * @param id: String (char/creature Id) or null
 	 * @param lightingHasChanged: boolean
 	 * @param isInitialCreatureSetup: Boolean
@@ -236,7 +239,7 @@ class Game extends React.Component {
 			this.setState(prevState => ({
 				[collection]: {
 					...prevState[collection],
-					[id]: {...prevState[collection][id], ...deepCopy(updateData)}
+					[id]: {...prevState[collection][id], ...updateData}
 				}
 			}), () => {
 				if (this.state.selectedCreature === id) {
@@ -263,7 +266,7 @@ class Game extends React.Component {
 				} else if (callback) callback();
 			});
 		} else {
-			this.setState({[collection]: deepCopy(updateData)}, () => {
+			this.setState({[collection]: updateData}, () => {
 				if (isInitialCharacterSetup) {
 					this._setAllUnitsTurnOrder('playerCharacters', callback);
 				} else if (isInitialCreatureSetup) {
@@ -320,14 +323,81 @@ class Game extends React.Component {
 			Object.assign({}, this.state.playerCharacters, this.state.mapCreatures); // copy all to empty object to avoid modifying originals
 
 		for (const [id, characterData] of Object.entries(collection)) {
-			const isLivingCreature = type === 'creature' && characterData.currentHealth > 0;
-			const isLivingPc = type === 'player' && !characterData.isDeadOrInsane;
+			const isLivingCreature = characterData.type === 'creature' && characterData.currentHealth > 0;
+			const isLivingPc = characterData.type === 'player' && !characterData.isDeadOrInsane;
 			if (isLivingCreature || isLivingPc) {
 				let coords = format === 'pos' ? `${characterData.coords.xPos}-${characterData.coords.yPos}` : characterData.coords;
 				allCharactersPos.push({id, [format]: coords});
 			}
 		}
 		return allCharactersPos;
+	}
+
+	/**
+	 * Called from UI when container is opened (possibly other sources too)
+	 * Determines if creature should spawn and if so, what kind, then calls _updateCreatureSpawnInfo
+	 * to set spawn info, which Map listens for to find spawn pos and finally call spawnCreature
+	 * @param envObjectId: string
+	 */
+	determineIfShouldSpawnCreature = (envObjectId) => {
+		// roll die to determine if and what creature to spawn
+		if (diceRoll(4) <= this.chanceToSpawnCreature) {
+			const spawnObj = this.state.envObjects[envObjectId];
+			const spawnIndex = diceRoll(spawnObj.canSpawnCreature.length) - 1;
+	console.log(spawnIndex)
+			const creatureIdToSpawn = spawnObj.canSpawnCreature[spawnIndex];
+			this._updateCreatureSpawnInfo({envObjectId, creatureIdToSpawn, pos: convertCoordsToPos(spawnObj.coords)});
+		}
+	}
+
+	/**
+	 * Object passed in and stored contains envObj id that's spawning the creature and pos of that object
+	 * @param creatureSpawnInfo: object ({envObjectId, creatureIdToSpawn, pos})
+	 * @private
+	 */
+	_updateCreatureSpawnInfo(creatureSpawnInfo) {
+		this.setState({creatureSpawnInfo});
+	}
+
+	/**
+	 * Spawns a new creature on the map after Map finds an open pos near the spawning obj
+	 * @param spawnPos: string
+	 */
+	spawnCreature = (spawnPos) => {
+		if (!spawnPos) return; // if no free nearby tile found to spawn creature
+
+		const newCreatureId = this.state.creatureSpawnInfo.creatureIdToSpawn;
+		let creatureData = CreatureTypes[newCreatureId];
+		let allCreatures = deepCopy(this.state.mapCreatures);
+		let lightingHasChanged = false; // only need to use this if creature projects light
+		let uniqueIdNumber = 0;
+		let uniqueCreatureId = '';
+
+		for (const id of Object.keys(allCreatures)) {
+			if (id.includes(newCreatureId)) {
+				const idValue = +id.match(/\d+/g)[0];
+				if (idValue >= uniqueIdNumber) {
+					uniqueIdNumber = idValue + 1;
+				}
+			}
+		}
+		uniqueCreatureId = newCreatureId + uniqueIdNumber;
+		creatureData.creatureId = uniqueCreatureId;
+		creatureData.coords = convertPosToCoords(spawnPos);
+		allCreatures[uniqueCreatureId] = new Creature(creatureData);
+		this.updateCharacters('creature', allCreatures, null, lightingHasChanged, false, false, () => {
+			const unitInit = this._rollCharInitiative(allCreatures[uniqueCreatureId].initiative);
+			// add unit to unitsTurnOrder
+			const unitsTurnOrder = this._sortInitiatives(deepCopy(this.state.unitsTurnOrder), uniqueCreatureId, unitInit, 'mapCreatures');
+			this.setState({unitsTurnOrder, creatureSpawnInfo: null}, () => {
+				this.updateThreatList([uniqueCreatureId], [], () => {
+					// call toggleLightingHasChanged if creature projects light
+					// this.toggleLightingHasChanged(lightingHasChanged);
+					this.updateLog(`As the lid is opened, ${articleType(creatureData.name)} ${creatureData.name} arises and attacks the party!`);
+				});
+			});
+		});
+
 	}
 
 	/**
@@ -403,9 +473,10 @@ class Game extends React.Component {
 	/**
 	 * Adds IDs to or removes IDs from threat list and saves list to state,
 	 * then if there's a change in the list, calls toggleTacticalMode
+	 * Both
 	 * This is the primary entry point for changing/determining whether game is in Follow mode or Tactical mode
-	 * @param threatIdsToAdd: Array (of strings - IDs of creatures attacking player)
-	 * @param threatIdsToRemove: Array (of strings - IDs of creatures no longer a threat)
+	 * @param threatIdsToAdd: Array (of strings - IDs of creatures attacking player - empty array if none)
+	 * @param threatIdsToRemove: Array (of strings - IDs of creatures no longer a threat - empty array if none)
 	 * @param callback: function
 	 * @param checkLineOfSightToParty: function
 	 */
@@ -432,7 +503,7 @@ class Game extends React.Component {
 			const isInCombat = updatedList.length > 0;
 
 			// if entering combat...
-			if (isInCombat && previousListSize === 0 ) {
+			if (isInCombat && previousListSize === 0) {
 				this.updateLog('Something horrific has been spotted nearby!');
 				if (!this.state.inTacticalMode) {
 					this.toggleTacticalMode(isInCombat, callback);
@@ -1139,7 +1210,6 @@ class Game extends React.Component {
 		this.updateCharacters('player', updatedData, recipientId, false, false, false, () => {
 			if (isPickUpAction) {
 				this._removeItemFromMap(objId, containerId);
-				this.updateActivePlayerActions();
 			} else if (isCreateAction) {
 				this.updateActivePlayerActions();
 			}
@@ -1271,22 +1341,24 @@ class Game extends React.Component {
 
 	/**
 	 * Sorts list of both player and non-player chars in map based on initiative value for taking turns
-	 * No return value as unitsTurnOrder array is modified directly by address
+	 * value of unitsTurnOrder is before setting to state by _setAllUnitsTurnOrder, so has to be passed in rather than accessing state
 	 * @param unitsTurnOrder: Array (of objects)
 	 * @param newUnitId: String
 	 * @param newUnitInitiative: Integer
-	 * @param unitType: String
+	 * @param unitType: String ('playerCharacters' or 'mapCreatures')
+	 * @return updatedTurnOrder: Array
 	 * @private
 	 */
 	_sortInitiatives (unitsTurnOrder, newUnitId, newUnitInitiative, unitType) {
-		if (unitsTurnOrder.length === 0) {
-			unitsTurnOrder.push({[newUnitInitiative]: {id: newUnitId, unitType}});
+		let updatedTurnOrder = unitsTurnOrder;
+		if (updatedTurnOrder.length === 0) {
+			updatedTurnOrder.push({[newUnitInitiative]: {id: newUnitId, unitType}});
 		} else {
 			let i = 0;
 			let notSorted = true;
 			while (notSorted) {
-				const sortedUnitInitValue = Object.keys(unitsTurnOrder[i])[0];
-				const sortedUnitOrderInfo = unitsTurnOrder[i][sortedUnitInitValue];
+				const sortedUnitInitValue = Object.keys(updatedTurnOrder[i])[0];
+				const sortedUnitOrderInfo = updatedTurnOrder[i][sortedUnitInitValue];
 				const sortedUnitId = sortedUnitOrderInfo.id;
 				const sortedUnitTypeCollection = this.state[sortedUnitOrderInfo.unitType];
 				const sortedUnitData = sortedUnitTypeCollection[sortedUnitId];
@@ -1306,15 +1378,26 @@ class Game extends React.Component {
 						newUnitData.mentalAcuity === sortedUnitData.mentalAcuity &&
 						diceRoll(2) === 1)
 				) {
-					unitsTurnOrder.splice(i, 0, {[newUnitInitiative]: {id: newUnitId, unitType}});
+					updatedTurnOrder.splice(i, 0, {[newUnitInitiative]: {id: newUnitId, unitType}});
 					notSorted = false;
-				} else if (i === unitsTurnOrder.length - 1) {
-					unitsTurnOrder.push({[newUnitInitiative]: {id: newUnitId, unitType}});
+				} else if (i === updatedTurnOrder.length - 1) {
+					updatedTurnOrder.push({[newUnitInitiative]: {id: newUnitId, unitType}});
 					notSorted = false;
 				}
 				i++;
 			}
 		}
+		return updatedTurnOrder;
+	}
+
+	/**
+	 * Rolls and returns turn order initiative based on character base initiative
+	 * @param baseInit: number
+	 * @returns {*}
+	 * @private
+	 */
+	_rollCharInitiative(baseInit) {
+		return baseInit + diceRoll(6);
 	}
 
 	/**
@@ -1325,11 +1408,11 @@ class Game extends React.Component {
 	 * @private
 	 */
 	_setAllUnitsTurnOrder(unitType, callback) {
-		let unitsTurnOrder = this.state.unitsTurnOrder;
+		let unitsTurnOrder = deepCopy(this.state.unitsTurnOrder);
 
 		for (const [id, charData] of Object.entries(this.state[unitType])) {
-			const unitInitiative = charData.initiative + diceRoll(6);
-			this._sortInitiatives(unitsTurnOrder, id, unitInitiative, unitType);
+			const unitInitiative = this._rollCharInitiative(charData.initiative);
+			unitsTurnOrder = this._sortInitiatives(unitsTurnOrder, id, unitInitiative, unitType);
 		}
 
 		this.setState({unitsTurnOrder}, () => {
@@ -1533,6 +1616,7 @@ class Game extends React.Component {
 						setHasObjBeenDropped={this.setHasObjBeenDropped}
 						addItemToPlayerInventory={this.addItemToPlayerInventory}
 						toggleLightingHasChanged={this.toggleLightingHasChanged}
+						determineIfShouldSpawnCreature={this.determineIfShouldSpawnCreature}
 
 						updateMapObjects={this.updateMapObjects}
 						mapObjects={this.state.mapObjects}
@@ -1593,6 +1677,8 @@ class Game extends React.Component {
 						setHasObjBeenDropped={this.setHasObjBeenDropped}
 						lightingHasChanged={this.state.lightingHasChanged}
 						toggleLightingHasChanged={this.toggleLightingHasChanged}
+						creatureSpawnInfo={this.state.creatureSpawnInfo}
+						spawnCreature={this.spawnCreature}
 
 						currentTurn={this.state.currentTurn}
 						updateCurrentTurn={this.updateCurrentTurn}
