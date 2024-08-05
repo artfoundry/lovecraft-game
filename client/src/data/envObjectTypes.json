@@ -32,7 +32,7 @@
     "isHidden": false,
     "isPassable": false,
     "isDestructible": false,
-    "canSpawnCreature": ["ghoul", "shoggoth"],
+    "canSpawnCreature": ["ghoul", "ghoul", "ghoul", "shoggoth"],
     "mayContain": {
       "Gems": {
         "max": 4
