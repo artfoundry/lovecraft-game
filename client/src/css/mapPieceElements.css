@@ -130,6 +130,10 @@ as box-shadow greatly dims the lighting */
 	content: url('../assets/objects/molotov-cocktail_sml.png');
 }
 
+.rock {
+	content: url('../assets/objects/rock_sml.png');
+}
+
 .knife {
 	content: url('../assets/objects/knife_sml.png');
 }
@@ -196,6 +200,10 @@ as box-shadow greatly dims the lighting */
 
 .gems {
 	content: url('../assets/objects/gems_sml.png');
+}
+
+.precious-metals {
+	content: url('../assets/objects/precious-metals_sml.png');
 }
 
 /* MAP ENV OBJECTS */

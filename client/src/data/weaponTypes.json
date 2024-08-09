@@ -99,7 +99,7 @@
     "description": "Fire! Fire!"
   },
   "Rock": {
-    "damage": 2,
+    "damage": 1,
     "ranged": true,
     "usesStr": true,
     "stackable": true,

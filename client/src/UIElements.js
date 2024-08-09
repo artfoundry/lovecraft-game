@@ -192,12 +192,12 @@ function CharacterControls(props) {
 				const leftGunHasAmmo = leftWeapon && leftWeapon.currentRounds > 0;
 				const rightGunHasAmmo = rightWeapon && rightWeapon.currentRounds > 0;
 				const gunIsLoaded = skill.requiresEquippedGunType && hasNeededItem && (leftGunHasAmmo || rightGunHasAmmo);
-				const actionsRemainingRequired = skill.name !== 'Quick Reload' && skill.name !== 'Mine' && skill.name !== 'Expert Mining';
+				const requiresActionsRemaining = skill.name !== 'Quick Reload' && skill.name !== 'Mine' && skill.name !== 'Expert Mining';
 				// all active and only active skills require spirit
 				const hasEnoughSpirit = skill.spirit && currentPCdata.currentSpirit >= skill.spirit[skill.level];
 				actionButtonState =
 					(!props.isActiveCharacter ||
-					(props.actionsRemaining === 0 && actionsRemainingRequired) ||
+					(props.actionsRemaining === 0 && requiresActionsRemaining) ||
 					(skill.spirit && !hasEnoughSpirit) || (requiresItemOrWeapon && !hasNeededItem) ||
 					(skill.name === 'Quick Reload' && !hasAmmoForReloadSkill) ||
 					(skill.name === 'Go Ballistic' && !gunIsLoaded) ||
