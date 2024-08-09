@@ -100,6 +100,11 @@
     "stackable": true,
     "description": "Precious gems that can be sold for money."
   },
+  "Precious Metals": {
+    "itemType": "Valuable",
+    "stackable": true,
+    "description": "Gold and other valuable metal ores that can be sold for money."
+  },
   "Elder Sign": {
     "itemType": "Relic",
     "name": "Elder Sign",

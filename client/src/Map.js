@@ -696,7 +696,7 @@ class Map extends React.Component {
 				const uniqueItemId = lowerCaseName + (i + 1);
 				const coords = convertPosToCoords(this._generateRandomLocation(itemCoords, 'floor', true, envItemInfo.isPassable)); // this.props.playerCharacters['privateEye'].coords (to easily test objects)
 				let containerContents = [];
-				if (envItemInfo.type === 'container') {
+				if (envItemInfo.type === 'container' || envItemInfo.type === 'mineable') {
 					// adding null option so container could have nothing
 					const itemNames = [...Object.keys(envItemInfo.mayContain), null];
 					const selectedItemIndex = diceRoll(itemNames.length) - 1;
@@ -725,7 +725,9 @@ class Map extends React.Component {
 					...envItemInfo,
 					name: itemId,
 					isDiscovered: !envItemInfo.isHidden,
-					isIdentified: !envItemInfo.isNotisIdentified,
+					isIdentified: true,
+					isDestructible: envItemInfo.isDestructible,
+					isDestroyed: false,
 					containerContents,
 					isOpen: envItemInfo.type === 'container' ? false : null,
 					coords
@@ -733,7 +735,7 @@ class Map extends React.Component {
 				itemCoords[uniqueItemId] = coords;
 			}
 		}
-		this.props.updateMapEnvObjects(envObjects, () => {
+		this.props.updateMapEnvObjects(envObjects, null, () => {
 			this.setState({envObjectsPlaced: true}, callback);
 		});
 	}
@@ -1211,6 +1213,7 @@ class Map extends React.Component {
 				tileIsVisible={tileIsVisible}
 				isHidden={!info.isDiscovered}
 				isContainerOpen={info.isOpen}
+				isDestroyed={info.isDestroyed}
 				updateContextMenu={this.checkForDragging}
 				styles={{
 					transform: `translate(${this._calculateObjectTransform(info.coords.xPos, info.coords.yPos)})`,

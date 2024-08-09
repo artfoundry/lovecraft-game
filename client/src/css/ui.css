@@ -540,8 +540,12 @@ h3 {
 	background-image: url('../assets/ui/always-on-the-lookout.png');
 }
 
-.skill-icon-dig {
-	background-image: url('../assets/ui/dig.png');
+.skill-icon-mine {
+	background-image: url('../assets/ui/mine.png');
+}
+
+.skill-icon-expert-mining {
+	background-image: url('../assets/ui/expert-mining.png');
 }
 
 .skill-icon-better-living-through-chemicals {
@@ -656,6 +660,10 @@ h3 {
 
 .control-bar-tab-container:last-child {
 	border: 0;
+}
+
+.control-bar-tab-container.active-character {
+	outline: 2px solid limegreen;
 }
 
 .control-bar-tab-icon {
@@ -1252,8 +1260,12 @@ select {
 	background-image: url('../assets/ui/quick-reload_sml.png');
 }
 
-.dig-action {
-	background-image: url('../assets/ui/dig_sml.png');
+.mine-action {
+	background-image: url('../assets/ui/mine_sml.png');
+}
+
+.expert-mining-action {
+	background-image: url('../assets/ui/expert-mining_sml.png');
 }
 
 .better-living-through-chemicals-action {
@@ -1445,6 +1457,10 @@ select {
 	.control-bar-buttons-container {
 		width: 350px;
 		border: none;
+	}
+
+	.control-bar-tab-container.active-character {
+		outline: none;
 	}
 }
 

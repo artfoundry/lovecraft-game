@@ -11,7 +11,7 @@
     "startingHealth": 100,
     "startingSanity": 80,
     "startingSpirit": 90,
-    "skills": ["quickReload", "keenInvestigation", "steadyHand", "handgunKnowledge", "shotgunKnowledge"],
+    "skills": ["quickReload", "keenInvestigation", "steadyHand", "handgunKnowledge", "shotgunKnowledge", "mine"],
     "weapons": {
       "coltRevolver0": {
         "id": "coltRevolver0",
@@ -48,14 +48,14 @@
     "startingHealth": 80,
     "startingSanity": 100,
     "startingSpirit": 90,
-    "skills": ["alwaysOnTheLookout", "dig", "createTorch"],
+    "skills": ["alwaysOnTheLookout", "expertMining", "mine", "createTorch"],
     "weapons": {
       "pickaxe0": {
         "id": "pickaxe0",
         "name": "Pickaxe"
       }
     },
-    "equippedItems": {"right": "pickaxe0", "left": "", "armor": ""},
+    "equippedItems": {"right": "pickaxe0", "left": "torch0", "armor": ""},
     "items": {
       "torch0": {
         "id": "torch0",
@@ -64,7 +64,7 @@
         "time": 100
       }
     },
-    "equippedLight": ""
+    "equippedLight": "torch0"
   },
   "chemist": {
     "id": "chemist",
@@ -78,7 +78,7 @@
     "startingHealth": 60,
     "startingSanity": 80,
     "startingSpirit": 70,
-    "skills": ["createAcidConcoction", "createPharmaceuticals", "betterLivingThroughChemicals"],
+    "skills": ["createAcidConcoction", "createPharmaceuticals", "betterLivingThroughChemicals", "mine"],
     "weapons": {
       "acidConcoction0": {
         "id": "acidConcoction0",
@@ -115,7 +115,7 @@
     "startingHealth": 110,
     "startingSanity": 100,
     "startingSpirit": 105,
-    "skills": ["createFirstAidKit", "medicalExpertise", "resuscitate"],
+    "skills": ["createFirstAidKit", "medicalExpertise", "resuscitate", "mine"],
     "weapons": {},
     "equippedItems": {"right": "", "left": "lantern0", "armor": ""},
     "items": {
@@ -152,7 +152,7 @@
     "startingHealth": 100,
     "startingSanity": 110,
     "startingSpirit": 105,
-    "skills": ["createHolyWater", "comfortTheFearful", "spiritualInspiration"],
+    "skills": ["createHolyWater", "comfortTheFearful", "spiritualInspiration", "mine"],
     "weapons": {
       "holyWater0": {
         "id": "holyWater0",
@@ -193,7 +193,7 @@
     "startingHealth": 120,
     "startingSanity": 60,
     "startingSpirit": 90,
-    "skills": ["feelThePain", "goBallistic", "moveIt", "handgunKnowledge", "shotgunKnowledge", "machineGunKnowledge"],
+    "skills": ["feelThePain", "goBallistic", "moveIt", "handgunKnowledge", "shotgunKnowledge", "machineGunKnowledge", "mine"],
     "weapons": {
       "remington0": {
         "id": "remington0",
@@ -233,7 +233,7 @@
     "startingHealth": 80,
     "startingSanity": 80,
     "startingSpirit": 80,
-    "skills": ["attackFromTheShadows", "stealthy", "disarmTrap", "handgunKnowledge"],
+    "skills": ["attackFromTheShadows", "stealthy", "disarmTrap", "handgunKnowledge", "mine"],
     "weapons": {
       "knife0": {
         "id": "knife0",
@@ -261,7 +261,7 @@
     "startingHealth": 60,
     "startingSanity": 80,
     "startingSpirit": 70,
-    "skills": ["identifyRelic", "sacrificialStrike", "relicExpertise", "krisKnifeExpertise"],
+    "skills": ["identifyRelic", "sacrificialStrike", "relicExpertise", "krisKnifeExpertise", "mine"],
     "weapons": {
       "krisKnife0": {
         "id": "krisKnife0",

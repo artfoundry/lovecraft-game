@@ -9,8 +9,7 @@
     "cost": {
       "cloth": 2,
       "alcohol": 2
-    },
-    "light": [30]
+    }
   },
   "createMolotovCocktail": {
     "name": "Create Molotov Cocktail",
@@ -22,8 +21,7 @@
     "cost": {
       "cloth": 1,
       "alcohol": 3
-    },
-    "light": [30]
+    }
   },
   "createTorch": {
     "name": "Create Torch",
@@ -36,8 +34,7 @@
       "cloth": 1,
       "alcohol": 1,
       "wood": 1
-    },
-    "light": [30]
+    }
   },
   "createAcidConcoction": {
     "name": "Create Acid Concoction",
@@ -48,8 +45,7 @@
     "mustBeOutOfDanger": true,
     "cost": {
       "chemical": 3
-    },
-    "light": [30]
+    }
   },
   "createPharmaceuticals": {
     "name": "Create Pharmaceuticals",
@@ -61,8 +57,7 @@
     "cost": {
       "chemical": 2,
       "alcohol": 1
-    },
-    "light": [30]
+    }
   },
   "createHolyWater": {
     "name": "Create Holy Water",
@@ -73,8 +68,7 @@
     "mustBeOutOfDanger": true,
     "cost": {
       "water": 3
-    },
-    "light": [30]
+    }
   },
   "handgunKnowledge": {
     "name": "Handgun Knowledge",
@@ -93,6 +87,15 @@
     "skillType": "knowledge",
     "profession": ["general", "veteran"],
     "description": "Knowledge of how to use machine guns, thus removing 50% penalty to hit targets"
+  },
+  "mine": {
+    "name": "Mine",
+    "skillType": "active",
+    "profession": ["general"],
+    "description": "Use a pickaxe to mine in certain locations (rocky mounds) in order to find rocks, gems, precious metals, etc.",
+    "hasTarget": false,
+    "mustBeOutOfDanger": true,
+    "requiresEquippedItem": "pickaxe"
   },
   "sureShot": {
     "name": "Sure Shot",
@@ -140,14 +143,14 @@
     "modType": "+",
     "affects": "%"
   },
-  "dig": {
-    "name": "Dig",
+  "expertMining": {
+    "name": "Expert Mining",
     "skillType": "active",
     "profession": ["archaeologist"],
-    "description": "Use a pickaxe to dig in certain locations in order to find rocks, gems, precious metals, etc.",
-    "hasTarget": true,
+    "description": "Allows the archaeologist to mine much more quickly. If not enough Spirit, only the normal Mine skill will be available.",
+    "hasTarget": false,
     "mustBeOutOfDanger": true,
-    "requiresEquippedItem": "pickaxe0",
+    "requiresEquippedItem": "pickaxe",
     "spirit": [45, 40, 35, 30, 25]
   },
   "betterLivingThroughChemicals": {
@@ -286,7 +289,7 @@
     "description": "Guaranteed hit and extra damage with Kris Knife in exchange for health and sanity loss",
     "hasTarget": true,
     "mustBeOutOfDanger": false,
-    "requiresEquippedItem": "krisKnife0",
+    "requiresEquippedItem": "krisKnife",
     "modifier": [1.5, 3, 4.5, 6, 7.5, 10],
     "modType": "x",
     "affects": " Damage",

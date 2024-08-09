@@ -81,7 +81,7 @@ function Item(props) {
 
 function EnvObject(props) {
 	const isHiddenClass = (!props.tileIsVisible || props.isHidden) ? ' hidden' : '';
-	const objNameClass = props.isContainerOpen ? props.name + '-open' : props.name;
+	const objNameClass = props.name + (props.isContainerOpen ? '-open' : props.isDestroyed ? '-destroyed' : '');
 	return (
 		<img
 			alt={props.name}

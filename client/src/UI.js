@@ -80,16 +80,21 @@ class UI extends React.Component {
 
 		for (const [id, playerInfo] of Object.entries(this.props.playerCharacters)) {
 			if (!playerInfo.isDeadOrInsane) {
-				// for setting up Pickup action and Open container action buttons
+				// for setting up Pickup action and Open container/mineable action buttons
 				let mapObjectsOnPcTiles = [];
-				let envObjectsNextToPc = [];
+				let containersNextToPc = [];
+				let mineablesNextToPc = [];
+				const hasEnoughLight = (id === 'archaeologist' && playerInfo.lightTime >= this.props.lightTimeCosts.expertMining) ||
+					playerInfo.lightTime >= this.props.lightTimeCosts.mine;
 				const allObjects = {...this.props.mapObjects, ...this.props.envObjects};
 				for (const [objId, objInfo] of Object.entries(allObjects)) {
 					const xDelta = Math.abs(playerInfo.coords.xPos - objInfo.coords.xPos);
 					const yDelta = Math.abs(playerInfo.coords.yPos - objInfo.coords.yPos);
 					if (xDelta <= 1 && yDelta <= 1) {
 						if (objInfo.isEnvObject && objInfo.type === 'container' && (!objInfo.isOpen || objInfo.containerContents.length > 0)) {
-							envObjectsNextToPc.push({...objInfo, id: objId});
+							containersNextToPc.push({...objInfo, id: objId});
+						} else if (objInfo.isEnvObject && objInfo.type === 'mineable' && (!objInfo.isDestroyed || objInfo.containerContents.length > 0)) {
+							mineablesNextToPc.push({...objInfo, id: objId});
 						} else if (!objInfo.isEnvObject) {
 							mapObjectsOnPcTiles.push({...objInfo, id: objId});
 						}
@@ -116,12 +121,15 @@ class UI extends React.Component {
 						checkForExtraAmmo={this.checkForExtraAmmo}
 						reloadGun={this.props.reloadGun}
 						refillLight={this.props.refillLight}
+						hasEnoughLight={hasEnoughLight}
+						notEnoughLightDialogProps={this.props.notEnoughLightDialogProps}
 						showDialog={this.props.showDialog}
 						setShowDialogProps={this.props.setShowDialogProps}
 						dropItemToPC={this.dropItemToPC}
 						setMapObjectSelected={this.props.setMapObjectSelected}
 						mapObjectsOnPcTiles={mapObjectsOnPcTiles}
-						envObjectsNextToPc={envObjectsNextToPc}
+						containersNextToPc={containersNextToPc}
+						mineablesNextToPc={mineablesNextToPc}
 						screenData={this.props.screenData}
 						selectedControlTab={this.state.selectedControlTab}
 						setSelectedControlTab={this.setSelectedControlTab}
@@ -578,12 +586,27 @@ class UI extends React.Component {
 		});
 	}
 
+	/**
+	 *
+	 * @param envObjectId: string
+	 */
 	setContainerOpenState = (envObjectId) => {
 		let envObjects = deepCopy(this.props.envObjects);
-		envObjects[envObjectId].isOpen = true;
-		this.props.updateMapEnvObjects(envObjects, () => {
-			this.props.determineIfShouldSpawnCreature(envObjectId);
-		});
+		const activeEnvObj = envObjects[envObjectId];
+		let changeMade = false;
+		if (activeEnvObj.type === 'container') {
+			activeEnvObj.isOpen = true;
+			changeMade = true;
+		} else if (activeEnvObj.type === 'mineable' && !activeEnvObj.isDestroyed) {
+			if (activeEnvObj.isDestructible) {
+				activeEnvObj.isDestroyed = true;
+				changeMade = true;
+			}
+			this.props.updateLog(`${this.props.playerCharacters[this.props.activeCharacter].name} spends time digging through the rocks and dirt...`);
+		}
+		if (changeMade) {
+			this.props.updateMapEnvObjects(envObjects, envObjectId);
+		}
 	}
 
 	/**
@@ -657,6 +680,7 @@ class UI extends React.Component {
 				creatureCoords={creatureCoords}
 				activePc={this.props.activeCharacter}
 				activePcInfo={this.props.playerCharacters[this.props.activeCharacter]}
+				inTacticalMode={this.props.inTacticalMode}
 				setContainerOpenState={this.setContainerOpenState}
 			/>
 		);

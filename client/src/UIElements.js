@@ -92,12 +92,14 @@ function CharacterControls(props) {
 
 	// add all action or create skills to actionableItems.skills
 	for (const [skillId, skillInfo] of Object.entries(pcSkills)) {
-		if (skillInfo.skillType === 'create' || skillInfo.skillType === 'active') {
+		if ((skillInfo.skillType === 'create' || skillInfo.skillType === 'active') &&
+			((skillId !== 'mine' && skillId !== 'expertMining') || ((skillId === 'mine' || skillId === 'expertMining') && props.mineablesNextToPc.length > 0)) &&
+			(!skillInfo.mustBeOutOfDanger || (skillInfo.mustBeOutOfDanger && props.threatList.length === 0)))
+		{
 			actionableItems.skills.push({
 				skillId,
 				name: skillInfo.name,
 				skillType: skillInfo.skillType,
-				mustBeOutOfDanger: skillInfo.mustBeOutOfDanger,
 				hasTarget: skillInfo.hasTarget,
 				requiresEquippedGunType: skillInfo.requiresEquippedGunType,
 				requiresEquippedItem: skillInfo.requiresEquippedItem,
@@ -111,12 +113,14 @@ function CharacterControls(props) {
 			});
 		}
 	}
+	//todo: could add block here for archaeologist to reorder actionableItems.skills array
+	// to ensure expertMining skill and mine skill are displayed next to each other in control bar
 
 	// add misc actions to actionableItems.misc
 	if (props.mapObjectsOnPcTiles.length > 0) {
 		actionableItems.misc.push('pickup');
 	}
-	if (props.envObjectsNextToPc.length > 0) {
+	if (props.containersNextToPc.length > 0) {
 		actionableItems.misc.push('open-container');
 	}
 	if ((currentPCdata.equippedLight && (currentPCdata.equippedLight.includes('lantern') || currentPCdata.equippedLight.includes('torch'))) &&
@@ -182,21 +186,21 @@ function CharacterControls(props) {
 				const hasNeededItem =
 					(skill.requiresItem && invItems[skill.requiresItem]) ||
 					(skill.requiresEquippedGunType && ((leftWeapon && skill.requiresEquippedGunType.includes(leftWeapon.gunType)) || (rightWeapon && skill.requiresEquippedGunType.includes(rightWeapon.gunType)))) ||
-					(skill.requiresEquippedItem && (skill.requiresEquippedItem === equippedItems.left || skill.requiresEquippedItem === equippedItems.right)) ||
+					(skill.requiresEquippedItem && (equippedItems.left.includes(skill.requiresEquippedItem) || equippedItems.right.includes(skill.requiresEquippedItem))) ||
 					(skill.requiresEquippedMeleeWeapon && ((leftWeapon && !leftWeapon.ranged) || (rightWeapon && !rightWeapon.ranged)));
 				const hasAmmoForReloadSkill = hasExtraAmmo && hasNeededItem && (leftWeaponNeedsReloading || rightWeaponNeedsReloading);
 				const leftGunHasAmmo = leftWeapon && leftWeapon.currentRounds > 0;
 				const rightGunHasAmmo = rightWeapon && rightWeapon.currentRounds > 0;
 				const gunIsLoaded = skill.requiresEquippedGunType && hasNeededItem && (leftGunHasAmmo || rightGunHasAmmo);
+				const actionsRemainingRequired = skill.name !== 'Quick Reload' && skill.name !== 'Mine' && skill.name !== 'Expert Mining';
 				// all active and only active skills require spirit
 				const hasEnoughSpirit = skill.spirit && currentPCdata.currentSpirit >= skill.spirit[skill.level];
 				actionButtonState =
 					(!props.isActiveCharacter ||
-					(props.actionsRemaining === 0 && skill.name !== 'Quick Reload') ||
+					(props.actionsRemaining === 0 && actionsRemainingRequired) ||
 					(skill.spirit && !hasEnoughSpirit) || (requiresItemOrWeapon && !hasNeededItem) ||
 					(skill.name === 'Quick Reload' && !hasAmmoForReloadSkill) ||
 					(skill.name === 'Go Ballistic' && !gunIsLoaded) ||
-					(skill.mustBeOutOfDanger && props.threatList.length > 0) ||
 					(skill.name === 'Feel The Pain' && skill.active) ||
 					(skill.name === 'Stealthy' && !props.inTacticalMode) ||
 					(skill.mustNotHaveLightEquipped && currentPCdata.equippedLight) ||
@@ -211,7 +215,7 @@ function CharacterControls(props) {
 				let skillClass = `${convertObjIdToClassId(skill.skillId)}-action`;
 				actionButtonCount++;
 				button = (
-					<div key={skill.skillId} className={`action-button ${shouldActionButtonShow() ? '' : 'hide'} ${skillClass} ${actionButtonState}`} onClick={() => {
+					<div key={skill.skillId} className={`action-button ${shouldActionButtonShow() ? '' : 'hide'} ${skillClass} ${actionButtonState}`} onClick={(evt) => {
 						if (skill.name === 'Quick Reload') {
 							const setWeapon = (id) => {
 								const weapon = {weaponId: id};
@@ -248,6 +252,12 @@ function CharacterControls(props) {
 								props.toggleActionButton('', '', '', '', null);
 							} else {
 								props.toggleActionButton(props.characterId, skill.skillId, skill.name, 'skill', handleWeaponClickCallback);
+							}
+						} else if (skill.skillId === 'expertMining' || skill.skillId === 'mine') {
+							if (props.hasEnoughLight) {
+								props.setMapObjectSelected(props.mineablesNextToPc, evt, true, {miningAction: skill.skillId});
+							} else {
+								props.setShowDialogProps(true, props.notEnoughLightDialogProps);
 							}
 						} else {
 							props.toggleActionButton(props.characterId, skill.skillId, skill.name, 'skill');
@@ -294,13 +304,13 @@ function CharacterControls(props) {
 				if (item === 'pickup') {
 					button = <div
 						key={item + index}
-						className={`action-button ${item}-action ${shouldActionButtonShow() ? '' : 'hide'}`}
+						className={`action-button ${item}-action ${shouldActionButtonShow() ? '' : 'hide'} ${actionButtonState}`}
 						onClick={(evt) => props.setMapObjectSelected(props.mapObjectsOnPcTiles, evt, true)}></div>;
 				} else if (item === 'open-container') {
 					button = <div
 						key={item + index}
-						className={`action-button ${item}-action ${shouldActionButtonShow() ? '' : 'hide'}`}
-						onClick={(evt) => props.setMapObjectSelected(props.envObjectsNextToPc, evt, true)}></div>;
+						className={`action-button ${item}-action ${shouldActionButtonShow() ? '' : 'hide'} ${actionButtonState}`}
+						onClick={(evt) => props.setMapObjectSelected(props.containersNextToPc, evt, true)}></div>;
 				} else if (item === 'refill') {
 					button = <div
 						key={item + index}
@@ -323,13 +333,13 @@ function CharacterControls(props) {
 	const spiritLevel = (currentPCdata.currentSpirit / currentPCdata.startingSpirit) * 100;
 	const skillPageTotal = Math.ceil(actionButtonCount / actionButtonMax);
 	// if a button has been removed and was the only button on that buttons page, reduce current page num
-	if (skillPageTotal < skillPaginationNum) {
+	if (skillPageTotal < skillPaginationNum && skillPageTotal > 0) {
 		updateSkillPageNum(skillPageTotal);
 	}
 	return (
 		<div
 			id={`${(props.screenData.isSmall && props.characterId === props.selectedControlTab) ? 'control-bar-tab-1' : ''}`}
-			className={`control-bar-tab-container ${props.showDialog ? 'no-click' : ''}`}
+			className={`control-bar-tab-container ${props.isActiveCharacter ? 'active-character' : ''} ${props.showDialog ? 'no-click' : ''}`}
 			onDragOver={(evt) => handleItemOverDropZone(evt)}
 			onDrop={(evt) => props.dropItemToPC(evt, props.characterId)}>
 
@@ -416,7 +426,7 @@ function CharacterInfoPanel(props) {
 					{skill.spirit ? <div>Required Spirit: {skill.spirit[skill.level]}</div> : null}
 					{skill.requiresEquippedGunType ? <div>Requires equipped {skill.requiresEquippedGunType}</div> : null}
 					{skill.requiresEquippedMeleeWeapon ? <div>Requires equipped melee weapon</div> : null}
-					{skill.requiredEquippedItem ? <div>Requires equipped {skill.requiredEquippedItem}</div> : null}
+					{skill.requiresEquippedItem ? <div>Requires equipped {skill.requiresEquippedItem}</div> : null}
 				</div>
 			</div>
 		);
@@ -630,14 +640,14 @@ function ObjectInfoPanel(props) {
 		const remainingCount = objectInfo.amount ? objectInfo.amount - splitValue : objectInfo.currentRounds - splitValue;
 
 		if (objHasBeenDropped) {
-			addObjectToMap(splitValue, remainingCount)
+			addObjectToMap(splitValue, remainingCount);
 		} else {
 			addStackedObjToOtherPc(splitValue, remainingCount);
 		}
 		cancelObjPanel();
 	};
 	const openContainer = (container) => {
-		if (!container.isOpen) {
+		if (!container.isOpen || (container.isDestructible && !container.isDestroyed)) {
 			setContainerOpenState(container.id);
 		}
 		// container id needed when taking item from container, and id needs to be saved to state because
@@ -653,7 +663,7 @@ function ObjectInfoPanel(props) {
 				<div key={0}>
 					<div className='object-row-with-buttons'>
 						<div></div>
-						<div>Empty</div>
+						<div>{objectInfo.type === 'container' ? 'Empty' : 'Nothing was found'}</div>
 					</div>
 				</div>
 			)
@@ -661,56 +671,53 @@ function ObjectInfoPanel(props) {
 			origObjectList.forEach((obj, index) => {
 				if (obj) {
 					const isEnvObject = obj.isEnvObject;
-					if (isEnvObject && obj.isOpen) {
-						openContainer(obj);
-					} else {
-						list.push(
-							<div key={obj.id}>
-								<div className='object-row-with-buttons'>
-									<div className={`inv-object ${convertObjIdToClassId(obj.id)}`}></div>
-									<div>
-										<div className='font-fancy object-list-objname'>{obj.isIdentified ? obj.name : '???'}</div>
-										<div>{obj.description}</div>
-									</div>
-									{isPickUpAction && !isEnvObject &&
-										<div className='general-button' onClick={() => updateObjToShow(obj)}>Show</div>
-									}
-									{isPickUpAction && !isEnvObject &&
-									<div className='general-button' onClick={() => {
-										if (creatureCoords.find(creature => creature.coords.xPos === obj.coords.xPos && creature.coords.yPos === obj.coords.yPos)) {
-											const guardedDialogProps = {
-												dialogContent: "That item can't be picked up, as it's being guarded by something horrid!",
-												closeButtonText: 'Ok',
-												closeButtonCallback: null,
-												disableCloseButton: false,
-												actionButtonVisible: false,
-												actionButtonText: '',
-												actionButtonCallback: null,
-												dialogClasses: ''
-											}
-											setShowDialogProps(true, guardedDialogProps);
-										} else if (notEnoughSpaceInInventory(1, 0, activePcInfo)) {
-											setShowDialogProps(true, notEnoughSpaceDialogProps);
-										} else {
-											addItemToPlayerInventory(obj, obj.id, activePc, isPickUpAction, false, containerId);
-											const updatedList = origObjectList;
-											updatedList[index] = undefined;
-											updateOrigObjectList(updatedList);
-											if (updatedList.every(obj => obj === undefined)) {
-												cancelObjPanel();
-											}
-										}
-									}}>Pick up</div>
-									}
-									{isPickUpAction && isEnvObject &&
-										<div className='general-button' onClick={() => {
-											openContainer(obj);
-										}}>Open</div>
-									}
+					list.push(
+						<div key={obj.id}>
+							<div className='object-row-with-buttons'>
+								<div className={`inv-object ${convertObjIdToClassId(obj.id)}`}></div>
+								<div>
+									<div className='font-fancy object-list-objname'>{obj.isIdentified ? obj.name : '???'}</div>
+									<div>{obj.description}</div>
 								</div>
+								{isPickUpAction && !isEnvObject &&
+									<div className='general-button' onClick={() => updateObjToShow(obj)}>Show</div>
+								}
+								{isPickUpAction && !isEnvObject &&
+								<div className='general-button' onClick={() => {
+									if (creatureCoords.find(creature => creature.coords.xPos === obj.coords.xPos && creature.coords.yPos === obj.coords.yPos)) {
+										const guardedDialogProps = {
+											dialogContent: "That item can't be picked up, as it's being guarded by something horrid!",
+											closeButtonText: 'Ok',
+											closeButtonCallback: null,
+											disableCloseButton: false,
+											actionButtonVisible: false,
+											actionButtonText: '',
+											actionButtonCallback: null,
+											dialogClasses: ''
+										}
+										setShowDialogProps(true, guardedDialogProps);
+									} else if (notEnoughSpaceInInventory(1, 0, activePcInfo)) {
+										setShowDialogProps(true, notEnoughSpaceDialogProps);
+									} else {
+										addItemToPlayerInventory(obj, obj.id, activePc, isPickUpAction, false, containerId);
+										const updatedList = origObjectList;
+										updatedList[index] = undefined;
+										updateOrigObjectList(updatedList);
+										if (updatedList.every(obj => obj === undefined)) {
+											cancelObjPanel();
+										}
+									}
+								}}>Pick up</div>
+								}
+								{isPickUpAction && isEnvObject && (obj.type === 'container' || obj.type === 'mineable') &&
+									<div className='general-button' onClick={() => {
+										openContainer(obj);
+									}}>{(obj.isOpen || obj.isDestroyed) ? 'Collect Contents' : obj.type === 'mineable' ? 'Mine' : 'Open'}</div>
+								}
+
 							</div>
-						)
-					}
+						</div>
+					)
 				}
 			});
 		}

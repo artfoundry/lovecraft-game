@@ -230,3 +230,7 @@ as box-shadow greatly dims the lighting */
 .rocky-mound {
 	content: url('../assets/objects/rocky-mound.png');
 }
+
+.rocky-mound-destroyed {
+	content: url('../assets/objects/rocky-mound-destroyed.png');
+}

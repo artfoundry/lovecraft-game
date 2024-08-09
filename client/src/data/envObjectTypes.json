@@ -12,7 +12,7 @@
     }
   },
   "Rocky Mound": {
-    "description": "A large mound of dirt and rock protrudes through the ground. May have valuable minerals in it if it can be mined.",
+    "description": "A large mound of dirt and rock protrudes through the ground. May have valuable minerals or other objects in it. Stand next to it to dig (requires a Pickaxe).",
     "isEnvObject": true,
     "type": "mineable",
     "isHidden": false,
@@ -20,7 +20,12 @@
     "isDestructible": true,
     "mayContain": {
       "Gems": {
-        "min": 0,
+        "max": 10
+      },
+      "Precious Metals": {
+        "max": 20
+      },
+      "Rock": {
         "max": 10
       }
     }
@@ -35,7 +40,7 @@
     "canSpawnCreature": ["ghoul", "ghoul", "ghoul", "shoggoth"],
     "mayContain": {
       "Gems": {
-        "max": 4
+        "max": 2
       },
       "Alcohol": {
         "max": 2

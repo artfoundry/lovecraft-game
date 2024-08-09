@@ -69,10 +69,10 @@
     "description": "Doesn't hurt much, but at least you won't cut up your fists."
   },
   "Pickaxe": {
-    "damage": 3,
+    "damage": 2,
     "ranged": false,
-    "twoHanded": true,
-    "description": "Intended for digging, but works as a weapon in a pinch."
+    "twoHanded": false,
+    "description": "Intended for mining, but works as a weapon in a pinch."
   },
   "Acid Concoction": {
     "damage": 10,
@@ -97,5 +97,13 @@
     "stackable": true,
     "twoHanded": false,
     "description": "Fire! Fire!"
+  },
+  "Rock": {
+    "damage": 2,
+    "ranged": true,
+    "usesStr": true,
+    "stackable": true,
+    "twoHanded": false,
+    "description": "I got a rock..."
   }
 }

@@ -36,6 +36,11 @@ class Game extends React.Component {
 			'Lantern': ItemTypes['Lantern'].range,
 			'Electric Torch': ItemTypes['Electric Torch'].range
 		};
+		this.lightTimeCosts = {
+			'mine': 45,
+			'expertMining': 10,
+			'create': 30
+		};
 
 		this.minScreenWidthForSmall = 1000;
 		this.minScreenWidthForNarrow = 768;
@@ -59,7 +64,7 @@ class Game extends React.Component {
 			dialogClasses: ''
 		};
 		this.noMoreActionsDialogProps = {
-			dialogContent: 'That character has no more actions this turn',
+			dialogContent: 'That character has no more actions this turn.',
 			closeButtonText: 'Ok',
 			closeButtonCallback: null,
 			disableCloseButton: false,
@@ -69,7 +74,17 @@ class Game extends React.Component {
 			dialogClasses: ''
 		};
 		this.noMoreMovesDialogProps = {
-			dialogContent: 'That character has no more moves this turn',
+			dialogContent: 'That character has no more moves this turn.',
+			closeButtonText: 'Ok',
+			closeButtonCallback: null,
+			disableCloseButton: false,
+			actionButtonVisible: false,
+			actionButtonText: '',
+			actionButtonCallback: null,
+			dialogClasses: ''
+		};
+		this.notEnoughLightDialogProps = {
+			dialogContent: "That character needs to equip a light with enough time left in order to do that.",
 			closeButtonText: 'Ok',
 			closeButtonCallback: null,
 			disableCloseButton: false,
@@ -298,11 +313,24 @@ class Game extends React.Component {
 
 	/**
 	 * Updates collection of envObjects in state during map init or if obj has been opened, found, triggered, destroyed
+	 * Then, if obj is container, calls func to determine if creature should spawn, or
+	 * if obj is mineable, reduces lighttime for party
 	 * @param envObjects: object (modified copy of this.state.envObjects)
-	 * @param callback
+	 * @param envObjectId: string (optional - used when object is updated from player interacting with it)
+	 * @param callback: function (currently only passed from _setInitialEnvObjectData in Map)
 	 */
-	updateMapEnvObjects = (envObjects, callback) => {
+	updateMapEnvObjects = (envObjects, envObjectId = null, callback) => {
 		this.setState({envObjects}, () => {
+			if (envObjectId) {
+				const activeEnvObj = envObjects[envObjectId];
+				if (activeEnvObj.type === 'container') {
+					this.determineIfShouldSpawnCreature(envObjectId);
+				} else if (activeEnvObj.type === 'mineable') {
+					const miningAction = this.state.objectSelected.miningAction;
+					const buttonName = miningAction.substring(0,1).toUpperCase() + miningAction.substring(1, miningAction.length-1);
+					this.toggleActionButton(this.state.activeCharacter, miningAction, buttonName, 'skill');
+				}
+			}
 			if (callback) {
 				callback();
 			}
@@ -577,9 +605,11 @@ class Game extends React.Component {
 				updateCharacters: this.updateCharacters,
 				updateLog: this.updateLog,
 				setShowDialogProps: this.setShowDialogProps,
+				notEnoughLightDialogProps: this.notEnoughLightDialogProps,
 				addItemToPlayerInventory: this.addItemToPlayerInventory,
 				updateActivePlayerActions: this.updateActivePlayerActions,
-				calcPcLightChanges: this.calcPcLightChanges
+				calcPcLightChanges: this.calcPcLightChanges,
+				lightTimeCosts: this.lightTimeCosts
 			} : {
 				currentPcData: characterData,
 				partyData: this.state.playerCharacters,
@@ -587,8 +617,11 @@ class Game extends React.Component {
 				updateCharacters: this.updateCharacters,
 				updateLog: this.updateLog,
 				setShowDialogProps: this.setShowDialogProps,
+				notEnoughLightDialogProps: this.notEnoughLightDialogProps,
 				updateActivePlayerActions: this.updateActivePlayerActions,
-				calcPcLightChanges: this.calcPcLightChanges
+				calcPcLightChanges: this.calcPcLightChanges,
+				// dummy isExpertMining, so when expertMining in Character calls mine, can pass this in, and calling mine from here doesn't cause error
+				isExpertMining: null
 			};
 			const skillId = stats.skillType === 'create' ? 'create' : buttonId;
 			characterData[skillId](props);
@@ -652,9 +685,8 @@ class Game extends React.Component {
 	}
 
 	/**
-	 * charData obj passed in is modified to reduce light time (from moving, using skills, etc.) and range if time gets low enough
+	 * charData obj is modified to reduce light time (from moving, using skills, etc.) and range if time gets low enough
 	 * whether lighting has changed (light range) is returned to determine if lighting needs to be recalculated
-	 * charData doesn't need to be returned (pointer to orig object from calling function)
 	 * @param charId: string (pc ID)
 	 * @param lightCost: integer (how much to reduce lightTime)
 	 * @returns object: (equippedLight, lightTime, lightRange, lightingHasChanged)
@@ -1116,9 +1148,10 @@ class Game extends React.Component {
 	 * @param objectInfo: array (of objects: {objId: objInfo})
 	 * @param selectionEvt: event object
 	 * @param isPickUpAction: boolean (true if action button clicked to inspect/pickup object)
+	 * @param miningInfo: object ({miningAction: (either 'mine' or 'expertMining')})
 	 */
-	setMapObjectSelected = (objectInfo, selectionEvt, isPickUpAction) => {
-		const objectSelected = objectInfo ? {objectList: objectInfo, evt: selectionEvt, isPickUpAction} : null;
+	setMapObjectSelected = (objectInfo, selectionEvt, isPickUpAction, miningInfo = null) => {
+		const objectSelected = objectInfo ? {objectList: objectInfo, evt: selectionEvt, isPickUpAction, miningAction: miningInfo ? miningInfo.miningAction : null} : null;
 		this.setState({objectSelected});
 	}
 
@@ -1307,7 +1340,7 @@ class Game extends React.Component {
 		let playerFollowOrder = [];
 		let activeCharacter = this.state.activeCharacter;
 		this.startingPlayerCharacters.forEach(characterId => {
-			const props = {...PlayerCharacterTypes[characterId], playerInventoryLimit: this.playerInventoryLimit};
+			const props = {...PlayerCharacterTypes[characterId], playerInventoryLimit: this.playerInventoryLimit, lightTimeCosts: this.lightTimeCosts};
 			playerCharacters[characterId] = new Character(props);
 			playerFollowOrder.push(characterId);
 		});
@@ -1628,6 +1661,8 @@ class Game extends React.Component {
 						toggleActionButton={this.toggleActionButton}
 						reloadGun={this.reloadGun}
 						refillLight={this.refillLight}
+						lightTimeCosts={this.lightTimeCosts}
+						notEnoughLightDialogProps={this.notEnoughLightDialogProps}
 						handleContextMenuSelection={this.handleContextMenuSelection}
 						contextMenu={this.state.contextMenu}
 						toggleCenterOnPlayer={this.toggleCenterOnPlayer}

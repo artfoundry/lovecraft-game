@@ -11,6 +11,7 @@ class Character extends React.Component {
 		this.noGunKnowledgePenalty = 0.5;
 		this.hitDie = 10;
 		this.defenseDie = 4;
+		this.lightTimeCosts = props.lightTimeCosts;
 
 		// For instantiation only - updated data is stored in App.state.playerCharacters
 		this.id = props.id;
@@ -85,6 +86,13 @@ class Character extends React.Component {
 				skillData[skillId].description = skillData[skillId].description.split('; ').map(str => {
 					return <div key={str.substring(0, 5)}>{str}</div>;
 				});
+			}
+			if (skillData[skillId].skillType === 'create') {
+				skillData[skillId].light = [this.lightTimeCosts.create];
+			} else if (skillId === 'mine') {
+				skillData[skillId].light = [this.lightTimeCosts.mine];
+			} else if (skillId === 'expertMining') {
+				skillData[skillId].light = [this.lightTimeCosts.expertMining];
 			}
 		});
 		return skillData;
@@ -266,6 +274,28 @@ class Character extends React.Component {
 	/** Profession Skills **/
 
 	/**
+	 *
+	 * @param updatedPartyData
+	 * @param calcPcLightChanges
+	 * @param lightCost
+	 * @return {boolean}
+	 * @private
+	 */
+	_updatePcLights(updatedPartyData, calcPcLightChanges, lightCost) {
+		let lightingHasChanged = false;
+		for (const charData of Object.values(updatedPartyData)) {
+			if (charData.equippedLight && charData.lightTime > 0) {
+				const {equippedLightItem, lightTime, lightRange, hasLightChanged} = calcPcLightChanges(charData.id, lightCost);
+				charData.items[charData.equippedLight] = {...equippedLightItem};
+				charData.lightTime = lightTime;
+				charData.lightRange = lightRange;
+				lightingHasChanged = hasLightChanged;
+			}
+		}
+		return lightingHasChanged;
+	}
+
+	/**
 	 * Creates an item using materials and light (cost); enemies must not be around in order to use
 	 * Called from toggleActionButton in App
 	 * @param props: object {
@@ -280,19 +310,28 @@ class Character extends React.Component {
 	 * }
 	 */
 	create = (props) => {
-		const {itemType, activeCharId, partyData, updateCharacters, updateLog, setShowDialogProps, addItemToPlayerInventory, updateActivePlayerActions, calcPcLightChanges} = props;
+		const {
+			itemType,
+			activeCharId,
+			partyData,
+			updateCharacters,
+			updateLog,
+			setShowDialogProps,
+			notEnoughLightDialogProps,
+			addItemToPlayerInventory,
+			updateActivePlayerActions,
+			calcPcLightChanges
+		} = props;
 		const currentPcData = partyData[activeCharId];
 		const createSkill = currentPcData.skills[itemType];
 		const materialCosts = createSkill.cost;
-		const lightCost = createSkill.light[createSkill.level];
+		const lightCost = this.lightTimeCosts.create;
 		const itemName = createSkill.name.substring(7); // removes "Create "
 		let updatedPartyData = deepCopy(partyData);
 		let activeCharItems = updatedPartyData[activeCharId].items;
 		let lightingHasChanged = false;
-		const notEnoughMaterialsMessage = `${currentPcData.name} doesn't have enough materials to create that item.`;
-		const notEnoughLightMessage = `${currentPcData.name} needs to equip a light with enough time left to create that item.`;
 		const notEnoughMatsDialogProps = {
-			dialogContent: '',
+			dialogContent: `${currentPcData.name} doesn't have enough materials to create that item.`,
 			closeButtonText: 'Ok',
 			closeButtonCallback: null,
 			disableCloseButton: false,
@@ -303,8 +342,7 @@ class Character extends React.Component {
 		};
 
 		if (!currentPcData.equippedLight || currentPcData.lightTime < lightCost) {
-			notEnoughMatsDialogProps.dialogContent = notEnoughLightMessage;
-			setShowDialogProps(true, notEnoughMatsDialogProps);
+			setShowDialogProps(true, notEnoughLightDialogProps);
 			return;
 		}
 
@@ -313,7 +351,6 @@ class Character extends React.Component {
 			const materialItemKey = material + '0';
 			// if not enough materials to create, show dialog and exit
 			if (!currentPcData.items[materialItemKey] || currentPcData.items[materialItemKey].amount < reqAmount) {
-				notEnoughMatsDialogProps.dialogContent = notEnoughMaterialsMessage;
 				setShowDialogProps(true, notEnoughMatsDialogProps);
 				return;
 			// otherwise, delete materials from inv
@@ -327,15 +364,8 @@ class Character extends React.Component {
 			}
 		}
 
-		for (const charData of Object.values(updatedPartyData)) {
-			if (charData.equippedLight && charData.lightTime > 0) {
-				const {equippedLightItem, lightTime, lightRange, hasLightChanged} = calcPcLightChanges(charData.id, lightCost);
-				charData.items[charData.equippedLight] = {...equippedLightItem};
-				charData.lightTime = lightTime;
-				charData.lightRange = lightRange;
-				lightingHasChanged = hasLightChanged;
-			}
-		}
+		// _updatePcLights modifies updatedPartyData directly
+		lightingHasChanged = this._updatePcLights(updatedPartyData, calcPcLightChanges, lightCost);
 
 		let itemId = itemType + '0';
 		const itemCategory = createSkill.itemCategory;
@@ -396,8 +426,22 @@ class Character extends React.Component {
 	 *
 	 * }
 	 */
-	dig = (props) => {
+	mine = (props) => {
+		const {partyData, updateCharacters, calcPcLightChanges, isExpertMining} = props;
+		let updatedPartyData = deepCopy(partyData);
+		const lightCost = isExpertMining ? this.lightTimeCosts.expertMining : this.lightTimeCosts.mine;
+		const expertMiningSkill = partyData.archaeologist.skills.expertMining;
 
+		// _updatePcLights modifies updatedPartyData directly
+		const lightingHasChanged = this._updatePcLights(updatedPartyData, calcPcLightChanges, lightCost);
+		if (isExpertMining) {
+			updatedPartyData.archaeologist.currentSpirit -= expertMiningSkill.spirit[expertMiningSkill.level];
+		}
+		updateCharacters('player', updatedPartyData, null, lightingHasChanged, false, false);
+	}
+
+	expertMining = (props) => {
+		this.mine({...props, isExpertMining: true});
 	}
 
 	/**
@@ -587,7 +631,7 @@ class Character extends React.Component {
 	}
 
 	identifyRelic = (props) => {
-		const {partyData, updateCharacters, updateLog, setShowDialogProps, calcPcLightChanges} = props;
+		const {partyData, updateCharacters, updateLog, setShowDialogProps, notEnoughLightDialogProps, calcPcLightChanges} = props;
 		let updatedPartyData = deepCopy(partyData);
 		const currentPcData = updatedPartyData.occultResearcher;
 		const identifyRelicSkill = currentPcData.skills.identifyRelic;
@@ -596,10 +640,8 @@ class Character extends React.Component {
 		let itemFound = false;
 		let lightingHasChanged = false;
 		const lightCost = identifyRelicSkill.light[identifyRelicSkill.level];
-		const notEnoughLightMessage = `${currentPcData.name} needs to equip a light with enough time left to identify a Relic.`;
-		const noRelicsMessage = `There are no Relics in ${currentPcData.name}'s inventory.`;
-		const notEnoughLightDialogProps = {
-			dialogContent: '',
+		const noRelicsDialogProps = {
+			dialogContent: `There are no Relics in ${currentPcData.name}'s inventory.`,
 			closeButtonText: 'Ok',
 			closeButtonCallback: null,
 			disableCloseButton: false,
@@ -610,7 +652,6 @@ class Character extends React.Component {
 		};
 
 		if (!currentPcData.equippedLight || currentPcData.lightTime < lightCost) {
-			notEnoughLightDialogProps.dialogContent = notEnoughLightMessage;
 			setShowDialogProps(true, notEnoughLightDialogProps);
 			return;
 		}
@@ -624,22 +665,15 @@ class Character extends React.Component {
 			index++;
 		}
 		if (itemFound) {
-			for (const charData of Object.values(updatedPartyData)) {
-				if (charData.equippedLight && charData.lightTime > 0) {
-					const {equippedLightItem, lightTime, lightRange, hasLightChanged} = calcPcLightChanges(charData.id, lightCost);
-					charData.items[charData.equippedLight] = {...equippedLightItem};
-					charData.lightTime = lightTime;
-					charData.lightRange = lightRange;
-					lightingHasChanged = hasLightChanged;
-				}
-			}
+			// _updatePcLights modifies updatedPartyData directly
+			lightingHasChanged = this._updatePcLights(updatedPartyData, calcPcLightChanges, lightCost);
+
 			updatedPartyData.occultResearcher.currentSpirit -= identifyRelicSkill.spirit[identifyRelicSkill.level];
 			updateCharacters('player', updatedPartyData, null, lightingHasChanged, false, false, () => {
 				updateLog(`${currentPcData.name} spends time examining a Relic and identifies it as the ${itemFound.name}!`);
 			});
 		} else {
-			notEnoughLightDialogProps.dialogContent = noRelicsMessage;
-			setShowDialogProps(true, notEnoughLightDialogProps);
+			setShowDialogProps(true, noRelicsDialogProps);
 		}
 	}
 
