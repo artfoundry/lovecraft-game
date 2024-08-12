@@ -34,7 +34,7 @@ class Map extends React.Component {
 		// Constants
 		this.tileSize = 64;
 		this.mapTileLimit = 500;
-		this.uiPadding = 150; // extra space above/below map so top/bottom of map aren't under UI
+		this.uiPadding = 290; // extra space above/below map so top/bottom of map aren't under UI and for determining when to move map if pc gets too close to ui
 		this.firstMapPieceCoords = {xPos: 10, yPos: 10}; //arbitrary but shifted from 0,0 to allow space for pieces on all sides
 		this.characterSizePercentage = 0.7;
 		this.OPPOSITE_SIDE = {
