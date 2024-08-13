@@ -47,13 +47,13 @@ class Map extends React.Component {
 		this.playerMovementDelay = 50;
 		this.creatureMovementDelay = 200;
 		this.maxLightStrength = 5;
-		this.numMapPieceTwoDoorHalls = 6;
 
 		// total number of map pieces in currentMapData: 17;
 		this.currentMapData = GameLocations[this.props.currentLocation];
 		this.pageFirstLoaded = true;
 		this.initialMapLoad = true;
 		this.mapLayoutTemp = {};
+		this.numberOpeningsPerPiece = {};
 
 		this.sfxSelectors = {
 			catacombs: {}
@@ -135,6 +135,18 @@ class Map extends React.Component {
 		let attemptedPieces = [];
 		const numPieceTemplates = Object.keys(MapData).length;
 
+		for (const [pieceName, pieceData] of Object.entries(MapData)) {
+			let openings = 0;
+			for (const tileSides of Object.values(pieceData)) {
+				for (const value of Object.values(tileSides)) {
+					if (value === 'opening') {
+						openings++;
+					}
+				}
+			}
+			this.numberOpeningsPerPiece[pieceName] = openings;
+		}
+
 		while (numPiecesTried < numPieceTemplates && Object.keys(this.mapLayoutTemp).length < this.mapTileLimit) {
 			const {newPiece, pieceName} = this._chooseNewRandomPiece(attemptedPieces);
 			attemptedPieces.push(pieceName);
@@ -189,13 +201,21 @@ class Map extends React.Component {
 	 */
 	_chooseNewRandomPiece(attemptedPieces) {
 		const pieceNamesList = Object.keys(MapData);
-		const filteredPieceNameList = pieceNamesList.filter(name => attemptedPieces.indexOf(name) < 0);
+		const remainingPieceNameList = pieceNamesList.filter(name => attemptedPieces.indexOf(name) < 0);
+		const piecesWith3orMoreOpenings = remainingPieceNameList.filter(name => this.numberOpeningsPerPiece[name] >= 3);
 		const percentMapFilled = Object.keys(this.mapLayoutTemp).length / this.mapTileLimit;
 		// while map is only 30% filled so far, ~66% chance of only using rooms/halls with more than 2 doors - this is to try to prevent small maps
-		const randomWeighting = percentMapFilled < 0.3 ? (Math.floor(Math.random() * 1.5) * -this.numMapPieceTwoDoorHalls) : 0;
-		const randomIndex = Math.floor(Math.random() * (filteredPieceNameList.length + randomWeighting));
-		const newPiece = MapData[filteredPieceNameList[randomIndex]];
-		return {newPiece, pieceName: filteredPieceNameList[randomIndex]};
+		let pieceName = '';
+		let randomIndex = 0;
+		if (percentMapFilled < 0.3 && diceRoll(3) > 1) {
+			randomIndex = Math.floor(Math.random() * piecesWith3orMoreOpenings.length);
+			pieceName = piecesWith3orMoreOpenings[randomIndex];
+		} else {
+			randomIndex = Math.floor(Math.random() * remainingPieceNameList.length);
+			pieceName = remainingPieceNameList[randomIndex];
+		}
+		const newPiece = MapData[pieceName];
+		return {newPiece, pieceName};
 	}
 
 	/**
