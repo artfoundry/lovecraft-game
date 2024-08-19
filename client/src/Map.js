@@ -47,6 +47,7 @@ class Map extends React.Component {
 		this.playerMovementDelay = 50;
 		this.creatureMovementDelay = 200;
 		this.maxLightStrength = 5;
+		this.baseChanceOfFindingSecretDoor = 0.3;
 
 		// total number of map pieces in currentMapData: 17;
 		this.currentMapData = GameLocations[this.props.currentLocation];
@@ -81,9 +82,9 @@ class Map extends React.Component {
 			playerVisited: {},
 			mapLayout: {},
 			mapLayoutDone: false,
-			exitPosition: {},
+			previousAreaExitCoords: {},
+			nextAreaExitCoords: {},
 			exitPlaced: false,
-			lighting: {},
 			mapMoved: false,
 			worldWidth: 0,
 			worldHeight: 0
@@ -106,9 +107,9 @@ class Map extends React.Component {
 			playerVisited: {},
 			mapLayout: {},
 			mapLayoutDone: false,
-			exitPosition: {},
+			previousAreaExitCoords: {},
+			nextAreaExitCoords: {},
 			exitPlaced: false,
-			lighting: {},
 			mapMoved: false,
 			worldWidth: 0,
 			worldHeight: 0
@@ -150,10 +151,10 @@ class Map extends React.Component {
 		while (numPiecesTried < numPieceTemplates && Object.keys(this.mapLayoutTemp).length < this.mapTileLimit) {
 			const {newPiece, pieceName} = this._chooseNewRandomPiece(attemptedPieces);
 			attemptedPieces.push(pieceName);
-			const {positionFound, updatedPiece, mapOpening, pieceOpening} = this._findNewPiecePosition(newPiece);
+			const {positionFound, updatedPiece, mapOpening, pieceOpening} = this._findNewPiecePosition(newPiece, pieceName);
 
 			if (positionFound) {
-				this._updateMapLayout(updatedPiece, mapOpening, pieceOpening);
+				this._updateMapLayout(updatedPiece, mapOpening, pieceOpening, pieceName);
 				attemptedPieces = [];
 				numPiecesTried = 0;
 			} else numPiecesTried++;
@@ -170,24 +171,27 @@ class Map extends React.Component {
 				worldWidth,
 				worldHeight
 			}, () => {
-				this._setInitialCharacterCoords(() => {
-					this._setExitPosition();
-					this._setInitialCreatureData(() => {
-						this._setInitialObjectData(() => {
-							this._setInitialEnvObjectData(() => {
-								this._calculateLighting(() => {
-									const creaturePositions = this.props.getAllCharactersPos('creature', 'pos');
-									const playerPositions = this.props.getAllCharactersPos('player', 'pos');
-									const threatLists = this._findChangesToNearbyThreats(playerPositions, creaturePositions);
-									this.props.updateThreatList(threatLists.threatListToAdd, [], null, this.isInLineOfSight);
+				this._setExitPosition('previousArea', () => {
+					this._setInitialCharacterCoords(() => {
+						this._setExitPosition('nextArea', () => {
+							this._setInitialCreatureData(() => {
+								this._setInitialObjectData(() => {
+									this._setInitialEnvObjectData(() => {
+										this._calculateLighting(() => {
+											const creaturePositions = this.props.getAllCharactersPos('creature', 'pos');
+											const playerPositions = this.props.getAllCharactersPos('player', 'pos');
+											const threatLists = this._findChangesToNearbyThreats(playerPositions, creaturePositions);
+											this.props.updateThreatList(threatLists.threatListToAdd, [], null, this.isInLineOfSight);
+										});
+									})
 								});
-							})
+							});
+							if (this.pageFirstLoaded) {
+								this.pageFirstLoaded = false;
+								this._setupKeyListeners();
+							}
 						});
 					});
-					if (this.pageFirstLoaded) {
-						this.pageFirstLoaded = false;
-						this._setupKeyListeners();
-					}
 				});
 			});
 		}
@@ -269,6 +273,7 @@ class Map extends React.Component {
 	 * Finds a position on the map to place a new piece by looking at each piece's door/hall openings
 	 * and ensuring the new piece has enough space
 	 * @param piece: Object (containing objects with each tile's data)
+	 * @param pieceName: String
 	 * @returns Object: {
 	 *      pieceOpening: Object (tile in the new piece that was connected to piece on the map),
 	 *      positionFound: Boolean,
@@ -277,7 +282,7 @@ class Map extends React.Component {
 	 * }
 	 * @private
 	 */
-	_findNewPiecePosition(piece) {
+	_findNewPiecePosition(piece, pieceName) {
 		let positionFound = false;
 		let updatedPiece = {};
 
@@ -305,17 +310,17 @@ class Map extends React.Component {
 		let mapOpenings = [];
 
 		// find all tile openings in piece and existing map
-		for (const [tilePos, tileSides] of Object.entries(piece)) {
-			for (const [side, value] of Object.entries(tileSides)) {
-				if (value === 'opening') {
-					pieceOpenings.push({[tilePos]: side});
+		for (const [tilePos, tileInfo] of Object.entries(piece)) {
+			for (const [attributeType, attributeValue] of Object.entries(tileInfo)) {
+				if (attributeValue === 'opening') {
+					pieceOpenings.push({[tilePos]: attributeType});
 				}
 			}
 		}
-		for (const [tilePos, tileSides] of Object.entries(this.mapLayoutTemp)) {
-			for (const [side, value] of Object.entries(tileSides)) {
-				if (value === 'opening') {
-					mapOpenings.push({[tilePos]: side});
+		for (const [tilePos, tileInfo] of Object.entries(this.mapLayoutTemp)) {
+			for (const [attributeType, attributeValue] of Object.entries(tileInfo)) {
+				if (attributeValue === 'opening' && (!pieceName.includes('secret') || tileInfo.piece.includes('room'))) {
+					mapOpenings.push({[tilePos]: attributeType});
 				}
 			}
 		}
@@ -414,9 +419,10 @@ class Map extends React.Component {
 	 * @param newPiece: Object (newly placed piece with updated coordinates for map layout)
 	 * @param mapOpeningToRemove: Object ({[tileCoords relative to map]: side} - n/a for first piece)
 	 * @param pieceOpeningToRemove: Object ({[tileCoords relative to piece]: side} - n/a for first piece)
+	 * @param pieceName: String
 	 * @private
 	 */
-	_updateMapLayout(newPiece, mapOpeningToRemove, pieceOpeningToRemove) {
+	_updateMapLayout(newPiece, mapOpeningToRemove, pieceOpeningToRemove, pieceName) {
 		const tilePositions = Object.keys(newPiece);
 		let pieceOpeningTilePos = '';
 		let pieceOpeningSide = '';
@@ -440,6 +446,24 @@ class Map extends React.Component {
 		// clear 'opening' from map tile next to where new piece is placed
 		if (mapOpeningToRemove) {
 			this.mapLayoutTemp[mapOpeningTile][mapOpeningSide] = '';
+		}
+
+		if (pieceName.includes('secret') && mapOpeningTile) {
+			const mapTileCoords = convertPosToCoords(mapOpeningTile);
+			let mapTileToChangeCoords = {};
+			if (mapOpeningSide === 'topSide') {
+				mapTileToChangeCoords = {xPos: mapTileCoords.xPos, yPos: mapTileCoords.yPos + 1};
+			} else if (mapOpeningSide === 'bottomSide') {
+				mapTileToChangeCoords = {xPos: mapTileCoords.xPos, yPos: mapTileCoords.yPos - 1};
+			} else if (mapOpeningSide === 'leftSide') {
+				mapTileToChangeCoords = {xPos: mapTileCoords.xPos + 1, yPos: mapTileCoords.yPos};
+			} else {
+				mapTileToChangeCoords = {xPos: mapTileCoords.xPos - 1, yPos: mapTileCoords.yPos};
+			}
+			let mapTileToChange = this.mapLayoutTemp[convertCoordsToPos(mapTileToChangeCoords)];
+			mapTileToChange.isSecretDoor = true;
+			mapTileToChange.isDiscovered = false;
+			mapTileToChange.baseChanceOfFinding = this.baseChanceOfFindingSecretDoor;
 		}
 	}
 
@@ -527,7 +551,12 @@ class Map extends React.Component {
 	_findNearbyAvailableTile(previousPlayerCoords, playerPositions) {
 		let availableTile = null;
 		let distanceAway = 1;
-		const tileList = Object.keys(this.state.mapLayout).filter(tilePos => this.state.mapLayout[tilePos].type === 'floor');
+		const previousPlayerPos = convertCoordsToPos(previousPlayerCoords);
+		const prevPlayerRoomName = this.state.mapLayout[previousPlayerPos].pieceName;
+		const tileList = Object.keys(this.state.mapLayout).filter(tilePos => {
+			const mapTile = this.state.mapLayout[tilePos];
+			return mapTile.type === 'floor' && mapTile.pieceName === prevPlayerRoomName;
+		});
 		while (!availableTile) {
 			const newNearbyPos1 = `${previousPlayerCoords.xPos + distanceAway}-${previousPlayerCoords.yPos}`;
 			const newNearbyPos2 = `${previousPlayerCoords.xPos - distanceAway}-${previousPlayerCoords.yPos}`;
@@ -605,7 +634,7 @@ class Map extends React.Component {
 			let tilePos = '';
 			let newCoords = [];
 			if (!previousPlayerCoords) {
-				tilePos = this._generateRandomLocation();
+				tilePos = convertCoordsToPos(this.state.previousAreaExitCoords);
 			} else {
 				// look for empty nearby tile to place 2nd/3rd PC
 				tilePos = this._findNearbyAvailableTile(previousPlayerCoords, playerPositions);
@@ -744,7 +773,6 @@ class Map extends React.Component {
 				envObjects[uniqueItemId] = {
 					...envItemInfo,
 					name: itemId,
-					isDiscovered: !envItemInfo.isHidden,
 					isIdentified: true,
 					isDestructible: envItemInfo.isDestructible,
 					isDestroyed: false,
@@ -752,6 +780,9 @@ class Map extends React.Component {
 					isOpen: envItemInfo.type === 'container' ? false : null,
 					coords
 				};
+				if (envItemInfo.isHidden) {
+					envObjects[uniqueItemId].isDiscovered = false;
+				}
 				itemCoords[uniqueItemId] = coords;
 			}
 		}
@@ -767,7 +798,7 @@ class Map extends React.Component {
 	 * A char and object can occupy same tile, but env obj is placed with nothing else (even if passable)
 	 * If placing env obj, needs to check if canHaveObject, and if so, objectMustBePassable and objectCanBeImpassable
 	 * Note: during map setup, players get placed first, then creatures, then items, then env objects
-	 * @param objectCoords: Object
+	 * @param objectCoords: Object (collection of objects/chars being placed by calling function, before they've been set to state)
 	 * @param tileType: String (either 'floor' or 'wall')
 	 * @param isEnvObj: Boolean
 	 * @param isPassable: Boolean (true if object can be walked over)
@@ -786,7 +817,7 @@ class Map extends React.Component {
 		let newObjectList = Object.values(objectCoords).length > 0 ? Object.values(objectCoords).map(object => convertCoordsToPos(object)) : null;
 		let randomIndex = 0;
 		let tilePos = '';
-		const exitPos = Object.values(this.state.exitPosition).length > 0 ? convertCoordsToPos(this.state.exitPosition) : null;
+		const exitPos = Object.values(this.state.nextAreaExitCoords).length > 0 ? convertCoordsToPos(this.state.nextAreaExitCoords) : null;
 		let allCharacterPos = [];
 		const listOfMapObjectsPos = isEnvObj ? Object.values(this.props.mapObjects).map(object => convertCoordsToPos(object.coords)) : null;
 
@@ -880,6 +911,40 @@ class Map extends React.Component {
 	}
 
 	/**
+	 * Adds range attribute to each light info object in passed in array,
+	 * and removes any light object whose light has expired (or if no light equipped)
+	 * @param allLights: Array (of objects: {id, pos})
+	 * @return {*[]}
+	 * @private
+	 */
+	_getActiveLightRanges(allLights) {
+		let allLightPos = [...allLights];
+		let idsToRemove = [];
+
+		// add range info for player lights or remove from array if light expired
+		allLightPos.forEach((light, index, lightsArray) => {
+			// check if light belongs to player (instead of map)
+			const player = this.props.playerCharacters[light.id];
+			if (player) {
+				if (player.lightTime === 0 || !player.equippedLight) {
+					idsToRemove.push(light.id);
+				} else {
+					lightsArray[index].range = player.lightRange;
+				}
+			}
+		});
+		if (idsToRemove.length > 0) {
+			idsToRemove.forEach(id => {
+				let matchingId = allLightPos.findIndex(light => id === light.id);
+				if (matchingId >= 0) {
+					allLightPos.splice(matchingId, 1);
+				}
+			});
+		}
+		return allLightPos;
+	}
+
+	/**
 	 * Calculates lighting for each tile from map lights and pc lights
 	 * @param callback
 	 * @private
@@ -901,26 +966,7 @@ class Map extends React.Component {
 		}
 
 		// add range info for player lights or remove from array if light expired
-		let idsToRemove = [];
-		allLightPos.forEach((light, index, lightsArray) => {
-			// check if light belongs to player (instead of map)
-			const player = this.props.playerCharacters[light.id];
-			if (player) {
-				if (player.lightTime === 0 || !player.equippedLight) {
-					idsToRemove.push(light.id);
-				} else {
-					lightsArray[index].range = player.lightRange;
-				}
-			}
-		});
-		if (idsToRemove.length > 0) {
-			idsToRemove.forEach(id => {
-				let matchingId = allLightPos.findIndex(light => id === light.id);
-				if (matchingId >= 0) {
-					allLightPos.splice(matchingId, 1);
-				}
-			});
-		}
+		allLightPos = this._getActiveLightRanges(allLightPos);
 
 		// get all lit floors/walls around each player and map light that are in LOS of a player
 		// lineOfSightTiles are tiles in LOS from their own source
@@ -972,25 +1018,29 @@ class Map extends React.Component {
 	}
 
 	/**
-	 * Sets to state the position for the exit object
+	 * Sets to state the position for the nextArea or previousArea exit
+	 * Exits can't be in secret areas
+	 * If previousArea, must be in a room (to help prevent pcs from getting separated)
+	 * If nextArea, can't be in pc location
+	 * @param exitType : String ('nextArea' or 'previousArea')
+	 * @param callback : function
 	 * @private
 	 */
-	_setExitPosition() {
-		const tilePositions = Object.keys(this.state.mapLayout).filter(tilePos => this.state.mapLayout[tilePos].type === 'floor');
-		const pickRandomLoc = () => {
-			return tilePositions[Math.floor(Math.random() * tilePositions.length)];
-		}
-		let exitPosition = pickRandomLoc();
-		let allPlayerPos = [];
-
-		this.props.getAllCharactersPos('player', 'pos').forEach(player => {
-			allPlayerPos.push(player.pos);
+	_setExitPosition(exitType, callback) {
+		let allPlayerPos = exitType === 'nextArea' ? this.props.getAllCharactersPos('player', 'pos').map(player => player.pos) : null;
+		const tilePositions = Object.keys(this.state.mapLayout).filter(tilePos => {
+			return this.state.mapLayout[tilePos].type === 'floor' &&
+				!this.state.mapLayout[tilePos].piece.includes('secret') &&
+				(exitType === 'nextArea' || (exitType === 'previousArea' && this.state.mapLayout[tilePos].piece.includes('room'))) &&
+				(exitType === 'previousArea' || (exitType === 'nextArea' && !allPlayerPos.includes(tilePos)));
 		});
-		while (allPlayerPos.includes(exitPosition)) {
-			exitPosition = pickRandomLoc();
-		}
+		let exitPosition = tilePositions[Math.floor(Math.random() * tilePositions.length)];
 		const exitCoords = convertPosToCoords(exitPosition);
-		this.setState({exitPosition: exitCoords, exitPlaced: true});
+		if (exitType === 'nextArea') {
+			this.setState({nextAreaExitCoords: exitCoords}, callback);
+		} else {
+			this.setState({previousAreaExitCoords: exitCoords, exitPlaced: true}, callback);
+		}
 	}
 
 	/**
@@ -1027,6 +1077,9 @@ class Map extends React.Component {
 
 		if (tileData.classes && tileData.classes !== '') {
 			allClasses += ` ${tileData.classes}`;
+			if (tileData.isSecretDoor && !tileData.isDiscovered) {
+				allClasses += ' secret';
+			}
 		} else if (tileData.type === 'floor') {
 			allClasses += ' floor'
 		}
@@ -1209,7 +1262,7 @@ class Map extends React.Component {
 	 */
 	addAllEnvObjects = () => {
 		let allObjects = [];
-		allObjects.push(...this._addDoors(), this._addExit(), ...this._addEnvObjects());
+		allObjects.push(...this._addDoors(), this._addExits(), ...this._addEnvObjects());
 
 		return allObjects;
 	}
@@ -1231,7 +1284,7 @@ class Map extends React.Component {
 				name={idConvertedToClassName}
 				tilePos={convertCoordsToPos(info.coords)}
 				tileIsVisible={tileIsVisible}
-				isHidden={!info.isDiscovered}
+				isDiscovered={info.isDiscovered}
 				isContainerOpen={info.isOpen}
 				isDestroyed={info.isDestroyed}
 				updateContextMenu={this.checkForDragging}
@@ -1246,24 +1299,29 @@ class Map extends React.Component {
 	}
 
 	/**
-	 * Creates Exit component
-	 * Note - may end up broadening this to add other objects too
-	 * @returns {JSX.Element} (Exit component)
+	 * Creates Exit components for nextArea and previousArea
+	 * @returns Array of JSX.Element (Exit components)
 	 * @private
 	 */
-	_addExit() {
-		return (<Exit
-			key={'exit-' + convertCoordsToPos(this.state.exitPosition)}
-			styleProp={{
-				transform: `translate(${this._calculateObjectTransform(this.state.exitPosition.xPos, this.state.exitPosition.yPos)})`,
-				width: this.tileSize + 'px',
-				height: this.tileSize + 'px'
-			}} />);
+	_addExits() {
+		return [
+			{class: 'stairs-up', coords: this.state.previousAreaExitCoords},
+			{class: 'stairs-down', coords: this.state.nextAreaExitCoords}
+		].map(info => {
+			return (<Exit
+				key={'exit-' + convertCoordsToPos(info.coords)}
+				class={info.class}
+				style={{
+					transform: `translate(${this._calculateObjectTransform(info.coords.xPos, info.coords.yPos)})`,
+					width: this.tileSize + 'px',
+					height: this.tileSize + 'px'
+				}}
+			/>);
+		});
 	}
 
 	/**
 	 * Creates and transforms Door components
-	 * Could be used for other objects and/or merged with _addExit
 	 * @returns Array (of Door components)
 	 * @private
 	 */
@@ -1273,24 +1331,41 @@ class Map extends React.Component {
 		for (const [tilePos, tileData] of Object.entries(this.state.mapLayout)) {
 			const tileCoords = convertPosToCoords(tilePos);
 			if (tileData.type === 'door') {
-				let doorClass = this.props.currentLocation + ' object door';
+				let doorClass = this.props.currentLocation + ' door';
 				let topStyle = '';
 				let leftStyle = '';
+				const isSecret = tileData.isSecretDoor;
+				const isDiscovered = tileData.isDiscovered;
 				if (tileData.classes.includes('top-bottom-door')) {
-					doorClass += tileData.doorIsOpen ? ' front-door-open' : ' front-door';
-					if (doorClass.includes('open')) {
+					if (tileData.doorIsOpen) {
+						doorClass += isSecret ? ' secret-front-door-open' : ' front-door-open';
+					} else {
+						doorClass += isSecret && !isDiscovered ? ' secret-front-door' : isSecret && isDiscovered ? ' secret-front-door-discovered' : ' front-door';
+					}
+					// doorClass += tileData.doorIsOpen ? ' front-door-open' : isSecret ? ' secret-front-door' : ' front-door';
+					if (doorClass.includes('open') && !isSecret) {
 						topStyle = (this.tileSize / 2) + 'px';
 						leftStyle = -(this.tileSize / 2) + 'px';
 					}
 				} else if (tileData.classes.includes('left-door')) {
-					doorClass += tileData.doorIsOpen ? ' left-side-door-open' : ' side-door';
-					if (doorClass.includes('open')) {
+					if (tileData.doorIsOpen) {
+						doorClass += isSecret ? ' secret-side-door-open' : ' left-side-door-open';
+					} else {
+						doorClass += isSecret && !isDiscovered ? ' secret-left-side-door' : isSecret && isDiscovered ? ' secret-side-door-discovered' : ' side-door';
+					}
+					// doorClass += tileData.doorIsOpen ? ' left-side-door-open' : isSecret ? ' secret-left-side-door' : ' side-door';
+					if (doorClass.includes('open') && !isSecret) {
 						topStyle = -(this.tileSize / 2) + 'px';
 						leftStyle = -(this.tileSize / 2) + 'px';
 					}
 				} else if (tileData.classes.includes('right-door')) {
-					doorClass += tileData.doorIsOpen ? ' right-side-door-open' : ' side-door';
-					if (doorClass.includes('open')) {
+					if (tileData.doorIsOpen) {
+						doorClass += isSecret ? ' secret-side-door-open' : ' right-side-door-open';
+					} else {
+						doorClass += isSecret && !isDiscovered ? ' secret-right-side-door' : isSecret && isDiscovered ? ' secret-side-door-discovered' : ' side-door';
+					}
+					// doorClass += tileData.doorIsOpen ? ' right-side-door-open' : isSecret ? ' secret-right-side-door' : ' side-door';
+					if (doorClass.includes('open') && !isSecret) {
 						topStyle = -(this.tileSize / 2) + 'px';
 						leftStyle = (this.tileSize / 2) + 'px';
 					}
@@ -1298,6 +1373,7 @@ class Map extends React.Component {
 				objects.push(
 					<Door
 						key={`object-${tilePos}`}
+						isDiscovered={tileData.isDiscovered}
 						styleProp={{
 							transform: `translate(${this._calculateObjectTransform(tileCoords.xPos, tileCoords.yPos)})`,
 							width: this.tileSize + 'px',
@@ -1449,8 +1525,8 @@ class Map extends React.Component {
 	 */
 	_checkForExit() {
 		const activePCCoords = this.props.playerCharacters[this.props.activeCharacter].coords;
-		if (activePCCoords.xPos === this.state.exitPosition.xPos &&
-			activePCCoords.yPos === this.state.exitPosition.yPos)
+		if (activePCCoords.xPos === this.state.nextAreaExitCoords.xPos &&
+			activePCCoords.yPos === this.state.nextAreaExitCoords.yPos)
 		{
 			let dialogProps = {};
 			if (this.props.inTacticalMode) {
@@ -1834,10 +1910,10 @@ class Map extends React.Component {
 	/**
 	 * Find tiles out to 'range' that have unblocked lines of sight(LOS) to the center
 	 * Used for lighting and creature movement
-	 * @param centerTilePos {string} : position of player (ex. '1-2')
-	 * @param range {number} : perception/light radius
-	 * @param checkForCreatures {boolean} : whether to check for creatures blocking paths (used for creature movement)
-	 * @returns {
+	 * @param centerTilePos: string (position of player (ex. '1-2'))
+	 * @param range: number (perception/light radius)
+	 * @param checkForCreatures: boolean (whether to check for creatures blocking paths (used for creature movement))
+	 * @returns object {
 	 *  {
 	 *      '1Away': {floors: {[tilePosString]: [range]}, walls: {[tilePosString]: [range]}},
 	 *      '2Away': {floors: {[tilePosString]: [range]}, walls: {[tilePosString]: [range]}},
@@ -2101,13 +2177,22 @@ class Map extends React.Component {
 			}
 		}
 
+		// only search when the activeChar moves in tactical mode or the leader moves in follow mode
+		// this will avoid duplicate announcements for finding something (and improve performance a bit)
+		if (this.props.inSearchMode && activePC === this.props.activeCharacter) {
+			if (this._searchForHiddenSecrets()) {
+				pathData.tilePath = [];
+			}
+		}
+
 		let updateData = {coords: newCoords};
 		const activePlayerData = deepCopy(this.props.playerCharacters[activePC]);
 		let lightingHasChanged = false;
 		// reduce light time remaining and range if time is really low
 		if (activePlayerData.equippedLight && activePlayerData.lightTime > 0) {
 			updateData.items = activePlayerData.items;
-			const {equippedLightItem, lightTime, lightRange, hasLightChanged} = this.props.calcPcLightChanges(activePC);
+			const lightCost = this.props.inSearchMode ? this.props.lightTimeCosts.search : this.props.lightTimeCosts.move;
+			const {equippedLightItem, lightTime, lightRange, hasLightChanged} = this.props.calcPcLightChanges(activePC, lightCost);
 			updateData.items[activePlayerData.equippedLight] = {...equippedLightItem};
 			updateData.lightTime = lightTime;
 			updateData.lightRange = lightRange;
@@ -2182,6 +2267,65 @@ class Map extends React.Component {
 				}
 			});
 		});
+	}
+
+	_searchForHiddenSecrets() {
+		let allPcLightPos = this.props.getAllCharactersPos('player', 'pos');
+		allPcLightPos = this._getActiveLightRanges(allPcLightPos);
+		const litTilesAroundPcs = this._getLitSurroundingTiles(allPcLightPos);
+		const envObjects = deepCopy(this.props.envObjects);
+		const mapLayout = deepCopy(this.state.mapLayout);
+		const keenInvestSkill = this.props.playerCharacters.privateEye ? this.props.playerCharacters.privateEye.skills.keenInvestigation : null;
+		const keenInvestBonus = keenInvestSkill ? keenInvestSkill.modifier[keenInvestSkill.level] : 0;
+		let hiddenSecrets = {};
+		let mapObjFound = false;
+		let envObjFound = '';
+
+		for (const [objId, objInfo] of Object.entries(envObjects)) {
+			if (!objInfo.isDiscovered) {
+				hiddenSecrets[convertCoordsToPos(objInfo.coords)] = {objId, baseChanceOfFinding: objInfo.baseChanceOfFinding};
+			}
+		}
+
+		for (const [tilePos, tileInfo] of Object.entries(mapLayout)) {
+			if (tileInfo.isSecretDoor && !tileInfo.isDiscovered) {
+				hiddenSecrets[tilePos] = {tilePos, baseChanceOfFinding: tileInfo.baseChanceOfFinding};
+			}
+		}
+
+		for (const floorsAndWalls of Object.values(litTilesAroundPcs)) {
+			for (const positions of Object.values(floorsAndWalls)) {
+				for (const litTilePos of Object.keys(positions)) {
+					const tileLightStrength = this.state.mapLayout[litTilePos].lightStrength;
+					const hiddenSecretInfo = hiddenSecrets[litTilePos];
+					if (hiddenSecretInfo) {
+						// determine if found
+						// tileLightStrength has a range of 0 to this.maxLightStrength
+						const chanceOfFinding = (tileLightStrength * .05) + hiddenSecretInfo.baseChanceOfFinding + keenInvestBonus;
+						const secretFound = diceRoll(100) <= (chanceOfFinding * 100);
+						if (secretFound) {
+							if (hiddenSecretInfo.objId) {
+								const foundObj = envObjects[hiddenSecretInfo.objId];
+								foundObj.isDiscovered = true;
+								envObjFound = foundObj.type;
+								this.props.updateLog(`The investigators found a ${foundObj.name}!`);
+							} else {
+								mapLayout[hiddenSecretInfo.tilePos].isDiscovered = true;
+								mapObjFound = true;
+								this.props.updateLog('The investigators found a secret door!');
+							}
+						}
+					}
+				}
+			}
+		}
+		if (envObjFound) {
+			this.props.updateMapEnvObjects(envObjects);
+		}
+		if (mapObjFound) {
+			this.setState({mapLayout});
+		}
+		return envObjFound === 'trap';
 	}
 
 	/**

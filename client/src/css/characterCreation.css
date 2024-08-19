@@ -70,17 +70,17 @@ h2 {
 	border-color: yellow;
 }
 
-.button-selected {
-	background-color: darkred;
+.char-creation-button.button-selected {
+	background-color: greenyellow;
 }
 
-.button-disabled {
-	background-color: darkslategrey;
+.char-creation-button.button-disabled {
+	background-color: #224444;
 	pointer-events: none;
 	cursor: default;
 }
 
-.button-disabled:hover {
+.char-creation-button.button-disabled:hover {
 	outline: initial;
 }
 
@@ -169,6 +169,10 @@ h2 {
 .char-creation-companion {
 	border: 1px solid seagreen;
 	cursor: pointer;
+}
+
+.char-creation-companion.button-disabled {
+	background-color: #224444;
 }
 
 #char-creation-finish {

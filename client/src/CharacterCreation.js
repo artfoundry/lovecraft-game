@@ -269,7 +269,7 @@ export default class CharacterCreation extends React.Component {
 					<div className='char-creation-items-container'>
 						{<this.listItems id={id} />}
 					</div>
-					<p><u>Starting Skills</u></p>
+					<p><u>Skills</u></p>
 					<div className='char-creation-skills-container'>
 						{<this.listSkills id={id} />}
 					</div>
@@ -285,7 +285,7 @@ export default class CharacterCreation extends React.Component {
 		for (const [id, profInfo] of Object.entries(PlayerCharacterTypes)) {
 			companionList.push(
 				<div key={profInfo.name}
-				     className={`char-creation-companion ${id === this.state.profession ? 'button-disabled' : ''} ${this.state.companions.includes(id) ? 'button-selected' : ''}`}
+				     className={`char-creation-companion ${(id === this.state.profession || !this.state.profession) ? 'button-disabled' : ''} ${this.state.companions.includes(id) ? 'button-selected' : ''}`}
 				     onClick={() => this.addCompanion(id)}
 				>
 					<h4 className='font-fancy'>{profInfo.name}</h4>

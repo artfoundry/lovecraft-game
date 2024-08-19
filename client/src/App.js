@@ -37,9 +37,11 @@ class Game extends React.Component {
 			'Electric Torch': ItemTypes['Electric Torch'].range
 		};
 		this.lightTimeCosts = {
+			'move': 1,
 			'mine': 45,
 			'expertMining': 10,
-			'create': 30
+			'create': 30,
+			'search': 2
 		};
 
 		this.minScreenWidthForSmall = 1000;
@@ -166,6 +168,7 @@ class Game extends React.Component {
 			inTacticalMode: true, // start in tactical mode any time entering a new area
 			threatList: [],
 			partyIsNearby: true,
+			inSearchMode: false,
 			contextMenuChoice: null,
 			centerOnPlayer: false,
 			logText: []
@@ -199,6 +202,7 @@ class Game extends React.Component {
 			inTacticalMode: true, // start in tactical mode any time entering a new area
 			threatList: [],
 			partyIsNearby: true,
+			inSearchMode: false,
 			contextMenuChoice: null,
 			centerOnPlayer: false,
 			logText: []
@@ -500,8 +504,8 @@ class Game extends React.Component {
 
 	/**
 	 * Adds IDs to or removes IDs from threat list and saves list to state,
-	 * then if there's a change in the list, calls toggleTacticalMode
-	 * Both
+	 * then if there's a additions to the list and none before, calls toggleTacticalMode,
+	 * and if list becomes empty, calls updateIfPartyIsNearby
 	 * This is the primary entry point for changing/determining whether game is in Follow mode or Tactical mode
 	 * @param threatIdsToAdd: Array (of strings - IDs of creatures attacking player - empty array if none)
 	 * @param threatIdsToRemove: Array (of strings - IDs of creatures no longer a threat - empty array if none)
@@ -533,6 +537,10 @@ class Game extends React.Component {
 			// if entering combat...
 			if (isInCombat && previousListSize === 0) {
 				this.updateLog('Something horrific has been spotted nearby!');
+				if (this.state.inSearchMode) {
+					this.toggleSearchMode();
+					this.updateLog('Disabling search mode.');
+				}
 				if (!this.state.inTacticalMode) {
 					this.toggleTacticalMode(isInCombat, callback);
 				} else if (callback) {
@@ -547,6 +555,13 @@ class Game extends React.Component {
 				callback();
 			}
 		});
+	}
+
+	/**
+	 * toggles search mode on/off
+	 */
+	toggleSearchMode = () => {
+		this.setState(prevState => ({inSearchMode: !prevState.inSearchMode}));
 	}
 
 	/**
@@ -691,7 +706,7 @@ class Game extends React.Component {
 	 * @param lightCost: integer (how much to reduce lightTime)
 	 * @returns object: (equippedLight, lightTime, lightRange, lightingHasChanged)
 	 */
-	calcPcLightChanges = (charId, lightCost = 1) => {
+	calcPcLightChanges = (charId, lightCost = this.lightTimeCosts.move) => {
 		const charData = this.state.playerCharacters[charId];
 		let equippedLightItem = {...charData.items[charData.equippedLight]}; // shouldn't be any nested data in light obj
 		let lightTime = charData.lightTime;
@@ -1670,6 +1685,7 @@ class Game extends React.Component {
 						currentLocation={this.state.currentLocation}
 						updateCurrentTurn={this.updateCurrentTurn}
 						activeCharacter={this.state.activeCharacter}
+						updateActiveCharacter={this.updateActiveCharacter}
 						playerCharacters={this.state.playerCharacters}
 						actionsCompleted={{moves: this.state.activePlayerMovesCompleted, actions: this.state.activePlayerActionsCompleted}}
 						playerLimits={{moves: playerMoveLimit, actions: this.playerActionsLimit}}
@@ -1678,8 +1694,9 @@ class Game extends React.Component {
 						toggleTacticalMode={this.toggleTacticalMode}
 						isPartyNearby={this.state.partyIsNearby}
 						modeInfo={{inTacticalMode: this.state.inTacticalMode, turn: this.state.currentTurn + 1}}
-						updateActiveCharacter={this.updateActiveCharacter}
 						updateFollowModePositions={this.updateFollowModePositions}
+						inSearchMode={this.state.inSearchMode}
+						toggleSearchMode={this.toggleSearchMode}
 					/>
 				}
 
@@ -1704,6 +1721,7 @@ class Game extends React.Component {
 						mapCreatures={this.state.mapCreatures}
 						updateCharacters={this.updateCharacters}
 						calcPcLightChanges={this.calcPcLightChanges}
+						lightTimeCosts={this.lightTimeCosts}
 
 						updateMapObjects={this.updateMapObjects}
 						updateMapEnvObjects={this.updateMapEnvObjects}
@@ -1740,6 +1758,7 @@ class Game extends React.Component {
 						playerFollowOrder={this.state.playerFollowOrder}
 						updateFollowModePositions={this.updateFollowModePositions}
 						followModePositions={this.state.followModePositions}
+						inSearchMode={this.state.inSearchMode}
 					/>
 				}
 

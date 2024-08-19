@@ -34,8 +34,8 @@ function Exit(props) {
 	return (
 		<img alt='exit'
 		     draggable={false}
-		     className='exit'
-		     style={props.styleProp} />
+		     className={props.class}
+		     style={props.style} />
 	)
 }
 
@@ -59,7 +59,14 @@ function Tile(props) {
 }
 
 function Door(props) {
-	return <div className={props.classProp} style={props.styleProp} draggable={false} />;
+	const [alreadyDiscovered, updateAlreadyDiscovered] = useState(false);
+	const isDiscoveredClass = (props.isDiscovered && !alreadyDiscovered) ? ' glow-pulse-once' : '';
+	if (props.isDiscovered && !alreadyDiscovered) {
+		setTimeout(() => {
+			updateAlreadyDiscovered(true);
+		}, 1000);
+	}
+	return <div className={props.classProp + isDiscoveredClass} style={props.styleProp} draggable={false} />;
 }
 
 function Item(props) {
@@ -80,12 +87,20 @@ function Item(props) {
 }
 
 function EnvObject(props) {
-	const isHiddenClass = (!props.tileIsVisible || props.isHidden) ? ' hidden' : '';
+	const [alreadyDiscovered, updateAlreadyDiscovered] = useState(false);
+	const isHiddenClass = (!props.tileIsVisible || props.isDiscovered === false) ? ' hidden' : '';
+	const isDiscoveredClass = (props.isDiscovered && !alreadyDiscovered) ? ' glow-pulse-once' : '';
+	if (props.isDiscovered && !alreadyDiscovered) {
+		setTimeout(() => {
+			updateAlreadyDiscovered(true);
+		}, 1000);
+	}
 	const objNameClass = props.name + (props.isContainerOpen ? '-open' : props.isDestroyed ? '-destroyed' : '');
+
 	return (
 		<img
 			alt={props.name}
-			className={`env-object ${objNameClass}${isHiddenClass}`}
+			className={`env-object ${objNameClass}${isHiddenClass}${isDiscoveredClass}`}
 			style={props.styles}
 			draggable={false}
 			onClick={(evt) => {

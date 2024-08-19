@@ -227,7 +227,7 @@ h3 {
 }
 
 .button-disabled {
-	background-color: darkslategrey;
+	background-color: #224444;
 	pointer-events: none;
 	cursor: default;
 }
@@ -862,7 +862,7 @@ h3 {
 }
 
 .button-selected {
-	background-color: darkred;
+	background-color: greenyellow;
 }
 
 .context-manu-container {
@@ -886,8 +886,18 @@ h3 {
 /*	text-align: center;*/
 /*}*/
 
-.button-tactical-mode-on {
-	background-color: darkred;
+.mode-buttons-container {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 5px;
+}
+
+.button-search-mode {
+	width: 20px;
+	height: 20px;
+	background-image: url('../assets/ui/search.png');
+	background-size: 32px 32px;
 }
 
 #system-buttons-container {

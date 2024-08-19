@@ -538,7 +538,7 @@ class UI extends React.Component {
 		const sourcePcData = deepCopy(this.props.playerCharacters[this.state.draggedObjectMetaData.sourcePC]);
 		const invObjectCategory = this.state.objectSelected.itemType ? 'items' : 'weapons';
 		const draggedObject = deepCopy(this.state.objectSelected);
-		const lightingChanged = draggedObject.itemType && draggedObject.itemType === 'Light';
+		const lightingChanged = draggedObject.itemType && draggedObject.itemType === 'Light' && draggedObject.time > 0;
 
 		// for stackable items, need to update count from object panel split
 		if (draggedObject.amount) {
@@ -883,6 +883,8 @@ class UI extends React.Component {
 					<ModeInfoPanel
 						inTacticalMode={this.props.modeInfo.inTacticalMode}
 						toggleTacticalMode={this.props.toggleTacticalMode}
+						inSearchMode={this.props.inSearchMode}
+						toggleSearchMode={this.props.toggleSearchMode}
 						threatList={this.props.threatList}
 						isPartyNearby={this.props.isPartyNearby}
 						showDialog={this.props.showDialog}

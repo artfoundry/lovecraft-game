@@ -6,6 +6,7 @@
     "isHidden": true,
     "isPassable": true,
     "isDestructible": false,
+    "baseChanceOfFinding": 0.1,
     "damage": {
       "dieType": 6,
       "dieCount": 2

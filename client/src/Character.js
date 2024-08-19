@@ -274,10 +274,10 @@ class Character extends React.Component {
 	/** Profession Skills **/
 
 	/**
-	 *
-	 * @param updatedPartyData
-	 * @param calcPcLightChanges
-	 * @param lightCost
+	 * Determines whether lighting is going to change based on how much lighting is used for active skill
+	 * @param updatedPartyData: object
+	 * @param calcPcLightChanges: function (from App)
+	 * @param lightCost: number (how much light time will be reduced)
 	 * @return {boolean}
 	 * @private
 	 */
@@ -301,7 +301,7 @@ class Character extends React.Component {
 	 * @param props: object {
 	 *     itemType: string ('firstAidKit', 'molotovCocktail', 'torch', 'acidConcoction', 'pharmaceuticals', 'holyWater'),
 	 *     activeCharId: string,
-	 *     currentPcData: object,
+	 *     partyData: object,
 	 *     updateCharacters: function (from App),
 	 *     updateLog: function (from App),
 	 *     setShowDialogProps: function (from App),

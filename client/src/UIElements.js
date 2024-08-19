@@ -753,7 +753,7 @@ function ObjectInfoPanel(props) {
 						{objectToShow.currentRounds !== null && objectToShow.currentRounds >= 0 && <div>Rounds remaining: {objectToShow.currentRounds}</div>}
 						{objectToShow.twoHanded && <div>Two-handed</div>}
 						{objectToShow.damage && <div>Base damage: {objectToShow.damage}</div>}
-						{objectToShow.time && <div>Light remaining: {objectToShow.time} steps</div>}
+						{objectToShow.time !== null && objectToShow.time !== undefined && objectToShow.time >= 0 && <div>Light remaining: {objectToShow.time} steps</div>}
 						<div>{objectToShow.description}</div>
 						{objectToShow.isIdentified && <div>{objectToShow.furtherInfo}</div>}
 						{objectToShow.isIdentified && objectToShow.effect && <div>Effect: {objectToShow.effect}</div>}
@@ -842,7 +842,8 @@ function ModeInfoPanel(props) {
 			dyingPcGender = player.gender === 'Male' ? 'him' : 'her';
 		}
 	}
-	const enemiesNearbyDialog = "You can't disable Tactical Mode with creatures still about!";
+	const enemiesNearbyTacticalDialog = "You can't disable Tactical Mode with creatures still about!";
+	const enemiesNearbySearchDialog = "You can't enable Search Mode with creatures nearby.";
 	const partyNotNearbyDialog = 'Your party must all be in sight of each other to enable Follow mode';
 	const pcIsDyingDialog = `You can't enter Follow Mode while ${dyingPcName} is dying. Either resuscitate ${dyingPcGender} or End Turn enough times to let death take its course.`
 	const dialogProps = {
@@ -861,30 +862,46 @@ function ModeInfoPanel(props) {
 
 	return (
 		<div className={`mode-info-container ${props.showDialog ? 'no-click' : ''}`}>
-			<div
-				className={'general-button' + (props.inTacticalMode ? ' button-tactical-mode-on' : '')}
-				onClick={() => {
-					if (props.inTacticalMode) {
-						if (props.threatList.length > 0) {
-							dialogProps.dialogContent = enemiesNearbyDialog
-							props.setShowDialogProps(true, dialogProps);
+			<div className='mode-buttons-container'>
+				<div
+					className='general-button'
+					onClick={() => {
+						if (props.inTacticalMode) {
+							if (props.threatList.length > 0) {
+								dialogProps.dialogContent = enemiesNearbyTacticalDialog;
+								props.setShowDialogProps(true, dialogProps);
+							} else if (!props.isPartyNearby) {
+								dialogProps.dialogContent = partyNotNearbyDialog;
+								props.setShowDialogProps(true, dialogProps);
+							} else if (dyingPcName) {
+								dialogProps.dialogContent = pcIsDyingDialog;
+								props.setShowDialogProps(true, dialogProps);
+							} else {
+								props.toggleTacticalMode(false);
+							}
 						} else if (!props.isPartyNearby) {
 							dialogProps.dialogContent = partyNotNearbyDialog;
 							props.setShowDialogProps(true, dialogProps);
-						} else if (dyingPcName) {
-							dialogProps.dialogContent = pcIsDyingDialog;
-							props.setShowDialogProps(true, dialogProps);
 						} else {
-							props.toggleTacticalMode(false);
+							props.toggleTacticalMode(true);
 						}
-					} else if (!props.isPartyNearby) {
-						dialogProps.dialogContent = partyNotNearbyDialog;
-						props.setShowDialogProps(true, dialogProps);
-					} else {
-						props.toggleTacticalMode(true);
-					}
-				}}>
-				{props.inTacticalMode ? 'In Tactical Mode' : 'In Follow Mode'}
+					}}>
+					{props.inTacticalMode ? 'In Tactical Mode' : 'In Follow Mode'}
+				</div>
+				<div className={'general-button button-search-mode' + (props.inSearchMode ? ' button-selected' : '')}
+				     onClick={() => {
+					     if (!props.inSearchMode) {
+						     if (props.threatList.length > 0) {
+							     dialogProps.dialogContent = enemiesNearbySearchDialog;
+							     props.setShowDialogProps(true, dialogProps);
+						     } else {
+							     props.toggleSearchMode();
+						     }
+					     } else {
+						     props.toggleSearchMode();
+					     }
+				     }}>
+				</div>
 			</div>
 
 			{!props.inTacticalMode && props.isPartyNearby &&

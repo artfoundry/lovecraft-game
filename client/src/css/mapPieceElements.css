@@ -4,6 +4,10 @@
 	box-sizing: border-box;
 }
 
+.tile.secret:hover {
+	cursor: default;
+}
+
 .map-cover {
 	position: fixed;
 	top: 0;
@@ -25,7 +29,8 @@
 	box-shadow: 0 0 64px 32px black; /* for blended lighting */
 }
 
-/* for blended lighting using above box-shadow, need to lower all light class opacities below by 0.4 (except no-light)
+/* for blended lighting using above box-shadow, need to lower all light class opacities below
+from 0.4-0.8 (str 1-5), 0.9 (ambient) to 0-0.2 (str 1-5), 0.4 (ambient) (except no-light)
 as box-shadow greatly dims the lighting */
 
 .light-strength-5 {
@@ -33,23 +38,23 @@ as box-shadow greatly dims the lighting */
 }
 
 .light-strength-4 {
-	opacity: 0.1;
+	opacity: 0.05;
 }
 
 .light-strength-3 {
-	opacity: 0.2;
+	opacity: 0.1;
 }
 
 .light-strength-2 {
-	opacity: 0.3;
+	opacity: 0.15;
 }
 
 .light-strength-1 {
-	opacity: 0.4;
+	opacity: 0.2;
 }
 
 .ambient-light {
-	opacity: 0.5;
+	opacity: 0.4;
 }
 
 .no-light {
@@ -74,6 +79,7 @@ as box-shadow greatly dims the lighting */
 	position: absolute;
 	user-select: none;
 	filter: drop-shadow(4px 4px 2px black);
+	transition: opacity 0.5s;
 }
 
 .torch-top-wall, .torch {
@@ -212,11 +218,14 @@ as box-shadow greatly dims the lighting */
 	position: absolute;
 	user-select: none;
 	filter: drop-shadow(1px 1px 1px black);
+	transition: opacity 0.5s;
 }
 
 .door {
+	position: absolute;
 	pointer-events: none;
 	user-select: none;
+	transition: opacity 0.5s;
 }
 
 .sarcophagus {
@@ -241,4 +250,18 @@ as box-shadow greatly dims the lighting */
 
 .rocky-mound-destroyed {
 	content: url('../assets/objects/rocky-mound-destroyed.png');
+}
+
+/* EFFECTS */
+
+.glow-pulse-once {
+	border-radius: 50%;
+	box-shadow: 0 0;
+	animation: glow 0.5s linear 2 alternate;
+}
+@keyframes glow {
+	100% {
+		box-shadow: 0 0 10px 10px #CCCC99,
+					inset 0 0 5px 5px #CCCC99;
+	}
 }
