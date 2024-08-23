@@ -111,8 +111,8 @@ class Character extends React.Component {
 	/**
 	 * Carry out an attack on a creature
 	 * @param props : object (
-	 *  itemId: string,
-	 *  itemStats: object,
+	 *  actionId: string,
+	 *  actionStats: object,
 	 *  targetData: object,
 	 *  pcData: object,
 	 *  updateCharacters: function (from App),
@@ -121,26 +121,26 @@ class Character extends React.Component {
 	 * )
 	 */
 	attack = (props) => {
-		const {itemId, itemStats, targetData, pcData, updateCharacters, updateLog, callback} = props;
+		const {actionId, actionStats, targetData, pcData, updateCharacters, updateLog, callback} = props;
 		let attackTotal, hitRoll, defenseRoll, defenseTotal;
 		let isHit = false;
 		let damageTotal = 0;
-		let rangedStrHitModifier = itemStats.usesStr ? Math.round(pcData.strength / 2) : 0;
+		let rangedStrHitModifier = actionStats.usesStr ? Math.round(pcData.strength / 2) : 0;
 		let updatedPcData = deepCopy(pcData);
 		let updatedCreatureData = deepCopy(targetData);
-		const weaponInfo = updatedPcData.weapons[itemId];
-		const equippedSide = pcData.equippedItems.loadout1.right === itemId ? 'right' : 'left';
+		const weaponInfo = updatedPcData.weapons[actionId];
+		const equippedSide = pcData.equippedItems.loadout1.right === actionId ? 'right' : 'left';
 		const equippedGunType = weaponInfo.gunType;
 		const noGunKnowledgeMod =
 			(!pcData.skills.handgunKnowledge && equippedGunType === 'handgun') ||
 			(!pcData.skills.shotgunKnowledge && equippedGunType === 'shotgun') ||
 			(!pcData.skills.machineGunKnowledge && equippedGunType === 'machineGun') ? this.noGunKnowledgePenalty : 0;
-		const goBallistic = itemStats.goBallistic;
+		const goBallistic = actionStats.goBallistic;
 		const attackFromTheShadowsMod = (pcData.id === 'thief' && pcData.skills.stealthy.active) ? pcData.skills.attackFromTheShadows.modifier[pcData.skills.attackFromTheShadows.level] : 0;
-		const sacrificialStrikeSkill = itemStats.sacrificialStrike;
+		const sacrificialStrikeSkill = actionStats.sacrificialStrike;
 		const krisKnifeExpertiseMod = pcData.id === 'occultResearcher' ? pcData.skills.krisKnifeExpertise.modifier[pcData.skills.krisKnifeExpertise.level] : 0;
 
-		if (itemStats.ranged) {
+		if (actionStats.ranged) {
 			let numOfAttacks = goBallistic ? weaponInfo.currentRounds : 1;
 			if (goBallistic) {
 				updateLog(`${pcData.name} goes ballistic!`);
@@ -162,13 +162,13 @@ class Character extends React.Component {
 				if (isHit) {
 					const attackDifference = attackTotal - defenseTotal;
 					const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 2);
-					damage = rangedStrHitModifier + itemStats.damage + damageModBasedOnAttack;
+					damage = rangedStrHitModifier + actionStats.damage + damageModBasedOnAttack;
 					damage -= targetData.damageReduction <= damage ? targetData.damageReduction : damage;
 					damageTotal += damage;
 				}
 				weaponInfo.currentRounds--;
 				if (weaponInfo.currentRounds === 0 && weaponInfo.stackable) {
-					delete updatedPcData.weapons[itemId];
+					delete updatedPcData.weapons[actionId];
 					updatedPcData.equippedItems.loadout1[equippedSide] = '';
 				}
 				updateLog(`${pcData.name} attacks with the ${weaponInfo.name}, scores ${attackTotal} to hit...and ${isHit ? `does ${damage} damage!` : `misses (${targetData.name} scored ${defenseTotal} for defense).`}`);
@@ -189,10 +189,10 @@ class Character extends React.Component {
 			if (isHit) {
 				const attackDifference = attackTotal - defenseTotal;
 				const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 2);
-				damageTotal = pcData.strength + itemStats.damage + damageModBasedOnAttack;
+				damageTotal = pcData.strength + actionStats.damage + damageModBasedOnAttack;
 				if (pcData.id === 'thief') {
 					damageTotal += Math.round(attackFromTheShadowsMod * damageTotal);
-				} else if (pcData.id === 'occultResearcher' && itemId === 'krisKnife0') {
+				} else if (pcData.id === 'occultResearcher' && actionId === 'krisKnife0') {
 					damageTotal += Math.round(krisKnifeExpertiseMod * damageTotal);
 				}
 				if (sacrificialStrikeSkill) {
@@ -221,8 +221,8 @@ class Character extends React.Component {
 	/**
 	 * Carry out a health or sanity heal on a companion
 	 * @param props : object (
-	 *  itemId: string,
-	 *  itemStats: object,
+	 *  actionId: string,
+	 *  actionStats: object,
 	 *  targetData: object,
 	 *  pcData: object,
 	 *  updateCharacters: function (from App),
@@ -232,17 +232,17 @@ class Character extends React.Component {
 	 * )
 	 */
 	heal = (props) => {
-		const {itemId, itemStats, targetData, pcData, updateCharacters, updateLog, isChemistSkill, callback} = props;
-		const healItem = pcData.items[itemId].name;
-		const targetStat = itemStats.healingType === 'health' ? 'currentHealth' : 'currentSanity';
-		const startingStatValue = itemStats.healingType === 'health' ? targetData.startingHealth : targetData.startingSanity;
-		let healAmount = Math.round(pcData.mentalAcuity / 2) + (itemStats.healingType === 'health' ? diceRoll(12) : diceRoll(4)) + itemStats.healingAmount;
+		const {actionId, actionStats, targetData, pcData, updateCharacters, updateLog, isChemistSkill, callback} = props;
+		const healItem = pcData.items[actionId].name;
+		const targetStat = actionStats.healingType === 'health' ? 'currentHealth' : 'currentSanity';
+		const startingStatValue = actionStats.healingType === 'health' ? targetData.startingHealth : targetData.startingSanity;
+		let healAmount = Math.round(pcData.mentalAcuity / 2) + (actionStats.healingType === 'health' ? diceRoll(12) : diceRoll(4)) + actionStats.healingAmount;
 		let updatedHealerData = deepCopy(pcData);
 		// if pc is healing itself, target points to healer object
 		let updatedTargetData = targetData.id !== pcData.id ? deepCopy(targetData) : updatedHealerData;
 		const medicalExpertSkill = updatedHealerData.skills.medicalExpertise;
 
-		if (medicalExpertSkill + itemStats.healingType === 'health') {
+		if (medicalExpertSkill + actionStats.healingType === 'health') {
 			healAmount += Math.round(medicalExpertSkill.modifier[medicalExpertSkill.level] * healAmount);
 		}
 		if (isChemistSkill) {
@@ -253,12 +253,12 @@ class Character extends React.Component {
 
 		const healedStatValue = targetData[targetStat] + healAmount;
 		updatedTargetData[targetStat] = healedStatValue > startingStatValue ? startingStatValue : healedStatValue;
-		if (updatedHealerData.items[itemId].amount === 1) {
-			delete updatedHealerData.items[itemId];
-			const itemInvIndex = updatedHealerData.inventory.indexOf(itemId);
+		if (updatedHealerData.items[actionId].amount === 1) {
+			delete updatedHealerData.items[actionId];
+			const itemInvIndex = updatedHealerData.inventory.indexOf(actionId);
 			updatedHealerData.inventory.splice(itemInvIndex, 1, null);
 		} else {
-			updatedHealerData.items[itemId].amount--;
+			updatedHealerData.items[actionId].amount--;
 		}
 		updateCharacters('player', updatedTargetData, targetData.id, false, false, false, () => {
 			const target = pcData.name === targetData.name ? (targetData.gender === 'Male' ? 'his' : 'her') : targetData.name + "'s";
@@ -474,8 +474,8 @@ class Character extends React.Component {
 		}
 
 		const healProps = {
-			itemId: 'pharmaceuticals0',
-			itemStats: ItemTypes.Pharmaceuticals,
+			actionId: 'pharmaceuticals0',
+			actionStats: ItemTypes.Pharmaceuticals,
 			isChemistSkill: true,
 			targetData: currentPcData,
 			pcData: currentPcData,
@@ -630,6 +630,25 @@ class Character extends React.Component {
 		});
 	}
 
+	disarmTrap = (props) => {
+		const {partyData, updateCharacters, updateLog, setShowDialogProps, notEnoughLightDialogProps, calcPcLightChanges, callback} = props;
+		const thiefData = partyData.thief;
+		const disarmTrapSkill = thiefData.skills.disarmTrap;
+		const updatedPartyData = deepCopy(partyData);
+		const lightCost = disarmTrapSkill.light[disarmTrapSkill.level];
+		let lightingHasChanged = false;
+
+		if (disarmTrapSkill.light[disarmTrapSkill.level] > thiefData.lightTime) {
+			setShowDialogProps(true, notEnoughLightDialogProps);
+		} else {
+			// _updatePcLights modifies updatedPartyData directly
+			lightingHasChanged = this._updatePcLights(updatedPartyData, calcPcLightChanges, lightCost);
+			updatedPartyData.thief.currentSpirit -= disarmTrapSkill.spirit[disarmTrapSkill.level];
+			updateCharacters('player', updatedPartyData, null, lightingHasChanged, null, null, callback);
+			updateLog(`${thiefData.name} disarmed the trap.`);
+		}
+	}
+
 	identifyRelic = (props) => {
 		const {partyData, updateCharacters, updateLog, setShowDialogProps, notEnoughLightDialogProps, calcPcLightChanges} = props;
 		let updatedPartyData = deepCopy(partyData);
@@ -678,7 +697,7 @@ class Character extends React.Component {
 	}
 
 	useRelic = (props) => {
-		const {itemStats, targetData, pcData, updateCharacters, updateLog, callback} = props;
+		const {actionStats, targetData, pcData, updateCharacters, updateLog, callback} = props;
 		let updatedPcData = deepCopy(pcData);
 		let updatedCreatureData = deepCopy(targetData);
 		const relicExpertSkillMod = pcData.id === 'occultResearcher' ? pcData.skills.relicExpertise.modifier[pcData.skills.relicExpertise.level] : 0;
@@ -686,17 +705,17 @@ class Character extends React.Component {
 
 		//todo: need to decide what each relic will do
 
-		updatedPcData.currentSpirit -= itemStats.spiritCost > updatedPcData.currentSpirit ? updatedPcData.currentSpirit : itemStats.spiritCost;
-		sanityReduction = itemStats.sanityCost - (relicExpertSkillMod * itemStats.sanityCost);
+		updatedPcData.currentSpirit -= actionStats.spiritCost > updatedPcData.currentSpirit ? updatedPcData.currentSpirit : actionStats.spiritCost;
+		sanityReduction = actionStats.sanityCost - (relicExpertSkillMod * actionStats.sanityCost);
 		updatedPcData.currentSanity -= sanityReduction > updatedPcData.currentSanity ? updatedPcData.currentSanity : sanityReduction;
 
-		if (itemStats.result === 'remove') {
+		if (actionStats.result === 'remove') {
 			updatedCreatureData.currentHealth = 0;
 			updatedCreatureData.isRemoved = true;
 		}
 
 		updateCharacters('player', updatedPcData, pcData.id, false, false, false, () => {
-		    updateLog(`${pcData.name} uses the ${itemStats.name}, wreaking havoc on the ${targetData.name} but driving ${pcData.gender === 'Male' ? 'him' : 'her'}self closer to madness!`);
+		    updateLog(`${pcData.name} uses the ${actionStats.name}, wreaking havoc on the ${targetData.name} but driving ${pcData.gender === 'Male' ? 'him' : 'her'}self closer to madness!`);
 			updateCharacters('creature', updatedCreatureData, targetData.id, false, false, false, callback);
 		});
 	}

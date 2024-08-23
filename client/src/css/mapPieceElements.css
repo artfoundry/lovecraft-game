@@ -26,11 +26,11 @@
 	position: absolute;
 	box-sizing: border-box;
 	transition: opacity 0.5s;
-	box-shadow: 0 0 64px 32px black; /* for blended lighting */
+	box-shadow: 0 0 64px 16px black; /* for blended lighting */
 }
 
 /* for blended lighting using above box-shadow, need to lower all light class opacities below
-from 0.4-0.8 (str 1-5), 0.9 (ambient) to 0-0.2 (str 1-5), 0.4 (ambient) (except no-light)
+from 0.4-0.8 (str 1-5), 0.9 (ambient) to 0-0.6 (str 1-5), 0.75 (ambient) (except no-light)
 as box-shadow greatly dims the lighting */
 
 .light-strength-5 {
@@ -38,23 +38,23 @@ as box-shadow greatly dims the lighting */
 }
 
 .light-strength-4 {
-	opacity: 0.05;
-}
-
-.light-strength-3 {
 	opacity: 0.1;
 }
 
-.light-strength-2 {
-	opacity: 0.15;
-}
-
-.light-strength-1 {
+.light-strength-3 {
 	opacity: 0.2;
 }
 
-.ambient-light {
+.light-strength-2 {
+	opacity: 0.3;
+}
+
+.light-strength-1 {
 	opacity: 0.4;
+}
+
+.ambient-light {
+	opacity: 0.75;
 }
 
 .no-light {
@@ -237,10 +237,14 @@ as box-shadow greatly dims the lighting */
 }
 
 .spike-trap {
+	top: 8px;
+	left: 8px;
 	content: url('../assets/objects/spike-trap.png');
 }
 
 .spike-trap-triggered {
+	top: 8px;
+	left: 8px;
 	content: url('../assets/objects/spike-trap-triggered.png');
 }
 

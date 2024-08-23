@@ -251,9 +251,16 @@ class Game extends React.Component {
 	 */
 	updateCharacters = (type, updateData, id, lightingHasChanged, isInitialCreatureSetup = false, isInitialCharacterSetup = false, callback) => {
 		const collection = type === 'player' ? 'playerCharacters' : 'mapCreatures';
+		const currentChar = this.state.playerCharacters[id];
 		if (id) {
 			if (updateData.currentSanity <= 0) {
 				updateData.isDeadOrInsane = true;
+			}
+			if (type === 'player' && updateData.currentHealth <= 0 && currentChar.currentHealth > 0) {
+				if (!this.state.inTacticalMode) {
+					this.toggleTacticalMode(true);
+				}
+				this.updateLog(`${currentChar.name}'s health has been reduced to 0, and ${currentChar.gender === 'Male' ? 'he' : 'she'} is now dying!`);
 			}
 			this.setState(prevState => ({
 				[collection]: {
@@ -320,7 +327,7 @@ class Game extends React.Component {
 	 * Then, if obj is container, calls func to determine if creature should spawn, or
 	 * if obj is mineable, reduces lighttime for party
 	 * @param envObjects: object (modified copy of this.state.envObjects)
-	 * @param envObjectId: string (optional - used when object is updated from player interacting with it)
+	 * @param envObjectId: string (optional - used when object is updated from player interacting with it and contents are to be given to pc)
 	 * @param callback: function (currently only passed from _setInitialEnvObjectData in Map)
 	 */
 	updateMapEnvObjects = (envObjects, envObjectId = null, callback) => {
@@ -574,8 +581,9 @@ class Game extends React.Component {
 	 * @param buttonName: String (action button name - ie. item, weapon, or skill name)
 	 * @param buttonType: String ('weapon', 'item', or 'skill')
 	 * @param callback: Function
+	 * @param targetData: Array (of objects containing env obj info and id)
 	 */
-	toggleActionButton = (characterId, buttonId, buttonName, buttonType, callback) => {
+	toggleActionButton = (characterId, buttonId, buttonName, buttonType, callback, targetData = null) => {
 		let buttonState = null;
 		let isImmediateAction = false; // action takes effect without needing user to select a target
 		let stats = null;
@@ -602,8 +610,11 @@ class Game extends React.Component {
 			} else {
 				stats = characterData.skills[buttonId];
 				isImmediateAction = !stats.hasTarget;
-				if (buttonId === 'goBallistic' || buttonId === 'sacrificialStrike') {
+				if (buttonId === 'goBallistic' || buttonId === 'sacrificialStrike' || buttonId === 'disarmTrap') {
 					skillModeActive = buttonId;
+					if (buttonId === 'disarmTrap') {
+						stats.targetData = targetData;
+					}
 				} else {
 					skillModeActive = null;
 				}
@@ -751,13 +762,16 @@ class Game extends React.Component {
 			const selectedItemInfo = this.state.actionButtonSelected;
 			const activePC = this.state.playerCharacters[this.state.activeCharacter];
 			const actionProps = {
-				itemId: selectedItemInfo.buttonId,
-				itemStats: selectedItemInfo.stats,
+				actionId: selectedItemInfo.buttonId,
+				actionStats: selectedItemInfo.stats,
 				targetData: target === 'creature' ? this.state.mapCreatures[id] : this.state.playerCharacters[id],
 				pcData: activePC,
+				partyData: this.state.playerCharacters,
 				updateCharacters: this.updateCharacters,
 				updateLog: this.updateLog,
 				setShowDialogProps: this.setShowDialogProps,
+				notEnoughLightDialogProps: this.notEnoughLightDialogProps,
+				calcPcLightChanges: this.calcPcLightChanges,
 				callback: () => {
 					this.toggleActionButton('', '', '', '', () => {
 						if (target === 'creature' && this.state.mapCreatures[id].currentHealth <= 0) {
@@ -768,6 +782,11 @@ class Game extends React.Component {
 							}
 							this._removeDeadFromTurnOrder(id, this.updateActivePlayerActions, checkLineOfSightToParty);
 						} else {
+							if (target === 'object') {
+								const updatedEnvObjects = deepCopy(this.state.envObjects);
+								updatedEnvObjects[id].isDestroyed = true;
+								this.updateMapEnvObjects(updatedEnvObjects);
+							}
 							this.updateActivePlayerActions();
 						}
 					});
@@ -782,6 +801,8 @@ class Game extends React.Component {
 				}
 			} else if (selectedItemInfo.stats.name && selectedItemInfo.stats.name === 'Resuscitate') {
 				activePC.resuscitate(actionProps);
+			} else if (target === 'object') {
+				activePC.disarmTrap(actionProps);
 			} else {
 				activePC.heal(actionProps);
 			}
@@ -972,7 +993,7 @@ class Game extends React.Component {
 	 * -handle unit click to show unit info
 	 * -handle unit click to take action on it
 	 * -handle object click to set object selected
-	 * @param actionType: string (possibilities: 'examine', 'creature', 'player', null)
+	 * @param actionType: string (possibilities: 'examine', 'creature', 'player', 'disarmTrap', null)
 	 * @param tilePos: string
 	 * @param evt: event object
 	 * @param actionInfo: object (props for appropriate function called upon clicking menu button)
@@ -980,6 +1001,7 @@ class Game extends React.Component {
 	 */
 	isContextMenuNeeded = (actionType, tilePos = null, evt = null, actionInfo = null) => {
 		let contextMenuNeeded = {menuNeeded: true, actionToProcess: null};
+		const actionObjInfo = actionInfo.objectInfo[0];
 
 		// if clicked obj is a creature/player, check if at least one object is on that tile
 		let objectOnTile = null;
@@ -987,6 +1009,7 @@ class Game extends React.Component {
 			objectOnTile = this._isObjectOnTile(tilePos, evt);
 		}
 
+		// if player is trying to resuscitate
 		const clickedTargetId = evt.currentTarget.id;
 		const skillId = this.state.actionButtonSelected ? this.state.actionButtonSelected.buttonId : null;
 		let otherCharacterOnTile = '';
@@ -1021,7 +1044,7 @@ class Game extends React.Component {
 				actionToProcess: () => this.handleUnitClick(actionInfo.id, actionType)
 			};
 		// ...or if action is being used (regardless of whether object is also there)
-		} else if (this.state.actionButtonSelected && (actionType === 'creature' || actionType === 'player')) {
+		} else if (this.state.actionButtonSelected && (actionType === 'creature' || actionType === 'player' || actionType === 'disarmTrap')) {
 			if (skillId === 'resuscitate' && dyingChar && otherCharacterOnTile) {
 				const resusBlockedDialogProps = {
 					dialogContent: `${otherCharacterOnTile} is on top of ${dyingChar}, preventing resuscitation!`,
@@ -1035,14 +1058,19 @@ class Game extends React.Component {
 				};
 				this.setShowDialogProps(true, resusBlockedDialogProps);
 				contextMenuNeeded = {menuNeeded: false, actionToProcess: null};
+			} else if (actionType === 'disarmTrap') {
+				contextMenuNeeded = {
+					menuNeeded: false,
+					actionToProcess: () => this.handleUnitClick(actionObjInfo.id, 'object', true)
+				};
 			} else {
 				contextMenuNeeded = {
 					menuNeeded: false,
 					actionToProcess: () => this.handleUnitClick(actionInfo.id, actionInfo.target, actionInfo.isInRange, actionInfo.checkLineOfSightToParty)
 				};
 			}
-		// ...or if clicked target is a torch
-		} else if (actionType === 'examine' && (actionInfo.objectInfo[0].name === 'Torch' || actionInfo.objectInfo[0].isEnvObject)) {
+		// ...or if clicked target is a torch or non-trap env object
+		} else if (actionType === 'examine' && (actionObjInfo.name === 'Torch' || (actionObjInfo.isEnvObject && actionObjInfo.type !== 'trap'))) {
 			contextMenuNeeded = {
 				menuNeeded: false,
 				actionToProcess: () => this.setMapObjectSelected(actionInfo.objectInfo, actionInfo.selectionEvt, actionInfo.isPickUpAction)
@@ -1758,7 +1786,9 @@ class Game extends React.Component {
 						playerFollowOrder={this.state.playerFollowOrder}
 						updateFollowModePositions={this.updateFollowModePositions}
 						followModePositions={this.state.followModePositions}
+
 						inSearchMode={this.state.inSearchMode}
+						skillModeActive={this.state.skillModeActive}
 					/>
 				}
 

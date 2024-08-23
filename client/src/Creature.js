@@ -89,9 +89,6 @@ class Creature extends React.Component {
 				}
 				const resultingHealth = targetData.currentHealth - damageTotal;
 				targetData.currentHealth = resultingHealth < 0 ? 0 : resultingHealth;
-				if (targetData.currentHealth === 0) {
-					updateLog(`${targetData.name}'s health has been reduced to 0, and ${targetData.gender === 'Male' ? 'he' : 'she'} is now dying!`);
-				}
 			}
 			updateTarget('player', targetData, targetData.id, false, false, false, updateTurnCallback);
 		} else if (updateTurnCallback) {

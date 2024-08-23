@@ -204,6 +204,7 @@ function CharacterControls(props) {
 					(skill.name === 'Feel The Pain' && skill.active) ||
 					(skill.name === 'Stealthy' && !props.inTacticalMode) ||
 					(skill.mustNotHaveLightEquipped && currentPCdata.equippedLight) ||
+					(skill.name === 'Disarm Trap' && props.trapsNextToPc.length === 0) ||
 					(skill.requiresBothActions && props.actionsRemaining < 2)) ? 'button-inactive' :
 					(props.isActiveCharacter &&
 					((props.actionButtonSelected &&
@@ -259,6 +260,8 @@ function CharacterControls(props) {
 							} else {
 								props.setShowDialogProps(true, props.notEnoughLightDialogProps);
 							}
+						} else if (skill.skillId === 'disarmTrap') {
+							props.toggleActionButton(props.characterId, skill.skillId, skill.name, 'skill', null, props.trapsNextToPc);
 						} else {
 							props.toggleActionButton(props.characterId, skill.skillId, skill.name, 'skill');
 						}

@@ -6,10 +6,10 @@
     "isHidden": true,
     "isPassable": true,
     "isDestructible": false,
-    "baseChanceOfFinding": 0.1,
+    "baseChanceOfFinding": 0.03,
     "damage": {
-      "dieType": 6,
-      "dieCount": 2
+      "diceType": 10,
+      "modifier": 5
     }
   },
   "Rocky Mound": {

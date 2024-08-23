@@ -84,19 +84,23 @@ class UI extends React.Component {
 				let mapObjectsOnPcTiles = [];
 				let containersNextToPc = [];
 				let mineablesNextToPc = [];
+				let trapsNextToPc = [];
 				const hasEnoughLight = (id === 'archaeologist' && playerInfo.lightTime >= this.props.lightTimeCosts.expertMining) ||
 					playerInfo.lightTime >= this.props.lightTimeCosts.mine;
 				const allObjects = {...this.props.mapObjects, ...this.props.envObjects};
 				for (const [objId, objInfo] of Object.entries(allObjects)) {
 					const xDelta = Math.abs(playerInfo.coords.xPos - objInfo.coords.xPos);
 					const yDelta = Math.abs(playerInfo.coords.yPos - objInfo.coords.yPos);
+					const objInfoAndId = {...objInfo, id: objId};
 					if (xDelta <= 1 && yDelta <= 1) {
 						if (objInfo.isEnvObject && objInfo.type === 'container' && (!objInfo.isOpen || objInfo.containerContents.length > 0)) {
-							containersNextToPc.push({...objInfo, id: objId});
+							containersNextToPc.push(objInfoAndId);
 						} else if (objInfo.isEnvObject && objInfo.type === 'mineable' && (!objInfo.isDestroyed || objInfo.containerContents.length > 0)) {
-							mineablesNextToPc.push({...objInfo, id: objId});
+							mineablesNextToPc.push(objInfoAndId);
+						} else if (objInfo.isEnvObject && objInfo.type === 'trap' && objInfo.isDiscovered && !objInfo.isDestroyed && !objInfo.isSprung) {
+							trapsNextToPc.push(objInfoAndId);
 						} else if (!objInfo.isEnvObject) {
-							mapObjectsOnPcTiles.push({...objInfo, id: objId});
+							mapObjectsOnPcTiles.push(objInfoAndId);
 						}
 					}
 				}
@@ -130,6 +134,7 @@ class UI extends React.Component {
 						mapObjectsOnPcTiles={mapObjectsOnPcTiles}
 						containersNextToPc={containersNextToPc}
 						mineablesNextToPc={mineablesNextToPc}
+						trapsNextToPc={trapsNextToPc}
 						screenData={this.props.screenData}
 						selectedControlTab={this.state.selectedControlTab}
 						setSelectedControlTab={this.setSelectedControlTab}
@@ -199,6 +204,7 @@ class UI extends React.Component {
 			if (sourcePCdata.equippedLight === invId) {
 				sourcePCdata.equippedLight = null;
 				sourcePCdata.lightRange = 0;
+				sourcePCdata.lightTime = 0;
 			}
 		// otherwise just update its item count
 		} else if (sourceItemCount > 0) {
@@ -448,6 +454,7 @@ class UI extends React.Component {
 		if (draggedItem.itemType && draggedItem.itemType === 'Light' && updateData.equippedLight === draggedItem.id) {
 			updateData.equippedLight = null;
 			updateData.lightRange = 0;
+			updateData.lightTime = 0;
 			draggingEquippedItem = true;
 			lightingChanged = true;
 		}

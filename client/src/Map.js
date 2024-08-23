@@ -47,7 +47,7 @@ class Map extends React.Component {
 		this.playerMovementDelay = 50;
 		this.creatureMovementDelay = 200;
 		this.maxLightStrength = 5;
-		this.baseChanceOfFindingSecretDoor = 0.3;
+		this.baseChanceOfFindingSecretDoor = 0.1;
 
 		// total number of map pieces in currentMapData: 17;
 		this.currentMapData = GameLocations[this.props.currentLocation];
@@ -989,8 +989,9 @@ class Map extends React.Component {
 			for (const positions of Object.values(tiles)) {
 				for (const [pos, ranges] of Object.entries(positions)) {
 					// add together each (light source range + 1 (as the source of the light will be +1 compared to the range tiles) - distance from source)
-					lightStrengthByTile[pos] = (lightStrengthByTile[pos] || 0) + ranges.reduce((accumulator, value) => accumulator + value + 1, 0) - (distValues[distance] * ranges.length);
-					capLightStrength(pos);
+					// lightStrengthByTile[pos] = (lightStrengthByTile[pos] || 0) + ranges.reduce((accumulator, value) => accumulator + value + 1, 0) - (distValues[distance] * ranges.length);
+					lightStrengthByTile[pos] = (lightStrengthByTile[pos] || 0) + ranges.reduce((accumulator, value) => accumulator + value - distValues[distance], 0);
+						capLightStrength(pos);
 					mapLayout[pos].lightStrength = lightStrengthByTile[pos];
 				}
 			}
@@ -1003,7 +1004,8 @@ class Map extends React.Component {
 				mapLightIsSeen = this.tileSeenByAnyPc(source.pos, playerPositions);
 			}
 			if (this.props.playerCharacters[source.id] || mapLightIsSeen) {
-				lightStrengthByTile[source.pos] = (lightStrengthByTile[source.pos] || 0) + source.range + (source.range > 0 ? 1 : 0);
+				// lightStrengthByTile[source.pos] = (lightStrengthByTile[source.pos] || 0) + source.range + (source.range > 0 ? 1 : 0);
+				lightStrengthByTile[source.pos] = (lightStrengthByTile[source.pos] || 0) + source.range;
 				capLightStrength(source.pos);
 				mapLayout[source.pos].lightStrength = lightStrengthByTile[source.pos];
 			}
@@ -1116,7 +1118,7 @@ class Map extends React.Component {
 		characterIDs.forEach(id => {
 			characterCoords = characters[id].coords;
 			const characterPos = convertCoordsToPos(characterCoords);
-			const actionButtonIsSelected = this.props.actionButtonSelected;
+			const actionButtonSelected = this.props.actionButtonSelected;
 			const activeCharIsPlayer = this.props.activeCharacter ? this.props.playerCharacters[this.props.activeCharacter] : null;
 			const characterType = characters[id].type;
 			const isDyingPc = characterType === 'player' && characters[id].currentHealth <= 0 && !characters[id].isDeadOrInsane;
@@ -1149,12 +1151,12 @@ class Map extends React.Component {
 				}
 			}
 
-			if (actionButtonIsSelected) {
-				const actionItemType = this.props.actionButtonSelected.stats.itemType;
-				const actionSkillType = this.props.actionButtonSelected.stats.skillType;
+			if (actionButtonSelected) {
+				const actionItemType = actionButtonSelected.stats.itemType;
+				const actionSkillType = actionButtonSelected.stats.skillType;
 				// currentCharType is player and action is either skill or non-Relic item
-				if (characterType === 'player' && (actionSkillType || (actionItemType && actionItemType !== 'Relic'))) {
-					const buttonName = this.props.actionButtonSelected.buttonName;
+				if (characterType === 'player' && ((actionSkillType && actionButtonSelected.stats.name !== 'Disarm Trap') || (actionItemType && actionItemType !== 'Relic'))) {
+					const buttonName = actionButtonSelected.buttonName;
 					isResuscitateSkill = buttonName && buttonName === 'Resuscitate';
 					let adjacentCompanionIsDying = false;
 					activePlayerPos = convertCoordsToPos(activeCharIsPlayer.coords);
@@ -1176,7 +1178,7 @@ class Map extends React.Component {
 				} else if (characterType === 'creature' && !actionSkillType && (!actionItemType || (actionItemType && actionItemType === 'Relic' && characters[id].isOldOne))) {
 					targetIsInRange = activeCharIsPlayer &&
 						characters[id].currentHealth > 0 &&
-						this.isCreatureInRange(id, this.props.actionButtonSelected);
+						this.isCreatureInRange(id, actionButtonSelected);
 				}
 			}
 
@@ -1195,7 +1197,7 @@ class Map extends React.Component {
 					isDying={isDyingPc}
 					isDead={characters[id].currentHealth <= 0 && !isDyingPc}
 					isCatatonic={characters[id].currentSanity <= 0 && characters[id].currentHealth > 0}
-					isInRange={actionButtonIsSelected && targetIsInRange}
+					isInRange={actionButtonSelected && targetIsInRange}
 					isLineOfSight={this.isInLineOfSight}
 					isOtherCharOnTop={otherCharisOnTopOfPc}
 					charPos={characterPos}
@@ -1274,6 +1276,9 @@ class Map extends React.Component {
 		for (const [id, info] of Object.entries(this.props.envObjects)) {
 			let idConvertedToClassName = convertObjIdToClassId(id);
 			const objPos = convertCoordsToPos(info.coords);
+			const isTargetForDisarm = info.type === 'trap' &&
+				this.props.skillModeActive === 'disarmTrap' &&
+				this.props.actionButtonSelected.stats.targetData.find(target => convertCoordsToPos(target.coords) === objPos);
 
 			// to prevent clicking on objects not visible
 			tileIsVisible = this.state.mapLayout[objPos].lightStrength > 0;
@@ -1287,11 +1292,11 @@ class Map extends React.Component {
 				isDiscovered={info.isDiscovered}
 				isContainerOpen={info.isOpen}
 				isDestroyed={info.isDestroyed}
+				isSprung={info.isSprung}
+				isTargetForDisarm={isTargetForDisarm}
 				updateContextMenu={this.checkForDragging}
 				styles={{
-					transform: `translate(${this._calculateObjectTransform(info.coords.xPos, info.coords.yPos)})`,
-					width: this.tileSize + 'px',
-					height: this.tileSize + 'px'
+					transform: `translate(${this._calculateObjectTransform(info.coords.xPos, info.coords.yPos)})`
 				}}
 			/>))
 		}
@@ -2178,11 +2183,12 @@ class Map extends React.Component {
 		}
 
 		// only search when the activeChar moves in tactical mode or the leader moves in follow mode
-		// this will avoid duplicate announcements for finding something (and improve performance a bit)
+		// to try to avoid duplicate announcements for finding something (and improve performance a bit)
+		// but _searchForHiddenSecrets could still get called a 2nd time before results of 1st time are set to state
+		// todo: try to find a way to prevent _searchForHiddenSecrets from getting called again before its previous results are set to state
 		if (this.props.inSearchMode && activePC === this.props.activeCharacter) {
-			if (this._searchForHiddenSecrets()) {
-				pathData.tilePath = [];
-			}
+			const foundTrap = this._searchForHiddenSecrets();
+			if (foundTrap) return;
 		}
 
 		let updateData = {coords: newCoords};
@@ -2198,6 +2204,27 @@ class Map extends React.Component {
 			updateData.lightRange = lightRange;
 			lightingHasChanged = hasLightChanged;
 		}
+
+		// check if pc moved onto trap that hasn't been disarmed or sprung, then trigger it if so
+		let updatedEnvObjects = {};
+		let trapSprung = false;
+		const objIds = Object.keys(this.props.envObjects);
+		let objCounter = 0;
+		while (!trapSprung && objCounter < objIds.length) {
+			const objId = objIds[objCounter];
+			const objInfo = this.props.envObjects[objId];
+			if (objInfo.type === 'trap' && !objInfo.isDestroyed && !objInfo.isSprung && newTilePos === convertCoordsToPos(objInfo.coords)) {
+				updatedEnvObjects = deepCopy(this.props.envObjects);
+				const damage = diceRoll(objInfo.damage.diceType) + objInfo.damage.modifier;
+				updateData.currentHealth = damage > activePlayerData.currentHealth ? 0 : activePlayerData.currentHealth - damage;
+				trapSprung = true;
+				updatedEnvObjects[objId].isSprung = true;
+				updatedEnvObjects[objId].isDiscovered = true;
+				this.props.updateLog(`${activePlayerData.name} has triggered a ${objInfo.name} and taken damage!`);
+				pathData.tilePath = [];
+			}
+			objCounter++;
+		}
 		this.props.updateCharacters('player', updateData, activePC, lightingHasChanged, false, false, () => {
 			this._calculateLighting(() => {
 				if (activePC === this.props.activeCharacter && this.isActivePlayerNearWindowEdge()) {
@@ -2205,6 +2232,9 @@ class Map extends React.Component {
 				}
 				if (pathData.tilePath.length === 0) {
 					this._checkForExit();
+				}
+				if (trapSprung) {
+					this.props.updateMapEnvObjects(updatedEnvObjects);
 				}
 
 				const updatePlayerMovesAndPartyStatus = () => {
@@ -2269,6 +2299,12 @@ class Map extends React.Component {
 		});
 	}
 
+	/**
+	 * Checks all hidden objects and env objects on lit tiles within sight of pcs to see if they're found by the pcs
+	 * Then sets to state it's discovered in respective collection
+	 * @return {boolean} (if a found object is a trap)
+	 * @private
+	 */
 	_searchForHiddenSecrets() {
 		let allPcLightPos = this.props.getAllCharactersPos('player', 'pos');
 		allPcLightPos = this._getActiveLightRanges(allPcLightPos);
@@ -2276,7 +2312,7 @@ class Map extends React.Component {
 		const envObjects = deepCopy(this.props.envObjects);
 		const mapLayout = deepCopy(this.state.mapLayout);
 		const keenInvestSkill = this.props.playerCharacters.privateEye ? this.props.playerCharacters.privateEye.skills.keenInvestigation : null;
-		const keenInvestBonus = keenInvestSkill ? keenInvestSkill.modifier[keenInvestSkill.level] : 0;
+		let keenInvestBonus = keenInvestSkill ? keenInvestSkill.modifier[keenInvestSkill.level] : 0;
 		let hiddenSecrets = {};
 		let mapObjFound = false;
 		let envObjFound = '';
@@ -2301,7 +2337,8 @@ class Map extends React.Component {
 					if (hiddenSecretInfo) {
 						// determine if found
 						// tileLightStrength has a range of 0 to this.maxLightStrength
-						const chanceOfFinding = (tileLightStrength * .05) + hiddenSecretInfo.baseChanceOfFinding + keenInvestBonus;
+						keenInvestBonus = tileLightStrength === 0 ? 0 : keenInvestBonus;
+						const chanceOfFinding = (tileLightStrength * hiddenSecretInfo.baseChanceOfFinding) + keenInvestBonus;
 						const secretFound = diceRoll(100) <= (chanceOfFinding * 100);
 						if (secretFound) {
 							if (hiddenSecretInfo.objId) {
@@ -2506,7 +2543,7 @@ class Map extends React.Component {
 					if (playerDistance > 0 && (!targetPlayerDistance || playerDistance < targetPlayerDistance)) {
 						targetPlayerDistance = playerDistance;
 						targetPlayerPos = playerPos;
-						targetPlayerData = playerData;
+						targetPlayerData = deepCopy(playerData);
 					}
 				}
 			}

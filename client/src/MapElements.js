@@ -23,7 +23,8 @@ function Character(props) {
 					 id: props.id,
 					 target: props.characterType,
 					 isInRange: props.isInRange,
-					 checkLineOfSightToParty: props.isLineOfSight
+					 checkLineOfSightToParty: props.isLineOfSight,
+					 objectInfo: []
 				 };
 				 props.updateContextMenu(props.characterType, props.charPos, evt, actionInfo);
 			 }} />
@@ -90,22 +91,27 @@ function EnvObject(props) {
 	const [alreadyDiscovered, updateAlreadyDiscovered] = useState(false);
 	const isHiddenClass = (!props.tileIsVisible || props.isDiscovered === false) ? ' hidden' : '';
 	const isDiscoveredClass = (props.isDiscovered && !alreadyDiscovered) ? ' glow-pulse-once' : '';
+	const isTargetClass = props.isTargetForDisarm ? ' in-range' : '';
 	if (props.isDiscovered && !alreadyDiscovered) {
 		setTimeout(() => {
 			updateAlreadyDiscovered(true);
 		}, 1000);
 	}
-	const objNameClass = props.name + (props.isContainerOpen ? '-open' : props.isDestroyed ? '-destroyed' : '');
+	const objNameClass = props.name + (props.isContainerOpen ? '-open' : (props.isDestroyed && !props.name.includes('trap')) ? '-destroyed' : props.isSprung ? '-triggered' : '');
 
 	return (
 		<img
 			alt={props.name}
-			className={`env-object ${objNameClass}${isHiddenClass}${isDiscoveredClass}`}
+			className={`env-object ${objNameClass}${isHiddenClass}${isDiscoveredClass}${isTargetClass}`}
 			style={props.styles}
 			draggable={false}
 			onClick={(evt) => {
 				if (props.tileIsVisible) {
-					props.updateContextMenu('examine', props.tilePos, evt, {objectInfo: [props.objectInfo], selectionEvt: evt});
+					if (props.isTargetForDisarm) {
+						props.updateContextMenu('disarmTrap', props.tilePos, evt, {objectInfo: [props.objectInfo]});
+					} else {
+						props.updateContextMenu('examine', props.tilePos, evt, {objectInfo: [props.objectInfo], selectionEvt: evt});
+					}
 				}
 			}}
 		/>
