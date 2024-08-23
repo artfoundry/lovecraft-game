@@ -7,10 +7,12 @@ Current demo: https://lovecraft-oldones.web.app/
 
 *WIP*
 
-*CURRENT WORKING BRANCH: adding-characters*
+*CURRENT WORKING BRANCH: -*
 
 ---
 #### Current status:
+
+8/22/24: Massive update from adding-characters branch - adding character and party creation; adding skills for each profession; adding numerous usable items, interactive environment objects, and hidden secrets; adding title screen and image.
 
 11/28/23: More mobile optimizations; added help screens; control bars now show health, sanity, spirit and have more space for buttons; character info panels now have tabs for inv/attributes/skills; bug fixes.
 
