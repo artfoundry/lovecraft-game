@@ -14,7 +14,8 @@ import {
 	signInWithEmailAndPassword
 } from "firebase/auth";
 import { GoogleAuthProvider } from "firebase/auth";
-import { DialogWindow } from "./UIElements";
+import './css/ui.css';
+import './css/login.css';
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -68,10 +69,9 @@ export default class Firebase extends React.Component {
 
 		const dialogContent = (
 			<>
-				<h2 className='font-fancy'>War of the Old Ones</h2>
-				<h3>Choose a method to login</h3>
+				<h2>Choose a method to login</h2>
 
-				<div className='login-methods-container'>
+				<div id='login-methods-container'>
 
 					<div className='login-email-pw-container'>
 						<div className='login-method-title'>Create an account</div>
@@ -128,13 +128,7 @@ export default class Firebase extends React.Component {
 		return (
 			<DialogWindow
 				classes='dialog-login'
-				dialogContent={dialogContent}
-				closeButtonText=''
-				actionButtonVisible={false}
-				actionButtonText=''
-				actionButtonCallback={null}
-				disableCloseButton={true}
-				closeButtonCallback={null} />
+				dialogContent={dialogContent} />
 		);
 	}
 
@@ -248,6 +242,7 @@ export default class Firebase extends React.Component {
 				this.updateLogin(user);
 			})
 			.catch((error) => {
+				alert('Incorrect email or password. Please try again.');
 				console.log(error.code, error.message);
 			});
 	}
@@ -282,3 +277,10 @@ export default class Firebase extends React.Component {
 	}
 }
 
+function DialogWindow(props) {
+	return (
+		<div className={`dialog ui-panel ${props.classes}`}>
+			<div className='dialog-message'>{props.dialogContent}</div>
+		</div>
+	);
+}

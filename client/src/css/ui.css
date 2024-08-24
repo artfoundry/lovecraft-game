@@ -6,8 +6,42 @@
 	font-family: Copperplate, "Gill Sans", sans-serif;
 }
 
+h1 {
+	margin: 0.3em 0;
+	font-size: xxx-large;
+}
+
 h3 {
 	margin: 0 0 0.5em 0;
+}
+
+.title-screen {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	align-items: center;
+	height: 100%;
+	padding-bottom: 30px;
+	background-image: url('../assets/ui/title_image.jpg');
+	background-size: contain;
+	background-repeat: no-repeat;
+	background-position: center;
+}
+
+.title-screen-title-container {
+	text-align: center;
+	color: white;
+}
+
+.title-screen .general-button {
+	width: 150px;
+	text-align: center;
+	font-size: 30px;
+	margin-bottom: 50px;
+}
+
+.no-click {
+	pointer-events: none !important;
 }
 
 .ui-panel {
@@ -73,12 +107,18 @@ h3 {
 }
 
 .dialog-button {
-	width: 100px;
-	height: 30px;
+	min-width: 150px;
+	height: 35px;
+	font-size: large;
 	background-color: lightgray;
 	border: 2px solid black;
 	border-radius: 5px;
 	cursor: pointer;
+}
+
+.dialog-button-x {
+	align-self: flex-start;
+	font-size: medium;
 }
 
 /*.help-popup {*/
@@ -171,119 +211,6 @@ h3 {
 	position: absolute;
 }
 
-/* LOGIN WINDOW */
-
-.dialog-login {
-	position: absolute;
-	width: 100%;
-	min-height: 100%;
-	top: 0;
-	left: 0;
-	justify-content: center;
-	background-color: #225555;
-	border: none;
-	border-radius: unset;
-	box-sizing: border-box;
-}
-
-.login-methods-container {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	width: 400px;
-	border-top: 1px solid;
-	padding-top: 20px;
-}
-
-.login-method {
-	margin-bottom: 30px;
-}
-
-.login-method-title {
-	grid-area: title;
-	width: 100%;
-	margin-top: 20px;
-	margin-bottom: 10px;
-	color: #225555;
-	background-color: lightgray;
-}
-
-.login-email-pw-container {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	grid-template-rows: 1fr 50px 150px;
-	grid-template-areas:
-	"title title"
-	"createtab logintab"
-	"content content";
-	width: 100%;
-	padding: 10px;
-}
-
-.login-email-only-container {
-	width: 100%;
-	padding: 10px;
-}
-
-.login-google-container {
-	display: flex;
-	flex-direction: column;
-}
-
-.login-account-entry-row {
-	display: flex;
-	justify-content: space-between;
-	width: 80%;
-	margin: auto;
-}
-
-.login-button {
-	margin: 10px;
-	padding: 5px 10px;
-	background-color: burlywood;
-	cursor: pointer;
-}
-
-.login-email-message-hidden {
-	visibility: hidden;
-}
-
-.email-pw-tab {
-	border-radius: 5px 5px 0 0;
-	font-size: 16px;
-	height: 100%;
-	line-height: 40px;
-	border-top: 2px solid transparent;
-	border-left: 2px solid transparent;
-	border-right: 2px solid transparent;
-	cursor: pointer;
-}
-
-.email-pw-tab:not(.active-tab):hover {
-	background-color: burlywood;
-	color: black;
-}
-
-.create-tab {
-	grid-area: createtab;
-}
-
-.login-tab {
-	grid-area: logintab;
-}
-
-.active-tab {
-	border-top: 2px solid burlywood;
-	border-left: 2px solid burlywood;
-	border-right: 2px solid burlywood;
-}
-
-.active-tab-content {
-	grid-area: content;
-	padding-top: 20px;
-	border-top: 2px solid burlywood;
-}
-
 
 /* GAME UI */
 
@@ -296,10 +223,11 @@ h3 {
 	border-radius: 5px;
 	color: white;
 	background-color: #996633;
+	text-align: center;
 }
 
 .button-disabled {
-	background-color: darkslategrey;
+	background-color: #224444;
 	pointer-events: none;
 	cursor: default;
 }
@@ -366,7 +294,7 @@ h3 {
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
-	min-width: 175px;
+	min-width: 200px;
 	padding: 10px;
 	border-left: 1px solid seagreen;
 	border-right: 1px solid seagreen;
@@ -396,7 +324,7 @@ h3 {
 .char-info-all-contents-container {
 	display: flex;
 	flex-direction: column;
-	height: 500px;
+	overflow: hidden;
 }
 
 .char-info-tabs-container {
@@ -424,7 +352,8 @@ h3 {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	margin-bottom: 20px;
+	padding-bottom: 20px;
+	overflow: auto;
 }
 
 .char-info-doll-container {
@@ -473,12 +402,9 @@ h3 {
 	left: 140px;
 }
 
-.char-info-equip-toggle-button {
-
-}
-
 .char-info-stats-container {
 	padding: 10px;
+	overflow: auto;
 }
 
 .char-info-item-drop-zone {
@@ -489,7 +415,6 @@ h3 {
 	border: 1px solid seagreen;
 	border-radius: 5px;
 	background-image: url('../assets/ui/drop_item.png');
-
 	vertical-align: middle;
 }
 
@@ -518,8 +443,160 @@ h3 {
 	border-bottom: 1px solid seagreen;
 }
 
-.char-info-equipped-light {
+.char-info-skills-container {
+	padding: 10px;
+	overflow: auto;
+}
 
+.char-info-skills-skill-container {
+	display: flex;
+	gap: 10px;
+	padding-bottom: 20px;
+}
+
+.char-info-skill-name {
+	font-weight: bold;
+	margin-bottom: 5px;
+}
+
+.char-info-skill-component-list-item {
+	list-style: none inside;
+	margin-left: 10px;
+}
+
+.char-info-skill-icon-column {
+	padding: 0 5px;
+}
+
+.char-info-skill-icon {
+	width: 64px;
+	height: 64px;
+	background-position: center;
+	background-repeat: no-repeat;
+}
+
+.skill-icon-create-first-aid-kit {
+	background-image: url('../assets/ui/create-first-aid-kit.png');
+}
+
+.skill-icon-create-molotov-cocktail {
+	background-image: url('../assets/ui/create-molotov-cocktail.png');
+}
+
+.skill-icon-create-torch {
+	background-image: url('../assets/ui/create-torch.png');
+}
+
+.skill-icon-create-acid-concoction {
+	background-image: url('../assets/ui/create-acid-concoction.png');
+}
+
+.skill-icon-create-pharmaceuticals {
+	background-image: url('../assets/ui/create-pharmaceuticals.png');
+}
+
+.skill-icon-create-holy-water {
+	background-image: url('../assets/ui/create-holy-water.png');
+}
+
+.skill-icon-handgun-knowledge {
+	background-image: url('../assets/ui/handgun-knowledge.png');
+}
+
+.skill-icon-shotgun-knowledge {
+	background-image: url('../assets/ui/shotgun-knowledge.png');
+}
+
+.skill-icon-machine-gun-knowledge {
+	background-image: url('../assets/ui/machine-gun-knowledge.png');
+}
+
+.skill-icon-sure-shot {
+	background-image: url('../assets/ui/sure-shot.png');
+}
+
+.skill-icon-quick-reload {
+	background-image: url('../assets/ui/quick-reload.png');
+}
+
+.skill-icon-keen-investigation {
+	background-image: url('../assets/ui/keen-investigation.png');
+}
+
+.skill-icon-steady-hand {
+	background-image: url('../assets/ui/steady-hand.png');
+}
+
+.skill-icon-always-on-the-lookout {
+	background-image: url('../assets/ui/always-on-the-lookout.png');
+}
+
+.skill-icon-mine {
+	background-image: url('../assets/ui/mine.png');
+}
+
+.skill-icon-expert-mining {
+	background-image: url('../assets/ui/expert-mining.png');
+}
+
+.skill-icon-better-living-through-chemicals {
+	background-image: url('../assets/ui/better-living-through-chemicals.png');
+}
+
+.skill-icon-resuscitate {
+	background-image: url('../assets/ui/resuscitate.png');
+}
+
+.skill-icon-medical-expertise {
+	background-image: url('../assets/ui/medical-expertise.png');
+}
+
+.skill-icon-comfort-the-fearful {
+	background-image: url('../assets/ui/comfort-the-fearful.png');
+}
+
+.skill-icon-spiritual-inspiration {
+	background-image: url('../assets/ui/spiritual-inspiration.png');
+}
+
+.skill-icon-feel-the-pain {
+	background-image: url('../assets/ui/feel-the-pain.png');
+}
+
+.skill-icon-go-ballistic {
+	background-image: url('../assets/ui/go-ballistic.png');
+}
+
+.skill-icon-move-it {
+	background-image: url('../assets/ui/move-it.png');
+}
+
+.skill-icon-attack-from-the-shadows {
+	background-image: url('../assets/ui/attack-from-the-shadows.png');
+}
+
+.skill-icon-stealthy {
+	background-image: url('../assets/ui/stealthy.png');
+}
+
+.skill-icon-disarm-trap {
+	background-image: url('../assets/ui/disarm-trap.png');
+}
+
+.skill-icon-identify-relic {
+	background-image: url('../assets/ui/identify-relic.png');
+}
+
+.skill-icon-sacrificial-strike {
+	background-image: url('../assets/ui/sacrificial-strike.png');
+}
+
+.skill-icon-relic-expertise {
+	background-image: url('../assets/ui/relic-expertise.png');
+}
+
+.skill-icon-kris-knife-expertise {
+	background-image: url('../assets/ui/kris-knife-expertise.png');
 }
 
 .creature-info-container {
@@ -537,7 +614,6 @@ h3 {
 #control-bar-container {
 	grid-area: controlBar;
 	display: grid;
-	grid-template-columns: 1fr 1fr 1fr;
 	grid-template-areas: "controlBarTab1 . .";
 	justify-self: center;
 	align-self: end;
@@ -546,6 +622,18 @@ h3 {
 	border-bottom: 0;
 	border-radius: 5px 5px 0 0;
 	box-sizing: border-box;
+}
+
+#control-bar-container.control-bar-3-columns {
+	grid-template-columns: 1fr 1fr 1fr;
+}
+
+#control-bar-container.control-bar-2-columns {
+	grid-template-columns: 1fr 1fr;
+}
+
+#control-bar-container.control-bar-1-columns {
+	grid-template-columns: 1fr;
 }
 
 #control-bar-tab-1 {
@@ -563,6 +651,10 @@ h3 {
 
 .control-bar-tab-container:last-child {
 	border: 0;
+}
+
+.control-bar-tab-container.active-character {
+	outline: 2px solid limegreen;
 }
 
 .control-bar-tab-icon {
@@ -704,6 +796,7 @@ h3 {
 	background-position: center;
 	background-repeat: no-repeat;
 	line-height: 32px;
+	font-size: 20px;
 }
 
 .action-button:hover {
@@ -725,7 +818,7 @@ h3 {
 }
 
 .action-button-scroll {
-	width: 12px;
+	width: 16px;
 	padding-left: 1px;
 	padding-right: 5px;
 }
@@ -734,7 +827,7 @@ h3 {
 	align-items: center;
 }
 
-.weapon-buttons-container, .item-buttons-container, .misc-action-buttons-container {
+.weapon-buttons-container, .item-buttons-container, .misc-action-buttons-container, .skill-buttons-container {
 	display: flex;
 	text-align: center;
 }
@@ -760,7 +853,7 @@ h3 {
 }
 
 .button-selected {
-	background-color: darkred;
+	background-color: greenyellow;
 }
 
 .context-manu-container {
@@ -784,8 +877,18 @@ h3 {
 /*	text-align: center;*/
 /*}*/
 
-.button-tactical-mode-on {
-	background-color: darkred;
+.mode-buttons-container {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 5px;
+}
+
+.button-search-mode {
+	width: 20px;
+	height: 20px;
+	background-image: url('../assets/ui/search.png');
+	background-size: 32px 32px;
 }
 
 #system-buttons-container {
@@ -855,10 +958,10 @@ select {
 	font-family: inherit;
 }
 
-.object-info-panel {
+.object-info-panel, .skill-info-panel {
 	position: fixed;
-	max-width: 400px;
-	max-height: 250px;
+	width: 400px;
+	max-height: 350px;
 	padding: 10px;
 	background-color: #225555;
 	font-family: "Century Gothic", sans-serif;
@@ -873,25 +976,34 @@ select {
 	overflow: auto;
 }
 
-.object-panel-container {
+.object-panel-container, .skill-panel-container {
+	display: flex;
+	flex-direction: column;
+	min-width: 300px;
+}
+
+.object-list-container {
+	max-height: 300px;
+}
+
+.object-panel-contents, .skill-panel-contents {
 	display: flex;
 	justify-content: space-around;
 	margin-bottom: 20px;
-	flex-wrap: wrap;
 }
 
-.object-text-container {
+.object-text-container, .skill-text-container {
 	flex-basis: 70%;
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
+	align-items: start;
 	gap: 5px;
-	max-height: 200px;
 	overflow-y: auto;
 	margin-bottom: 20px;
 }
 
-.object-panel-buttons-container {
+.object-panel-buttons-container, .skill-panel-buttons-container {
 	display: flex;
 	justify-content: center;
 	gap: 5px;
@@ -905,10 +1017,12 @@ select {
 }
 
 .object-row-with-buttons {
-	display: flex;
+	display: grid;
+	grid-template-columns: 1fr 3fr 0fr 0fr;
 	width: 100%;
 	align-items: center;
 	gap: 10px;
+	margin-bottom: 10px;
 }
 
 .object-row-with-buttons .inv-object {
@@ -954,7 +1068,11 @@ select {
 }
 
 .handgun-ammo-inv {
-	background-image: url('../assets/objects/handgunammo_lrg.png');
+	background-image: url('../assets/objects/handgunAmmo_lrg.png');
+}
+
+.shotgun-ammo-inv {
+	background-image: url('../assets/objects/shotgunAmmo_lrg.png');
 }
 
 .first-aid-kit-inv {
@@ -969,6 +1087,30 @@ select {
 	background-image: url('../assets/objects/acid_lrg.png');
 }
 
+.holy-water-inv {
+	background-image: url('../assets/objects/holyWater_lrg.png');
+}
+
+.molotov-cocktail-inv {
+	background-image: url('../assets/objects/molotov-cocktail_lrg.png');
+}
+
+.rock-inv {
+	background-image: url('../assets/objects/rock_lrg.png');
+}
+
+.knife-inv {
+	background-image: url('../assets/objects/knife_lrg.png');
+}
+
+.kris-knife-inv {
+	background-image: url('../assets/objects/krisKnife_lrg.png');
+}
+
+.baseball-bat-inv {
+	background-image: url('../assets/objects/baseballBat_lrg.png');
+}
+
 .pickaxe-inv {
 	background-image: url('../assets/objects/pickaxe_lrg.png');
 }
@@ -981,6 +1123,10 @@ select {
 	background-image: url('../assets/objects/SandWrevolver_lrg.png');
 }
 
+.remington-inv {
+	background-image: url('../assets/objects/remington_lrg.png');
+}
+
 .leather-jacket-inv {
 	background-image: url('../assets/objects/leatherJacket_lrg.png');
 }
@@ -989,31 +1135,90 @@ select {
 	background-image: url('../assets/objects/bulletproofVest_lrg.png');
 }
 
+.alcohol-inv {
+	background-image: url('../assets/objects/alcohol_lrg.png');
+}
+
+.chemical-inv {
+	background-image: url('../assets/objects/chemical_lrg.png');
+}
+
+.cloth-inv {
+	background-image: url('../assets/objects/cloth_lrg.png');
+}
+
+.water-inv {
+	background-image: url('../assets/objects/water_lrg.png');
+}
+
+.wood-inv {
+	background-image: url('../assets/objects/wood_lrg.png');
+}
+
+.elder-sign-inv {
+	background-image: url('../assets/objects/elderSign_lrg.png');
+}
+
+.necronomicon-inv {
+	background-image: url('../assets/objects/necronomicon_lrg.png');
+}
+
+.gems-inv {
+	background-image: url('../assets/objects/gems_lrg.png');
+}
+
+.precious-metals-inv {
+	background-image: url('../assets/objects/precious-metals_lrg.png');
+}
 
 /* ACTION BUTTON ICONS */
 
 .first-aid-kit-action {
-	background-image: url('../assets/ui/firstaidkit_sml.png');
+	background-image: url('../assets/objects/firstaidkit_sml.png');
 }
 
 .pharmaceuticals-action {
-	background-image: url('../assets/ui/pharmaceuticals_sml.png');
+	background-image: url('../assets/objects/pharmaceuticals_sml.png');
 }
 
 .acid-concoction-action {
-	background-image: url('../assets/ui/acid_sml.png');
+	background-image: url('../assets/objects/acid_sml.png');
+}
+
+.holy-water-action {
+	background-image: url('../assets/objects/holyWater_sml.png');
+}
+
+.rock-action {
+	background-image: url('../assets/objects/rock_sml.png');
+}
+
+.knife-action {
+	background-image: url('../assets/objects/knife_sml.png');
+}
+
+.kris-knife-action {
+	background-image: url('../assets/objects/krisKnife_sml.png');
+}
+
+.baseball-bat-action {
+	background-image: url('../assets/objects/baseballBat_sml.png');
 }
 
 .pickaxe-action {
-	background-image: url('../assets/ui/pickaxe_sml.png');
+	background-image: url('../assets/objects/pickaxe_sml.png');
 }
 
 .colt-revolver-action {
-	background-image: url('../assets/ui/coltRevolver_sml.png');
+	background-image: url('../assets/objects/coltRevolver_sml.png');
 }
 
 .s-and-w-revolver-action {
-	background-image: url('../assets/ui/SandWrevolver_sml.png');
+	background-image: url('../assets/objects/SandWrevolver_sml.png');
+}
+
+.remington-action {
+	background-image: url('../assets/objects/remington_sml.png');
 }
 
 .refill-action {
@@ -1039,6 +1244,95 @@ select {
 .move-action {
 	background-image: url('../assets/ui/move-icon_sml.png');
 }
+
+.create-first-aid-kit-action {
+	background-image: url('../assets/ui/create-first-aid-kit_sml.png');
+}
+
+.create-pharmaceuticals-action {
+	background-image: url('../assets/ui/create-pharmaceuticals_sml.png');
+}
+
+.create-acid-concoction-action {
+	background-image: url('../assets/ui/create-acid-concoction_sml.png');
+}
+
+.create-molotov-cocktail-action {
+	background-image: url('../assets/ui/create-molotov-cocktail_sml.png');
+}
+
+.create-holy-water-action {
+	background-image: url('../assets/ui/create-holy-water_sml.png');
+}
+
+.create-torch-action {
+	background-image: url('../assets/ui/create-torch_sml.png');
+}
+
+.quick-reload-action {
+	background-image: url('../assets/ui/quick-reload_sml.png');
+}
+
+.mine-action {
+	background-image: url('../assets/ui/mine_sml.png');
+}
+
+.expert-mining-action {
+	background-image: url('../assets/ui/expert-mining_sml.png');
+}
+
+.better-living-through-chemicals-action {
+	background-image: url('../assets/ui/better-living-through-chemicals_sml.png');
+}
+
+.resuscitate-action {
+	background-image: url('../assets/ui/resuscitate_sml.png');
+}
+
+.comfort-the-fearful-action {
+	background-image: url('../assets/ui/comfort-the-fearful_sml.png');
+}
+
+.spiritual-inspiration-action {
+	background-image: url('../assets/ui/spiritual-inspiration_sml.png');
+}
+
+.feel-the-pain-action {
+	background-image: url('../assets/ui/feel-the-pain_sml.png');
+}
+
+.go-ballistic-action {
+	background-image: url('../assets/ui/go-ballistic_sml.png');
+}
+
+.move-it-action {
+	background-image: url('../assets/ui/move-it_sml.png');
+}
+
+.stealthy-action {
+	background-image: url('../assets/ui/stealthy_sml.png');
+}
+
+.disarm-trap-action {
+	background-image: url('../assets/ui/disarm-trap_sml.png');
+}
+
+.identify-relic-action {
+	background-image: url('../assets/ui/identify-relic_sml.png');
+}
+
+.sacrificial-strike-action {
+	background-image: url('../assets/ui/sacrificial-strike_sml.png');
+}
+
+.necronomicon-action {
+	background-image: url('../assets/ui/necronomicon_sml.png');
+}
+
+.open-container-action {
+	background-image: url('../assets/ui/open-container_sml.png');
+}
+
 
 /* Audio */
 
@@ -1074,6 +1368,10 @@ select {
 
 /* Narrow or short screens */
 @media (width < 1000px) or (height < 768px) {
+	h1 {
+		font-size: revert;
+	}
+
 	.dialog-login h2, .dialog-login h3 {
 		margin: 10px;
 	}
@@ -1104,11 +1402,12 @@ select {
 	}
 
 	.mode-info-container, .log-container {
+		min-width: 185px;
 		padding: 5px;
 	}
 
 	.char-info-inv-container {
-		margin-bottom: 10px;
+		padding-bottom: 10px;
 	}
 
 	.char-info-doll-container {
@@ -1120,10 +1419,6 @@ select {
 		border-radius: 0;
 		border: 0;
 		min-height: unset;
-	}
-
-	.char-info-all-contents-container {
-		height: 620px;
 	}
 
 	.creature-info-container {
@@ -1173,8 +1468,12 @@ select {
 	}
 
 	.control-bar-buttons-container {
-		width: 280px;
+		width: 350px;
 		border: none;
+	}
+
+	.control-bar-tab-container.active-character {
+		outline: none;
 	}
 }
 
@@ -1189,7 +1488,6 @@ select {
 	}
 
 	.turn-info-container {
-		/*max-height: 180px;*/
 		border: 0;
 		border-bottom: 2px solid seagreen;
 		border-radius: 0;
@@ -1198,7 +1496,8 @@ select {
 	.character-info-container {
 		border: 2px solid seagreen;
 		border-left: 0;
-		border-radius: 0 5px 5px 0;
+		border-radius: 0;
+		padding: 10px;
 	}
 
 	.creature-info-container {
@@ -1262,7 +1561,6 @@ select {
 	}
 
 	.turn-info-container {
-		/*max-height: 180px;*/
 		border: 0;
 		border-bottom: 2px solid seagreen;
 		border-radius: 0;
@@ -1282,7 +1580,7 @@ select {
 	}
 
 	.character-info-container {
-		padding: 10px 10px 60px;
+		padding: 10px;
 	}
 
 	.char-info-inv-container {
@@ -1310,9 +1608,10 @@ select {
 		border-bottom: 1px solid seagreen;
 	}
 
-	.object-info-panel {
-		width: 90%;
-		max-width: unset;
+	.object-info-panel, .skill-info-panel {
+		width: 100%;
+		max-height: 300px;
+		overflow: scroll;
 		left: 5%;
 	}
 
@@ -1365,6 +1664,7 @@ select {
 		top: 25%;
 	}
 
+	/* Need max heights on this (220px) and log-container (100px) to allow for needed control bar height and account for browser toolbar */
 	.turn-info-container {
 		flex-direction: column;
 		max-height: 220px;
@@ -1386,6 +1686,11 @@ select {
 
 	.character-info-container, .creature-info-container {
 		border-left: 2px solid seagreen;
+	}
+
+	.object-info-panel, .skill-info-panel {
+		max-height: 250px;
+		overflow: scroll;
 	}
 
 	.object-panel-container {

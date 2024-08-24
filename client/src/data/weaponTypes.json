@@ -5,7 +5,8 @@
     "rounds": 6,
     "usesStr": false,
     "gunType": "handgun",
-    "twoHanded": false
+    "twoHanded": false,
+    "description": "Standard issue 6 round revolver."
   },
   "S And W Revolver": {
     "damage": 7,
@@ -13,7 +14,8 @@
     "rounds": 6,
     "usesStr": false,
     "gunType": "handgun",
-    "twoHanded": false
+    "twoHanded": false,
+    "description": "Higher powered version of the 6 round revolver."
   },
   "Browning Semi-automatic": {
     "damage": 7,
@@ -21,7 +23,8 @@
     "rounds": 10,
     "usesStr": false,
     "gunType": "handgun",
-    "twoHanded": false
+    "twoHanded": false,
+    "description": "More power and more rounds between reloads equals more killing!"
   },
   "Remington": {
     "damage": 10,
@@ -29,7 +32,8 @@
     "rounds": 5,
     "usesStr": false,
     "gunType": "shotgun",
-    "twoHanded": true
+    "twoHanded": true,
+    "description": "A standard among pump action shotguns. Not as powerful, but if you can shoot more between reloading, does it matter?"
   },
   "Winchester": {
     "damage": 18,
@@ -37,25 +41,69 @@
     "rounds": 2,
     "usesStr": false,
     "gunType": "shotgun",
-    "twoHanded": true
+    "twoHanded": true,
+    "description": "Double barrelled portable canon. 'Nuff said."
+  },
+  "Knife": {
+    "damage": 3,
+    "ranged": false,
+    "twoHanded": false,
+    "description": "Slice and dice! Not a machete, but bigger than a pocketknife."
+  },
+  "Kris Knife": {
+    "damage": 4,
+    "ranged": false,
+    "twoHanded": false,
+    "description": "Ornate and with alternating curves in its very sharp blade, there is something disturbingly mysterious about this weapon."
+  },
+  "Machete": {
+    "damage": 5,
+    "ranged": false,
+    "twoHanded": false,
+    "description": "Now THIS is a knife!"
   },
   "Baseball Bat": {
     "damage": 2,
     "ranged": false,
-    "usesStr": true,
-    "twoHanded": true
+    "twoHanded": true,
+    "description": "Doesn't hurt much, but at least you won't cut up your fists."
   },
   "Pickaxe": {
     "damage": 2,
     "ranged": false,
-    "usesStr": true,
-    "twoHanded": true
+    "twoHanded": false,
+    "description": "Intended for mining, but works as a weapon in a pinch."
   },
   "Acid Concoction": {
     "damage": 10,
     "ranged": true,
     "usesStr": false,
     "stackable": true,
-    "twoHanded": false
+    "twoHanded": false,
+    "description": "Melt the hide off anything crawling. Just don't spill it in your pack."
+  },
+  "Holy Water": {
+    "damage": 6,
+    "ranged": true,
+    "usesStr": false,
+    "stackable": true,
+    "twoHanded": false,
+    "description": "Useful against the undead but not much else. Except as drinking water."
+  },
+  "Molotov Cocktail": {
+    "damage": 6,
+    "ranged": true,
+    "usesStr": false,
+    "stackable": true,
+    "twoHanded": false,
+    "description": "Fire! Fire!"
+  },
+  "Rock": {
+    "damage": 1,
+    "ranged": true,
+    "usesStr": true,
+    "stackable": true,
+    "twoHanded": false,
+    "description": "I got a rock..."
   }
 }

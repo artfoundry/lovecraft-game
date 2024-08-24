@@ -6,8 +6,8 @@ h3 {
 .tool-container {
 	display: grid;
 	gap: 10px;
-	grid-template-columns: auto 480px auto;
-	grid-template-rows: 80px 170px auto;
+	grid-template-columns: auto 960px auto;
+	grid-template-rows: 210px 170px auto;
 	grid-template-areas:
     "pieces tiles tiles"
     "pieces grid piece-options"
@@ -36,8 +36,7 @@ h3 {
 
 .existing-pieces {
 	grid-area: pieces;
-	max-height: 630px;
-	min-width: 100px;
+	min-width: 150px;
 	font-size: 12px;
 	overflow-y: auto;
 	text-align: center;

@@ -7,10 +7,12 @@ Current demo: https://lovecraft-oldones.web.app/
 
 *WIP*
 
-*CURRENT WORKING BRANCH: bug-fixes*
+*CURRENT WORKING BRANCH: -*
 
 ---
 #### Current status:
+
+8/22/24: Massive update from adding-characters branch - adding character and party creation; adding skills for each profession; adding numerous usable items, interactive environment objects, and hidden secrets; adding title screen and image.
 
 11/28/23: More mobile optimizations; added help screens; control bars now show health, sanity, spirit and have more space for buttons; character info panels now have tabs for inv/attributes/skills; bug fixes.
 
@@ -116,5 +118,13 @@ Make sure to save the piece to keep your changes!
 - If an alt is needed for when both openings are deleted/closed, change to that mode. Then you only need to select the alt template (you don't need to select another opening tile on the grid).
 - Click the Select alts button again to exit alt class settings. Your settings will be stored in the tiles
   on the grid.
+
+#### Object options
+
+- Select tile on the grid (don't place objects in doorways or tiles on either side of a doorway)
+- Click 'Can have object'
+- Select 'Object must be passable' if an impassable object in that tile would block pathing
+- Game engine will check surrounding tiles to ensure no impassable objects next to each other
+- Options will remain checked as long as another piece isn't selected before saving current piece (selecting other tiles won't erase options)
 
 Make sure to save the piece to keep your changes!

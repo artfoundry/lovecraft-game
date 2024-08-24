@@ -7,7 +7,6 @@ class UI extends React.Component {
 	constructor(props) {
 		super(props);
 
-		this.inventoryLength = 12;
 		this.initialUiLoad = true;
 
 		this.uiRefs = {
@@ -29,14 +28,15 @@ class UI extends React.Component {
 			selectedControlTab: '',
 			logMinimized: false,
 			modeMinimized: false,
-			entireInventory: {},
+			inventoryData: {},
 			objectIsSelected: false,
 			selectedObjPos: {},
 			objectSelected: {},
 			draggedObjectMetaData: {},
 			draggedObjRecipient: '',
 			needToShowObjectPanel: false,
-			isPickUpAction: false
+			isPickUpAction: false,
+			controlBarColumnCount: ''
 		};
 	}
 
@@ -79,44 +79,68 @@ class UI extends React.Component {
 		let controlPanels = [];
 
 		for (const [id, playerInfo] of Object.entries(this.props.playerCharacters)) {
-			let mapObjectsOnPcTiles = [];
-			for (const [objId, objInfo] of Object.entries(this.props.mapObjects)) {
-				const xDelta = Math.abs(playerInfo.coords.xPos - objInfo.coords.xPos);
-				const yDelta = Math.abs(playerInfo.coords.yPos - objInfo.coords.yPos);
-				if (xDelta <= 1 && yDelta <= 1) {
-					mapObjectsOnPcTiles.push({...objInfo, id: objId});
+			if (!playerInfo.isDeadOrInsane) {
+				// for setting up Pickup action and Open container/mineable action buttons
+				let mapObjectsOnPcTiles = [];
+				let containersNextToPc = [];
+				let mineablesNextToPc = [];
+				let trapsNextToPc = [];
+				const hasEnoughLight = (id === 'archaeologist' && playerInfo.lightTime >= this.props.lightTimeCosts.expertMining) ||
+					playerInfo.lightTime >= this.props.lightTimeCosts.mine;
+				const allObjects = {...this.props.mapObjects, ...this.props.envObjects};
+				for (const [objId, objInfo] of Object.entries(allObjects)) {
+					const xDelta = Math.abs(playerInfo.coords.xPos - objInfo.coords.xPos);
+					const yDelta = Math.abs(playerInfo.coords.yPos - objInfo.coords.yPos);
+					const objInfoAndId = {...objInfo, id: objId};
+					if (xDelta <= 1 && yDelta <= 1) {
+						if (objInfo.isEnvObject && objInfo.type === 'container' && (!objInfo.isOpen || objInfo.containerContents.length > 0)) {
+							containersNextToPc.push(objInfoAndId);
+						} else if (objInfo.isEnvObject && objInfo.type === 'mineable' && (!objInfo.isDestroyed || objInfo.containerContents.length > 0)) {
+							mineablesNextToPc.push(objInfoAndId);
+						} else if (objInfo.isEnvObject && objInfo.type === 'trap' && objInfo.isDiscovered && !objInfo.isDestroyed && !objInfo.isSprung) {
+							trapsNextToPc.push(objInfoAndId);
+						} else if (!objInfo.isEnvObject) {
+							mapObjectsOnPcTiles.push(objInfoAndId);
+						}
+					}
 				}
-			}
 
-			controlPanels.push(
-				<CharacterControls
-					key={id}
-					playerCharacters={this.props.playerCharacters}
-					characterId={id}
-					characterName={playerInfo.name}
-					equippedItems={playerInfo.equippedItems}
-					invItems={playerInfo.items}
-					toggleActionButton={this.props.toggleActionButton}
-					actionButtonSelected={this.props.actionButtonSelected}
-					isActiveCharacter={id === this.props.activeCharacter}
-					movesRemaining={this.props.playerLimits.moves - this.props.actionsCompleted.moves}
-					actionsRemaining={this.props.playerLimits.actions - this.props.actionsCompleted.actions}
-					inTacticalMode={this.props.inTacticalMode}
-					updateCharacters={this.props.updateCharacters}
-					entireInventory={this.state.entireInventory}
-					updateInventory={this.updateInventory}
-					checkForExtraAmmo={this.checkForExtraAmmo}
-					reloadGun={this.props.reloadGun}
-					refillLight={this.props.refillLight}
-					setShowDialogProps={this.props.setShowDialogProps}
-					dropItemToPC={this.dropItemToPC}
-					setMapObjectSelected={this.props.setMapObjectSelected}
-					mapObjectsOnPcTiles={mapObjectsOnPcTiles}
-					screenData={this.props.screenData}
-					selectedControlTab={this.state.selectedControlTab}
-					setSelectedControlTab={this.setSelectedControlTab}
-				/>
-			)
+				controlPanels.push(
+					<CharacterControls
+						key={id}
+						playerCharacters={this.props.playerCharacters}
+						characterId={id}
+						characterName={playerInfo.name}
+						equippedItems={playerInfo.equippedItems}
+						invItems={playerInfo.items}
+						toggleActionButton={this.props.toggleActionButton}
+						actionButtonSelected={this.props.actionButtonSelected}
+						skillModeActive={this.props.skillModeActive}
+						isActiveCharacter={id === this.props.activeCharacter}
+						movesRemaining={this.props.playerLimits.moves - this.props.actionsCompleted.moves}
+						actionsRemaining={this.props.playerLimits.actions - this.props.actionsCompleted.actions}
+						inTacticalMode={this.props.inTacticalMode}
+						threatList={this.props.threatList}
+						updateCharacters={this.props.updateCharacters}
+						checkForExtraAmmo={this.checkForExtraAmmo}
+						reloadGun={this.props.reloadGun}
+						refillLight={this.props.refillLight}
+						hasEnoughLight={hasEnoughLight}
+						notEnoughLightDialogProps={this.props.notEnoughLightDialogProps}
+						showDialog={this.props.showDialog}
+						setShowDialogProps={this.props.setShowDialogProps}
+						dropItemToPC={this.dropItemToPC}
+						setMapObjectSelected={this.props.setMapObjectSelected}
+						mapObjectsOnPcTiles={mapObjectsOnPcTiles}
+						containersNextToPc={containersNextToPc}
+						mineablesNextToPc={mineablesNextToPc}
+						trapsNextToPc={trapsNextToPc}
+						screenData={this.props.screenData}
+						selectedControlTab={this.state.selectedControlTab}
+						setSelectedControlTab={this.setSelectedControlTab}
+					/>
+				)
+			}
 		}
 		return controlPanels;
 	}
@@ -144,13 +168,14 @@ class UI extends React.Component {
 
 	/**
 	 * Remove dragged item from source pc inv if it's a single object or an entire stack (of ammo, oil, etc.)
-	 * @param invObjectCategory
-	 * @param sourceItemCount
-	 * @param sourcePCdata
-	 * @param allPlayersInv
-	 * @param callback
+	 * note: sourcePCdata that's passed in and gets updated directly is deepCopy of data sent from calling functions
+	 * @param invObjectCategory: string
+	 * @param sourceItemCount: number
+	 * @param sourcePCdata: object
+	 * @param lightingChanged: boolean
+	 * @param callback: function
 	 */
-	updateSourcePcInvAfterTransfer = (invObjectCategory, sourceItemCount, sourcePCdata, allPlayersInv, lightingChanged, callback = null) => {
+	updateSourcePcInvAfterTransfer = (invObjectCategory, sourceItemCount, sourcePCdata, lightingChanged, callback = null) => {
 		if (Object.keys(this.state.objectSelected).length === 0) {
 			return;
 		}
@@ -162,7 +187,7 @@ class UI extends React.Component {
 		if (!draggedItem.stackable || sourceItemCount === 0) {
 			// if no source box index, then it was dragged from being equipped and doesn't exist in allPlayersInv
 			if (sourceBoxIndex) {
-				allPlayersInv[draggedObjectMetaData.sourcePC].splice(+sourceBoxIndex[0], 1, null);
+				sourcePCdata.inventory.splice(+sourceBoxIndex[0], 1, null);
 			}
 
 			delete sourcePCdata[invObjectCategory][invId];
@@ -179,6 +204,7 @@ class UI extends React.Component {
 			if (sourcePCdata.equippedLight === invId) {
 				sourcePCdata.equippedLight = null;
 				sourcePCdata.lightRange = 0;
+				sourcePCdata.lightTime = 0;
 			}
 		// otherwise just update its item count
 		} else if (sourceItemCount > 0) {
@@ -189,9 +215,7 @@ class UI extends React.Component {
 			}
 		}
 
-		this.updateInventory(null, allPlayersInv, () => {
-			this.props.updateCharacters('player', sourcePCdata, draggedObjectMetaData.sourcePC, lightingChanged, false, false, callback);
-		});
+		this.props.updateCharacters('player', sourcePCdata, draggedObjectMetaData.sourcePC, lightingChanged, false, false, callback);
 	}
 
 	/**
@@ -208,9 +232,9 @@ class UI extends React.Component {
 		if (!draggedItem || draggedObjectMetaData.sourcePC === recipientId) {
 			return;
 		}
-		const allPlayersInv = deepCopy(this.state.entireInventory);
 		let dialogProps = null;
 
+		// If destination pc is too far away
 		if (Math.abs(currentPCdata.coords.xPos - sourcePCdata.coords.xPos) > 1 || Math.abs(currentPCdata.coords.yPos - sourcePCdata.coords.yPos) > 1) {
 			dialogProps = {
 				dialogContent: 'That character is too far away. To trade, characters need to be next to each other.',
@@ -222,28 +246,21 @@ class UI extends React.Component {
 				actionButtonCallback: null,
 				dialogClasses: ''
 			};
+		// or if not enough space in destination inv
 		} else if (notEnoughSpaceInInventory(1, 0, currentPCdata)) {
 			dialogProps = this.props.notEnoughSpaceDialogProps;
+		// if item dragged is stackable, open options dialog
+		} else if (draggedItem.stackable) {
+			this.setObjectPanelDisplayOption(true, evt, recipientId);
+		// add dragged item to destination pc inv
 		} else {
-			const firstOpenInvSlot = allPlayersInv[recipientId].indexOf(null);
 			const invObjectCategory = draggedItem.itemType ? 'items' : 'weapons';
 			const invId = draggedItem.id;
 			const lightingChanged = draggedItem.itemType && draggedItem.itemType === 'Light' && sourcePCdata.equippedLight === invId;
 
-			// add dragged item to current pc inv
-			if (draggedItem.stackable) {
-				this.setObjectPanelDisplayOption(true, evt, recipientId);
-			} else {
-				currentPCdata[invObjectCategory][draggedItem.id] = {...draggedItem};
-				// now add item to inv shown in char info panel
-				if (!allPlayersInv[recipientId].includes(invId) && currentPCdata.equippedItems.loadout1.right !== invId && currentPCdata.equippedItems.loadout1.left !== invId) {
-					allPlayersInv[recipientId].splice(firstOpenInvSlot, 1, invId);
-				}
-
-				this.updateSourcePcInvAfterTransfer(invObjectCategory, null, sourcePCdata, allPlayersInv, lightingChanged, () => {
-					this.props.updateCharacters('player', currentPCdata, recipientId);
-				});
-			}
+			this.updateSourcePcInvAfterTransfer(invObjectCategory, null, sourcePCdata, lightingChanged, () => {
+				this.props.addItemToPlayerInventory(draggedItem, invId, recipientId, false, false);
+			});
 		}
 
 		if (dialogProps) {
@@ -279,12 +296,12 @@ class UI extends React.Component {
 
 		let hand = '';
 		let oppositeHand = '';
-		const updateData = deepCopy(this.props.selectedCharacterInfo);
-		const inventoryItems = this.state.entireInventory[this.props.selectedCharacterInfo.id];
-		let tempAllItemsList = [...inventoryItems];
+		let updateData = deepCopy(this.props.selectedCharacterInfo);
 		const sourceBoxIndex = draggedObjectMetaData.sourceLoc.match(/\d+/);
 		const loadout1 = updateData.equippedItems.loadout1;
 		let lightBeingSwapped = null;
+		let itemBeingReplaced = '';
+		let secondItemBeingReplaced = '';
 		let dialogProps = {};
 
 		if (destination === 'hand-swap') {
@@ -313,6 +330,11 @@ class UI extends React.Component {
 				}
 				this.props.setShowDialogProps(true, dialogProps);
 			}
+			if (updateData.id === 'thief' && updateData.skills.stealthy.active) {
+				updateData.skills.stealthy.active = false;
+				this.props.updateLog(`After equipping a light source, ${updateData.name} is no longer hiding in the shadows`);
+			}
+			itemBeingReplaced = updateData.equippedLight;
 			updateData.equippedLight = draggedItem.id;
 			updateData.lightRange = draggedItem.range;
 			updateData.lightTime = draggedItem.time;
@@ -321,6 +343,7 @@ class UI extends React.Component {
 		} else if (hand && sourceBoxIndex && (loadout1[hand] === updateData.equippedLight ||
 			(draggedItem.twoHanded && loadout1[oppositeHand] === updateData.equippedLight)))
 		{
+			itemBeingReplaced = updateData.equippedLight;
 			updateData.equippedLight = null;
 			updateData.lightRange = 0;
 			updateData.lightTime = 0;
@@ -343,10 +366,13 @@ class UI extends React.Component {
 				this.props.setShowDialogProps(true, dialogProps);
 				return;
 			}
+			itemBeingReplaced = loadout1[hand];
+			secondItemBeingReplaced = loadout1[oppositeHand];
 			loadout1[hand] = draggedItem.id;
 			loadout1[oppositeHand] = draggedItem.id;
 		// or if we're replacing a two-handed item with a one-handed item
 		} else if (hand && loadout1.right && loadout1.right === loadout1.left) {
+			itemBeingReplaced = loadout1[hand];
 			loadout1[hand] = draggedItem.id;
 			loadout1[oppositeHand] = '';
 		// or we're just equipping a one-handed item
@@ -361,22 +387,30 @@ class UI extends React.Component {
 				loadout1.right = '';
 				hand = 'right';
 			}
+			itemBeingReplaced = lightBeingSwapped || loadout1[hand];
 			loadout1[hand] = draggedItem.id;
 		// or we're equipping a body item
 		} else if (destination === 'body') {
+			itemBeingReplaced = updateData.equippedItems.armor;
 			updateData.equippedItems.armor = draggedItem.id;
-			updateData.defense = this.props.selectedCharacterInfo.calculateDefense();
+			updateData.defense = this.props.selectedCharacterInfo.calculateDefense(this.props.selectedCharacterInfo.agility, this.props.selectedCharacterInfo.items[updateData.equippedItems.armor].defense);
 			updateData.damageReduction = draggedItem.damageReduction;
 		}
 
-		// if item is dragged from one hand to another, sourceBoxIndex is null
+		// Update inventory array, though if item is dragged from one hand to another, sourceBoxIndex is null, so no update needed
 		if (sourceBoxIndex) {
-			tempAllItemsList.splice(+sourceBoxIndex[0], 1, null);
+			updateData.inventory.splice(+sourceBoxIndex[0], 1, null);
+			if (itemBeingReplaced) {
+				const firstOpenInvSlot = updateData.inventory.indexOf(null);
+				updateData.inventory.splice(firstOpenInvSlot, 1, itemBeingReplaced);
+			}
+			if (secondItemBeingReplaced) {
+				const firstOpenInvSlot = updateData.inventory.indexOf(null);
+				updateData.inventory.splice(firstOpenInvSlot, 1, secondItemBeingReplaced);
+			}
 		}
 
-		this.updateInventory(this.props.selectedCharacterInfo.id, tempAllItemsList, () => {
-			this.props.updateCharacters('player', updateData, this.props.selectedCharacterInfo.id, lightingChanged, false, false);
-		});
+		this.props.updateCharacters('player', updateData, this.props.selectedCharacterInfo.id, lightingChanged, false, false);
 	}
 
 	/**
@@ -396,15 +430,14 @@ class UI extends React.Component {
 			return;
 		}
 
-		const updateData = deepCopy(this.props.selectedCharacterInfo);
+		let updateData = deepCopy(this.props.selectedCharacterInfo);
 		const equippedItems = updateData.equippedItems;
-		const inventoryItems = this.state.entireInventory[this.props.selectedCharacterInfo.id];
 		let lightingChanged = false;
 
 		let draggingEquippedItem = false;
 		if (equippedItems.armor === draggedItem.id) {
 			updateData.equippedItems.armor = '';
-			updateData.defense = this.props.selectedCharacterInfo.calculateDefense();
+			updateData.defense = this.props.selectedCharacterInfo.calculateDefense(this.props.selectedCharacterInfo.agility, 0);
 			updateData.damageReduction = 0;
 			draggingEquippedItem = true;
 		} else if (equippedItems.loadout1.left === draggedItem.id) {
@@ -421,27 +454,28 @@ class UI extends React.Component {
 		if (draggedItem.itemType && draggedItem.itemType === 'Light' && updateData.equippedLight === draggedItem.id) {
 			updateData.equippedLight = null;
 			updateData.lightRange = 0;
+			updateData.lightTime = 0;
 			draggingEquippedItem = true;
 			lightingChanged = true;
 		}
 
 		if (draggingEquippedItem) {
-			this.props.updateCharacters('player', updateData, this.props.selectedCharacterInfo.id, lightingChanged, false, false);
+			const firstOpenInvSlot = updateData.inventory.indexOf(null);
+			updateData.inventory.splice(firstOpenInvSlot, 1, draggedItem.id);
 		} else {
-			let tempAllItemsList = [...inventoryItems];
 			const targetIsBox = evt.target.id.includes('invBox');
 			const targetId = +evt.target.id.match(/\d+/)[0];
 			const parentId = !targetIsBox ? +evt.target.parentElement.id.match(/\d+/)[0] : null;
 			const destBoxIndex = targetIsBox ? targetId : parentId;
-			const destBoxContents = tempAllItemsList[destBoxIndex];
+			const destBoxContents = updateData.inventory[destBoxIndex];
 			const sourceBoxIndex = +draggedObjectMetaData.sourceLoc.match(/\d+/)[0];
 
 			// replace contents of destination spot with dragged item
-			tempAllItemsList.splice(destBoxIndex, 1, draggedItem.id);
+			updateData.inventory.splice(destBoxIndex, 1, draggedItem.id);
 			// replace contents of source spot with replaced destination item
-			tempAllItemsList.splice(sourceBoxIndex, 1, destBoxContents);
-			this.updateInventory(this.props.selectedCharacterInfo.id, tempAllItemsList);
+			updateData.inventory.splice(sourceBoxIndex, 1, destBoxContents);
 		}
+		this.props.updateCharacters('player', updateData, this.props.selectedCharacterInfo.id, lightingChanged, false, false);
 	}
 
 	/**
@@ -458,10 +492,9 @@ class UI extends React.Component {
 		if (!draggedItem) return;
 
 		const allPCdata = deepCopy(this.props.playerCharacters);
-		const sourcePCdata = allPCdata[draggedObjectMetaData.sourcePC];
+		let sourcePCdata = allPCdata[draggedObjectMetaData.sourcePC];
 		const recipientId = this.state.draggedObjRecipient;
-		const currentPCdata = allPCdata[recipientId];
-		const allPlayersInv = deepCopy(this.state.entireInventory);
+		let currentPCdata = allPCdata[recipientId];
 		const invObjectCategory = draggedItem.itemType ? 'items' : 'weapons';
 		const invId = draggedItem.id;
 
@@ -490,12 +523,12 @@ class UI extends React.Component {
 		}
 
 		// now add item to inv shown in char info panel
-		const firstOpenInvSlot = allPlayersInv[recipientId].indexOf(null);
-		if (!allPlayersInv[recipientId].includes(invId) && currentPCdata.equippedItems.loadout1.right !== invId && currentPCdata.equippedItems.loadout1.left !== invId) {
-			allPlayersInv[recipientId].splice(firstOpenInvSlot, 1, invId);
+		const firstOpenInvSlot = currentPCdata.inventory.indexOf(null);
+		if (!currentPCdata.inventory.includes(invId) && currentPCdata.equippedItems.loadout1.right !== invId && currentPCdata.equippedItems.loadout1.left !== invId) {
+			currentPCdata.inventory.splice(firstOpenInvSlot, 1, invId);
 		}
 
-		this.updateSourcePcInvAfterTransfer(invObjectCategory, sourceItemCount, sourcePCdata, allPlayersInv, false, () => {
+		this.updateSourcePcInvAfterTransfer(invObjectCategory, sourceItemCount, sourcePCdata, false, () => {
 			this.props.updateCharacters('player', currentPCdata, recipientId);
 		});
 	}
@@ -510,10 +543,9 @@ class UI extends React.Component {
 			return;
 		}
 		const sourcePcData = deepCopy(this.props.playerCharacters[this.state.draggedObjectMetaData.sourcePC]);
-		const allPlayersInv = deepCopy(this.state.entireInventory);
 		const invObjectCategory = this.state.objectSelected.itemType ? 'items' : 'weapons';
 		const draggedObject = deepCopy(this.state.objectSelected);
-		const lightingChanged = draggedObject.itemType && draggedObject.itemType === 'Light';
+		const lightingChanged = draggedObject.itemType && draggedObject.itemType === 'Light' && draggedObject.time > 0;
 
 		// for stackable items, need to update count from object panel split
 		if (draggedObject.amount) {
@@ -521,9 +553,19 @@ class UI extends React.Component {
 		} else if (draggedObject.currentRounds) {
 			draggedObject.currentRounds = draggedItemCount;
 		}
-		this.updateSourcePcInvAfterTransfer(invObjectCategory, sourceItemCount, sourcePcData, allPlayersInv, false, () => {
+		this.updateSourcePcInvAfterTransfer(invObjectCategory, sourceItemCount, sourcePcData, false, () => {
 			const mapObjects = deepCopy(this.props.mapObjects);
-			mapObjects[draggedObject.id] = {
+			const draggedObjGenericId = draggedObject.id.match(/\D+/)[0];
+			let highestIdNum = 0;
+			for (const id of Object.keys(mapObjects)) {
+				if (id.includes(draggedObjGenericId)) {
+					const idNum = +id.match(/\d+/)[0];
+					highestIdNum = idNum > highestIdNum ? idNum : highestIdNum;
+				}
+			}
+			const newMapObjId = draggedObjGenericId + (highestIdNum + 1);
+			delete draggedObject.id;
+			mapObjects[newMapObjId] = {
 				...draggedObject,
 				coords: sourcePcData.coords
 			}
@@ -552,6 +594,29 @@ class UI extends React.Component {
 	}
 
 	/**
+	 *
+	 * @param envObjectId: string
+	 */
+	setContainerOpenState = (envObjectId) => {
+		let envObjects = deepCopy(this.props.envObjects);
+		const activeEnvObj = envObjects[envObjectId];
+		let changeMade = false;
+		if (activeEnvObj.type === 'container') {
+			activeEnvObj.isOpen = true;
+			changeMade = true;
+		} else if (activeEnvObj.type === 'mineable' && !activeEnvObj.isDestroyed) {
+			if (activeEnvObj.isDestructible) {
+				activeEnvObj.isDestroyed = true;
+				changeMade = true;
+			}
+			this.props.updateLog(`${this.props.playerCharacters[this.props.activeCharacter].name} spends time digging through the rocks and dirt...`);
+		}
+		if (changeMade) {
+			this.props.updateMapEnvObjects(envObjects, envObjectId);
+		}
+	}
+
+	/**
 	 * Determines position for object info panel or contextual menu
 	 * @param x
 	 * @param y
@@ -573,11 +638,15 @@ class UI extends React.Component {
 			const yBuffer = 80;
 			const leftMod = x > (window.innerWidth - panelWidth) ? -(panelWidth + xBuffer) : 0;
 			const halfScreenHeight = this.props.screenData.height / 2;
-			const controlBarTopPos = this.props.screenData.height - this.props.uiControlBarHeight;
-			// if context menu or clicked item is top half of screen, position at cursor;
-			// or if clicking pick up action button, push up 3x buffer;
-			// otherwise, clicked lower half of screen, push up 1x buffer
-			const topMod = (panelType === 'menu') || (y < halfScreenHeight) ? 0 : y > controlBarTopPos ? -(yBuffer * 3) : -yBuffer;
+			const controlBarTopPos = this.props.screenData.height - this.props.uiControlBarHeight - yBuffer;
+			let topMod = 0;
+			// if context menu and clicked at bottom of screen (below where top of control bar is), bump up a little
+			if (panelType === 'menu' && y > controlBarTopPos) {
+				topMod = -yBuffer;
+			// else if object panel and clicked at lower half of screen, bump up a lot if below top of control bar height or a little if above control bar
+			} else if (panelType === 'object' && y > halfScreenHeight) {
+				topMod = y > controlBarTopPos ? -(yBuffer * 4) : -yBuffer;
+			}
 			coords = {left: x + leftMod, top: y + topMod};
 		}
 		return coords;
@@ -598,12 +667,6 @@ class UI extends React.Component {
 	}
 
 	showObjectPanel = () => {
-		let dialogProps = null;
-		if ((this.props.playerLimits.actions - this.props.actionsCompleted.actions) === 0) {
-			dialogProps = this.props.noMoreActionsDialogProps;
-		} else if (notEnoughSpaceInInventory(1, 0, this.props.playerCharacters[this.props.activeCharacter])) {
-			dialogProps = this.props.notEnoughSpaceDialogProps;
-		}
 		const creatureCoords = this.props.getAllCharactersPos('creature', 'coords');
 		return (
 			<ObjectInfoPanel
@@ -614,19 +677,20 @@ class UI extends React.Component {
 				selectedObjPos={this.state.selectedObjPos}
 				objHasBeenDropped={this.props.objHasBeenDropped.dropped}
 				setHasObjBeenDropped={this.props.setHasObjBeenDropped}
-				dropItemToPC={this.dropItemToPC}
-				dropItemToEquipped={this.dropItemToEquipped}
-				dropItemToInv={this.dropItemToInv}
 				addObjectToMap={this.addObjectToMap}
 				addStackedObjToOtherPc={this.addStackedObjToOtherPc}
 				addItemToPlayerInventory={this.props.addItemToPlayerInventory}
 				isPickUpAction={this.state.isPickUpAction}
 				isMapObj={this.state.isMapObj}
-				dialogProps={dialogProps}
+				notEnoughSpaceDialogProps={this.props.notEnoughSpaceDialogProps}
 				setShowDialogProps={this.props.setShowDialogProps}
 				creatureCoords={creatureCoords}
+				activePc={this.props.activeCharacter}
+				activePcInfo={this.props.playerCharacters[this.props.activeCharacter]}
+				inTacticalMode={this.props.inTacticalMode}
+				setContainerOpenState={this.setContainerOpenState}
 			/>
-		)
+		);
 	}
 
 	switchEquipment = (id) => {
@@ -634,7 +698,6 @@ class UI extends React.Component {
 		const loadout2 = updateData.equippedItems.loadout2;
 		const leftHandHasLight = updateData.items[loadout2.left] && updateData.items[loadout2.left].itemType === 'Light';
 		const rightHandHasLight = updateData.items[loadout2.right] && updateData.items[loadout2.right].itemType === 'Light';
-		let tempAllItemsList = [...this.state.entireInventory[id]];
 		let lightingChanged = false;
 
 		if (updateData.equippedLight || leftHandHasLight || rightHandHasLight) {
@@ -646,17 +709,22 @@ class UI extends React.Component {
 		updateData.equippedItems.loadout1 = {...loadout2};
 
 		for (const itemId of Object.values(updateData.equippedItems.loadout1)) {
-			const itemBox = tempAllItemsList.indexOf(itemId);
-			tempAllItemsList.splice(itemBox, 1, null);
+			const itemBox = updateData.inventory.indexOf(itemId);
+			updateData.inventory.splice(itemBox, 1, null);
 		}
-		this.updateInventory(id, tempAllItemsList, () => {
-			const updatedData = {
-				equippedItems: updateData.equippedItems,
-				equippedLight: updateData.equippedLight,
-				lightRange: updateData.lightRange
-			};
-			this.props.updateCharacters('player', updatedData, id, lightingChanged, false, false);
-		})
+		for (const itemId of Object.values(updateData.equippedItems.loadout2)) {
+			if (!updateData.inventory.includes(itemId) && updateData.equippedItems.loadout1.left !== itemId && updateData.equippedItems.loadout1.right !== itemId) {
+				const itemBox = updateData.inventory.indexOf(null);
+				updateData.inventory.splice(itemBox, 1, itemId);
+			}
+		}
+		const updatedEquipmentData = {
+			equippedItems: updateData.equippedItems,
+			equippedLight: updateData.equippedLight,
+			lightRange: updateData.lightRange,
+			inventory: updateData.inventory
+		};
+		this.props.updateCharacters('player', updatedEquipmentData, id, lightingChanged, false, false);
 	}
 
 	/**
@@ -683,26 +751,6 @@ class UI extends React.Component {
 		return hasExtraAmmo;
 	}
 
-	/**
-	 * Update UI's list of inv items in state
-	 * @param id: string (pc ID)
-	 * @param updatedList: array (of item/weapon IDs)
-	 * @param callback
-	 */
-	updateInventory = (id, updatedList, callback) => {
-		let updatedInv = this.state.entireInventory;
-		if (id) {
-			updatedInv[id] = updatedList;
-		} else {
-			updatedInv = updatedList;
-		}
-		this.setState({entireInventory: updatedInv}, () => {
-			if (callback) {
-				callback();
-			}
-		});
-	}
-
 	toggleMusic = () => {
 		const music = this.audioSelectors.music[this.props.gameOptions.songName];
 		if (this.props.gameOptions.playMusic) {
@@ -725,40 +773,6 @@ class UI extends React.Component {
 		this.audioSelectors.music[this.props.gameOptions.songName] = document.getElementById(`music-${this.props.gameOptions.songName}-theme`);
 	}
 
-	/**
-	 * For setting up/updating player inventory (not the stored inventory from App) shown in the char info panel
-	 * @param charId: string
-	 * @param invItemsList: array of itemIds (or null if no item in that slot)
-	 * @private
-	 */
-	_parseInvItems(charId, invItemsList){
-		const charInfo = this.props.playerCharacters[charId];
-		const allItems = Object.assign({...charInfo.weapons}, {...charInfo.items});
-		const equippedItems = charInfo.equippedItems;
-		let tempInvList = [...invItemsList];
-
-		for (const itemId of Object.keys(allItems)) {
-			if (itemId !== equippedItems.loadout1.right && itemId !== equippedItems.loadout1.left && itemId !== equippedItems.armor && tempInvList.indexOf(itemId) === -1) {
-				const emptyBoxId = tempInvList.indexOf(null);
-				tempInvList.splice(emptyBoxId, 1, itemId);
-			}
-		}
-
-		// remove from inv list any items that are no longer among character's items/weapons
-		tempInvList.forEach((id, index) => {
-			if (!allItems[id]) {
-				tempInvList.splice(index, 1, null);
-			}
-		});
-
-		// need to fill in the rest of the inv slots with null, so char info panel shows empty boxes
-		let updatedInventory = [];
-		for (let i=0; i < this.inventoryLength; i++) {
-			updatedInventory.push(tempInvList[i] || null);
-		}
-		this.updateInventory(charId, updatedInventory);
-	}
-
 	toggleOptionsPanel = () => {
 		this.setState(prevState => ({showGameOptions: !prevState.showGameOptions}));
 	}
@@ -767,22 +781,29 @@ class UI extends React.Component {
 		this.setState(prevState => ({showHelpScreen: !prevState.showHelpScreen}));
 	}
 
+	updateControlBarColumnCount = (playerCount) => {
+		const controlBarColumnCount = `control-bar-${playerCount}-columns`;
+		this.setState({controlBarColumnCount});
+	}
+
 	/**
-	 *
-	 * @param clickedObjPos
+	 * When user clicks on tile with object(s) on it or pickup action button, gathers list of objects, then calls functions to
+	 * set object info panel to closed (in case it was open for another tile), store the objects that are selected, and then open object info panel
+	 * @param clickedObjPos: string
 	 */
 	processTileClick = (clickedObjPos) => {
 		// if object was clicked on on the map, check if any other objects are on the same tile
 		let clickedObjects = [];
+		const allObjects = {...this.props.mapObjects, ...this.props.envObjects};
 		if (!this.props.objectSelected.isPickUpAction) {
-			for (const [objId, objInfo] of Object.entries(this.props.mapObjects)) {
+			for (const [objId, objInfo] of Object.entries(allObjects)) {
 				const objPos = convertCoordsToPos(objInfo.coords);
 				if (clickedObjPos === objPos) {
 					clickedObjects.push({...objInfo, id: objId});
 				}
 			}
 		} else {
-			//todo: not sure deepcopy is needed, as currently nothing is modifying this.state.selectedObject outside of setObjectSelected for clicked objects
+			//TODO: not sure deepcopy is needed, as currently nothing is modifying this.state.selectedObject outside of setObjectSelected for clicked objects
 			clickedObjects = deepCopy(this.props.objectSelected.objectList);
 		}
 		this.setObjectPanelDisplayOption(false, null, null, () => {
@@ -793,11 +814,6 @@ class UI extends React.Component {
 	}
 
 	componentDidMount() {
-		if (Object.keys(this.state.entireInventory).length === 0) {
-			for (const id of Object.keys(this.props.playerCharacters)) {
-				this._parseInvItems(id, []);
-			}
-		}
 		if (this.initialUiLoad) {
 			this._populateSfxSelectors();
 			this.toggleMusic();
@@ -811,12 +827,13 @@ class UI extends React.Component {
 			this.setState({logText: [...this.props.logText]}, this.scrollLog);
 		}
 
-		if (this.props.selectedCharacterInfo && prevProps.selectedCharacterInfo !== this.props.selectedCharacterInfo) {
-			this._parseInvItems(this.props.selectedCharacterInfo.id, this.state.entireInventory[this.props.selectedCharacterInfo.id]);
-		}
-
 		if (prevProps.activeCharacter !== this.props.activeCharacter && this.props.playerCharacters[this.props.activeCharacter]) {
 			this.setSelectedControlTab(this.props.activeCharacter);
+		}
+
+		const newPlayerCount = Object.keys(prevProps.playerCharacters).length;
+		if (newPlayerCount !== Object.keys(this.props.playerCharacters).length) {
+			this.updateControlBarColumnCount(newPlayerCount);
 		}
 
 		const clickedObjPos = this.props.objectSelected ? convertCoordsToPos(this.props.objectSelected.objectList[0].coords) : null;
@@ -873,29 +890,32 @@ class UI extends React.Component {
 					<ModeInfoPanel
 						inTacticalMode={this.props.modeInfo.inTacticalMode}
 						toggleTacticalMode={this.props.toggleTacticalMode}
+						inSearchMode={this.props.inSearchMode}
+						toggleSearchMode={this.props.toggleSearchMode}
 						threatList={this.props.threatList}
 						isPartyNearby={this.props.isPartyNearby}
+						showDialog={this.props.showDialog}
 						setShowDialogProps={this.props.setShowDialogProps}
 						players={this.props.playerCharacters}
 						activeCharacter={this.props.activeCharacter}
 						updateActiveCharacter={this.props.updateActiveCharacter}
 						updateFollowModePositions={this.props.updateFollowModePositions}
-						endTurnCallback={this.props.updateCurrentTurn}
+						updateCurrentTurn={this.props.updateCurrentTurn}
 					/>}
 					{/*<div className='minimize-button general-button' onClick={() => {*/}
 					{/*	this.minimizePanel('turnInfo');*/}
 					{/*}}>_</div>*/}
 				</div>
 
-				{this.props.selectedCharacterInfo && this.state.entireInventory &&
+				{this.props.selectedCharacterInfo &&
 				<CharacterInfoPanel
 					characterIsSelected={this.props.characterIsSelected}
 					updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
 					characterInfo={this.props.selectedCharacterInfo}
 					switchEquipment={this.switchEquipment}
 					updateCharacters={this.props.updateCharacters}
-					entireInventory={this.state.entireInventory}
-					updateInventory={this.updateInventory}
+					characterInventoryIds={this.props.selectedCharacterInfo.inventory}
+					showDialog={this.props.showDialog}
 					setShowDialogProps={this.props.setShowDialogProps}
 					setObjectSelected={this.setObjectSelected}
 					setObjectPanelDisplayOption={this.setObjectPanelDisplayOption}
@@ -927,7 +947,7 @@ class UI extends React.Component {
 					<div className='system-button game-options-button' onClick={() => this.toggleOptionsPanel()}></div>
 				</div>
 
-				<div id='control-bar-container' ref={this.uiRefs.controlBar} className='ui-panel'>
+				<div id='control-bar-container' ref={this.uiRefs.controlBar} className={`ui-panel ${this.state.controlBarColumnCount}`}>
 					{/*<div className='minimize-button general-button' onClick={() => {*/}
 					{/*	this.minimizePanel('controlBar');*/}
 					{/*}}>_</div>*/}

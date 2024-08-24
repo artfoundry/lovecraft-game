@@ -1,0 +1,320 @@
+{
+  "createFirstAidKit": {
+    "name": "Create First Aid Kit",
+    "itemCategory": "items",
+    "skillType": "create",
+    "profession": ["general", "doctor"],
+    "description": "Create 1 First Aid Kit.",
+    "mustBeOutOfDanger": true,
+    "cost": {
+      "cloth": 2,
+      "alcohol": 2
+    }
+  },
+  "createMolotovCocktail": {
+    "name": "Create Molotov Cocktail",
+    "itemCategory": "weapons",
+    "skillType": "create",
+    "profession": ["general"],
+    "description": "Create 1 Molotov Cocktail.",
+    "mustBeOutOfDanger": true,
+    "cost": {
+      "cloth": 1,
+      "alcohol": 3
+    }
+  },
+  "createTorch": {
+    "name": "Create Torch",
+    "itemCategory": "items",
+    "skillType": "create",
+    "profession": ["general", "archaeologist"],
+    "description": "Create 1 Torch.",
+    "mustBeOutOfDanger": true,
+    "cost": {
+      "cloth": 1,
+      "alcohol": 1,
+      "wood": 1
+    }
+  },
+  "createAcidConcoction": {
+    "name": "Create Acid Concoction",
+    "itemCategory": "weapons",
+    "skillType": "create",
+    "profession": ["general", "chemist"],
+    "description": "Create 1 Acid Concoction.",
+    "mustBeOutOfDanger": true,
+    "cost": {
+      "chemical": 3
+    }
+  },
+  "createPharmaceuticals": {
+    "name": "Create Pharmaceuticals",
+    "itemCategory": "items",
+    "skillType": "create",
+    "profession": ["chemist", "doctor"],
+    "description": "Create 1 vial of Pharmaceuticals.",
+    "mustBeOutOfDanger": true,
+    "cost": {
+      "chemical": 2,
+      "alcohol": 1
+    }
+  },
+  "createHolyWater": {
+    "name": "Create Holy Water",
+    "itemCategory": "weapons",
+    "skillType": "create",
+    "profession": ["priest"],
+    "description": "Create 1 vial of Holy Water.",
+    "mustBeOutOfDanger": true,
+    "cost": {
+      "water": 3
+    }
+  },
+  "handgunKnowledge": {
+    "name": "Handgun Knowledge",
+    "skillType": "knowledge",
+    "profession": ["general", "privateEye", "veteran", "thief"],
+    "description": "Knowledge of how to use handguns, thus removing 50% penalty to hit targets."
+  },
+  "shotgunKnowledge": {
+    "name": "Shotgun Knowledge",
+    "skillType": "knowledge",
+    "profession": ["general", "privateEye", "veteran"],
+    "description": "Knowledge of how to use shotguns, thus removing 50% penalty to hit targets."
+  },
+  "machineGunKnowledge": {
+    "name": "Machine Gun Knowledge",
+    "skillType": "knowledge",
+    "profession": ["general", "veteran"],
+    "description": "Knowledge of how to use machine guns, thus removing 50% penalty to hit targets."
+  },
+  "mine": {
+    "name": "Mine",
+    "skillType": "active",
+    "profession": ["general"],
+    "description": "Use a pickaxe to mine in certain locations (rocky mounds) in order to find rocks, gems, precious metals, etc.",
+    "hasTarget": false,
+    "mustBeOutOfDanger": true,
+    "requiresEquippedItem": "pickaxe"
+  },
+  "sureShot": {
+    "name": "Sure Shot",
+    "skillType": "passive",
+    "profession": ["general"],
+    "description": "Improved accuracy with all guns (bonus to Agility when shooting with any gun).",
+    "modifier": [1, 2, 3, 4, 5],
+    "modType": "+",
+    "affects": "Agility"
+  },
+  "quickReload": {
+    "name": "Quick Reload",
+    "skillType": "active",
+    "profession": ["privateEye"],
+    "description": "Reload a handgun without using an action.",
+    "hasTarget": false,
+    "mustBeOutOfDanger": false,
+    "requiresEquippedGunType": ["handgun"],
+    "spirit": [40, 30, 20, 10]
+  },
+  "keenInvestigation": {
+    "name": "Keen Investigation",
+    "skillType": "passive",
+    "profession": ["privateEye"],
+    "description": "Improved chance of finding secrets for the party when doing a search.",
+    "modifier": [0.1, 0.15, 0.2, 0.25, 0.3],
+    "modType": "+",
+    "affects": "%"
+  },
+  "steadyHand": {
+    "name": "Steady Hand",
+    "skillType": "passive",
+    "profession": ["privateEye"],
+    "description": "Improved accuracy with handguns (bonus to Agility when shooting with a handgun).",
+    "modifier": [1, 2, 3],
+    "modType": "+",
+    "affects": " Agility"
+  },
+  "alwaysOnTheLookout": {
+    "name": "Always On The Lookout",
+    "skillType": "passive",
+    "profession": ["archaeologist"],
+    "description": "Increased chance of finding Relics.",
+    "modifier": [0.2, 0.3, 0.4, 0.5, 0.6],
+    "modType": "+",
+    "affects": "%"
+  },
+  "expertMining": {
+    "name": "Expert Mining",
+    "skillType": "active",
+    "profession": ["archaeologist"],
+    "description": "Allows the archaeologist to mine much more quickly. If not enough Spirit, only the normal Mine skill will be available.",
+    "hasTarget": false,
+    "mustBeOutOfDanger": true,
+    "requiresEquippedItem": "pickaxe",
+    "spirit": [45, 40, 35, 30, 25]
+  },
+  "betterLivingThroughChemicals": {
+    "name": "Better Living Through Chemicals",
+    "skillType": "active",
+    "profession": ["chemist"],
+    "description": "Use Pharmaceuticals on self with increased effectiveness (more Sanity recovered).",
+    "hasTarget": false,
+    "mustBeOutOfDanger": false,
+    "requiresItem": "pharmaceuticals0",
+    "modifier": [0.1, 0.2, 0.3, 0.4],
+    "spirit": [40, 40, 30, 30],
+    "modType": "+",
+    "affects": "%"
+  },
+  "resuscitate": {
+    "name": "Resuscitate",
+    "skillType": "active",
+    "profession": ["doctor"],
+    "description": "Adjacent party member at 0 health is brought back to life at 5 health if skill is used within 3 turns of target being mortally wounded.",
+    "hasTarget": true,
+    "mustBeOutOfDanger": false,
+    "modifier": [5, 5, 5, 5, 5],
+    "spirit": [70, 65, 60, 55, 50],
+    "modType": "Revived with ",
+    "affects": " Health"
+  },
+  "medicalExpertise": {
+    "name": "Medical Expertise",
+    "skillType": "passive",
+    "profession": ["doctor"],
+    "description": "Improved healing with First Aid Kits.",
+    "modifier": [0.25, 0.5, 0.75, 1, 1.5],
+    "modType": "+",
+    "affects": "% healing"
+  },
+  "comfortTheFearful": {
+    "name": "Comfort The Fearful",
+    "skillType": "active",
+    "profession": ["priest"],
+    "description": "Comfort the party with calming words and presence to reduce Sanity damage to the party for a number of turns while in Tactical Mode.",
+    "hasTarget": false,
+    "mustBeOutOfDanger": false,
+    "modifier": [2, 4, 6, 8, 10],
+    "turnsLeft": [2, 2, 3, 3, 4],
+    "spirit": [70, 60, 50, 40, 30],
+    "modType": "-",
+    "affects": " Sanity damage per Investigator"
+  },
+  "spiritualInspiration": {
+    "name": "Spiritual Inspiration",
+    "skillType": "active",
+    "profession": ["priest"],
+    "description": "Use both actions (and amazing words of inspiration) to recover some Spirit for the party.",
+    "hasTarget": false,
+    "mustBeOutOfDanger": false,
+    "requiresBothActions": true,
+    "modifier": [10, 20, 30, 40, 50],
+    "modType": "+",
+    "affects": " Spirit per Investigator"
+  },
+  "feelThePain": {
+    "name": "Feel The Pain",
+    "skillType": "active",
+    "profession": ["veteran"],
+    "description": "For the next Psychic attack that reduces Sanity, Sanity reduction is converted to 2x Health damage, ignoring any health damage reductions.",
+    "active": false,
+    "spirit": [40, 35, 30, 25, 20]
+  },
+  "goBallistic": {
+    "name": "Go Ballistic",
+    "skillType": "active",
+    "profession": ["veteran"],
+    "description": "Use all remaining ammo in gun to shoot target with reduced accuracy (reduced percent to attack roll).",
+    "hasTarget": true,
+    "mustBeOutOfDanger": false,
+    "requiresEquippedGunType": ["handgun", "shotgun", "machineGun"],
+    "modifier": [0.4, 0.35, 0.3, 0.25, 0.2],
+    "modType": "-",
+    "affects": "%",
+    "spirit": [80, 75, 70, 65, 60]
+  },
+  "moveIt": {
+    "name": "Move It!",
+    "skillType": "passive",
+    "profession": ["veteran"],
+    "description": "Permanent increase to movement.",
+    "modifier": [1, 2, 3],
+    "modType": "+",
+    "affects": " Move(s)"
+  },
+  "attackFromTheShadows": {
+    "name": "Attack From The Shadows",
+    "skillType": "passive",
+    "profession": ["thief"],
+    "description": "While Stealthy, increased hit chance and damage with melee attacks.",
+    "modifier": [0.1, 0.2, 0.3, 0.4, 0.5],
+    "modType": "+",
+    "affects": "%"
+  },
+  "stealthy": {
+    "name": "Stealthy",
+    "skillType": "active",
+    "profession": ["thief"],
+    "description": "Less likely to be hit when not equipped with a light (bonus to Agility when attacked) and allows Attack From The Shadows; • Drains Spirit with each move or action; • Doesn't require an action to activate or deactivate; • Only usable in Tactical Mode.",
+    "mustNotHaveLightEquipped": true,
+    "active": false,
+    "modifier": [1, 2, 3, 4, 5],
+    "modType": "+",
+    "affects": " Agility",
+    "spirit": [3, 3, 2, 2, 1]
+  },
+  "disarmTrap": {
+    "name": "Disarm Trap",
+    "skillType": "active",
+    "profession": ["thief"],
+    "description": "Disarm a trap without chance of it triggering.",
+    "hasTarget": true,
+    "mustBeOutOfDanger": true,
+    "light": [30, 25, 20, 15, 10],
+    "spirit": [40, 35, 30, 25, 20]
+  },
+  "identifyRelic": {
+    "name": "Identify Relic",
+    "skillType": "active",
+    "profession": ["occultResearcher"],
+    "description": "Discern what a Relic does (item must be in inventory).",
+    "mustBeOutOfDanger": true,
+    "light": [30, 25, 20, 15, 10],
+    "spirit": [30, 25, 20, 15, 10]
+  },
+  "sacrificialStrike": {
+    "name": "Sacrificial Strike",
+    "skillType": "active",
+    "profession": ["occultResearcher"],
+    "description": "Guaranteed hit and extra damage with Kris Knife in exchange for health and sanity loss.",
+    "hasTarget": true,
+    "mustBeOutOfDanger": false,
+    "requiresEquippedItem": "krisKnife",
+    "modifier": [1.5, 3, 4.5, 6, 7.5, 10],
+    "modType": "x",
+    "affects": " Damage",
+    "cost": {
+      "health": [3, 5, 7, 9, 11, 20],
+      "sanity": [3, 5, 7, 9, 11, 20]
+    },
+    "spirit": [30, 30, 30, 30, 30, 30]
+  },
+  "relicExpertise": {
+    "name": "Relic Expertise",
+    "skillType": "passive",
+    "profession": ["occultResearcher"],
+    "description": "Suffer less Sanity loss when using Relics.",
+    "modifier": [0.2, 0.4, 0.6],
+    "modType": "-",
+    "affects": "% Sanity damage"
+  },
+  "krisKnifeExpertise": {
+    "name": "Kris Knife Expertise",
+    "skillType": "passive",
+    "profession": ["occultResearcher"],
+    "description": "Knowledge of how to strike with precision in order to do the most damage possible.",
+    "modifier": [0.1, 0.15, 0.2, 0.25],
+    "modType": "+",
+    "affects": "% Damage"
+  }
+}

@@ -3,18 +3,21 @@
     "itemType": "Light",
     "range": 3,
     "maxTime": 100,
+    "time": 100,
     "description": "A short term light source with a small range of visible light. Easier to find, but not as reliable."
   },
   "Lantern": {
     "itemType": "Light",
     "range": 4,
     "maxTime": 300,
+    "time": 300,
     "description": "A long lasting light source with a good range of visible light."
   },
   "Electric Torch": {
     "itemType": "Light",
     "range": 5,
     "maxTime": 500,
+    "time": 500,
     "description": "The longest lasting light source with a very good range of visible light. Expensive and harder to find than a lantern."
   },
   "Oil": {
@@ -38,27 +41,88 @@
   },
   "Leather Jacket": {
     "itemType": "Armor",
-    "defense": 3,
-    "damageReduction": 1
+    "defense": 2,
+    "damageReduction": 1,
+    "description": "Jacket made of durable leather, providing some defensive protection and minimal damage reduction."
   },
   "Bulletproof Vest": {
     "itemType": "Armor",
     "defense": 4,
-    "damageReduction": 2
+    "damageReduction": 2,
+    "penalty": {"movement": 1},
+    "description": "Heavy cloth vest with metal plates inserted in pockets throughout, providing decent defensive protection and damage reduction at the cost of slower movement."
   },
   "Handgun Ammo": {
     "itemType": "Ammo",
     "gunType":  "handgun",
-    "stackable": true
+    "stackable": true,
+    "description": "Ammunition for all handguns."
   },
   "Shotgun Ammo": {
     "itemType": "Ammo",
     "gunType":  "shotgun",
-    "stackable": true
+    "stackable": true,
+    "description": "Ammunition for all shotguns."
   },
   "Machine Gun Ammo": {
     "itemType": "Ammo",
     "gunType":  "machineGun",
-    "stackable": true
+    "stackable": true,
+    "description": "Ammunition for all machine guns."
+  },
+  "Alcohol": {
+    "itemType": "Component",
+    "stackable": true,
+    "description": "Component for making First Aid Kits, Pharmaceuticals, Molotov Cocktails, and Torches (requires create skill for the appropriate item)."
+  },
+  "Chemical": {
+    "itemType": "Component",
+    "stackable": true,
+    "description": "Component for making Pharmaceuticals and Acid Concoctions (requires create skill for the appropriate item)."
+  },
+  "Cloth": {
+    "itemType": "Component",
+    "stackable": true,
+    "description": "Component for making First Aid Kits, Molotov Cocktails, and Torches (requires create skill for the appropriate item)."
+  },
+  "Water": {
+    "itemType": "Component",
+    "stackable": true,
+    "description": "Component for making Holy Water (requires Holy Water create skill)."
+  },
+  "Wood": {
+    "itemType": "Component",
+    "stackable": true,
+    "description": "Component for making Torches (requires Torch create skill)."
+  },
+  "Gems": {
+    "itemType": "Valuable",
+    "stackable": true,
+    "description": "Precious gems that can be sold for money."
+  },
+  "Precious Metals": {
+    "itemType": "Valuable",
+    "stackable": true,
+    "description": "Gold and other valuable metal ores that can be sold for money."
+  },
+  "Elder Sign": {
+    "itemType": "Relic",
+    "name": "Elder Sign",
+    "description": "A small tablet of an unknown material with a symbol on it showing an asymmetrical five point star with a flame in the center.",
+    "furtherInfo": "Not of this Earth, this object emanates a strange, barely audible noise and simultaneously makes the wielder feel at ease and gives them a sense of foreboding.",
+    "effect": "Protects the wielder from the effects of the Old Ones. May have other properties...",
+    "useType": "passive"
+  },
+  "Necronomicon": {
+    "itemType": "Relic",
+    "name": "Necronomicon",
+    "description": "An ancient book, bound in leather with iron clasps.",
+    "furtherInfo": "Translated into Greek from the original, which was written in Arabic by Abdul Alhazred, who was thought to be a mad man from the early 700s CE. It purportedly accounts the details of the Old Ones and the means to summon or banish them, but none who have tried have survived or maintained their sanity.",
+    "effect": "With the Elder Sign, it can be used to banish an Old One to its original dimension, at great cost to the wielder's Sanity.",
+    "useType": "active",
+    "hasTarget": true,
+    "sanityCost": 50,
+    "spiritCost": 50,
+    "result": "remove"
   }
 }

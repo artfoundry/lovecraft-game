@@ -5,26 +5,19 @@ import 'drag-drop-touch';
 // import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
+const testAttributes = {
+    showLogin: true,
+    showCharacterCreation: true,
+    startingCharacters: ['privateEye', 'chemist', 'archaeologist'],
+    startingLocation: 'catacombs'
+};
 
-// prevent zoom on mobile - not sure these will work
+// prevent zoom on mobile
 document.querySelector('meta[name="viewport"]').setAttribute("content", "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no");
-// document.addEventListener("gesturestart", function (e) {
-//     e.preventDefault();
-//     document.body.style.zoom = 0.99;
-// });
-// document.addEventListener("gesturechange", function (e) {
-//     e.preventDefault();
-//
-//     document.body.style.zoom = 0.99;
-// });
-// document.addEventListener("gestureend", function (e) {
-//     e.preventDefault();
-//     document.body.style.zoom = 1;
-// });
 
 root.render(
   <React.StrictMode>
-    <Game />
+    <Game testAttributes={testAttributes} />
   </React.StrictMode>
 );
 

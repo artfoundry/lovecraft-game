@@ -2,6 +2,7 @@
   "privateEye": {
     "id": "privateEye",
     "name": "Joseph Hide",
+    "gender": "Male",
     "type": "player",
     "profession": "Private Investigator",
     "strength": 5,
@@ -10,8 +11,7 @@
     "startingHealth": 100,
     "startingSanity": 80,
     "startingSpirit": 90,
-    "skills": {
-    },
+    "skills": ["quickReload", "keenInvestigation", "steadyHand", "handgunKnowledge", "shotgunKnowledge", "mine"],
     "weapons": {
       "coltRevolver0": {
         "id": "coltRevolver0",
@@ -19,31 +19,27 @@
         "currentRounds": 6
       }
     },
-    "equippedItems": {"right": "coltRevolver0", "left": "electricTorch0", "armor": "leatherJacket0"},
+    "equippedItems": {"right": "coltRevolver0", "left": "lantern0", "armor": ""},
     "items": {
-      "electricTorch0": {
-        "id": "electricTorch0",
-        "name": "Electric Torch",
+      "lantern0": {
+        "id": "lantern0",
+        "name": "Lantern",
         "itemType": "Light",
-        "time": 500
+        "time": 300
       },
       "handgunAmmo0": {
         "id": "handgunAmmo0",
         "name": "Handgun Ammo",
         "itemType": "Ammo",
         "amount": 6
-      },
-      "leatherJacket0": {
-        "id": "leatherJacket0",
-        "name": "Leather Jacket",
-        "itemType": "Armor"
       }
     },
-    "equippedLight": "electricTorch0"
+    "equippedLight": "lantern0"
   },
   "archaeologist": {
     "id": "archaeologist",
     "name": "Mary Simpleton",
+    "gender": "Female",
     "type": "player",
     "profession": "Archaeologist",
     "strength": 3,
@@ -52,15 +48,14 @@
     "startingHealth": 80,
     "startingSanity": 100,
     "startingSpirit": 90,
-    "skills": {
-    },
+    "skills": ["alwaysOnTheLookout", "expertMining", "mine", "createTorch"],
     "weapons": {
       "pickaxe0": {
         "id": "pickaxe0",
         "name": "Pickaxe"
       }
     },
-    "equippedItems": {"right": "pickaxe0", "left": "", "armor": ""},
+    "equippedItems": {"right": "pickaxe0", "left": "torch0", "armor": ""},
     "items": {
       "torch0": {
         "id": "torch0",
@@ -69,21 +64,21 @@
         "time": 100
       }
     },
-    "equippedLight": ""
+    "equippedLight": "torch0"
   },
   "chemist": {
     "id": "chemist",
     "name": "Helen Abernathy",
+    "gender": "Female",
     "type": "player",
     "profession": "Chemist",
     "strength": 2,
-    "agility": 3,
+    "agility": 4,
     "mentalAcuity": 7,
     "startingHealth": 60,
-    "startingSanity": 100,
-    "startingSpirit": 80,
-    "skills": {
-    },
+    "startingSanity": 80,
+    "startingSpirit": 70,
+    "skills": ["createAcidConcoction", "createPharmaceuticals", "betterLivingThroughChemicals", "mine"],
     "weapons": {
       "acidConcoction0": {
         "id": "acidConcoction0",
@@ -99,6 +94,182 @@
         "itemType": "Medicine",
         "amount": 1
       },
+      "lantern0": {
+        "id": "lantern0",
+        "name": "Lantern",
+        "itemType": "Light",
+        "time": 300
+      }
+    },
+    "equippedLight": "lantern0"
+  },
+  "doctor": {
+    "id": "doctor",
+    "name": "Thomas Wade",
+    "gender": "Male",
+    "type": "player",
+    "profession": "Doctor",
+    "strength": 3,
+    "agility": 3,
+    "mentalAcuity": 8,
+    "startingHealth": 110,
+    "startingSanity": 100,
+    "startingSpirit": 105,
+    "skills": ["createFirstAidKit", "medicalExpertise", "resuscitate", "mine"],
+    "weapons": {},
+    "equippedItems": {"right": "", "left": "lantern0", "armor": ""},
+    "items": {
+      "firstAidKit0": {
+        "id": "firstAidKit0",
+        "name": "First Aid Kit",
+        "itemType": "Medicine",
+        "amount": 2
+      },
+      "pharmaceuticals0": {
+        "id": "pharmaceuticals0",
+        "name": "Pharmaceuticals",
+        "itemType": "Medicine",
+        "amount": 1
+      },
+      "lantern0": {
+        "id": "lantern0",
+        "name": "Lantern",
+        "itemType": "Light",
+        "time": 300
+      }
+    },
+    "equippedLight": "lantern0"
+  },
+  "priest": {
+    "id": "priest",
+    "name": "Peter Mulcahy",
+    "gender": "Male",
+    "type": "player",
+    "profession": "Priest",
+    "strength": 4,
+    "agility": 3,
+    "mentalAcuity": 6,
+    "startingHealth": 100,
+    "startingSanity": 110,
+    "startingSpirit": 105,
+    "skills": ["createHolyWater", "comfortTheFearful", "spiritualInspiration", "mine"],
+    "weapons": {
+      "holyWater0": {
+        "id": "holyWater0",
+        "name": "Holy Water",
+        "currentRounds": 2
+      },
+      "baseballBat0": {
+        "id": "baseballBat0",
+        "name": "Baseball Bat"
+      }
+    },
+    "equippedItems": {"right": "holyWater0", "left": "torch0", "armor": ""},
+    "items": {
+      "firstAidKit0": {
+        "id": "firstAidKit0",
+        "name": "First Aid Kit",
+        "itemType": "Medicine",
+        "amount": 1
+      },
+      "torch0": {
+        "id": "torch0",
+        "name": "Torch",
+        "itemType": "Light",
+        "time": 100
+      }
+    },
+    "equippedLight": "torch0"
+  },
+  "veteran": {
+    "id": "veteran",
+    "name": "Frank Wilcox",
+    "gender": "Male",
+    "type": "player",
+    "profession": "WWI Veteran",
+    "strength": 6,
+    "agility": 5,
+    "mentalAcuity": 2,
+    "startingHealth": 120,
+    "startingSanity": 60,
+    "startingSpirit": 90,
+    "skills": ["feelThePain", "goBallistic", "moveIt", "handgunKnowledge", "shotgunKnowledge", "machineGunKnowledge", "mine"],
+    "weapons": {
+      "remington0": {
+        "id": "remington0",
+        "name": "Remington",
+        "currentRounds": 5
+      },
+      "knife0": {
+        "id": "knife0",
+        "name": "Knife"
+      }
+    },
+    "equippedItems": {"right": "remington0", "left": "", "armor": "leatherJacket0"},
+    "items": {
+      "shotgunAmmo0": {
+        "id": "shotgunAmmo0",
+        "name": "Shotgun Ammo",
+        "itemType": "Ammo",
+        "amount": 5
+      },
+      "leatherJacket0": {
+        "id": "leatherJacket0",
+        "name": "Leather Jacket",
+        "itemType": "Armor"
+      }
+    },
+    "equippedLight": ""
+  },
+  "thief": {
+    "id": "thief",
+    "name": "Elizabeth Smith",
+    "gender": "Female",
+    "type": "player",
+    "profession": "Thief",
+    "strength": 4,
+    "agility": 6,
+    "mentalAcuity": 4,
+    "startingHealth": 80,
+    "startingSanity": 80,
+    "startingSpirit": 80,
+    "skills": ["attackFromTheShadows", "stealthy", "disarmTrap", "handgunKnowledge", "mine"],
+    "weapons": {
+      "knife0": {
+        "id": "knife0",
+        "name": "Knife"
+      }
+    },
+    "equippedItems": {"right": "knife0", "left": "electricTorch0", "armor": ""},
+    "items": {
+      "electricTorch0": {
+        "id": "electricTorch0",
+        "name": "Electric Torch"
+      }
+    },
+    "equippedLight": "electricTorch0"
+  },
+  "occultResearcher": {
+    "id": "occultResearcher",
+    "name": "Philip Howard",
+    "gender": "Male",
+    "type": "player",
+    "profession": "Occult Researcher",
+    "strength": 2,
+    "agility": 3,
+    "mentalAcuity": 6,
+    "startingHealth": 60,
+    "startingSanity": 80,
+    "startingSpirit": 70,
+    "skills": ["identifyRelic", "sacrificialStrike", "relicExpertise", "krisKnifeExpertise", "mine"],
+    "weapons": {
+      "krisKnife0": {
+        "id": "krisKnife0",
+        "name": "Kris Knife"
+      }
+    },
+    "equippedItems": {"right": "krisKnife0", "left": "lantern0", "armor": ""},
+    "items": {
       "lantern0": {
         "id": "lantern0",
         "name": "Lantern",

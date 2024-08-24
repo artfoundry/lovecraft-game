@@ -2,16 +2,74 @@
 	position: absolute;
 	transition: transform 0.5s;
 	user-select: none;
+	filter: drop-shadow(4px 4px 2px black);
+	z-index: 2;
+}
+
+.player.dead {
+	pointer-events: none;
 }
 
 .private-eye {
 	content: url('../assets/characters/players/private-eye.png');
 }
 
+.private-eye-dead {
+	content: url('../assets/characters/players/private-eye_dead.png');
+}
+
 .archaeologist {
 	content: url('../assets/characters/players/archaeologist.png');
 }
 
+.archaeologist-dead {
+	content: url('../assets/characters/players/archaeologist_dead.png');
+}
+
 .chemist {
 	content: url('../assets/characters/players/chemist.png');
+}
+
+.chemist-dead {
+	content: url('../assets/characters/players/chemist_dead.png');
+}
+
+.doctor {
+	content: url('../assets/characters/players/doctor.png');
+}
+
+.doctor-dead {
+	content: url('../assets/characters/players/doctor_dead.png');
+}
+
+.priest {
+	content: url('../assets/characters/players/priest.png');
+}
+
+.priest-dead {
+	content: url('../assets/characters/players/priest_dead.png');
+}
+
+.veteran {
+	content: url('../assets/characters/players/veteran.png');
+}
+
+.veteran-dead {
+	content: url('../assets/characters/players/veteran_dead.png');
+}
+
+.thief {
+	content: url('../assets/characters/players/thief.png');
+}
+
+.thief-dead {
+	content: url('../assets/characters/players/thief_dead.png');
+}
+
+.occult-researcher {
+	content: url('../assets/characters/players/occult-researcher.png');
+}
+
+.occult-researcher-dead {
+	content: url('../assets/characters/players/occult-researcher_dead.png');
 }

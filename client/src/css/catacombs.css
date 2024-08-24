@@ -131,7 +131,7 @@
 }
 
 
-/* OBJECTS */
+/* ENV OBJECTS */
 
 .front-door {
 	background-position: calc(var(--tile-size) * 6) calc(var(--tile-size) * 2); /* -384px -128px at 64px tile size */
@@ -153,12 +153,52 @@
 	background-position: calc(var(--tile-size) * 6) calc(var(--tile-size) * 2); /* -384px -128px at 64px tile size */
 }
 
-.exit {
+.secret-front-door {
+	background-position: var(--tile-size) 0; /* -64px 0 at 64px tile size */
+}
+
+.secret-front-door-discovered {
+	background-position: calc(var(--tile-size) * 6) calc(var(--tile-size) * 3); /* -384px -192px at 64px tile size */
+}
+
+.secret-front-door-open {
+	background-position: calc(var(--tile-size) * 7) calc(var(--tile-size) * 3); /* -448px -192px at 64px tile size */
+}
+
+.secret-left-side-door {
+	background-position: 0 var(--tile-size); /* 0 -64px at 64px tile size */
+}
+
+.secret-right-side-door {
+	background-position: calc(var(--tile-size) * 5) var(--tile-size); /* -320px -64px at 64px tile size */
+}
+
+.secret-side-door-discovered {
+	background-position: calc(var(--tile-size) * 7) calc(var(--tile-size) * 2); /* -448px -128px at 64px tile size */
+}
+
+.secret-side-door-open {
+	background-position: calc(var(--tile-size) * 7) calc(var(--tile-size) * 4); /* -448px -256px at 64px tile size */
+}
+
+.stairs-down {
 	position: absolute;
 	content: url('../assets/tilesets/Catacombs/catacombs.png');
 	object-fit: none;
 	object-position: calc(var(--tile-size) * 7) calc(var(--tile-size) * 6); /* -448px -384px at 64px tile size */
 	z-index: 0;
+	user-select: none;
+	pointer-events: none;
+	cursor: pointer;
+}
+
+.stairs-up {
+	position: absolute;
+	content: url('../assets/tilesets/Catacombs/catacombs.png');
+	object-fit: none;
+	object-position: calc(var(--tile-size) * 6) calc(var(--tile-size) * 6); /* -384px -384px at 64px tile size */
+	z-index: 0;
+	user-select: none;
 	pointer-events: none;
 	cursor: pointer;
 }

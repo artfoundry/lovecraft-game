@@ -4,10 +4,8 @@
 	box-sizing: border-box;
 }
 
-.door {
-	z-index: 1;
-	pointer-events: none;
-	user-select: none;
+.tile.secret:hover {
+	cursor: default;
 }
 
 .map-cover {
@@ -28,10 +26,11 @@
 	position: absolute;
 	box-sizing: border-box;
 	transition: opacity 0.5s;
-	box-shadow: 0 0 64px 32px black; /* for blended lighting */
+	box-shadow: 0 0 64px 16px black; /* for blended lighting */
 }
 
-/* for blended lighting using above box-shadow, need to lower all light class opacities below by 0.4 (except no-light)
+/* for blended lighting using above box-shadow, need to lower all light class opacities below
+from 0.4-0.8 (str 1-5), 0.9 (ambient) to 0-0.6 (str 1-5), 0.75 (ambient) (except no-light)
 as box-shadow greatly dims the lighting */
 
 .light-strength-5 {
@@ -55,7 +54,7 @@ as box-shadow greatly dims the lighting */
 }
 
 .ambient-light {
-	opacity: 0.5;
+	opacity: 0.75;
 }
 
 .no-light {
@@ -79,6 +78,8 @@ as box-shadow greatly dims the lighting */
 .object {
 	position: absolute;
 	user-select: none;
+	filter: drop-shadow(4px 4px 2px black);
+	transition: opacity 0.5s;
 }
 
 .torch-top-wall, .torch {
@@ -108,7 +109,11 @@ as box-shadow greatly dims the lighting */
 }
 
 .handgun-ammo {
-	content: url('../assets/objects/handgunammo_sml.png');
+	content: url('../assets/objects/handgunAmmo_sml.png');
+}
+
+.shotgun-ammo {
+	content: url('../assets/objects/shotgunAmmo_sml.png');
 }
 
 .first-aid-kit {
@@ -123,6 +128,30 @@ as box-shadow greatly dims the lighting */
 	content: url('../assets/objects/acid_sml.png');
 }
 
+.holy-water {
+	content: url('../assets/objects/holyWater_sml.png');
+}
+
+.molotov-cocktail {
+	content: url('../assets/objects/molotov-cocktail_sml.png');
+}
+
+.rock {
+	content: url('../assets/objects/rock_sml.png');
+}
+
+.knife {
+	content: url('../assets/objects/knife_sml.png');
+}
+
+.kris-knife {
+	content: url('../assets/objects/krisKnife_sml.png');
+}
+
+.baseball-bat {
+	content: url('../assets/objects/baseballBat_sml.png');
+}
+
 .pickaxe {
 	content: url('../assets/objects/pickaxe_sml.png');
 }
@@ -135,10 +164,108 @@ as box-shadow greatly dims the lighting */
 	content: url('../assets/objects/SandWrevolver_sml.png');
 }
 
+.remington {
+	content: url('../assets/objects/remington_sml.png');
+}
+
 .leather-jacket {
 	content: url('../assets/objects/leatherJacket_sml.png');
 }
 
 .bulletproof-vest {
 	content: url('../assets/objects/bulletproofVest_sml.png');
+}
+
+.alcohol {
+	content: url('../assets/objects/alcohol_sml.png');
+}
+
+.chemical {
+	content: url('../assets/objects/chemical_sml.png');
+}
+
+.cloth {
+	content: url('../assets/objects/cloth_sml.png');
+}
+
+.water {
+	content: url('../assets/objects/water_sml.png');
+}
+
+.wood {
+	content: url('../assets/objects/wood_sml.png');
+}
+
+.elder-sign {
+	content: url('../assets/objects/elderSign_sml.png');
+}
+
+.necronomicon {
+	content: url('../assets/objects/necronomicon_sml.png');
+}
+
+.gems {
+	content: url('../assets/objects/gems_sml.png');
+}
+
+.precious-metals {
+	content: url('../assets/objects/precious-metals_sml.png');
+}
+
+/* MAP ENV OBJECTS */
+
+.env-object {
+	position: absolute;
+	user-select: none;
+	filter: drop-shadow(1px 1px 1px black);
+	transition: opacity 0.5s;
+}
+
+.door {
+	position: absolute;
+	pointer-events: none;
+	user-select: none;
+	transition: opacity 0.5s;
+}
+
+.sarcophagus {
+	content: url('../assets/objects/sarcophagus.png');
+}
+
+.sarcophagus-open {
+	content: url('../assets/objects/sarcophagus-open.png');
+}
+
+.spike-trap {
+	top: 8px;
+	left: 8px;
+	content: url('../assets/objects/spike-trap.png');
+}
+
+.spike-trap-triggered {
+	top: 8px;
+	left: 8px;
+	content: url('../assets/objects/spike-trap-triggered.png');
+}
+
+.rocky-mound {
+	content: url('../assets/objects/rocky-mound.png');
+}
+
+.rocky-mound-destroyed {
+	content: url('../assets/objects/rocky-mound-destroyed.png');
+}
+
+/* EFFECTS */
+
+.glow-pulse-once {
+	border-radius: 50%;
+	box-shadow: 0 0;
+	animation: glow 0.5s linear 2 alternate;
+}
+@keyframes glow {
+	100% {
+		box-shadow: 0 0 10px 10px #CCCC99,
+					inset 0 0 5px 5px #CCCC99;
+	}
 }

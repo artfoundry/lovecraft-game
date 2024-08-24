@@ -2,9 +2,11 @@
 	position: absolute;
 	transition: transform 0.5s;
 	user-select: none;
+	filter: drop-shadow(4px 4px 2px black);
+	z-index: 1;
 }
 
-.dead {
+.creature.dead {
 	pointer-events: none;
 }
 

@@ -1,0 +1,60 @@
+{
+  "Spike Trap": {
+    "description": "A floor panel with holes in it (out of which nasty spikes project upon triggering), that seems to be triggered by stepping on it. If it can't be disarmed, probably best to go around...",
+    "isEnvObject": true,
+    "type": "trap",
+    "isHidden": true,
+    "isPassable": true,
+    "isDestructible": false,
+    "baseChanceOfFinding": 0.03,
+    "damage": {
+      "diceType": 10,
+      "modifier": 5
+    }
+  },
+  "Rocky Mound": {
+    "description": "A large mound of dirt and rock protrudes through the ground. May have valuable minerals or other objects in it. Stand next to it to dig (requires a Pickaxe).",
+    "isEnvObject": true,
+    "type": "mineable",
+    "isHidden": false,
+    "isPassable": false,
+    "isDestructible": true,
+    "mayContain": {
+      "Gems": {
+        "max": 10
+      },
+      "Precious Metals": {
+        "max": 20
+      },
+      "Rock": {
+        "max": 10
+      }
+    }
+  },
+  "Sarcophagus": {
+    "description": "A large stone sarcophagus. Could contain some valuables, or just old bones. Or something else...",
+    "isEnvObject": true,
+    "type": "container",
+    "isHidden": false,
+    "isPassable": false,
+    "isDestructible": false,
+    "canSpawnCreature": ["ghoul", "ghoul", "ghoul", "shoggoth"],
+    "mayContain": {
+      "Gems": {
+        "max": 2
+      },
+      "Alcohol": {
+        "max": 2
+      },
+      "Cloth": {
+        "max": 3
+      },
+      "Holy Water": {
+        "max": 1
+      },
+      "Knife": {
+        "max": 1
+      }
+    }
+  }
+}
