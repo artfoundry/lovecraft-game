@@ -4,7 +4,7 @@ import ItemTypes from './data/itemTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
 import Skills from './data/skills.json';
 
-class Character extends React.Component {
+class Character extends React.PureComponent {
 	constructor(props) {
 		super(props);
 

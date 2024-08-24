@@ -3,7 +3,7 @@ import {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPane
 import {convertCoordsToPos, notEnoughSpaceInInventory, deepCopy} from './Utils';
 import './css/ui.css';
 
-class UI extends React.Component {
+class UI extends React.PureComponent {
 	constructor(props) {
 		super(props);
 

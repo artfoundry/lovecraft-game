@@ -12,7 +12,7 @@ import UI from './UI';
 import './css/app.css';
 import {diceRoll, deepCopy, convertCoordsToPos, convertPosToCoords, articleType} from './Utils';
 
-class Game extends React.Component {
+class Game extends React.PureComponent {
 	constructor(props) {
 		super(props);
 

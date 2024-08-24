@@ -27,7 +27,7 @@ import './css/playerCharacters.css';
  * Map is made up of pre-defined pieces (using the map tool) that contain tiles
  */
 
-class Map extends React.Component {
+class Map extends React.PureComponent {
 	constructor(props) {
 		super(props);
 

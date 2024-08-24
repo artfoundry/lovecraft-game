@@ -20,7 +20,7 @@ import './css/login.css';
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
-export default class Firebase extends React.Component {
+export default class Firebase extends React.PureComponent {
 	constructor(props) {
 		super(props);
 

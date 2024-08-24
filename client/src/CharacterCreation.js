@@ -10,7 +10,7 @@ import './css/characterCreation.css';
 import './css/playerCharacters.css';
 import './css/ui.css';
 
-export default class CharacterCreation extends React.Component {
+export default class CharacterCreation extends React.PureComponent {
 	constructor(props) {
 		super(props);
 
