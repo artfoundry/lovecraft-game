@@ -14,7 +14,6 @@ import {
 	signInWithEmailAndPassword
 } from "firebase/auth";
 import { GoogleAuthProvider } from "firebase/auth";
-import { DialogWindow } from "./UIElements";
 import './css/ui.css';
 import './css/login.css';
 
@@ -129,13 +128,7 @@ export default class Firebase extends React.Component {
 		return (
 			<DialogWindow
 				classes='dialog-login'
-				dialogContent={dialogContent}
-				closeButtonText=''
-				actionButtonVisible={false}
-				actionButtonText=''
-				actionButtonCallback={null}
-				disableCloseButton={true}
-				closeButtonCallback={null} />
+				dialogContent={dialogContent} />
 		);
 	}
 
@@ -249,6 +242,7 @@ export default class Firebase extends React.Component {
 				this.updateLogin(user);
 			})
 			.catch((error) => {
+				alert('Incorrect email or password. Please try again.');
 				console.log(error.code, error.message);
 			});
 	}
@@ -283,3 +277,10 @@ export default class Firebase extends React.Component {
 	}
 }
 
+function DialogWindow(props) {
+	return (
+		<div className={`dialog ui-panel ${props.classes}`}>
+			<div className='dialog-message'>{props.dialogContent}</div>
+		</div>
+	);
+}
