@@ -1181,6 +1181,7 @@ class Map extends React.PureComponent {
 				// either attacking a creature or using a Relic on an old one
 				} else if (characterType === 'creature' && !actionSkillType && (!actionItemType || (actionItemType && actionItemType === 'Relic' && characters[id].isOldOne))) {
 					targetIsInRange = activeCharIsPlayer &&
+						(actionButtonSelected.buttonName !== 'Holy Water' || characters[id].race === 'Undead') &&
 						characters[id].currentHealth > 0 &&
 						this.isCreatureInRange(id, actionButtonSelected);
 				}

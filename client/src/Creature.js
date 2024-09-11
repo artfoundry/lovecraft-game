@@ -10,6 +10,7 @@ class Creature extends React.PureComponent {
 		this.id = props.creatureId;
 		this.name = props.name;
 		this.type = props.type;
+		this.race = props.race;
 		this.isOldOne = props.isOldOne;
 		this.level = props.level;
 		this.strength = props.strength;
