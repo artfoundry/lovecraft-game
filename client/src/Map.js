@@ -1031,10 +1031,14 @@ class Map extends React.PureComponent {
 	_setExitPosition(exitType, callback) {
 		let allPlayerPos = exitType === 'nextArea' ? this.props.getAllCharactersPos('player', 'pos').map(player => player.pos) : null;
 		const tilePositions = Object.keys(this.state.mapLayout).filter(tilePos => {
+			let isValidPreviousAreaExit = false;
+			if (exitType === 'previousArea' && this.state.mapLayout[tilePos].piece.includes('room')) {
+				const adjacentTiles = this._getAllSurroundingTilesToRange(tilePos, 1)['1Away'].filter(pos => this.state.mapLayout[pos].type === 'floor');
+				isValidPreviousAreaExit = adjacentTiles.length >= 3;
+			}
 			return this.state.mapLayout[tilePos].type === 'floor' &&
 				!this.state.mapLayout[tilePos].piece.includes('secret') &&
-				(exitType === 'nextArea' || (exitType === 'previousArea' && this.state.mapLayout[tilePos].piece.includes('room'))) &&
-				(exitType === 'previousArea' || (exitType === 'nextArea' && !allPlayerPos.includes(tilePos)));
+				((exitType === 'nextArea' && !allPlayerPos.includes(tilePos)) || isValidPreviousAreaExit);
 		});
 		let exitPosition = tilePositions[Math.floor(Math.random() * tilePositions.length)];
 		const exitCoords = convertPosToCoords(exitPosition);
