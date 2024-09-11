@@ -2070,7 +2070,11 @@ class Map extends React.PureComponent {
 		creaturePositions.forEach(creature => {
 			if (tilesInView[creature.pos]) {
 				if (!this.props.threatList.includes(creature.id)) {
-					threatLists.threatListToAdd.push(creature.id);
+					playerPositions.forEach(player => {
+						if (!threatLists.threatListToAdd.includes(creature.id) && this.isInLineOfSight(player.pos, creature.pos)) {
+							threatLists.threatListToAdd.push(creature.id);
+						}
+					});
 				// any creatures that are in view, remove from the threatListToRemove (thus, don't remove from the App's threatList)
 				} else if (threatLists.threatListToRemove.includes(creature.id)) {
 					threatLists.threatListToRemove.splice(threatLists.threatListToRemove.indexOf(creature.id), 1);
