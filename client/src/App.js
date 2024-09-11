@@ -110,7 +110,7 @@ class Game extends React.PureComponent {
 				fxVolume: 1,
 				playFx: true,
 				musicVolume: 1,
-				playMusic: true,
+				playMusic: false,
 				songName: '',
 				screenZoom: 1.0
 			},
@@ -1781,7 +1781,7 @@ class Game extends React.PureComponent {
 						threatList={this.state.threatList}
 						toggleTacticalMode={this.toggleTacticalMode}
 						inTacticalMode={this.state.inTacticalMode}
-						isPartyNearby={this.state.partyIsNearby}
+						partyIsNearby={this.state.partyIsNearby}
 						updateIfPartyIsNearby={this.updateIfPartyIsNearby}
 						playerFollowOrder={this.state.playerFollowOrder}
 						updateFollowModePositions={this.updateFollowModePositions}

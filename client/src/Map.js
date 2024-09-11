@@ -1536,12 +1536,22 @@ class Map extends React.PureComponent {
 	_checkForExit() {
 		const activePCCoords = this.props.playerCharacters[this.props.activeCharacter].coords;
 		if (activePCCoords.xPos === this.state.nextAreaExitCoords.xPos &&
-			activePCCoords.yPos === this.state.nextAreaExitCoords.yPos)
-		{
+			activePCCoords.yPos === this.state.nextAreaExitCoords.yPos) {
 			let dialogProps = {};
-			if (this.props.inTacticalMode) {
+			if (this.props.threatList.length > 0) {
 				dialogProps = {
-					dialogContent: "You can't descend to the next level while in combat.",
+					dialogContent: "You can't exit while in combat.",
+					closeButtonText: 'Ok',
+					closeButtonCallback: null,
+					disableCloseButton: false,
+					actionButtonVisible: false,
+					actionButtonText: '',
+					actionButtonCallback: null,
+					dialogClasses: ''
+				};
+			} else if (this.props.inTacticalMode && !this.props.partyIsNearby) {
+				dialogProps = {
+					dialogContent: "All party members need to be in sight of each other before exiting.",
 					closeButtonText: 'Ok',
 					closeButtonCallback: null,
 					disableCloseButton: false,
@@ -2179,7 +2189,7 @@ class Map extends React.PureComponent {
 		let newCoords = convertPosToCoords(newTilePos);
 		let playerPositions = this.props.getAllCharactersPos('player', 'pos');
 		const activePC = this.props.inTacticalMode || !followerId ? this.props.activeCharacter : followerId;
-		let inFollowMode = !this.props.inTacticalMode && this.props.isPartyNearby;
+		let inFollowMode = !this.props.inTacticalMode && this.props.partyIsNearby;
 
 		const followModePositions = inFollowMode ? [...this.props.followModePositions] : [];
 		// only update followModePositions if we're moving the leader
@@ -2720,9 +2730,9 @@ class Map extends React.PureComponent {
 				const doorNowOpen = this.state.mapLayout[doorTilePos].doorIsOpen;
 				if (threatLists.threatListToAdd.length > 0 || threatLists.threatListToRemove.length > 0) {
 					this.props.updateThreatList(threatLists.threatListToAdd, threatLists.threatListToRemove, null, this.isInLineOfSight);
-				} else if ((doorNowOpen && !this.props.isPartyNearby) || (!doorNowOpen && this.props.isPartyNearby)) {
+				} else if ((doorNowOpen && !this.props.partyIsNearby) || (!doorNowOpen && this.props.partyIsNearby)) {
 					this.props.updateIfPartyIsNearby(this.isInLineOfSight, () => {
-						if (!this.props.isPartyNearby && !this.props.inTacticalMode) {
+						if (!this.props.partyIsNearby && !this.props.inTacticalMode) {
 							this.props.toggleTacticalMode(true);
 						}
 					});
