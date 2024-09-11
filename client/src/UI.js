@@ -318,17 +318,6 @@ class UI extends React.PureComponent {
 			// if light is already equipped and not just switching light to other hand
 			if (updateData.equippedLight && sourceBoxIndex) {
 				lightBeingSwapped = updateData.equippedLight;
-				dialogProps = {
-					dialogContent: 'That character already has an equipped light, and only one light may be equipped. Swapping the equipped one with this one.',
-					closeButtonText: 'Ok',
-					closeButtonCallback: null,
-					disableCloseButton: false,
-					actionButtonVisible: false,
-					actionButtonText: '',
-					actionButtonCallback: null,
-					dialogClasses: ''
-				}
-				this.props.setShowDialogProps(true, dialogProps);
 			}
 			if (updateData.id === 'thief' && updateData.skills.stealthy.active) {
 				updateData.skills.stealthy.active = false;

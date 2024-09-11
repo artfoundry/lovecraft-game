@@ -988,8 +988,7 @@ class Map extends React.PureComponent {
 		for (const [distance, tiles] of Object.entries(lineOfSightTiles)) {
 			for (const positions of Object.values(tiles)) {
 				for (const [pos, ranges] of Object.entries(positions)) {
-					// add together each (light source range + 1 (as the source of the light will be +1 compared to the range tiles) - distance from source)
-					// lightStrengthByTile[pos] = (lightStrengthByTile[pos] || 0) + ranges.reduce((accumulator, value) => accumulator + value + 1, 0) - (distValues[distance] * ranges.length);
+					// add together each light source range minus its distance from source (ie. if a 4 str light at dist of 2 and 3 str light at dist of 2, total str is 3)
 					lightStrengthByTile[pos] = (lightStrengthByTile[pos] || 0) + ranges.reduce((accumulator, value) => accumulator + value - distValues[distance], 0);
 						capLightStrength(pos);
 					mapLayout[pos].lightStrength = lightStrengthByTile[pos];
@@ -1004,7 +1003,6 @@ class Map extends React.PureComponent {
 				mapLightIsSeen = this.tileSeenByAnyPc(source.pos, playerPositions);
 			}
 			if (this.props.playerCharacters[source.id] || mapLightIsSeen) {
-				// lightStrengthByTile[source.pos] = (lightStrengthByTile[source.pos] || 0) + source.range + (source.range > 0 ? 1 : 0);
 				lightStrengthByTile[source.pos] = (lightStrengthByTile[source.pos] || 0) + source.range;
 				capLightStrength(source.pos);
 				mapLayout[source.pos].lightStrength = lightStrengthByTile[source.pos];

@@ -691,6 +691,19 @@ class Game extends React.PureComponent {
 	}
 
 	/**
+	 * Helper used by refillLight and calcPcLightChanges to determine if lighting has changed
+	 * Returns a categorized value based on active pc's equipped remaining light time
+	 * @param equippedLight: object (light item equipped by active pc)
+	 * @return {string} ('none' for no light left, 'low' for below min threshold, 'med' for below low threshold, 'high' otherwise)
+	 * @private
+	 */
+	_getLightRangeLevel (equippedLight) {
+		return equippedLight.light === 0 ? 'none' :
+			equippedLight.time <= (equippedLight.maxTime * this.minimalLightThreshold) ? 'low' :
+			equippedLight.time <= (equippedLight.maxTime * this.lowLightThreshold) ? 'med' : 'high';
+	}
+
+	/**
 	 * Reloading active character's light using oil in inv we already know we have, as determined by CharacterControls in UIElements
 	 */
 	refillLight = () => {
@@ -698,21 +711,30 @@ class Game extends React.PureComponent {
 		const equippedLight = activePcData.items[activePcData.equippedLight];
 		const oil = activePcData.items.oil0;
 		const oilNeeded = equippedLight.maxTime - activePcData.lightTime;
+		let lightingHasChanged = false;
+		const currentLightRangeLevel = this._getLightRangeLevel(equippedLight);
+
 		equippedLight.time = oil.amount < oilNeeded ? activePcData.lightTime + oil.amount : equippedLight.maxTime;
 		activePcData.lightTime = equippedLight.time;
+		const newLightRangeLevel = this._getLightRangeLevel(equippedLight);
+		if (currentLightRangeLevel !== newLightRangeLevel) {
+			equippedLight.range = this.lightRanges[equippedLight.name] - (newLightRangeLevel === 'high' ? 0 : newLightRangeLevel === 'med' ? 1 : 2);
+			activePcData.lightRange = equippedLight.range;
+			lightingHasChanged = true;
+		}
 		oil.amount -= oil.amount < oilNeeded ? oil.amount : oilNeeded;
 		if (oil.amount <= 0) {
 			delete activePcData.items.oil0;
 			activePcData.inventory.splice(activePcData.inventory.indexOf('oil0'), 1, null);
 		}
-		this.updateCharacters('player', activePcData, this.state.activeCharacter, true, false, false, () => {
+		this.updateCharacters('player', activePcData, this.state.activeCharacter, lightingHasChanged, false, false, () => {
 			this.updateActivePlayerActions();
 		});
 	}
 
 	/**
-	 * charData obj is modified to reduce light time (from moving, using skills, etc.) and range if time gets low enough
-	 * whether lighting has changed (light range) is returned to determine if lighting needs to be recalculated
+	 * charData obj is modified to reduce light time (from moving, using skills, etc.) and range if light's time gets low enough
+	 * Whether or not light range has changed is returned to determine if lighting needs to be recalculated
 	 * @param charId: string (pc ID)
 	 * @param lightCost: integer (how much to reduce lightTime)
 	 * @returns object: (equippedLight, lightTime, lightRange, lightingHasChanged)
@@ -724,14 +746,16 @@ class Game extends React.PureComponent {
 		let lightRange = charData.lightRange;
 		let lightingHasChanged = false;
 		const timeSpent = lightCost > lightTime ? lightTime : lightCost;
+		const currentLightRangeLevel = this._getLightRangeLevel(equippedLightItem);
 
 		equippedLightItem.time -= timeSpent;
 		lightTime -= timeSpent;
-		if (lightTime <= (equippedLightItem.maxTime * this.minimalLightThreshold)) {
-			lightRange = this.lightRanges[equippedLightItem.name] - 2;
-			lightingHasChanged = true;
-		} else if (lightTime <= (equippedLightItem.maxTime * this.lowLightThreshold)) {
-			lightRange = this.lightRanges[equippedLightItem.name] - 1;
+		const newLightRangeLevel = this._getLightRangeLevel(equippedLightItem);
+		if (currentLightRangeLevel !== newLightRangeLevel) {
+			lightRange = this.lightRanges[equippedLightItem.name] - (
+				newLightRangeLevel === 'none' ? this.lightRanges[equippedLightItem.name] :
+				newLightRangeLevel === 'low' ? 2 : 1);
+			equippedLightItem.range = lightRange;
 			lightingHasChanged = true;
 		}
 		return {equippedLightItem, lightTime, lightRange, lightingHasChanged};
@@ -1207,7 +1231,7 @@ class Game extends React.PureComponent {
 	}
 
 	/**
-	 * Set by UI when a light source has been equipped/unequipped/dropped to tell Map to recalculate lighting
+	 * Set by UI/App when a light source has been equipped/unequipped/dropped to tell Map to recalculate lighting
 	 * @param callback
 	 */
 	toggleLightingHasChanged = (callback) => {
