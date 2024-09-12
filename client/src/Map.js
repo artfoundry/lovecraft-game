@@ -47,6 +47,7 @@ class Map extends React.PureComponent {
 		this.playerMovementDelay = 50;
 		this.creatureMovementDelay = 200;
 		this.maxLightStrength = 5;
+		this.minPcTileLightStrength = 2;
 		this.baseChanceOfFindingSecretDoor = 0.1;
 
 		// total number of map pieces in currentMapData: 17;
@@ -1006,6 +1007,13 @@ class Map extends React.PureComponent {
 				lightStrengthByTile[source.pos] = (lightStrengthByTile[source.pos] || 0) + source.range;
 				capLightStrength(source.pos);
 				mapLayout[source.pos].lightStrength = lightStrengthByTile[source.pos];
+			}
+		});
+
+		// if pc has no light or light is at 0 time/range, set tile to at least 2 for player visibility
+		playerPositions.forEach(posData => {
+			if (this.props.playerCharacters[posData.id].lightRange === 0) {
+				mapLayout[posData.pos].lightStrength = this.minPcTileLightStrength;
 			}
 		});
 
