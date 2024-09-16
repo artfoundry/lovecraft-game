@@ -383,7 +383,6 @@ class Game extends React.PureComponent {
 		if (diceRoll(4) <= this.chanceToSpawnCreature) {
 			const spawnObj = this.state.envObjects[envObjectId];
 			const spawnIndex = diceRoll(spawnObj.canSpawnCreature.length) - 1;
-	console.log(spawnIndex)
 			const creatureIdToSpawn = spawnObj.canSpawnCreature[spawnIndex];
 			this._updateCreatureSpawnInfo({envObjectId, creatureIdToSpawn, pos: convertCoordsToPos(spawnObj.coords)});
 		}
@@ -1038,13 +1037,9 @@ class Game extends React.PureComponent {
 		const skillId = this.state.actionButtonSelected ? this.state.actionButtonSelected.buttonId : null;
 		let otherCharacterOnTile = '';
 		let dyingChar = '';
-		let isClickedTargetDyingPc = false;
 		for (const charData of Object.values(this.state.playerCharacters)) {
 			if (charData.currentHealth <= 0 && convertCoordsToPos(charData.coords) === tilePos) {
 				dyingChar = charData.name;
-				if (clickedTargetId === charData.id) {
-					isClickedTargetDyingPc = true;
-				}
 			}
 		}
 		if (skillId === 'resuscitate') {
@@ -1055,14 +1050,8 @@ class Game extends React.PureComponent {
 			}
 		}
 
-		// if clicked target is dying pc and no action cued up...
-		if (actionType === 'player' && isClickedTargetDyingPc && !this.state.actionButtonSelected) {
-			contextMenuNeeded = {
-				menuNeeded: true,
-				actionToProcess: () => this.handleUnitClick(actionInfo.id, actionType)
-			};
-		// ...or bypass setting up context menu if clicked target is a pc or creature with nothing else on the tile and no action cued up...
-		} else if (!objectOnTile && !this.state.actionButtonSelected && (actionType === 'player' || actionType === 'creature')) {
+		// bypass setting up context menu if clicked target is a pc or creature with nothing else on the tile and no action cued up...
+		if (!objectOnTile && !this.state.actionButtonSelected && (actionType === 'player' || actionType === 'creature')) {
 			contextMenuNeeded = {
 				menuNeeded: false,
 				actionToProcess: () => this.handleUnitClick(actionInfo.id, actionType)
@@ -1143,9 +1132,7 @@ class Game extends React.PureComponent {
 					tilePos,
 					evt
 				};
-				const clickedTargetIsPc = this.state.playerCharacters[evt.currentTarget.id];
-				const clickedTargetIsDyingPc = clickedTargetIsPc && clickedTargetIsPc.currentHealth <= 0;
-				if ((actionType !== 'player' && actionType !== 'creature') || (actionType === 'player' && clickedTargetIsDyingPc)) {
+				if (actionType !== 'player' && actionType !== 'creature') {
 					contextMenu.actionsAvailable.move = true;
 				} else {
 					const objectOnTile = this._isObjectOnTile(tilePos, evt);
