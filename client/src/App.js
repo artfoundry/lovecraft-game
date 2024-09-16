@@ -110,7 +110,7 @@ class Game extends React.PureComponent {
 				fxVolume: 1,
 				playFx: true,
 				musicVolume: 1,
-				playMusic: false,
+				playMusic: true,
 				songName: '',
 				screenZoom: 1.0
 			},
