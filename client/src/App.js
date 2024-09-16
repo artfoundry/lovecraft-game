@@ -12,7 +12,7 @@ import UI from './UI';
 import './css/app.css';
 import {diceRoll, deepCopy, convertCoordsToPos, convertPosToCoords, articleType} from './Utils';
 
-class Game extends React.Component {
+class Game extends React.PureComponent {
 	constructor(props) {
 		super(props);
 
@@ -110,7 +110,7 @@ class Game extends React.Component {
 				fxVolume: 1,
 				playFx: true,
 				musicVolume: 1,
-				playMusic: false,
+				playMusic: true,
 				songName: '',
 				screenZoom: 1.0
 			},
@@ -383,7 +383,6 @@ class Game extends React.Component {
 		if (diceRoll(4) <= this.chanceToSpawnCreature) {
 			const spawnObj = this.state.envObjects[envObjectId];
 			const spawnIndex = diceRoll(spawnObj.canSpawnCreature.length) - 1;
-	console.log(spawnIndex)
 			const creatureIdToSpawn = spawnObj.canSpawnCreature[spawnIndex];
 			this._updateCreatureSpawnInfo({envObjectId, creatureIdToSpawn, pos: convertCoordsToPos(spawnObj.coords)});
 		}
@@ -691,6 +690,19 @@ class Game extends React.Component {
 	}
 
 	/**
+	 * Helper used by refillLight and calcPcLightChanges to determine if lighting has changed
+	 * Returns a categorized value based on active pc's equipped remaining light time
+	 * @param equippedLight: object (light item equipped by active pc)
+	 * @return {string} ('none' for no light left, 'low' for below min threshold, 'med' for below low threshold, 'high' otherwise)
+	 * @private
+	 */
+	_getLightRangeLevel (equippedLight) {
+		return equippedLight.light === 0 ? 'none' :
+			equippedLight.time <= (equippedLight.maxTime * this.minimalLightThreshold) ? 'low' :
+			equippedLight.time <= (equippedLight.maxTime * this.lowLightThreshold) ? 'med' : 'high';
+	}
+
+	/**
 	 * Reloading active character's light using oil in inv we already know we have, as determined by CharacterControls in UIElements
 	 */
 	refillLight = () => {
@@ -698,21 +710,30 @@ class Game extends React.Component {
 		const equippedLight = activePcData.items[activePcData.equippedLight];
 		const oil = activePcData.items.oil0;
 		const oilNeeded = equippedLight.maxTime - activePcData.lightTime;
+		let lightingHasChanged = false;
+		const currentLightRangeLevel = this._getLightRangeLevel(equippedLight);
+
 		equippedLight.time = oil.amount < oilNeeded ? activePcData.lightTime + oil.amount : equippedLight.maxTime;
 		activePcData.lightTime = equippedLight.time;
+		const newLightRangeLevel = this._getLightRangeLevel(equippedLight);
+		if (currentLightRangeLevel !== newLightRangeLevel) {
+			equippedLight.range = this.lightRanges[equippedLight.name] - (newLightRangeLevel === 'high' ? 0 : newLightRangeLevel === 'med' ? 1 : 2);
+			activePcData.lightRange = equippedLight.range;
+			lightingHasChanged = true;
+		}
 		oil.amount -= oil.amount < oilNeeded ? oil.amount : oilNeeded;
 		if (oil.amount <= 0) {
 			delete activePcData.items.oil0;
 			activePcData.inventory.splice(activePcData.inventory.indexOf('oil0'), 1, null);
 		}
-		this.updateCharacters('player', activePcData, this.state.activeCharacter, true, false, false, () => {
+		this.updateCharacters('player', activePcData, this.state.activeCharacter, lightingHasChanged, false, false, () => {
 			this.updateActivePlayerActions();
 		});
 	}
 
 	/**
-	 * charData obj is modified to reduce light time (from moving, using skills, etc.) and range if time gets low enough
-	 * whether lighting has changed (light range) is returned to determine if lighting needs to be recalculated
+	 * charData obj is modified to reduce light time (from moving, using skills, etc.) and range if light's time gets low enough
+	 * Whether or not light range has changed is returned to determine if lighting needs to be recalculated
 	 * @param charId: string (pc ID)
 	 * @param lightCost: integer (how much to reduce lightTime)
 	 * @returns object: (equippedLight, lightTime, lightRange, lightingHasChanged)
@@ -724,14 +745,16 @@ class Game extends React.Component {
 		let lightRange = charData.lightRange;
 		let lightingHasChanged = false;
 		const timeSpent = lightCost > lightTime ? lightTime : lightCost;
+		const currentLightRangeLevel = this._getLightRangeLevel(equippedLightItem);
 
 		equippedLightItem.time -= timeSpent;
 		lightTime -= timeSpent;
-		if (lightTime <= (equippedLightItem.maxTime * this.minimalLightThreshold)) {
-			lightRange = this.lightRanges[equippedLightItem.name] - 2;
-			lightingHasChanged = true;
-		} else if (lightTime <= (equippedLightItem.maxTime * this.lowLightThreshold)) {
-			lightRange = this.lightRanges[equippedLightItem.name] - 1;
+		const newLightRangeLevel = this._getLightRangeLevel(equippedLightItem);
+		if (currentLightRangeLevel !== newLightRangeLevel) {
+			lightRange = this.lightRanges[equippedLightItem.name] - (
+				newLightRangeLevel === 'none' ? this.lightRanges[equippedLightItem.name] :
+				newLightRangeLevel === 'low' ? 2 : 1);
+			equippedLightItem.range = lightRange;
 			lightingHasChanged = true;
 		}
 		return {equippedLightItem, lightTime, lightRange, lightingHasChanged};
@@ -1014,13 +1037,9 @@ class Game extends React.Component {
 		const skillId = this.state.actionButtonSelected ? this.state.actionButtonSelected.buttonId : null;
 		let otherCharacterOnTile = '';
 		let dyingChar = '';
-		let isClickedTargetDyingPc = false;
 		for (const charData of Object.values(this.state.playerCharacters)) {
 			if (charData.currentHealth <= 0 && convertCoordsToPos(charData.coords) === tilePos) {
 				dyingChar = charData.name;
-				if (clickedTargetId === charData.id) {
-					isClickedTargetDyingPc = true;
-				}
 			}
 		}
 		if (skillId === 'resuscitate') {
@@ -1031,14 +1050,8 @@ class Game extends React.Component {
 			}
 		}
 
-		// if clicked target is dying pc and no action cued up...
-		if (actionType === 'player' && isClickedTargetDyingPc && !this.state.actionButtonSelected) {
-			contextMenuNeeded = {
-				menuNeeded: true,
-				actionToProcess: () => this.handleUnitClick(actionInfo.id, actionType)
-			};
-		// ...or bypass setting up context menu if clicked target is a pc or creature with nothing else on the tile and no action cued up...
-		} else if (!objectOnTile && !this.state.actionButtonSelected && (actionType === 'player' || actionType === 'creature')) {
+		// bypass setting up context menu if clicked target is a pc or creature with nothing else on the tile and no action cued up...
+		if (!objectOnTile && !this.state.actionButtonSelected && (actionType === 'player' || actionType === 'creature')) {
 			contextMenuNeeded = {
 				menuNeeded: false,
 				actionToProcess: () => this.handleUnitClick(actionInfo.id, actionType)
@@ -1119,9 +1132,7 @@ class Game extends React.Component {
 					tilePos,
 					evt
 				};
-				const clickedTargetIsPc = this.state.playerCharacters[evt.currentTarget.id];
-				const clickedTargetIsDyingPc = clickedTargetIsPc && clickedTargetIsPc.currentHealth <= 0;
-				if ((actionType !== 'player' && actionType !== 'creature') || (actionType === 'player' && clickedTargetIsDyingPc)) {
+				if (actionType !== 'player' && actionType !== 'creature') {
 					contextMenu.actionsAvailable.move = true;
 				} else {
 					const objectOnTile = this._isObjectOnTile(tilePos, evt);
@@ -1207,7 +1218,7 @@ class Game extends React.Component {
 	}
 
 	/**
-	 * Set by UI when a light source has been equipped/unequipped/dropped to tell Map to recalculate lighting
+	 * Set by UI/App when a light source has been equipped/unequipped/dropped to tell Map to recalculate lighting
 	 * @param callback
 	 */
 	toggleLightingHasChanged = (callback) => {
@@ -1781,7 +1792,7 @@ class Game extends React.Component {
 						threatList={this.state.threatList}
 						toggleTacticalMode={this.toggleTacticalMode}
 						inTacticalMode={this.state.inTacticalMode}
-						isPartyNearby={this.state.partyIsNearby}
+						partyIsNearby={this.state.partyIsNearby}
 						updateIfPartyIsNearby={this.updateIfPartyIsNearby}
 						playerFollowOrder={this.state.playerFollowOrder}
 						updateFollowModePositions={this.updateFollowModePositions}

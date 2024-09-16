@@ -27,7 +27,7 @@ import './css/playerCharacters.css';
  * Map is made up of pre-defined pieces (using the map tool) that contain tiles
  */
 
-class Map extends React.Component {
+class Map extends React.PureComponent {
 	constructor(props) {
 		super(props);
 
@@ -47,6 +47,7 @@ class Map extends React.Component {
 		this.playerMovementDelay = 50;
 		this.creatureMovementDelay = 200;
 		this.maxLightStrength = 5;
+		this.minPcTileLightStrength = 2;
 		this.baseChanceOfFindingSecretDoor = 0.1;
 
 		// total number of map pieces in currentMapData: 17;
@@ -988,8 +989,7 @@ class Map extends React.Component {
 		for (const [distance, tiles] of Object.entries(lineOfSightTiles)) {
 			for (const positions of Object.values(tiles)) {
 				for (const [pos, ranges] of Object.entries(positions)) {
-					// add together each (light source range + 1 (as the source of the light will be +1 compared to the range tiles) - distance from source)
-					// lightStrengthByTile[pos] = (lightStrengthByTile[pos] || 0) + ranges.reduce((accumulator, value) => accumulator + value + 1, 0) - (distValues[distance] * ranges.length);
+					// add together each light source range minus its distance from source (ie. if a 4 str light at dist of 2 and 3 str light at dist of 2, total str is 3)
 					lightStrengthByTile[pos] = (lightStrengthByTile[pos] || 0) + ranges.reduce((accumulator, value) => accumulator + value - distValues[distance], 0);
 						capLightStrength(pos);
 					mapLayout[pos].lightStrength = lightStrengthByTile[pos];
@@ -1004,10 +1004,16 @@ class Map extends React.Component {
 				mapLightIsSeen = this.tileSeenByAnyPc(source.pos, playerPositions);
 			}
 			if (this.props.playerCharacters[source.id] || mapLightIsSeen) {
-				// lightStrengthByTile[source.pos] = (lightStrengthByTile[source.pos] || 0) + source.range + (source.range > 0 ? 1 : 0);
 				lightStrengthByTile[source.pos] = (lightStrengthByTile[source.pos] || 0) + source.range;
 				capLightStrength(source.pos);
 				mapLayout[source.pos].lightStrength = lightStrengthByTile[source.pos];
+			}
+		});
+
+		// if pc has no light or light is at 0 time/range, set tile to at least 2 for player visibility
+		playerPositions.forEach(posData => {
+			if (this.props.playerCharacters[posData.id].lightRange === 0) {
+				mapLayout[posData.pos].lightStrength = this.minPcTileLightStrength;
 			}
 		});
 
@@ -1031,10 +1037,14 @@ class Map extends React.Component {
 	_setExitPosition(exitType, callback) {
 		let allPlayerPos = exitType === 'nextArea' ? this.props.getAllCharactersPos('player', 'pos').map(player => player.pos) : null;
 		const tilePositions = Object.keys(this.state.mapLayout).filter(tilePos => {
+			let isValidPreviousAreaExit = false;
+			if (exitType === 'previousArea' && this.state.mapLayout[tilePos].piece.includes('room')) {
+				const adjacentTiles = this._getAllSurroundingTilesToRange(tilePos, 1)['1Away'].filter(pos => this.state.mapLayout[pos].type === 'floor');
+				isValidPreviousAreaExit = adjacentTiles.length >= 3;
+			}
 			return this.state.mapLayout[tilePos].type === 'floor' &&
 				!this.state.mapLayout[tilePos].piece.includes('secret') &&
-				(exitType === 'nextArea' || (exitType === 'previousArea' && this.state.mapLayout[tilePos].piece.includes('room'))) &&
-				(exitType === 'previousArea' || (exitType === 'nextArea' && !allPlayerPos.includes(tilePos)));
+				((exitType === 'nextArea' && !allPlayerPos.includes(tilePos)) || isValidPreviousAreaExit);
 		});
 		let exitPosition = tilePositions[Math.floor(Math.random() * tilePositions.length)];
 		const exitCoords = convertPosToCoords(exitPosition);
@@ -1177,6 +1187,7 @@ class Map extends React.Component {
 				// either attacking a creature or using a Relic on an old one
 				} else if (characterType === 'creature' && !actionSkillType && (!actionItemType || (actionItemType && actionItemType === 'Relic' && characters[id].isOldOne))) {
 					targetIsInRange = activeCharIsPlayer &&
+						(actionButtonSelected.buttonName !== 'Holy Water' || characters[id].race === 'Undead') &&
 						characters[id].currentHealth > 0 &&
 						this.isCreatureInRange(id, actionButtonSelected);
 				}
@@ -1531,12 +1542,22 @@ class Map extends React.Component {
 	_checkForExit() {
 		const activePCCoords = this.props.playerCharacters[this.props.activeCharacter].coords;
 		if (activePCCoords.xPos === this.state.nextAreaExitCoords.xPos &&
-			activePCCoords.yPos === this.state.nextAreaExitCoords.yPos)
-		{
+			activePCCoords.yPos === this.state.nextAreaExitCoords.yPos) {
 			let dialogProps = {};
-			if (this.props.inTacticalMode) {
+			if (this.props.threatList.length > 0) {
 				dialogProps = {
-					dialogContent: "You can't descend to the next level while in combat.",
+					dialogContent: "You can't exit while in combat.",
+					closeButtonText: 'Ok',
+					closeButtonCallback: null,
+					disableCloseButton: false,
+					actionButtonVisible: false,
+					actionButtonText: '',
+					actionButtonCallback: null,
+					dialogClasses: ''
+				};
+			} else if (this.props.inTacticalMode && !this.props.partyIsNearby) {
+				dialogProps = {
+					dialogContent: "All party members need to be in sight of each other before exiting.",
 					closeButtonText: 'Ok',
 					closeButtonCallback: null,
 					disableCloseButton: false,
@@ -2070,7 +2091,11 @@ class Map extends React.Component {
 		creaturePositions.forEach(creature => {
 			if (tilesInView[creature.pos]) {
 				if (!this.props.threatList.includes(creature.id)) {
-					threatLists.threatListToAdd.push(creature.id);
+					playerPositions.forEach(player => {
+						if (!threatLists.threatListToAdd.includes(creature.id) && this.isInLineOfSight(player.pos, creature.pos)) {
+							threatLists.threatListToAdd.push(creature.id);
+						}
+					});
 				// any creatures that are in view, remove from the threatListToRemove (thus, don't remove from the App's threatList)
 				} else if (threatLists.threatListToRemove.includes(creature.id)) {
 					threatLists.threatListToRemove.splice(threatLists.threatListToRemove.indexOf(creature.id), 1);
@@ -2170,7 +2195,7 @@ class Map extends React.Component {
 		let newCoords = convertPosToCoords(newTilePos);
 		let playerPositions = this.props.getAllCharactersPos('player', 'pos');
 		const activePC = this.props.inTacticalMode || !followerId ? this.props.activeCharacter : followerId;
-		let inFollowMode = !this.props.inTacticalMode && this.props.isPartyNearby;
+		let inFollowMode = !this.props.inTacticalMode && this.props.partyIsNearby;
 
 		const followModePositions = inFollowMode ? [...this.props.followModePositions] : [];
 		// only update followModePositions if we're moving the leader
@@ -2711,9 +2736,9 @@ class Map extends React.Component {
 				const doorNowOpen = this.state.mapLayout[doorTilePos].doorIsOpen;
 				if (threatLists.threatListToAdd.length > 0 || threatLists.threatListToRemove.length > 0) {
 					this.props.updateThreatList(threatLists.threatListToAdd, threatLists.threatListToRemove, null, this.isInLineOfSight);
-				} else if ((doorNowOpen && !this.props.isPartyNearby) || (!doorNowOpen && this.props.isPartyNearby)) {
+				} else if ((doorNowOpen && !this.props.partyIsNearby) || (!doorNowOpen && this.props.partyIsNearby)) {
 					this.props.updateIfPartyIsNearby(this.isInLineOfSight, () => {
-						if (!this.props.isPartyNearby && !this.props.inTacticalMode) {
+						if (!this.props.partyIsNearby && !this.props.inTacticalMode) {
 							this.props.toggleTacticalMode(true);
 						}
 					});

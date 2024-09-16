@@ -1,7 +1,7 @@
 import React from 'react';
 import {diceRoll} from './Utils';
 
-class Creature extends React.Component {
+class Creature extends React.PureComponent {
 	constructor(props) {
 		super(props);
 		this.hitDie = 10;
@@ -10,6 +10,7 @@ class Creature extends React.Component {
 		this.id = props.creatureId;
 		this.name = props.name;
 		this.type = props.type;
+		this.race = props.race;
 		this.isOldOne = props.isOldOne;
 		this.level = props.level;
 		this.strength = props.strength;
