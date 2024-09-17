@@ -17,11 +17,12 @@ class Game extends React.PureComponent {
 		super(props);
 
 		// for testing
-		this.testAttr = this.props.testAttributes;
-		this.showLogin = this.testAttr.showLogin;
-		this.showCharacterCreation = this.testAttr.showCharacterCreation;
-		this.startingPlayerCharacters = !this.showCharacterCreation ? this.testAttr.startingCharacters : null;
-		this.startingLocation = this.testAttr.startingLocation;
+		this.gameAttr = this.props.gameAttributes;
+		this.showLogin = this.gameAttr.showLogin;
+		this.showCharacterCreation = this.gameAttr.showCharacterCreation;
+		this.startingPlayerCharacters = !this.showCharacterCreation ? this.gameAttr.startingCharacters : null;
+		this.startingLocation = this.gameAttr.startingLocation;
+		this.spawnCreatures = this.gameAttr.spawnCreatures;
 
 		this.initialDialogContent = '';
 		this.playerMovesLimit = 3;
@@ -110,9 +111,10 @@ class Game extends React.PureComponent {
 				fxVolume: 1,
 				playFx: true,
 				musicVolume: 1,
-				playMusic: true,
+				playMusic: this.gameAttr.playMusic,
 				songName: '',
-				screenZoom: 1.0
+				screenZoom: 1.0,
+				spawnCreatures: this.gameAttr.spawnCreatures
 			},
 			screenData: {
 				width: window.innerWidth,
@@ -697,7 +699,7 @@ class Game extends React.PureComponent {
 	 * @private
 	 */
 	_getLightRangeLevel (equippedLight) {
-		return equippedLight.light === 0 ? 'none' :
+		return equippedLight.time === 0 ? 'none' :
 			equippedLight.time <= (equippedLight.maxTime * this.minimalLightThreshold) ? 'low' :
 			equippedLight.time <= (equippedLight.maxTime * this.lowLightThreshold) ? 'med' : 'high';
 	}
@@ -756,6 +758,13 @@ class Game extends React.PureComponent {
 				newLightRangeLevel === 'low' ? 2 : 1);
 			equippedLightItem.range = lightRange;
 			lightingHasChanged = true;
+			if (newLightRangeLevel === 'med') {
+				this.updateLog(`${charData.name}'s light source is starting to get low.`);
+			} else if (newLightRangeLevel === 'low') {
+				this.updateLog(`${charData.name}'s light source is very low!`);
+			} else if (newLightRangeLevel === 'none') {
+				this.updateLog(`${charData.name}'s light source has gone out!`);
+			}
 		}
 		return {equippedLightItem, lightTime, lightRange, lightingHasChanged};
 	}

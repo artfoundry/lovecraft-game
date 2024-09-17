@@ -182,6 +182,13 @@ h2 {
 	margin: 20px;
 }
 
+#char-creation-finish .char-creation-button {
+	width: 170px;
+	height: 50px;
+	font-size: 24px;
+	line-height: 50px;
+}
+
 .object-text-container, .skill-text-container {
 	text-align: left;
 }

@@ -385,7 +385,7 @@ export default class CharacterCreation extends React.PureComponent {
 					<hr />
 					<div id='char-creation-finish'>
 						<p>Once you've created your investigator and chosen your companions, you can...</p>
-						<div className={`char-creation-button ${(this.state.name.length === 0 || this.state.gender.length === 0 || this.state.rollNumSaved === 0 || !this.state.profession || this.state.companions.length < 2) ? 'button-disabled' : ''}`}
+						<div className={`char-creation-button ${(this.state.name.length === 0 || this.state.gender.length === 0 || this.state.rollNumSaved === 0 || !this.state.profession) ? 'button-disabled' : ''}`}
 							onClick={() => {
 								const pcData = {
 									id: this.state.profession,

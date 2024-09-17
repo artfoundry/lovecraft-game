@@ -5,11 +5,30 @@ import 'drag-drop-touch';
 // import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
+// chars: privateEye, chemist, archaeologist, doctor, priest, veteran, thief, occultResearcher
+const bareBonesAttr = {
+    showLogin: false,
+    showCharacterCreation: false,
+    startingCharacters: ['privateEye', 'chemist', 'archaeologist'],
+    startingLocation: 'catacombs',
+    playMusic: false,
+    spawnCreatures: false
+};
 const testAttributes = {
+    showLogin: false,
+    showCharacterCreation: false,
+    startingCharacters: ['privateEye', 'chemist', 'archaeologist'],
+    startingLocation: 'catacombs',
+    playMusic: false,
+    spawnCreatures: true
+};
+const prodAttributes = {
     showLogin: true,
     showCharacterCreation: true,
     startingCharacters: ['privateEye', 'chemist', 'archaeologist'],
-    startingLocation: 'catacombs'
+    startingLocation: 'catacombs',
+    playMusic: true,
+    spawnCreatures: true
 };
 
 // prevent zoom on mobile
@@ -17,7 +36,7 @@ document.querySelector('meta[name="viewport"]').setAttribute("content", "width=d
 
 root.render(
   <React.StrictMode>
-    <Game testAttributes={testAttributes} />
+    <Game gameAttributes={testAttributes} />
   </React.StrictMode>
 );
 
