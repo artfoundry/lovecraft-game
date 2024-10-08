@@ -464,7 +464,7 @@ h3 {
 	margin-left: 10px;
 }
 
-.char-info-skill-icon-column {
+.char-info-skill-icon-column, .creature-info-icon-column {
 	padding: 0 5px;
 }
 
@@ -607,6 +607,19 @@ h3 {
 	border-radius: 5px 0 0 5px;
 	box-sizing: border-box;
 	overflow-y: auto;
+}
+
+.creature-info-columns {
+	display: flex;
+	flex-direction: row;
+}
+
+.creature-info-icon-column {
+	width: 64px;
+}
+
+.creature-info-icon-column .creature-icon {
+	width: 64px;
 }
 
 /* CONTROL BAR */
@@ -1025,8 +1038,24 @@ select {
 	margin-bottom: 10px;
 }
 
+.object-row-with-buttons.trade-buttons {
+	grid-template-columns: 3fr 1fr 1fr 1fr;
+}
+
 .object-row-with-buttons .inv-object {
 	cursor: default;
+}
+
+.object-row-with-buttons.trade-buttons #object-split {
+	width: 50px;
+	height: 20px;
+}
+
+.object-row-with-buttons.trade-buttons .general-button {
+	width: 40px;
+	height: 20px;
+	box-sizing: content-box;
+	font-size: 16px;
 }
 
 .object-list-objname {

@@ -766,9 +766,10 @@ function ObjectInfoPanel(props) {
 				</div>
 				<div className='object-panel-buttons-container'>
 					{isDraggedObject && objectToShow.stackable &&
-						<form className='object-row-with-buttons' onSubmit={(evt) => splitStack(evt)}>
+						<form className='object-row-with-buttons trade-buttons' onSubmit={evt => splitStack(evt)}>
 							<label htmlFor='object-split'>{objHasBeenDropped ? 'Drop' : 'Trade'} how many?</label>
-							<input type='number' id='object-split' name='object-split' size='3' defaultValue='1' min='1' max={objectToShow.amount || objectToShow.currentRounds} />
+							<input id='object-split' type='number' name='object-split' size='3' defaultValue='1' min='1' max={objectToShow.amount || objectToShow.currentRounds} />
+							<div className='all-button general-button' onClick={evt => evt.target.previousSibling.value = objectToShow.amount || objectToShow.currentRounds}>All</div>
 							<button className='general-button' type='submit'>{objHasBeenDropped ? 'Drop' : 'Trade'}</button>
 						</form>
 					}
@@ -809,20 +810,27 @@ function CreatureInfoPanel(props) {
 	return (
 		<div className={`creature-info-container ui-panel ${props.creatureIsSelected ? '' : 'hide'}`}>
 			<div className='general-button' onClick={() => props.updateUnitSelectionStatus(props.creatureInfo.id, 'creature')}>X</div>
-			<div>Name: {props.creatureInfo.name}</div>
-			<div>Level: {props.creatureInfo.level}</div>
-			<div>Health: {props.creatureInfo.currentHealth} / {props.creatureInfo.startingHealth}</div>
-			<div>Spirit: {props.creatureInfo.currentSpirit} / {props.creatureInfo.startingSpirit}</div>
-			<div>Strength: {props.creatureInfo.strength}</div>
-			<div>Agility: {props.creatureInfo.agility}</div>
-			<div>Mental Acuity: {props.creatureInfo.mentalAcuity}</div>
-			<div>Initiative: {props.creatureInfo.initiative}</div>
-			<div>Damage: {props.creatureInfo.damage}</div>
-			<div>Defense: {props.creatureInfo.defense}</div>
-			<div>Damage Reduction: {props.creatureInfo.damageReduction}</div>
-			<div>Range: {props.creatureInfo.range}</div>
-			<div>Speed: {props.creatureInfo.moveSpeed}</div>
-			<div>Perception: {props.creatureInfo.perception}</div>
+			<div className='creature-info-columns'>
+				<div className='creature-info-icon-column'>
+					<div className={`creature-icon ${convertObjIdToClassId(props.creatureInfo.id)}`}></div>
+				</div>
+				<div className='creature-info-column'>
+					<div>Name: {props.creatureInfo.name}</div>
+					<div>Level: {props.creatureInfo.level}</div>
+					<div>Health: {props.creatureInfo.currentHealth} / {props.creatureInfo.startingHealth}</div>
+					<div>Spirit: {props.creatureInfo.currentSpirit} / {props.creatureInfo.startingSpirit}</div>
+					<div>Strength: {props.creatureInfo.strength}</div>
+					<div>Agility: {props.creatureInfo.agility}</div>
+					<div>Mental Acuity: {props.creatureInfo.mentalAcuity}</div>
+					<div>Initiative: {props.creatureInfo.initiative}</div>
+					<div>Damage: {props.creatureInfo.damage}</div>
+					<div>Defense: {props.creatureInfo.defense}</div>
+					<div>Damage Reduction: {props.creatureInfo.damageReduction}</div>
+					<div>Range: {props.creatureInfo.range}</div>
+					<div>Speed: {props.creatureInfo.moveSpeed}</div>
+					<div>Perception: {props.creatureInfo.perception}</div>
+				</div>
+			</div>
 		</div>
 	);
 }

@@ -665,24 +665,30 @@ class Map extends React.PureComponent {
 	 * @private
 	 */
 	_setInitialCreatureData(callback) {
-		let mapCreatures = {};
-		let creatureCoords = {};
-		for (const [genericId, stats] of Object.entries(this.currentMapData.creatures)) {
-	//TODO: change this logic and data in gameLocations.json to use same level/count format as objects
-			for (let i=0; i < stats.count; i++) {
-				const coords = convertPosToCoords(this._generateRandomLocation(creatureCoords));
-				const creatureId = genericId + i;
-				CreatureData[genericId].creatureId = creatureId;
-				mapCreatures[creatureId] = new Creature(CreatureData[genericId]);
-				mapCreatures[creatureId].coords = coords;
-				creatureCoords[creatureId] = coords;
-			}
-		}
-		this.props.updateCharacters('creature', mapCreatures, null, false, true, false, () => {
+		if (!this.props.gameOptions.spawnCreatures) {
 			this.setState({creaturesPlaced: true}, () => {
 				callback();
 			});
-		});
+		} else {
+			let mapCreatures = {};
+			let creatureCoords = {};
+			for (const [genericId, stats] of Object.entries(this.currentMapData.creatures)) {
+		//TODO: change this logic and data in gameLocations.json to use same level/count format as objects
+				for (let i=0; i < stats.count; i++) {
+					const coords = convertPosToCoords(this._generateRandomLocation(creatureCoords));
+					const creatureId = genericId + i;
+					CreatureData[genericId].creatureId = creatureId;
+					mapCreatures[creatureId] = new Creature(CreatureData[genericId]);
+					mapCreatures[creatureId].coords = coords;
+					creatureCoords[creatureId] = coords;
+				}
+			}
+			this.props.updateCharacters('creature', mapCreatures, null, false, true, false, () => {
+				this.setState({creaturesPlaced: true}, () => {
+					callback();
+				});
+			});
+		}
 	}
 
 	/**
