@@ -1546,7 +1546,7 @@ class Map extends React.PureComponent {
 			let dialogProps = {};
 			if (this.props.threatList.length > 0) {
 				dialogProps = {
-					dialogContent: "You can't exit while in combat.",
+					dialogContent: "You can't exit the level while in combat.",
 					closeButtonText: 'Ok',
 					closeButtonCallback: null,
 					disableCloseButton: false,
