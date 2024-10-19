@@ -1274,6 +1274,10 @@ select {
 	background-image: url('../assets/ui/move-icon_sml.png');
 }
 
+.close-door-action {
+	background-image: url('../assets/ui/close-door_sml.png');
+}
+
 .create-first-aid-kit-action {
 	background-image: url('../assets/ui/create-first-aid-kit_sml.png');
 }

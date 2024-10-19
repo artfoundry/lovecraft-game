@@ -1106,15 +1106,19 @@ class Map extends React.PureComponent {
 			key={tilePos}
 			tileType={tileData.type}
 			styleProp={tileStyle}
-			tileName={convertCoordsToPos(tileData)}
+			tilePos={convertCoordsToPos(tileData)}
 			classStr={allClasses}
 			dataLightStr={tileLightStr}
-			moveCharacter={(tilePos) => {
+			moveCharacter={(tilePos, e) => {
 				if (this.contextMenuOpen) {
 					this.contextMenuOpen = false;
 					this.props.updateContextMenu(null);
 				} else if (!this.isDraggingWorld) {
-					this.checkIfTileOrObject(tilePos, null);
+					if (tileData.doorIsOpen) {
+						this.props.updateContextMenu('close-door', tilePos, e);
+					} else {
+						this.checkIfTileOrObject(tilePos, null);
+					}
 				}
 			}} />);
 	}
@@ -1465,8 +1469,9 @@ class Map extends React.PureComponent {
 	 * then destination tile is checked for interactive objects (like door) or just tile and calls appropriate function
 	 * @param tilePos: String
 	 * @param direction: String
+	 * @param actionType: String ('close-door' or 'move', from user clicking on context menu after clicking on open door)
 	 */
-	checkIfTileOrObject = (tilePos, direction) => {
+	checkIfTileOrObject = (tilePos, direction, actionType = null) => {
 		let tileData = this.state.mapLayout[tilePos];
 		let newPos = tilePos;
 		const activePCCoords = this.props.playerCharacters[this.props.activeCharacter].coords;
@@ -1514,21 +1519,10 @@ class Map extends React.PureComponent {
 				if (tileData.type === 'floor') {
 					this.moveCharacter({tilePath: [newPos]});
 				} else if (tileData.type === 'door') {
-					if (tileData.doorIsOpen) {
-						const showDialog = true;
-						const dialogProps = {
-							dialogContent: 'Close the door or move into the doorway?',
-							closeButtonText: 'Close door',
-							closeButtonCallback: () => {this.toggleDoor(newPos)},
-							disableCloseButton: false,
-							actionButtonVisible: true,
-							actionButtonText: 'Move',
-							actionButtonCallback: () => {this.moveCharacter({tilePath: [newPos]})},
-							dialogClasses: ''
-						};
-						this.props.setShowDialogProps(showDialog, dialogProps);
-					} else {
+					if (actionType === 'close-door' || !tileData.doorIsOpen) {
 						this.toggleDoor(newPos);
+					} else {
+						this.moveCharacter({tilePath: [newPos]});
 					}
 				}
 			} else if (tileData.type !== 'wall') {
@@ -2934,7 +2928,7 @@ class Map extends React.PureComponent {
 			}
 		}
 		if (this.props.contextMenuChoice && prevProps.contextMenuChoice !== this.props.contextMenuChoice) {
-			this.checkIfTileOrObject(this.props.contextMenuChoice.tilePos);
+			this.checkIfTileOrObject(this.props.contextMenuChoice.tilePos, null, this.props.contextMenuChoice.actionType);
 		}
 		if (prevProps.contextMenu && !this.props.contextMenu) {
 			this.contextMenuOpen = false;

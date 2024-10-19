@@ -50,16 +50,17 @@ function Tile(props) {
 		<div className={`tile ${props.classStr}${randomizedVariantSuffix}`}
 		     draggable={false}
 		     style={{...props.styleProp, fontSize: '18px'}}
-		     data-tile-num={props.tileName}
+		     data-tile-num={props.tilePos}
 		     data-light-strength={props.dataLightStr}
 		     onClick={e => {
-				 props.moveCharacter(props.tileName, e);
+				 props.moveCharacter(props.tilePos, e);
 		     }}>
 		</div>
 	);
 }
 
 function Door(props) {
+	// alreadyDiscovered, isDiscovered are for secret doors
 	const [alreadyDiscovered, updateAlreadyDiscovered] = useState(false);
 	const isDiscoveredClass = (props.isDiscovered && !alreadyDiscovered) ? ' glow-pulse-once' : '';
 	if (props.isDiscovered && !alreadyDiscovered) {
@@ -67,7 +68,13 @@ function Door(props) {
 			updateAlreadyDiscovered(true);
 		}, 1000);
 	}
-	return <div className={props.classProp + isDiscoveredClass} style={props.styleProp} draggable={false} />;
+	return (
+		<div
+			className={props.classProp + isDiscoveredClass}
+			style={props.styleProp}
+			draggable={false}
+		/>
+	);
 }
 
 function Item(props) {

@@ -1033,7 +1033,7 @@ class Game extends React.PureComponent {
 	 */
 	isContextMenuNeeded = (actionType, tilePos = null, evt = null, actionInfo = null) => {
 		let contextMenuNeeded = {menuNeeded: true, actionToProcess: null};
-		const actionObjInfo = actionInfo.objectInfo[0];
+		const actionObjInfo = actionInfo && actionInfo.objectInfo && actionInfo.objectInfo[0];
 
 		// if clicked obj is a creature/player, check if at least one object is on that tile
 		let objectOnTile = null;
@@ -1127,20 +1127,23 @@ class Game extends React.PureComponent {
 		// no actionType should indicate menu already exists (as clicking on item, char, or tile is already checking), but just in case...
 		if (!actionType) {
 			this.setState({contextMenu: null});
-		// Don't need menu, so do action instead
 		} else {
 			const isContextMenuNeeded = contextMenuInfo || this.isContextMenuNeeded(actionType, tilePos, evt, actionInfo);
 
+			// Don't need menu, so do action instead
 			if (!isContextMenuNeeded.menuNeeded) {
 				isContextMenuNeeded.actionToProcess();
 			// otherwise, set up context menu
 			} else {
 				const contextMenu = {
 					actionsAvailable: {[actionType]: actionInfo},
-					creatureId: actionInfo.id || null,
+					creatureId: null,
 					tilePos,
 					evt
 				};
+				if (actionInfo && actionInfo.id) {
+					contextMenu.creatureId = actionInfo.id;
+				}
 				if (actionType !== 'player' && actionType !== 'creature') {
 					contextMenu.actionsAvailable.move = true;
 				} else {
@@ -1170,6 +1173,10 @@ class Game extends React.PureComponent {
 			this.handleUnitClick(storedActionInfo.id, storedActionInfo.target, storedActionInfo.isInRange, storedActionInfo.checkLineOfSightToParty);
 			this.setState({contextMenu: null});
 		} else if (actionType === 'move') {
+			this.setState({contextMenuChoice: {actionType, tilePos: this.state.contextMenu.tilePos}}, () => {
+				this.setState({contextMenu: null});
+			});
+		} else if (actionType === 'close-door') {
 			this.setState({contextMenuChoice: {actionType, tilePos: this.state.contextMenu.tilePos}}, () => {
 				this.setState({contextMenu: null});
 			});
