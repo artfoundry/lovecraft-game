@@ -8,7 +8,6 @@ import ItemTypes from './data/itemTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
 import EnvObjectTypes from './data/envObjectTypes.json';
 import {Character, Exit, Tile, Door, Item, EnvObject, LightElement, MapCover} from './MapElements';
-import {SoundEffect} from './Audio';
 import {
 	convertObjIdToClassId,
 	convertPosToCoords,
@@ -57,9 +56,6 @@ class Map extends React.PureComponent {
 		this.mapLayoutTemp = {};
 		this.numberOpeningsPerPiece = {};
 
-		this.sfxSelectors = {
-			catacombs: {}
-		};
 		this.charRefs = {};
 		this.clickedOnWorld = false;
 		this.isDraggingWorld = false;
@@ -2719,7 +2715,7 @@ class Map extends React.PureComponent {
 	 * @param doorTilePos: string
 	 */
 	toggleDoor = (doorTilePos) => {
-		this.toggleAudio('door');
+		this.props.toggleAudio('environment', 'door');
 		this.setState(prevState => ({
 			mapLayout: {
 				...prevState.mapLayout,
@@ -2745,16 +2741,6 @@ class Map extends React.PureComponent {
 				}
 			});
 		});
-	}
-
-	toggleAudio = (selectorName) => {
-		const audio = this.sfxSelectors[this.props.currentLocation][selectorName];
-		if (audio.paused && this.props.gameOptions.playFx) {
-			audio.volume = this.props.gameOptions.fxVolume;
-			audio.play().catch(e => console.log(e));
-		} else if (!audio.paused) {
-			audio.pause().catch(e => console.log(e));
-		}
 	}
 
 	dragWorld = (evt, previousEvt) => {
@@ -2841,26 +2827,6 @@ class Map extends React.PureComponent {
 	 ***********************/
 
 	/**
-	 * Called by render() to set up array of sound effects elements
-	 * @returns {*[]}
-	 */
-	setupSoundEffects = () => {
-		let effects = [];
-
-		effects.push(<SoundEffect key='sfx-stoneDoor' idProp='sfx-stoneDoor' sourceName='stoneDoor' />);
-
-		return effects;
-	}
-
-	/**
-	 * Sets up selectors for sound effect elements
-	 * @private
-	 */
-	_populateSfxSelectors() {
-		this.sfxSelectors[this.props.currentLocation]['door'] = document.getElementById('sfx-stoneDoor');
-	}
-
-	/**
 	 * Sets up listeners for key commands
 	 * @private
 	 */
@@ -2912,7 +2878,9 @@ class Map extends React.PureComponent {
 	componentDidMount() {
 		if (this.initialMapLoad) {
 			this.layoutPieces();
-			this._populateSfxSelectors();
+			// note: this won't play until user interacts with page
+			// (which will happen with prod version but not testing if login and char creation are skipped)
+			this.props.toggleAudio('environment', 'background');
 		}
 	}
 
@@ -3003,7 +2971,6 @@ class Map extends React.PureComponent {
 				<div className='characters' draggable={false}>
 					{ this.state.mapLayoutDone && this.state.playerPlaced && this.state.creaturesPlaced && <this.addCharacters /> }
 				</div>
-				{ <this.setupSoundEffects /> }
 				<MapCover styleProp={{opacity: this.state.mapMoved ? '0' : '1.0'}} />
 			</div>
 		);

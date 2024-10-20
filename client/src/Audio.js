@@ -1,9 +1,15 @@
 import StoneDoorMP3 from './assets/sfx/stone_door_short.mp3';
+import WindIndoorsMp3 from './assets/sfx/wind-indoors.mp3';
+import HandgunShot from './assets/sfx/handgun-shot.mp3';
+import GlassVialBreak from './assets/sfx/glass-vial-break.mp3';
 import DiceMP3 from './assets/sfx/rolling-dice-1.mp3';
 import CatacombsThemeM4A from './assets/music/catacombs_theme.m4a';
 
 const sfxMap = {
 	stoneDoor: StoneDoorMP3,
+	windIndoors: WindIndoorsMp3,
+	handgunShot: HandgunShot,
+	glassVialBreak: GlassVialBreak,
 	dice: DiceMP3
 };
 

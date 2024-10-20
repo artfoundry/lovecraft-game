@@ -11,6 +11,8 @@ import ItemTypes from './data/itemTypes.json';
 import UI from './UI';
 import './css/app.css';
 import {diceRoll, deepCopy, convertCoordsToPos, convertPosToCoords, articleType} from './Utils';
+import {SoundEffect} from './Audio';
+
 
 class Game extends React.PureComponent {
 	constructor(props) {
@@ -43,6 +45,12 @@ class Game extends React.PureComponent {
 			'expertMining': 10,
 			'create': 30,
 			'search': 2
+		};
+		this.sfxSelectors = {
+			environment: {
+				catacombs: {}
+			},
+			weapons: {}
 		};
 
 		this.minScreenWidthForSmall = 1000;
@@ -804,6 +812,12 @@ class Game extends React.PureComponent {
 				setShowDialogProps: this.setShowDialogProps,
 				notEnoughLightDialogProps: this.notEnoughLightDialogProps,
 				calcPcLightChanges: this.calcPcLightChanges,
+				toggleAudio: this.toggleAudio,
+				sfxSelectors: {
+					'handgun': 'handgunShot',
+					'acidConcoction0': 'glassVialBreak',
+					'holyWater0': 'glassVialBreak'
+				},
 				callback: () => {
 					this.toggleActionButton('', '', '', '', () => {
 						if (target === 'creature' && this.state.mapCreatures[id].currentHealth <= 0) {
@@ -1356,6 +1370,16 @@ class Game extends React.PureComponent {
 		this.setState(prevState => ({centerOnPlayer: !prevState.centerOnPlayer}));
 	}
 
+	toggleAudio = (category, selectorName) => {
+		const audio = category === 'environment' ? this.sfxSelectors[category][this.state.currentLocation][selectorName] : this.sfxSelectors[category][selectorName];
+		if (audio.paused && this.state.gameOptions.playFx) {
+			audio.volume = this.state.gameOptions.fxVolume;
+			audio.play().catch(e => console.log(e));
+		} else if (!audio.paused) {
+			audio.pause().catch(e => console.log(e));
+		}
+	}
+
 	updateGameOptions = (gameOptions) => {
 		this.setState({gameOptions});
 	}
@@ -1620,6 +1644,36 @@ class Game extends React.PureComponent {
 		this.setShowDialogProps(true, dialogProps);
 	}
 
+	/**
+	 * Called by render() to set up array of sound effects elements
+	 * @returns {*[]}
+	 */
+	setupSoundEffects = () => {
+		let effects = [];
+
+		// environment
+		effects.push(<SoundEffect key='sfx-stoneDoor' idProp='sfx-stoneDoor' sourceName='stoneDoor' />);
+		effects.push(<SoundEffect key='sfx-windIndoors' idProp='sfx-windIndoors' sourceName='windIndoors' />);
+
+		//weapons
+		effects.push(<SoundEffect key='sfx-handgunShot' idProp='sfx-handgunShot' sourceName='handgunShot' />);
+		effects.push(<SoundEffect key='sfx-glassVialBreak' idProp='sfx-glassVialBreak' sourceName='glassVialBreak' />);
+
+		return effects;
+	}
+
+	/**
+	 * Sets up selectors for sound effect elements
+	 * @private
+	 */
+	_populateSfxSelectors() {
+		this.sfxSelectors.environment.catacombs.door = document.getElementById('sfx-stoneDoor');
+		this.sfxSelectors.environment.catacombs.background = document.getElementById('sfx-windIndoors');
+
+		this.sfxSelectors.weapons.handgunShot = document.getElementById('sfx-handgunShot');
+		this.sfxSelectors.weapons.glassVialBreak = document.getElementById('sfx-glassVialBreak');
+	}
+
 
 
 	/***************************
@@ -1643,6 +1697,7 @@ class Game extends React.PureComponent {
 					this._setupGameState();
 				});
 			}
+			this._populateSfxSelectors();
 		}
 
 		if (!this.showLogin) {
@@ -1803,6 +1858,7 @@ class Game extends React.PureComponent {
 						contextMenuChoice={this.state.contextMenuChoice}
 						centerOnPlayer={this.state.centerOnPlayer}
 						toggleCenterOnPlayer={this.toggleCenterOnPlayer}
+						toggleAudio={this.toggleAudio}
 
 						updateThreatList={this.updateThreatList}
 						threatList={this.state.threatList}
@@ -1818,7 +1874,7 @@ class Game extends React.PureComponent {
 						skillModeActive={this.state.skillModeActive}
 					/>
 				}
-
+				{ <this.setupSoundEffects /> }
 			</div>
 		);
 	}

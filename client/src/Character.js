@@ -111,8 +111,8 @@ class Character extends React.PureComponent {
 	/**
 	 * Carry out an attack on a creature
 	 * @param props : object (
-	 *  actionId: string,
-	 *  actionStats: object,
+	 *  actionId: string (weaponId),
+	 *  actionStats: object (includes item/weapon info),
 	 *  targetData: object,
 	 *  pcData: object,
 	 *  updateCharacters: function (from App),
@@ -121,7 +121,7 @@ class Character extends React.PureComponent {
 	 * )
 	 */
 	attack = (props) => {
-		const {actionId, actionStats, targetData, pcData, updateCharacters, updateLog, callback} = props;
+		const {actionId, actionStats, targetData, pcData, updateCharacters, updateLog, toggleAudio, sfxSelectors, callback} = props;
 		let attackTotal, hitRoll, defenseRoll, defenseTotal;
 		let isHit = false;
 		let damageTotal = 0;
@@ -173,7 +173,6 @@ class Character extends React.PureComponent {
 				}
 				updateLog(`${pcData.name} attacks with the ${weaponInfo.name}, scores ${attackTotal} to hit...and ${isHit ? `does ${damage} damage!` : `misses (${targetData.name} scored ${defenseTotal} for defense).`}`);
 			}
-
 		} else {
 			hitRoll = diceRoll(this.hitDie);
 			defenseRoll = diceRoll(this.defenseDie);
@@ -209,6 +208,13 @@ class Character extends React.PureComponent {
 		}
 
 		updateCharacters('player', updatedPcData, pcData.id, false, false, false, () => {
+			if (equippedGunType) {
+				if (equippedGunType === 'handgun') {
+					toggleAudio('weapons', sfxSelectors.handgun);
+				}
+			} else {
+				toggleAudio('weapons', sfxSelectors[actionId]);
+			}
 			if (damageTotal > 0) {
 				updatedCreatureData.currentHealth -= damageTotal;
 				updateCharacters('creature', updatedCreatureData, targetData.id, false, false, false, callback);
