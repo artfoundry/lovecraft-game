@@ -10,7 +10,7 @@ import WeaponTypes from './data/weaponTypes.json';
 import ItemTypes from './data/itemTypes.json';
 import UI from './UI';
 import './css/app.css';
-import {diceRoll, deepCopy, convertCoordsToPos, convertPosToCoords, articleType} from './Utils';
+import {removeIdNumber, diceRoll, deepCopy, convertCoordsToPos, convertPosToCoords, articleType} from './Utils';
 import {SoundEffect} from './Audio';
 
 
@@ -46,11 +46,31 @@ class Game extends React.PureComponent {
 			'create': 30,
 			'search': 2
 		};
+		// collection of audio fx DOM nodes by ID
 		this.sfxSelectors = {
 			environment: {
 				catacombs: {}
 			},
-			weapons: {}
+			characters: {},
+			weapons: {},
+			items: {},
+			skills: {}
+		};
+		// ids or item/weapon types matched with their appropriate sfxSelector IDs
+		this.sfxSelectorAliases = {
+			'handgun': 'handgunShot',
+			'liquid': 'glassVialBreak',
+			'blade': 'meleeAttackBlade',
+			'blunt': 'meleeAttackBlunt',
+			'attackMiss': 'attackMiss',
+			'pharmaceuticals': 'gulp',
+			'elderThing': 'elderThing',
+			'shoggoth': 'shoggoth',
+			'ghoul': 'ghoul',
+			'maleInjured': 'maleInjured',
+			'maleDeath': 'maleDeath',
+			'femaleInjured': 'femaleInjured',
+			'femaleDeath': 'femaleDeath',
 		};
 
 		this.minScreenWidthForSmall = 1000;
@@ -261,15 +281,24 @@ class Game extends React.PureComponent {
 	 */
 	updateCharacters = (type, updateData, id, lightingHasChanged, isInitialCreatureSetup = false, isInitialCharacterSetup = false, callback) => {
 		const collection = type === 'player' ? 'playerCharacters' : 'mapCreatures';
-		const currentChar = this.state.playerCharacters[id];
+		const currentChar = this.state[collection][id];
 		if (id) {
-			if (updateData.currentSanity <= 0) {
+			if (type === 'player' && updateData.currentSanity <= 0) {
 				updateData.isDeadOrInsane = true;
+			}
+			if (type === 'player' && updateData.currentHealth > 0 && updateData.currentSanity > 0 &&
+				(updateData.currentHealth < currentChar.currentHealth || updateData.currentSanity < currentChar.currentSanity))
+			{
+				currentChar.gender === 'Male' ? this.toggleAudio('characters', 'maleInjured') : this.toggleAudio('characters', 'femaleInjured');
+			} else if (type === 'creature' && updateData.currentHealth < currentChar.currentHealth) {
+				//todo: once creature injured sounds are added, need to change sound name to include '-injured'
+				this.toggleAudio('characters', removeIdNumber(id));
 			}
 			if (type === 'player' && updateData.currentHealth <= 0 && currentChar.currentHealth > 0) {
 				if (!this.state.inTacticalMode) {
 					this.toggleTacticalMode(true);
 				}
+				currentChar.gender === 'Male' ? this.toggleAudio('characters', 'maleDeath') : this.toggleAudio('characters', 'femaleDeath');
 				this.updateLog(`${currentChar.name}'s health has been reduced to 0, and ${currentChar.gender === 'Male' ? 'he' : 'she'} is now dying!`);
 			}
 			this.setState(prevState => ({
@@ -813,11 +842,7 @@ class Game extends React.PureComponent {
 				notEnoughLightDialogProps: this.notEnoughLightDialogProps,
 				calcPcLightChanges: this.calcPcLightChanges,
 				toggleAudio: this.toggleAudio,
-				sfxSelectors: {
-					'handgun': 'handgunShot',
-					'acidConcoction0': 'glassVialBreak',
-					'holyWater0': 'glassVialBreak'
-				},
+				sfxSelectors: this.sfxSelectorAliases,
 				callback: () => {
 					this.toggleActionButton('', '', '', '', () => {
 						if (target === 'creature' && this.state.mapCreatures[id].currentHealth <= 0) {
@@ -1655,9 +1680,27 @@ class Game extends React.PureComponent {
 		effects.push(<SoundEffect key='sfx-stoneDoor' idProp='sfx-stoneDoor' sourceName='stoneDoor' />);
 		effects.push(<SoundEffect key='sfx-windIndoors' idProp='sfx-windIndoors' sourceName='windIndoors' />);
 
+		//characters
+		effects.push(<SoundEffect key='sfx-elderThing' idProp='sfx-elderThing' sourceName='elderThing' />);
+		effects.push(<SoundEffect key='sfx-shoggoth' idProp='sfx-shoggoth' sourceName='shoggoth' />);
+		effects.push(<SoundEffect key='sfx-ghoul' idProp='sfx-ghoul' sourceName='ghoul' />);
+		effects.push(<SoundEffect key='sfx-maleInjured' idProp='sfx-maleInjured' sourceName='maleInjured' />);
+		effects.push(<SoundEffect key='sfx-maleDeath' idProp='sfx-maleDeath' sourceName='maleDeath' />);
+		effects.push(<SoundEffect key='sfx-femaleInjured' idProp='sfx-femaleInjured' sourceName='femaleInjured' />);
+		effects.push(<SoundEffect key='sfx-femaleDeath' idProp='sfx-femaleDeath' sourceName='femaleDeath' />);
+
 		//weapons
 		effects.push(<SoundEffect key='sfx-handgunShot' idProp='sfx-handgunShot' sourceName='handgunShot' />);
 		effects.push(<SoundEffect key='sfx-glassVialBreak' idProp='sfx-glassVialBreak' sourceName='glassVialBreak' />);
+		effects.push(<SoundEffect key='sfx-meleeAttackBlade' idProp='sfx-meleeAttackBlade' sourceName='meleeAttackBlade' />);
+		effects.push(<SoundEffect key='sfx-meleeAttackBlunt' idProp='sfx-meleeAttackBlunt' sourceName='meleeAttackBlunt' />);
+		effects.push(<SoundEffect key='sfx-attackMiss' idProp='sfx-attackMiss' sourceName='attackMiss' />);
+
+		//items
+		effects.push(<SoundEffect key='sfx-gulp' idProp='sfx-gulp' sourceName='gulp' />);
+
+		//skills
+
 
 		return effects;
 	}
@@ -1667,11 +1710,31 @@ class Game extends React.PureComponent {
 	 * @private
 	 */
 	_populateSfxSelectors() {
+		//environments
 		this.sfxSelectors.environment.catacombs.door = document.getElementById('sfx-stoneDoor');
 		this.sfxSelectors.environment.catacombs.background = document.getElementById('sfx-windIndoors');
 
+		//characters
+		this.sfxSelectors.characters.elderThing = document.getElementById('sfx-elderThing');
+		this.sfxSelectors.characters.shoggoth = document.getElementById('sfx-shoggoth');
+		this.sfxSelectors.characters.ghoul = document.getElementById('sfx-ghoul');
+		this.sfxSelectors.characters.maleInjured = document.getElementById('sfx-maleInjured');
+		this.sfxSelectors.characters.maleDeath = document.getElementById('sfx-maleDeath');
+		this.sfxSelectors.characters.femaleInjured = document.getElementById('sfx-femaleInjured');
+		this.sfxSelectors.characters.femaleDeath = document.getElementById('sfx-femaleDeath');
+
+		//weapons
 		this.sfxSelectors.weapons.handgunShot = document.getElementById('sfx-handgunShot');
 		this.sfxSelectors.weapons.glassVialBreak = document.getElementById('sfx-glassVialBreak');
+		this.sfxSelectors.weapons.meleeAttackBlade = document.getElementById('sfx-meleeAttackBlade');
+		this.sfxSelectors.weapons.meleeAttackBlunt = document.getElementById('sfx-meleeAttackBlunt');
+		this.sfxSelectors.weapons.attackMiss = document.getElementById('sfx-attackMiss');
+
+		//items
+		this.sfxSelectors.items.gulp = document.getElementById('sfx-gulp');
+
+		//skills
+
 	}
 
 

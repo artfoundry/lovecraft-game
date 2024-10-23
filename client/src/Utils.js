@@ -2,10 +2,14 @@ export function convertCamelToKabobCase(str) {
 	return str.replace(/([A-Z])/g, match => ('-' + match.toLowerCase()));
 }
 
-export function convertObjIdToClassId(id) {
+export function removeIdNumber(id) {
 	const numberInID = id.search(/\d/);
 	const idEndIndex = numberInID > -1 ? numberInID : id.length;
-	return convertCamelToKabobCase(id.substring(0, idEndIndex));
+	return id.substring(0, idEndIndex);
+}
+
+export function convertObjIdToClassId(id) {
+	return convertCamelToKabobCase(removeIdNumber(id));
 }
 
 export function convertPosToCoords(pos) {

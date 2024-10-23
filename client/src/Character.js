@@ -1,5 +1,5 @@
 import React from 'react';
-import {diceRoll, deepCopy} from './Utils';
+import {removeIdNumber, diceRoll, deepCopy} from './Utils';
 import ItemTypes from './data/itemTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
 import Skills from './data/skills.json';
@@ -212,8 +212,10 @@ class Character extends React.PureComponent {
 				if (equippedGunType === 'handgun') {
 					toggleAudio('weapons', sfxSelectors.handgun);
 				}
+			} else if (isHit) {
+				toggleAudio('weapons', sfxSelectors[weaponInfo.damageType]);
 			} else {
-				toggleAudio('weapons', sfxSelectors[actionId]);
+				toggleAudio('weapons', sfxSelectors.attackMiss);
 			}
 			if (damageTotal > 0) {
 				updatedCreatureData.currentHealth -= damageTotal;
@@ -238,7 +240,7 @@ class Character extends React.PureComponent {
 	 * )
 	 */
 	heal = (props) => {
-		const {actionId, actionStats, targetData, pcData, updateCharacters, updateLog, isChemistSkill, callback} = props;
+		const {actionId, actionStats, targetData, pcData, updateCharacters, updateLog, isChemistSkill, toggleAudio, sfxSelectors, callback} = props;
 		const healItem = pcData.items[actionId].name;
 		const targetStat = actionStats.healingType === 'health' ? 'currentHealth' : 'currentSanity';
 		const startingStatValue = actionStats.healingType === 'health' ? targetData.startingHealth : targetData.startingSanity;
@@ -267,6 +269,9 @@ class Character extends React.PureComponent {
 			updatedHealerData.items[actionId].amount--;
 		}
 		updateCharacters('player', updatedTargetData, targetData.id, false, false, false, () => {
+			if (targetStat === 'currentSanity') {
+				toggleAudio('items', sfxSelectors[removeIdNumber(actionId)]);
+			}
 			const target = pcData.name === targetData.name ? (targetData.gender === 'Male' ? 'his' : 'her') : targetData.name + "'s";
 			updateLog(`${pcData.name} uses ${healItem} to recover ${target} ${targetStat.substring(7)}`);
 			if (targetData.id !== pcData.id) {
