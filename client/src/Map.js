@@ -10,6 +10,7 @@ import EnvObjectTypes from './data/envObjectTypes.json';
 import {Character, Exit, Tile, Door, Item, EnvObject, LightElement, MapCover} from './MapElements';
 import {
 	convertObjIdToClassId,
+	removeIdNumber,
 	convertPosToCoords,
 	convertCoordsToPos,
 	roundTowardZero,
@@ -48,6 +49,7 @@ class Map extends React.PureComponent {
 		this.maxLightStrength = 5;
 		this.minPcTileLightStrength = 2;
 		this.baseChanceOfFindingSecretDoor = 0.1;
+		this.chanceForCreatureSound = 1; // dice roll of this or lower triggers sound
 
 		// total number of map pieces in currentMapData: 17;
 		this.currentMapData = GameLocations[this.props.currentLocation];
@@ -2583,7 +2585,7 @@ class Map extends React.PureComponent {
 					// if player char is within attack range, then attack
 					if (targetPlayerDistance <= creatureData.range) {
 						// this.props.updateLog(`${creatureID} attacks player at ${JSON.stringify(targetPlayerPos)}`);
-						this.props.mapCreatures[creatureID].attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog);
+						this.props.mapCreatures[creatureID].attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog, this.props.toggleAudio);
 					}
 					// then move away from player
 					for (let i = 1; i <= creatureData.moveSpeed; i++) {
@@ -2608,7 +2610,7 @@ class Map extends React.PureComponent {
 						// if player char is within attack range, then attack
 						if (targetPlayerDistance <= creatureData.range) {
 							// this.props.updateLog(`${creatureID} attacks player at ${JSON.stringify(targetPlayerPos)}`);
-							this.props.mapCreatures[creatureID].attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog, updateThreatAndCurrentTurn);
+							this.props.mapCreatures[creatureID].attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog, this.props.toggleAudio, updateThreatAndCurrentTurn);
 						} else {
 							this.props.updateCurrentTurn();
 						}
@@ -2616,7 +2618,7 @@ class Map extends React.PureComponent {
 				// otherwise player is in attack range, so attack
 				} else {
 					// this.props.updateLog(`${creatureID} attacks player at ${JSON.stringify(targetPlayerPos)}`);
-					this.props.mapCreatures[creatureID].attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog, updateThreatAndCurrentTurn);
+					this.props.mapCreatures[creatureID].attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog, this.props.toggleAudio, updateThreatAndCurrentTurn);
 				}
 				creatureDidAct = true;
 			} else {
@@ -2662,7 +2664,10 @@ class Map extends React.PureComponent {
 		if (surroundingCoords[randomIndex]) {
 			this._storeNewCreatureCoords(activeCreatureID, [surroundingCoords[randomIndex]]);
 		}
-		// this.props.updateLog(`Moving ${creatureID} randomly to ${newRandX}, ${newRandY}`);
+		const willPlaySound = diceRoll(10) <= this.chanceForCreatureSound;
+		if (willPlaySound) {
+			this.props.toggleAudio('characters', removeIdNumber(activeCreatureID));
+		}
 	}
 
 	// TODO: No longer needed? Was being used in moveCharacter, but from old map paradigm using tile sides to determine valid moves
@@ -2715,7 +2720,7 @@ class Map extends React.PureComponent {
 	 * @param doorTilePos: string
 	 */
 	toggleDoor = (doorTilePos) => {
-		this.props.toggleAudio('environment', 'door');
+		this.props.toggleAudio('environments', 'door');
 		this.setState(prevState => ({
 			mapLayout: {
 				...prevState.mapLayout,
@@ -2880,7 +2885,7 @@ class Map extends React.PureComponent {
 			this.layoutPieces();
 			// note: this won't play until user interacts with page
 			// (which will happen with prod version but not testing if login and char creation are skipped)
-			this.props.toggleAudio('environment', 'background');
+			this.props.toggleAudio('environments', 'background');
 		}
 	}
 

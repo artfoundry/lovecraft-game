@@ -1,5 +1,5 @@
 import React from 'react';
-import {diceRoll} from './Utils';
+import {removeIdNumber, diceRoll} from './Utils';
 
 class Creature extends React.PureComponent {
 	constructor(props) {
@@ -34,7 +34,7 @@ class Creature extends React.PureComponent {
 		this.isRemoved = false;
 	}
 
-	attack = (targetData, updateTarget, updateLog, updateTurnCallback = null) => {
+	attack = (targetData, updateTarget, updateLog, toggleAudio, updateTurnCallback = null) => {
 		let isHit, damageTotal = 0, hitTotal = 0, defenseTotal = 0;
 		let halfStr = Math.round(this.strength / 2);
 		let halfAgility = Math.round(this.agility / 2);
@@ -76,6 +76,7 @@ class Creature extends React.PureComponent {
 		}
 		updateLog(logAttackMessage);
 		updateLog(logDamageMessage);
+		toggleAudio('characters', removeIdNumber(this.id) + 'Attack');
 
 		if (isHit) {
 			const feelThePainSkill = targetData.skills.feelThePain;

@@ -48,7 +48,7 @@ class Game extends React.PureComponent {
 		};
 		// collection of audio fx DOM nodes by ID
 		this.sfxSelectors = {
-			environment: {
+			environments: {
 				catacombs: {}
 			},
 			characters: {},
@@ -63,14 +63,14 @@ class Game extends React.PureComponent {
 			'blade': 'meleeAttackBlade',
 			'blunt': 'meleeAttackBlunt',
 			'attackMiss': 'attackMiss',
-			'pharmaceuticals': 'gulp',
-			'elderThing': 'elderThing',
-			'shoggoth': 'shoggoth',
-			'ghoul': 'ghoul',
-			'maleInjured': 'maleInjured',
-			'maleDeath': 'maleDeath',
-			'femaleInjured': 'femaleInjured',
-			'femaleDeath': 'femaleDeath',
+			'pharmaceuticals': 'gulp'
+			// 'elderThing': 'elderThing',
+			// 'shoggoth': 'shoggoth',
+			// 'ghoul': 'ghoul',
+			// 'maleInjured': 'maleInjured',
+			// 'maleDeath': 'maleDeath',
+			// 'femaleInjured': 'femaleInjured',
+			// 'femaleDeath': 'femaleDeath',
 		};
 
 		this.minScreenWidthForSmall = 1000;
@@ -282,6 +282,11 @@ class Game extends React.PureComponent {
 	updateCharacters = (type, updateData, id, lightingHasChanged, isInitialCreatureSetup = false, isInitialCharacterSetup = false, callback) => {
 		const collection = type === 'player' ? 'playerCharacters' : 'mapCreatures';
 		const currentChar = this.state[collection][id];
+		const delayedAudio = (selector) => {
+			setTimeout(() => {
+				this.toggleAudio('characters', selector);
+			}, 500);
+		}
 		if (id) {
 			if (type === 'player' && updateData.currentSanity <= 0) {
 				updateData.isDeadOrInsane = true;
@@ -289,17 +294,18 @@ class Game extends React.PureComponent {
 			if (type === 'player' && updateData.currentHealth > 0 && updateData.currentSanity > 0 &&
 				(updateData.currentHealth < currentChar.currentHealth || updateData.currentSanity < currentChar.currentSanity))
 			{
-				currentChar.gender === 'Male' ? this.toggleAudio('characters', 'maleInjured') : this.toggleAudio('characters', 'femaleInjured');
-			} else if (type === 'creature' && updateData.currentHealth < currentChar.currentHealth) {
-				//todo: once creature injured sounds are added, need to change sound name to include '-injured'
-				this.toggleAudio('characters', removeIdNumber(id));
+				currentChar.gender === 'Male' ? delayedAudio('maleInjured') : delayedAudio('femaleInjured');
+			} else if (type === 'creature' && updateData.currentHealth > 0 && updateData.currentHealth < currentChar.currentHealth) {
+				delayedAudio(removeIdNumber(id) + 'Injured');
 			}
 			if (type === 'player' && updateData.currentHealth <= 0 && currentChar.currentHealth > 0) {
 				if (!this.state.inTacticalMode) {
 					this.toggleTacticalMode(true);
 				}
-				currentChar.gender === 'Male' ? this.toggleAudio('characters', 'maleDeath') : this.toggleAudio('characters', 'femaleDeath');
+				currentChar.gender === 'Male' ? delayedAudio('maleDeath') : delayedAudio('femaleDeath');
 				this.updateLog(`${currentChar.name}'s health has been reduced to 0, and ${currentChar.gender === 'Male' ? 'he' : 'she'} is now dying!`);
+			} else if (type === 'creature' && updateData.currentHealth <= 0 && currentChar.currentHealth > 0) {
+				delayedAudio(removeIdNumber(id) + 'Death');
 			}
 			this.setState(prevState => ({
 				[collection]: {
@@ -1396,12 +1402,10 @@ class Game extends React.PureComponent {
 	}
 
 	toggleAudio = (category, selectorName) => {
-		const audio = category === 'environment' ? this.sfxSelectors[category][this.state.currentLocation][selectorName] : this.sfxSelectors[category][selectorName];
+		const audio = category === 'environments' ? this.sfxSelectors[category][this.state.currentLocation][selectorName] : this.sfxSelectors[category][selectorName];
 		if (audio.paused && this.state.gameOptions.playFx) {
 			audio.volume = this.state.gameOptions.fxVolume;
 			audio.play().catch(e => console.log(e));
-		} else if (!audio.paused) {
-			audio.pause().catch(e => console.log(e));
 		}
 	}
 
@@ -1683,7 +1687,13 @@ class Game extends React.PureComponent {
 		//characters
 		effects.push(<SoundEffect key='sfx-elderThing' idProp='sfx-elderThing' sourceName='elderThing' />);
 		effects.push(<SoundEffect key='sfx-shoggoth' idProp='sfx-shoggoth' sourceName='shoggoth' />);
+		effects.push(<SoundEffect key='sfx-shoggothAttack' idProp='sfx-shoggothAttack' sourceName='shoggothAttack' />);
+		effects.push(<SoundEffect key='sfx-shoggothInjured' idProp='sfx-shoggothInjured' sourceName='shoggothInjured' />);
+		effects.push(<SoundEffect key='sfx-shoggothDeath' idProp='sfx-shoggothDeath' sourceName='shoggothDeath' />);
 		effects.push(<SoundEffect key='sfx-ghoul' idProp='sfx-ghoul' sourceName='ghoul' />);
+		effects.push(<SoundEffect key='sfx-ghoulAttack' idProp='sfx-ghoulAttack' sourceName='ghoulAttack' />);
+		effects.push(<SoundEffect key='sfx-ghoulInjured' idProp='sfx-ghoulInjured' sourceName='ghoulInjured' />);
+		effects.push(<SoundEffect key='sfx-ghoulDeath' idProp='sfx-ghoulDeath' sourceName='ghoulDeath' />);
 		effects.push(<SoundEffect key='sfx-maleInjured' idProp='sfx-maleInjured' sourceName='maleInjured' />);
 		effects.push(<SoundEffect key='sfx-maleDeath' idProp='sfx-maleDeath' sourceName='maleDeath' />);
 		effects.push(<SoundEffect key='sfx-femaleInjured' idProp='sfx-femaleInjured' sourceName='femaleInjured' />);
@@ -1711,13 +1721,19 @@ class Game extends React.PureComponent {
 	 */
 	_populateSfxSelectors() {
 		//environments
-		this.sfxSelectors.environment.catacombs.door = document.getElementById('sfx-stoneDoor');
-		this.sfxSelectors.environment.catacombs.background = document.getElementById('sfx-windIndoors');
+		this.sfxSelectors.environments.catacombs.door = document.getElementById('sfx-stoneDoor');
+		this.sfxSelectors.environments.catacombs.background = document.getElementById('sfx-windIndoors');
 
 		//characters
 		this.sfxSelectors.characters.elderThing = document.getElementById('sfx-elderThing');
 		this.sfxSelectors.characters.shoggoth = document.getElementById('sfx-shoggoth');
+		this.sfxSelectors.characters.shoggothAttack = document.getElementById('sfx-shoggothAttack');
+		this.sfxSelectors.characters.shoggothInjured = document.getElementById('sfx-shoggothInjured');
+		this.sfxSelectors.characters.shoggothDeath = document.getElementById('sfx-shoggothDeath');
 		this.sfxSelectors.characters.ghoul = document.getElementById('sfx-ghoul');
+		this.sfxSelectors.characters.ghoulAttack = document.getElementById('sfx-ghoulAttack');
+		this.sfxSelectors.characters.ghoulInjured = document.getElementById('sfx-ghoulInjured');
+		this.sfxSelectors.characters.ghoulDeath = document.getElementById('sfx-ghoulDeath');
 		this.sfxSelectors.characters.maleInjured = document.getElementById('sfx-maleInjured');
 		this.sfxSelectors.characters.maleDeath = document.getElementById('sfx-maleDeath');
 		this.sfxSelectors.characters.femaleInjured = document.getElementById('sfx-femaleInjured');
