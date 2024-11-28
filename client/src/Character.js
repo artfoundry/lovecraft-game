@@ -210,12 +210,12 @@ class Character extends React.PureComponent {
 		updateCharacters('player', updatedPcData, pcData.id, false, false, false, () => {
 			if (equippedGunType) {
 				if (equippedGunType === 'handgun') {
-					toggleAudio('weapons', sfxSelectors.handgun);
+					toggleAudio('weapons', sfxSelectors.handgun, {useReverb: true});
 				}
 			} else if (isHit) {
-				toggleAudio('weapons', sfxSelectors[weaponInfo.damageType]);
+				toggleAudio('weapons', sfxSelectors[weaponInfo.damageType], {useReverb: true});
 			} else {
-				toggleAudio('weapons', sfxSelectors.attackMiss);
+				toggleAudio('weapons', 'attackMiss', {useReverb: true});
 			}
 			if (damageTotal > 0) {
 				updatedCreatureData.currentHealth -= damageTotal;
@@ -438,7 +438,7 @@ class Character extends React.PureComponent {
 	 * }
 	 */
 	mine = (props) => {
-		const {partyData, updateCharacters, calcPcLightChanges, isExpertMining} = props;
+		const {partyData, updateCharacters, calcPcLightChanges, toggleAudio, isExpertMining} = props;
 		let updatedPartyData = deepCopy(partyData);
 		const lightCost = isExpertMining ? this.lightTimeCosts.expertMining : this.lightTimeCosts.mine;
 		const expertMiningSkill = partyData.archaeologist.skills.expertMining;
@@ -448,7 +448,9 @@ class Character extends React.PureComponent {
 		if (isExpertMining) {
 			updatedPartyData.archaeologist.currentSpirit -= expertMiningSkill.spirit[expertMiningSkill.level];
 		}
-		updateCharacters('player', updatedPartyData, null, lightingHasChanged, false, false);
+		updateCharacters('player', updatedPartyData, null, lightingHasChanged, false, false, () => {
+			toggleAudio('skills', 'mine', {useReverb: true});
+		});
 	}
 
 	expertMining = (props) => {

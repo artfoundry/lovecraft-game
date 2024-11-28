@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {createRef} from 'react';
 import Firebase from './Firebase';
 import CharacterCreation from './CharacterCreation';
 import Map from './Map';
@@ -11,7 +11,7 @@ import ItemTypes from './data/itemTypes.json';
 import UI from './UI';
 import './css/app.css';
 import {removeIdNumber, diceRoll, deepCopy, convertCoordsToPos, convertPosToCoords, articleType} from './Utils';
-import {SoundEffect} from './Audio';
+import {ProcessAudio, SoundEffect} from './Audio';
 
 
 class Game extends React.PureComponent {
@@ -49,28 +49,54 @@ class Game extends React.PureComponent {
 		// collection of audio fx DOM nodes by ID
 		this.sfxSelectors = {
 			environments: {
-				catacombs: {}
+				catacombsDoor: null,
+				catacombsBackground: null
 			},
-			characters: {},
-			weapons: {},
-			items: {},
-			skills: {}
+			characters: {
+				elderThing: null,
+				elderThingAttack: null,
+				elderThingInjured: null,
+				elderThingDeath: null,
+				shoggoth: null,
+				shoggothAttack: null,
+				shoggothInjured: null,
+				shoggothDeath: null,
+				ghoul: null,
+				ghoulAttack: null,
+				ghoulInjured: null,
+				ghoulDeath: null,
+				maleInjured: null,
+				maleDeath: null,
+				femaleInjured: null,
+				femaleDeath: null
+			},
+			weapons: {
+				handgunShot: null,
+				glassVialBreak: null,
+				meleeAttackBlade: null,
+				meleeAttackBlunt: null,
+				attackMiss: null
+			},
+			items: {
+				gulp: null
+			},
+			skills: {
+				mine: null
+			},
+			game: {
+				dice: null
+			}
 		};
-		// ids or item/weapon types matched with their appropriate sfxSelector IDs
-		this.sfxSelectorAliases = {
+
+		// certain action types matched with their appropriate sfxSelector IDs
+		// used because some categories of items (like all handguns) will use the same sound
+		this.sfxActionSelectorAliases = {
 			'handgun': 'handgunShot',
 			'liquid': 'glassVialBreak',
 			'blade': 'meleeAttackBlade',
 			'blunt': 'meleeAttackBlunt',
 			'attackMiss': 'attackMiss',
 			'pharmaceuticals': 'gulp'
-			// 'elderThing': 'elderThing',
-			// 'shoggoth': 'shoggoth',
-			// 'ghoul': 'ghoul',
-			// 'maleInjured': 'maleInjured',
-			// 'maleDeath': 'maleDeath',
-			// 'femaleInjured': 'femaleInjured',
-			// 'femaleDeath': 'femaleDeath',
 		};
 
 		this.minScreenWidthForSmall = 1000;
@@ -176,6 +202,7 @@ class Game extends React.PureComponent {
 				actionButtonCallback:  null,
 				dialogClasses: ''
 			},
+			sfxReverbProcessed: {},
 			// these need resetting on floor change
 			mapCreatures: {},
 			mapObjects: {},
@@ -284,7 +311,7 @@ class Game extends React.PureComponent {
 		const currentChar = this.state[collection][id];
 		const delayedAudio = (selector) => {
 			setTimeout(() => {
-				this.toggleAudio('characters', selector);
+				this.toggleAudio('characters', selector, {useReverb: true});
 			}, 500);
 		}
 		if (id) {
@@ -690,6 +717,8 @@ class Game extends React.PureComponent {
 				notEnoughLightDialogProps: this.notEnoughLightDialogProps,
 				updateActivePlayerActions: this.updateActivePlayerActions,
 				calcPcLightChanges: this.calcPcLightChanges,
+				toggleAudio: this.toggleAudio,
+				sfxSelectors: this.sfxActionSelectorAliases,
 				// dummy isExpertMining, so when expertMining in Character calls mine, can pass this in, and calling mine from here doesn't cause error
 				isExpertMining: null
 			};
@@ -848,7 +877,7 @@ class Game extends React.PureComponent {
 				notEnoughLightDialogProps: this.notEnoughLightDialogProps,
 				calcPcLightChanges: this.calcPcLightChanges,
 				toggleAudio: this.toggleAudio,
-				sfxSelectors: this.sfxSelectorAliases,
+				sfxSelectors: this.sfxActionSelectorAliases,
 				callback: () => {
 					this.toggleActionButton('', '', '', '', () => {
 						if (target === 'creature' && this.state.mapCreatures[id].currentHealth <= 0) {
@@ -1401,11 +1430,35 @@ class Game extends React.PureComponent {
 		this.setState(prevState => ({centerOnPlayer: !prevState.centerOnPlayer}));
 	}
 
-	toggleAudio = (category, selectorName) => {
-		const audio = category === 'environments' ? this.sfxSelectors[category][this.state.currentLocation][selectorName] : this.sfxSelectors[category][selectorName];
-		if (audio.paused && this.state.gameOptions.playFx) {
-			audio.volume = this.state.gameOptions.fxVolume;
-			audio.play().catch(e => console.log(e));
+	/**
+	 * Plays sound effects, processing them for reverb, panning, valume, etc. if needed beforehand
+	 * (reverb only processed once per sound file for a location)
+	 * @param category: string (sfx category - 'environments', 'characters', 'weapons', 'items', 'skills', 'game')
+	 * @param selectorName: string (sfx name - ex 'door', 'background', 'femaleDeath', etc.)
+	 * @param processors; object (params for ProcessAudio in Audio.js: {useReverb: true, usePan: {xPos: x, yPos: y}})
+	 */
+	toggleAudio = (category, selectorName, processors) => {
+		const sfxReverbProcessed = {...this.state.sfxReverbProcessed};
+		const audioEl = this.sfxSelectors[category][selectorName].current;
+		if (audioEl.paused && this.state.gameOptions.playFx) {
+			let processValues = null;
+			if (processors) {
+				processValues = {};
+				if (processors.useReverb && !sfxReverbProcessed[selectorName]) {
+					processValues.reverb = this.state.currentLocation;
+					sfxReverbProcessed[selectorName] = true;
+				}
+				if (processors.usePan) {
+					processValues.pan = processors.usePan;
+				}
+			}
+			ProcessAudio(selectorName, audioEl, processValues);
+			audioEl.volume = this.state.gameOptions.fxVolume;
+			audioEl.play().catch(e => console.log(e));
+
+			if (sfxReverbProcessed[selectorName] !== this.state.sfxReverbProcessed[selectorName]) {
+				this.setState({sfxReverbProcessed});
+			}
 		}
 	}
 
@@ -1680,77 +1733,14 @@ class Game extends React.PureComponent {
 	setupSoundEffects = () => {
 		let effects = [];
 
-		// environment
-		effects.push(<SoundEffect key='sfx-stoneDoor' idProp='sfx-stoneDoor' sourceName='stoneDoor' />);
-		effects.push(<SoundEffect key='sfx-windIndoors' idProp='sfx-windIndoors' sourceName='windIndoors' />);
-
-		//characters
-		effects.push(<SoundEffect key='sfx-elderThing' idProp='sfx-elderThing' sourceName='elderThing' />);
-		effects.push(<SoundEffect key='sfx-shoggoth' idProp='sfx-shoggoth' sourceName='shoggoth' />);
-		effects.push(<SoundEffect key='sfx-shoggothAttack' idProp='sfx-shoggothAttack' sourceName='shoggothAttack' />);
-		effects.push(<SoundEffect key='sfx-shoggothInjured' idProp='sfx-shoggothInjured' sourceName='shoggothInjured' />);
-		effects.push(<SoundEffect key='sfx-shoggothDeath' idProp='sfx-shoggothDeath' sourceName='shoggothDeath' />);
-		effects.push(<SoundEffect key='sfx-ghoul' idProp='sfx-ghoul' sourceName='ghoul' />);
-		effects.push(<SoundEffect key='sfx-ghoulAttack' idProp='sfx-ghoulAttack' sourceName='ghoulAttack' />);
-		effects.push(<SoundEffect key='sfx-ghoulInjured' idProp='sfx-ghoulInjured' sourceName='ghoulInjured' />);
-		effects.push(<SoundEffect key='sfx-ghoulDeath' idProp='sfx-ghoulDeath' sourceName='ghoulDeath' />);
-		effects.push(<SoundEffect key='sfx-maleInjured' idProp='sfx-maleInjured' sourceName='maleInjured' />);
-		effects.push(<SoundEffect key='sfx-maleDeath' idProp='sfx-maleDeath' sourceName='maleDeath' />);
-		effects.push(<SoundEffect key='sfx-femaleInjured' idProp='sfx-femaleInjured' sourceName='femaleInjured' />);
-		effects.push(<SoundEffect key='sfx-femaleDeath' idProp='sfx-femaleDeath' sourceName='femaleDeath' />);
-
-		//weapons
-		effects.push(<SoundEffect key='sfx-handgunShot' idProp='sfx-handgunShot' sourceName='handgunShot' />);
-		effects.push(<SoundEffect key='sfx-glassVialBreak' idProp='sfx-glassVialBreak' sourceName='glassVialBreak' />);
-		effects.push(<SoundEffect key='sfx-meleeAttackBlade' idProp='sfx-meleeAttackBlade' sourceName='meleeAttackBlade' />);
-		effects.push(<SoundEffect key='sfx-meleeAttackBlunt' idProp='sfx-meleeAttackBlunt' sourceName='meleeAttackBlunt' />);
-		effects.push(<SoundEffect key='sfx-attackMiss' idProp='sfx-attackMiss' sourceName='attackMiss' />);
-
-		//items
-		effects.push(<SoundEffect key='sfx-gulp' idProp='sfx-gulp' sourceName='gulp' />);
-
-		//skills
-
+		for (const [category, names] of Object.entries(this.sfxSelectors)) {
+			for (const name of Object.keys(names)) {
+				this.sfxSelectors[category][name] = createRef();
+				effects.push(<SoundEffect sfxRef={this.sfxSelectors[category][name]} key={'sfx' + name} id={'sfx' + name} sourceName={name} />);
+			}
+		}
 
 		return effects;
-	}
-
-	/**
-	 * Sets up selectors for sound effect elements
-	 * @private
-	 */
-	_populateSfxSelectors() {
-		//environments
-		this.sfxSelectors.environments.catacombs.door = document.getElementById('sfx-stoneDoor');
-		this.sfxSelectors.environments.catacombs.background = document.getElementById('sfx-windIndoors');
-
-		//characters
-		this.sfxSelectors.characters.elderThing = document.getElementById('sfx-elderThing');
-		this.sfxSelectors.characters.shoggoth = document.getElementById('sfx-shoggoth');
-		this.sfxSelectors.characters.shoggothAttack = document.getElementById('sfx-shoggothAttack');
-		this.sfxSelectors.characters.shoggothInjured = document.getElementById('sfx-shoggothInjured');
-		this.sfxSelectors.characters.shoggothDeath = document.getElementById('sfx-shoggothDeath');
-		this.sfxSelectors.characters.ghoul = document.getElementById('sfx-ghoul');
-		this.sfxSelectors.characters.ghoulAttack = document.getElementById('sfx-ghoulAttack');
-		this.sfxSelectors.characters.ghoulInjured = document.getElementById('sfx-ghoulInjured');
-		this.sfxSelectors.characters.ghoulDeath = document.getElementById('sfx-ghoulDeath');
-		this.sfxSelectors.characters.maleInjured = document.getElementById('sfx-maleInjured');
-		this.sfxSelectors.characters.maleDeath = document.getElementById('sfx-maleDeath');
-		this.sfxSelectors.characters.femaleInjured = document.getElementById('sfx-femaleInjured');
-		this.sfxSelectors.characters.femaleDeath = document.getElementById('sfx-femaleDeath');
-
-		//weapons
-		this.sfxSelectors.weapons.handgunShot = document.getElementById('sfx-handgunShot');
-		this.sfxSelectors.weapons.glassVialBreak = document.getElementById('sfx-glassVialBreak');
-		this.sfxSelectors.weapons.meleeAttackBlade = document.getElementById('sfx-meleeAttackBlade');
-		this.sfxSelectors.weapons.meleeAttackBlunt = document.getElementById('sfx-meleeAttackBlunt');
-		this.sfxSelectors.weapons.attackMiss = document.getElementById('sfx-attackMiss');
-
-		//items
-		this.sfxSelectors.items.gulp = document.getElementById('sfx-gulp');
-
-		//skills
-
 	}
 
 
@@ -1776,7 +1766,6 @@ class Game extends React.PureComponent {
 					this._setupGameState();
 				});
 			}
-			this._populateSfxSelectors();
 		}
 
 		if (!this.showLogin) {
@@ -1803,6 +1792,8 @@ class Game extends React.PureComponent {
 				</div>
 				}
 
+				{this.state.isLoggedIn && <this.setupSoundEffects /> }
+
 				{this.showLogin && this.state.isLoginWindowRequested &&
 					<Firebase
 						updateLoggedIn={this.updateLoggedIn}
@@ -1815,6 +1806,7 @@ class Game extends React.PureComponent {
 						objectPanelWidth={this.objectPanelWidth}
 						objectPanelHeight={this.objectPanelHeight}
 						screenData={this.state.screenData}
+						sfxSelectors={this.sfxSelectors}
 					/>
 				}
 
@@ -1953,7 +1945,6 @@ class Game extends React.PureComponent {
 						skillModeActive={this.state.skillModeActive}
 					/>
 				}
-				{ <this.setupSoundEffects /> }
 			</div>
 		);
 	}

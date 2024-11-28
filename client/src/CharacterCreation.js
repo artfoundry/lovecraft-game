@@ -170,12 +170,8 @@ export default class CharacterCreation extends React.PureComponent {
 	}
 
 	toggleDiceSound = () => {
-		const audio = document.getElementById('sfx-dice');
-		if (audio.paused) {
-			audio.play().catch(e => console.log(e));
-		} else if (!audio.paused) {
-			audio.pause().catch(e => console.log(e));
-		}
+		const audio = this.props.sfxSelectors.game.dice.current;
+		audio.play().catch(e => console.log(e));
 	}
 
 	rollStats = () => {

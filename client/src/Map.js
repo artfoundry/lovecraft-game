@@ -1,5 +1,4 @@
-import React from 'react';
-import {createRef} from 'react';
+import React, {createRef} from 'react';
 import MapData from './data/mapData.json';
 import GameLocations from './data/gameLocations.json';
 import CreatureData from './data/creatureTypes.json';
@@ -68,7 +67,7 @@ class Map extends React.PureComponent {
 
 		this.worldFarthestX = 0;
 		this.worldFarthestY = 0;
-		this.worldRef = React.createRef();
+		this.worldRef = createRef();
 		this.worldTransform = {x: 0, y: 0};
 
 		this.state = {
@@ -2666,7 +2665,7 @@ class Map extends React.PureComponent {
 		}
 		const willPlaySound = diceRoll(10) <= this.chanceForCreatureSound;
 		if (willPlaySound) {
-			this.props.toggleAudio('characters', removeIdNumber(activeCreatureID));
+			this.props.toggleAudio('characters', removeIdNumber(activeCreatureID), {useReverb: true});
 		}
 	}
 
@@ -2720,7 +2719,7 @@ class Map extends React.PureComponent {
 	 * @param doorTilePos: string
 	 */
 	toggleDoor = (doorTilePos) => {
-		this.props.toggleAudio('environments', 'door');
+		this.props.toggleAudio('environments', this.props.currentLocation + 'Door', {useReverb: true});
 		this.setState(prevState => ({
 			mapLayout: {
 				...prevState.mapLayout,
@@ -2883,9 +2882,10 @@ class Map extends React.PureComponent {
 	componentDidMount() {
 		if (this.initialMapLoad) {
 			this.layoutPieces();
+
 			// note: this won't play until user interacts with page
 			// (which will happen with prod version but not testing if login and char creation are skipped)
-			this.props.toggleAudio('environments', 'background');
+			this.props.toggleAudio('environments', this.props.currentLocation + 'Background');
 		}
 	}
 

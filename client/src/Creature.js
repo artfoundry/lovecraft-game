@@ -76,7 +76,7 @@ class Creature extends React.PureComponent {
 		}
 		updateLog(logAttackMessage);
 		updateLog(logDamageMessage);
-		toggleAudio('characters', removeIdNumber(this.id) + 'Attack');
+		toggleAudio('characters', removeIdNumber(this.id) + 'Attack', {useReverb: true});
 
 		if (isHit) {
 			const feelThePainSkill = targetData.skills.feelThePain;
