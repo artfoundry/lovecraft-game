@@ -1111,7 +1111,9 @@ class Map extends React.PureComponent {
 					this.contextMenuOpen = false;
 					this.props.updateContextMenu(null);
 				} else if (!this.isDraggingWorld) {
-					if (tileData.doorIsOpen) {
+					const activePcCoords = this.props.playerCharacters[this.props.activeCharacter].coords;
+					const distToDoor = Math.abs(tileData.xPos - activePcCoords.xPos) + Math.abs(tileData.yPos - activePcCoords.yPos);
+					if (tileData.doorIsOpen && (distToDoor === 1 || distToDoor === 2)) {
 						this.props.updateContextMenu('close-door', tilePos, e);
 					} else {
 						this.checkIfTileOrObject(tilePos, null);
