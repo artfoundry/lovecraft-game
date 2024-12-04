@@ -13,6 +13,7 @@ class Creature extends React.PureComponent {
 		this.race = props.race;
 		this.isOldOne = props.isOldOne;
 		this.level = props.level;
+		this.coords = props.coords;
 		this.strength = props.strength;
 		this.agility = props.agility;
 		this.mentalAcuity = props.mentalAcuity;
@@ -29,7 +30,6 @@ class Creature extends React.PureComponent {
 		this.moveSpeed = props.moveSpeed;
 		this.perception = props.perception;
 		this.skills = props.skills;
-		this.coords = props.coords;
 		this.statuses = {};
 		this.isRemoved = false;
 	}
@@ -76,7 +76,7 @@ class Creature extends React.PureComponent {
 		}
 		updateLog(logAttackMessage);
 		updateLog(logDamageMessage);
-		toggleAudio('characters', removeIdNumber(this.id) + 'Attack', {useReverb: true});
+		toggleAudio('characters', removeIdNumber(this.id) + 'Attack', {useReverb: true, useVolume: true, soundCoords: this.coords});
 
 		if (isHit) {
 			const feelThePainSkill = targetData.skills.feelThePain;

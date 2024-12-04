@@ -228,6 +228,7 @@ class Game extends React.PureComponent {
 			inSearchMode: false,
 			contextMenuChoice: null,
 			centerOnPlayer: false,
+			centeredPlayer: '',
 			logText: []
 		}
 	}
@@ -262,6 +263,7 @@ class Game extends React.PureComponent {
 			inSearchMode: false,
 			contextMenuChoice: null,
 			centerOnPlayer: false,
+			centeredPlayer: '',
 			logText: []
 		}, () => {
 			if (callback) callback();
@@ -1427,7 +1429,10 @@ class Game extends React.PureComponent {
 	}
 
 	toggleCenterOnPlayer = () => {
-		this.setState(prevState => ({centerOnPlayer: !prevState.centerOnPlayer}));
+		this.setState(prevState => ({
+			centerOnPlayer: !prevState.centerOnPlayer,
+			centeredPlayer: this.state.activeCharacter
+		}));
 	}
 
 	/**
@@ -1435,7 +1440,14 @@ class Game extends React.PureComponent {
 	 * (reverb only processed once per sound file for a location)
 	 * @param category: string (sfx category - 'environments', 'characters', 'weapons', 'items', 'skills', 'game')
 	 * @param selectorName: string (sfx name - ex 'door', 'background', 'femaleDeath', etc.)
-	 * @param processors; object (params for ProcessAudio in Audio.js: {useReverb: true, usePan: {xPos: x, yPos: y}})
+	 * @param processors; object (params for ProcessAudio in Audio.js:
+	 *  {
+	 *      useVolume: true/false,
+	 *      useReverb: true/false,
+	 *      usePan: true/false
+	 *      soundCoords: {xPos: x, yPos: y}
+	 *  }
+	 * )
 	 */
 	toggleAudio = (category, selectorName, processors) => {
 		const sfxReverbProcessed = {...this.state.sfxReverbProcessed};
@@ -1444,12 +1456,23 @@ class Game extends React.PureComponent {
 			let processValues = null;
 			if (processors) {
 				processValues = {};
+				const sndCoords = processors.soundCoords;
+				const activePcCoors = this.state.centeredPlayer ? this.state.playerCharacters[this.state.centeredPlayer].coords : null;
+				if (processors.useVolume) {
+					// calc number of tiles sound is away from active char using longest direction on grid (x or y)
+					// then multiply distance by audio gain reducing fraction to arrive at value between 0 and 1
+					const xDist = Math.abs(sndCoords.xPos - activePcCoors.xPos);
+					const yDist = Math.abs(sndCoords.yPos - activePcCoors.yPos);
+					const modifier = 0.06 * (xDist > yDist ? xDist : yDist);
+					// toFixed fixes issues with floating point math resulting in long slightly inaccurate float values
+					processValues.volumeSetting = +(1 - (modifier <= 1 ? modifier : 1)).toFixed(2);
+				}
 				if (processors.useReverb && !sfxReverbProcessed[selectorName]) {
-					processValues.reverb = this.state.currentLocation;
+					processValues.reverbSetting = this.state.currentLocation;
 					sfxReverbProcessed[selectorName] = true;
 				}
 				if (processors.usePan) {
-					processValues.pan = processors.usePan;
+					processValues.panSetting = {x: sndCoords.xPos - activePcCoors.xPos, y: sndCoords.yPos - activePcCoors.yPos};
 				}
 			}
 			ProcessAudio(selectorName, audioEl, processValues);
@@ -1501,7 +1524,7 @@ class Game extends React.PureComponent {
 	 */
 	_setupGameState() {
 		const gameReadyCallback = () => {
-			this.setState({gameSetupComplete: true});
+			this.setState({gameSetupComplete: true, centeredPlayer: this.state.playerFollowOrder[0]});
 		}
 		this._setupPlayerCharacters();
 		this._setLocation(gameReadyCallback);

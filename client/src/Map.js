@@ -2665,7 +2665,7 @@ class Map extends React.PureComponent {
 		}
 		const willPlaySound = diceRoll(10) <= this.chanceForCreatureSound;
 		if (willPlaySound) {
-			this.props.toggleAudio('characters', removeIdNumber(activeCreatureID), {useReverb: true});
+			this.props.toggleAudio('characters', removeIdNumber(activeCreatureID), {useVolume: true, useReverb: true, soundCoords: creatureCoords});
 		}
 	}
 
