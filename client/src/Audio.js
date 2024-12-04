@@ -76,10 +76,11 @@ function CreateReverb(activePipeline, reverbType) {
 }
 
 // panning: https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext/createPanner#examples
-function PanAudio(soundDeltas) {
-	const panner = audioContext.createPanner();
-
-}
+// may implement later
+// function PanAudio(soundDeltas) {
+// 	const panner = audioContext.createPanner();
+//
+// }
 
 function AdjustVolume(activePipeline, volumeSetting) {
 	gainNode.gain.value = volumeSetting;
@@ -97,9 +98,9 @@ function ProcessAudio(selectorName, audioEl, processValues) {
 		if (processValues.reverbSetting) {
 			CreateReverb(activePipeline, processValues.reverbSetting);
 		}
-		if (processValues.panSetting) {
-			PanAudio(activePipeline, processValues.panSetting);
-		}
+		// if (processValues.panSetting) {
+		// 	PanAudio(activePipeline, processValues.panSetting);
+		// }
 		const volume = processValues.volumeSetting || 1;
 		AdjustVolume(activePipeline, volume);
 	} else {
