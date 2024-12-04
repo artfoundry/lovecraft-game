@@ -1,5 +1,5 @@
 import React from 'react';
-import {diceRoll, deepCopy} from './Utils';
+import {removeIdNumber, diceRoll, deepCopy} from './Utils';
 import ItemTypes from './data/itemTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
 import Skills from './data/skills.json';
@@ -111,8 +111,8 @@ class Character extends React.PureComponent {
 	/**
 	 * Carry out an attack on a creature
 	 * @param props : object (
-	 *  actionId: string,
-	 *  actionStats: object,
+	 *  actionId: string (weaponId),
+	 *  actionStats: object (includes item/weapon info),
 	 *  targetData: object,
 	 *  pcData: object,
 	 *  updateCharacters: function (from App),
@@ -121,7 +121,7 @@ class Character extends React.PureComponent {
 	 * )
 	 */
 	attack = (props) => {
-		const {actionId, actionStats, targetData, pcData, updateCharacters, updateLog, callback} = props;
+		const {actionId, actionStats, targetData, pcData, updateCharacters, updateLog, toggleAudio, sfxSelectors, callback} = props;
 		let attackTotal, hitRoll, defenseRoll, defenseTotal;
 		let isHit = false;
 		let damageTotal = 0;
@@ -173,7 +173,6 @@ class Character extends React.PureComponent {
 				}
 				updateLog(`${pcData.name} attacks with the ${weaponInfo.name}, scores ${attackTotal} to hit...and ${isHit ? `does ${damage} damage!` : `misses (${targetData.name} scored ${defenseTotal} for defense).`}`);
 			}
-
 		} else {
 			hitRoll = diceRoll(this.hitDie);
 			defenseRoll = diceRoll(this.defenseDie);
@@ -209,6 +208,15 @@ class Character extends React.PureComponent {
 		}
 
 		updateCharacters('player', updatedPcData, pcData.id, false, false, false, () => {
+			if (equippedGunType) {
+				if (equippedGunType === 'handgun') {
+					toggleAudio('weapons', sfxSelectors.handgun, {useReverb: true});
+				}
+			} else if (isHit) {
+				toggleAudio('weapons', sfxSelectors[weaponInfo.damageType], {useReverb: true});
+			} else {
+				toggleAudio('weapons', 'attackMiss', {useReverb: true});
+			}
 			if (damageTotal > 0) {
 				updatedCreatureData.currentHealth -= damageTotal;
 				updateCharacters('creature', updatedCreatureData, targetData.id, false, false, false, callback);
@@ -232,7 +240,7 @@ class Character extends React.PureComponent {
 	 * )
 	 */
 	heal = (props) => {
-		const {actionId, actionStats, targetData, pcData, updateCharacters, updateLog, isChemistSkill, callback} = props;
+		const {actionId, actionStats, targetData, pcData, updateCharacters, updateLog, isChemistSkill, toggleAudio, sfxSelectors, callback} = props;
 		const healItem = pcData.items[actionId].name;
 		const targetStat = actionStats.healingType === 'health' ? 'currentHealth' : 'currentSanity';
 		const startingStatValue = actionStats.healingType === 'health' ? targetData.startingHealth : targetData.startingSanity;
@@ -261,6 +269,9 @@ class Character extends React.PureComponent {
 			updatedHealerData.items[actionId].amount--;
 		}
 		updateCharacters('player', updatedTargetData, targetData.id, false, false, false, () => {
+			if (targetStat === 'currentSanity') {
+				toggleAudio('items', sfxSelectors[removeIdNumber(actionId)]);
+			}
 			const target = pcData.name === targetData.name ? (targetData.gender === 'Male' ? 'his' : 'her') : targetData.name + "'s";
 			updateLog(`${pcData.name} uses ${healItem} to recover ${target} ${targetStat.substring(7)}`);
 			if (targetData.id !== pcData.id) {
@@ -427,7 +438,7 @@ class Character extends React.PureComponent {
 	 * }
 	 */
 	mine = (props) => {
-		const {partyData, updateCharacters, calcPcLightChanges, isExpertMining} = props;
+		const {partyData, updateCharacters, calcPcLightChanges, toggleAudio, isExpertMining} = props;
 		let updatedPartyData = deepCopy(partyData);
 		const lightCost = isExpertMining ? this.lightTimeCosts.expertMining : this.lightTimeCosts.mine;
 		const expertMiningSkill = partyData.archaeologist.skills.expertMining;
@@ -437,7 +448,9 @@ class Character extends React.PureComponent {
 		if (isExpertMining) {
 			updatedPartyData.archaeologist.currentSpirit -= expertMiningSkill.spirit[expertMiningSkill.level];
 		}
-		updateCharacters('player', updatedPartyData, null, lightingHasChanged, false, false);
+		updateCharacters('player', updatedPartyData, null, lightingHasChanged, false, false, () => {
+			toggleAudio('skills', 'mine', {useReverb: true});
+		});
 	}
 
 	expertMining = (props) => {

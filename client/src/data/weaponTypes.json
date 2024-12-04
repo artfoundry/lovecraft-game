@@ -46,36 +46,42 @@
   },
   "Knife": {
     "damage": 3,
+    "damageType": "blade",
     "ranged": false,
     "twoHanded": false,
     "description": "Slice and dice! Not a machete, but bigger than a pocketknife."
   },
   "Kris Knife": {
     "damage": 4,
+    "damageType": "blade",
     "ranged": false,
     "twoHanded": false,
     "description": "Ornate and with alternating curves in its very sharp blade, there is something disturbingly mysterious about this weapon."
   },
   "Machete": {
     "damage": 5,
+    "damageType": "blade",
     "ranged": false,
     "twoHanded": false,
     "description": "Now THIS is a knife!"
   },
   "Baseball Bat": {
     "damage": 2,
+    "damageType": "blunt",
     "ranged": false,
     "twoHanded": true,
     "description": "Doesn't hurt much, but at least you won't cut up your fists."
   },
   "Pickaxe": {
     "damage": 2,
+    "damageType": "blade",
     "ranged": false,
     "twoHanded": false,
     "description": "Intended for mining, but works as a weapon in a pinch."
   },
   "Acid Concoction": {
     "damage": 10,
+    "damageType": "liquid",
     "ranged": true,
     "usesStr": false,
     "stackable": true,
@@ -84,6 +90,7 @@
   },
   "Holy Water": {
     "damage": 6,
+    "damageType": "liquid",
     "ranged": true,
     "usesStr": false,
     "stackable": true,
@@ -92,6 +99,7 @@
   },
   "Molotov Cocktail": {
     "damage": 6,
+    "damageType": "explosion",
     "ranged": true,
     "usesStr": false,
     "stackable": true,
@@ -100,6 +108,7 @@
   },
   "Rock": {
     "damage": 1,
+    "damageType": "blunt",
     "ranged": true,
     "usesStr": true,
     "stackable": true,

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {createRef} from 'react';
 import Firebase from './Firebase';
 import CharacterCreation from './CharacterCreation';
 import Map from './Map';
@@ -10,7 +10,9 @@ import WeaponTypes from './data/weaponTypes.json';
 import ItemTypes from './data/itemTypes.json';
 import UI from './UI';
 import './css/app.css';
-import {diceRoll, deepCopy, convertCoordsToPos, convertPosToCoords, articleType} from './Utils';
+import {removeIdNumber, diceRoll, deepCopy, convertCoordsToPos, convertPosToCoords, articleType} from './Utils';
+import {ProcessAudio, SoundEffect} from './Audio';
+
 
 class Game extends React.PureComponent {
 	constructor(props) {
@@ -43,6 +45,58 @@ class Game extends React.PureComponent {
 			'expertMining': 10,
 			'create': 30,
 			'search': 2
+		};
+		// collection of audio fx DOM nodes by ID
+		this.sfxSelectors = {
+			environments: {
+				catacombsDoor: null,
+				catacombsBackground: null
+			},
+			characters: {
+				elderThing: null,
+				elderThingAttack: null,
+				elderThingInjured: null,
+				elderThingDeath: null,
+				shoggoth: null,
+				shoggothAttack: null,
+				shoggothInjured: null,
+				shoggothDeath: null,
+				ghoul: null,
+				ghoulAttack: null,
+				ghoulInjured: null,
+				ghoulDeath: null,
+				maleInjured: null,
+				maleDeath: null,
+				femaleInjured: null,
+				femaleDeath: null
+			},
+			weapons: {
+				handgunShot: null,
+				glassVialBreak: null,
+				meleeAttackBlade: null,
+				meleeAttackBlunt: null,
+				attackMiss: null
+			},
+			items: {
+				gulp: null
+			},
+			skills: {
+				mine: null
+			},
+			game: {
+				dice: null
+			}
+		};
+
+		// certain action types matched with their appropriate sfxSelector IDs
+		// used because some categories of items (like all handguns) will use the same sound
+		this.sfxActionSelectorAliases = {
+			'handgun': 'handgunShot',
+			'liquid': 'glassVialBreak',
+			'blade': 'meleeAttackBlade',
+			'blunt': 'meleeAttackBlunt',
+			'attackMiss': 'attackMiss',
+			'pharmaceuticals': 'gulp'
 		};
 
 		this.minScreenWidthForSmall = 1000;
@@ -148,6 +202,7 @@ class Game extends React.PureComponent {
 				actionButtonCallback:  null,
 				dialogClasses: ''
 			},
+			sfxReverbProcessed: {},
 			// these need resetting on floor change
 			mapCreatures: {},
 			mapObjects: {},
@@ -173,6 +228,7 @@ class Game extends React.PureComponent {
 			inSearchMode: false,
 			contextMenuChoice: null,
 			centerOnPlayer: false,
+			centeredPlayer: '',
 			logText: []
 		}
 	}
@@ -207,6 +263,7 @@ class Game extends React.PureComponent {
 			inSearchMode: false,
 			contextMenuChoice: null,
 			centerOnPlayer: false,
+			centeredPlayer: '',
 			logText: []
 		}, () => {
 			if (callback) callback();
@@ -253,16 +310,31 @@ class Game extends React.PureComponent {
 	 */
 	updateCharacters = (type, updateData, id, lightingHasChanged, isInitialCreatureSetup = false, isInitialCharacterSetup = false, callback) => {
 		const collection = type === 'player' ? 'playerCharacters' : 'mapCreatures';
-		const currentChar = this.state.playerCharacters[id];
+		const currentChar = this.state[collection][id];
+		const delayedAudio = (selector) => {
+			setTimeout(() => {
+				this.toggleAudio('characters', selector, {useReverb: true});
+			}, 500);
+		}
 		if (id) {
-			if (updateData.currentSanity <= 0) {
+			if (type === 'player' && updateData.currentSanity <= 0) {
 				updateData.isDeadOrInsane = true;
+			}
+			if (type === 'player' && updateData.currentHealth > 0 && updateData.currentSanity > 0 &&
+				(updateData.currentHealth < currentChar.currentHealth || updateData.currentSanity < currentChar.currentSanity))
+			{
+				currentChar.gender === 'Male' ? delayedAudio('maleInjured') : delayedAudio('femaleInjured');
+			} else if (type === 'creature' && updateData.currentHealth > 0 && updateData.currentHealth < currentChar.currentHealth) {
+				delayedAudio(removeIdNumber(id) + 'Injured');
 			}
 			if (type === 'player' && updateData.currentHealth <= 0 && currentChar.currentHealth > 0) {
 				if (!this.state.inTacticalMode) {
 					this.toggleTacticalMode(true);
 				}
+				currentChar.gender === 'Male' ? delayedAudio('maleDeath') : delayedAudio('femaleDeath');
 				this.updateLog(`${currentChar.name}'s health has been reduced to 0, and ${currentChar.gender === 'Male' ? 'he' : 'she'} is now dying!`);
+			} else if (type === 'creature' && updateData.currentHealth <= 0 && currentChar.currentHealth > 0) {
+				delayedAudio(removeIdNumber(id) + 'Death');
 			}
 			this.setState(prevState => ({
 				[collection]: {
@@ -647,6 +719,8 @@ class Game extends React.PureComponent {
 				notEnoughLightDialogProps: this.notEnoughLightDialogProps,
 				updateActivePlayerActions: this.updateActivePlayerActions,
 				calcPcLightChanges: this.calcPcLightChanges,
+				toggleAudio: this.toggleAudio,
+				sfxSelectors: this.sfxActionSelectorAliases,
 				// dummy isExpertMining, so when expertMining in Character calls mine, can pass this in, and calling mine from here doesn't cause error
 				isExpertMining: null
 			};
@@ -804,6 +878,8 @@ class Game extends React.PureComponent {
 				setShowDialogProps: this.setShowDialogProps,
 				notEnoughLightDialogProps: this.notEnoughLightDialogProps,
 				calcPcLightChanges: this.calcPcLightChanges,
+				toggleAudio: this.toggleAudio,
+				sfxSelectors: this.sfxActionSelectorAliases,
 				callback: () => {
 					this.toggleActionButton('', '', '', '', () => {
 						if (target === 'creature' && this.state.mapCreatures[id].currentHealth <= 0) {
@@ -1033,7 +1109,7 @@ class Game extends React.PureComponent {
 	 */
 	isContextMenuNeeded = (actionType, tilePos = null, evt = null, actionInfo = null) => {
 		let contextMenuNeeded = {menuNeeded: true, actionToProcess: null};
-		const actionObjInfo = actionInfo.objectInfo[0];
+		const actionObjInfo = actionInfo && actionInfo.objectInfo && actionInfo.objectInfo[0];
 
 		// if clicked obj is a creature/player, check if at least one object is on that tile
 		let objectOnTile = null;
@@ -1127,20 +1203,23 @@ class Game extends React.PureComponent {
 		// no actionType should indicate menu already exists (as clicking on item, char, or tile is already checking), but just in case...
 		if (!actionType) {
 			this.setState({contextMenu: null});
-		// Don't need menu, so do action instead
 		} else {
 			const isContextMenuNeeded = contextMenuInfo || this.isContextMenuNeeded(actionType, tilePos, evt, actionInfo);
 
+			// Don't need menu, so do action instead
 			if (!isContextMenuNeeded.menuNeeded) {
 				isContextMenuNeeded.actionToProcess();
 			// otherwise, set up context menu
 			} else {
 				const contextMenu = {
 					actionsAvailable: {[actionType]: actionInfo},
-					creatureId: actionInfo.id || null,
+					creatureId: null,
 					tilePos,
 					evt
 				};
+				if (actionInfo && actionInfo.id) {
+					contextMenu.creatureId = actionInfo.id;
+				}
 				if (actionType !== 'player' && actionType !== 'creature') {
 					contextMenu.actionsAvailable.move = true;
 				} else {
@@ -1170,6 +1249,10 @@ class Game extends React.PureComponent {
 			this.handleUnitClick(storedActionInfo.id, storedActionInfo.target, storedActionInfo.isInRange, storedActionInfo.checkLineOfSightToParty);
 			this.setState({contextMenu: null});
 		} else if (actionType === 'move') {
+			this.setState({contextMenuChoice: {actionType, tilePos: this.state.contextMenu.tilePos}}, () => {
+				this.setState({contextMenu: null});
+			});
+		} else if (actionType === 'close-door') {
 			this.setState({contextMenuChoice: {actionType, tilePos: this.state.contextMenu.tilePos}}, () => {
 				this.setState({contextMenu: null});
 			});
@@ -1346,7 +1429,60 @@ class Game extends React.PureComponent {
 	}
 
 	toggleCenterOnPlayer = () => {
-		this.setState(prevState => ({centerOnPlayer: !prevState.centerOnPlayer}));
+		this.setState(prevState => ({
+			centerOnPlayer: !prevState.centerOnPlayer,
+			centeredPlayer: this.state.activeCharacter
+		}));
+	}
+
+	/**
+	 * Plays sound effects, processing them for reverb, panning, valume, etc. if needed beforehand
+	 * (reverb only processed once per sound file for a location)
+	 * @param category: string (sfx category - 'environments', 'characters', 'weapons', 'items', 'skills', 'game')
+	 * @param selectorName: string (sfx name - ex 'door', 'background', 'femaleDeath', etc.)
+	 * @param processors; object (params for ProcessAudio in Audio.js:
+	 *  {
+	 *      useVolume: true/false,
+	 *      useReverb: true/false,
+	 *      usePan: true/false
+	 *      soundCoords: {xPos: x, yPos: y}
+	 *  }
+	 * )
+	 */
+	toggleAudio = (category, selectorName, processors) => {
+		const sfxReverbProcessed = {...this.state.sfxReverbProcessed};
+		const audioEl = this.sfxSelectors[category][selectorName].current;
+		if (audioEl.paused && this.state.gameOptions.playFx) {
+			let processValues = null;
+			if (processors) {
+				processValues = {};
+				const sndCoords = processors.soundCoords;
+				const activePcCoors = this.state.centeredPlayer ? this.state.playerCharacters[this.state.centeredPlayer].coords : null;
+				if (processors.useVolume) {
+					// calc number of tiles sound is away from active char using longest direction on grid (x or y)
+					// then multiply distance by audio gain reducing fraction to arrive at value between 0 and 1
+					const xDist = Math.abs(sndCoords.xPos - activePcCoors.xPos);
+					const yDist = Math.abs(sndCoords.yPos - activePcCoors.yPos);
+					const modifier = 0.06 * (xDist > yDist ? xDist : yDist);
+					// toFixed fixes issues with floating point math resulting in long slightly inaccurate float values
+					processValues.volumeSetting = +(1 - (modifier <= 1 ? modifier : 1)).toFixed(2);
+				}
+				if (processors.useReverb && !sfxReverbProcessed[selectorName]) {
+					processValues.reverbSetting = this.state.currentLocation;
+					sfxReverbProcessed[selectorName] = true;
+				}
+				if (processors.usePan) {
+					processValues.panSetting = {x: sndCoords.xPos - activePcCoors.xPos, y: sndCoords.yPos - activePcCoors.yPos};
+				}
+			}
+			ProcessAudio(selectorName, audioEl, processValues);
+			audioEl.volume = this.state.gameOptions.fxVolume;
+			audioEl.play().catch(e => console.log(e));
+
+			if (sfxReverbProcessed[selectorName] !== this.state.sfxReverbProcessed[selectorName]) {
+				this.setState({sfxReverbProcessed});
+			}
+		}
 	}
 
 	updateGameOptions = (gameOptions) => {
@@ -1388,7 +1524,7 @@ class Game extends React.PureComponent {
 	 */
 	_setupGameState() {
 		const gameReadyCallback = () => {
-			this.setState({gameSetupComplete: true});
+			this.setState({gameSetupComplete: true, centeredPlayer: this.state.playerFollowOrder[0]});
 		}
 		this._setupPlayerCharacters();
 		this._setLocation(gameReadyCallback);
@@ -1613,6 +1749,23 @@ class Game extends React.PureComponent {
 		this.setShowDialogProps(true, dialogProps);
 	}
 
+	/**
+	 * Called by render() to set up array of sound effects elements
+	 * @returns {*[]}
+	 */
+	setupSoundEffects = () => {
+		let effects = [];
+
+		for (const [category, names] of Object.entries(this.sfxSelectors)) {
+			for (const name of Object.keys(names)) {
+				this.sfxSelectors[category][name] = createRef();
+				effects.push(<SoundEffect sfxRef={this.sfxSelectors[category][name]} key={'sfx' + name} id={'sfx' + name} sourceName={name} />);
+			}
+		}
+
+		return effects;
+	}
+
 
 
 	/***************************
@@ -1662,6 +1815,8 @@ class Game extends React.PureComponent {
 				</div>
 				}
 
+				{this.state.isLoggedIn && <this.setupSoundEffects /> }
+
 				{this.showLogin && this.state.isLoginWindowRequested &&
 					<Firebase
 						updateLoggedIn={this.updateLoggedIn}
@@ -1674,6 +1829,7 @@ class Game extends React.PureComponent {
 						objectPanelWidth={this.objectPanelWidth}
 						objectPanelHeight={this.objectPanelHeight}
 						screenData={this.state.screenData}
+						sfxSelectors={this.sfxSelectors}
 					/>
 				}
 
@@ -1796,6 +1952,7 @@ class Game extends React.PureComponent {
 						contextMenuChoice={this.state.contextMenuChoice}
 						centerOnPlayer={this.state.centerOnPlayer}
 						toggleCenterOnPlayer={this.toggleCenterOnPlayer}
+						toggleAudio={this.toggleAudio}
 
 						updateThreatList={this.updateThreatList}
 						threatList={this.state.threatList}
@@ -1811,7 +1968,6 @@ class Game extends React.PureComponent {
 						skillModeActive={this.state.skillModeActive}
 					/>
 				}
-
 			</div>
 		);
 	}

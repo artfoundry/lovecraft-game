@@ -1,5 +1,4 @@
-import React from 'react';
-import {createRef} from 'react';
+import React, {createRef} from 'react';
 import MapData from './data/mapData.json';
 import GameLocations from './data/gameLocations.json';
 import CreatureData from './data/creatureTypes.json';
@@ -8,9 +7,9 @@ import ItemTypes from './data/itemTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
 import EnvObjectTypes from './data/envObjectTypes.json';
 import {Character, Exit, Tile, Door, Item, EnvObject, LightElement, MapCover} from './MapElements';
-import {SoundEffect} from './Audio';
 import {
 	convertObjIdToClassId,
+	removeIdNumber,
 	convertPosToCoords,
 	convertCoordsToPos,
 	roundTowardZero,
@@ -49,6 +48,7 @@ class Map extends React.PureComponent {
 		this.maxLightStrength = 5;
 		this.minPcTileLightStrength = 2;
 		this.baseChanceOfFindingSecretDoor = 0.1;
+		this.chanceForCreatureSound = 1; // dice roll of this or lower triggers sound
 
 		// total number of map pieces in currentMapData: 17;
 		this.currentMapData = GameLocations[this.props.currentLocation];
@@ -57,9 +57,6 @@ class Map extends React.PureComponent {
 		this.mapLayoutTemp = {};
 		this.numberOpeningsPerPiece = {};
 
-		this.sfxSelectors = {
-			catacombs: {}
-		};
 		this.charRefs = {};
 		this.clickedOnWorld = false;
 		this.isDraggingWorld = false;
@@ -70,7 +67,7 @@ class Map extends React.PureComponent {
 
 		this.worldFarthestX = 0;
 		this.worldFarthestY = 0;
-		this.worldRef = React.createRef();
+		this.worldRef = createRef();
 		this.worldTransform = {x: 0, y: 0};
 
 		this.state = {
@@ -1106,15 +1103,21 @@ class Map extends React.PureComponent {
 			key={tilePos}
 			tileType={tileData.type}
 			styleProp={tileStyle}
-			tileName={convertCoordsToPos(tileData)}
+			tilePos={convertCoordsToPos(tileData)}
 			classStr={allClasses}
 			dataLightStr={tileLightStr}
-			moveCharacter={(tilePos) => {
+			moveCharacter={(tilePos, e) => {
 				if (this.contextMenuOpen) {
 					this.contextMenuOpen = false;
 					this.props.updateContextMenu(null);
 				} else if (!this.isDraggingWorld) {
-					this.checkIfTileOrObject(tilePos, null);
+					const activePcCoords = this.props.playerCharacters[this.props.activeCharacter].coords;
+					const distToDoor = Math.abs(tileData.xPos - activePcCoords.xPos) + Math.abs(tileData.yPos - activePcCoords.yPos);
+					if (tileData.doorIsOpen && (distToDoor === 1 || distToDoor === 2)) {
+						this.props.updateContextMenu('close-door', tilePos, e);
+					} else {
+						this.checkIfTileOrObject(tilePos, null);
+					}
 				}
 			}} />);
 	}
@@ -1465,8 +1468,9 @@ class Map extends React.PureComponent {
 	 * then destination tile is checked for interactive objects (like door) or just tile and calls appropriate function
 	 * @param tilePos: String
 	 * @param direction: String
+	 * @param actionType: String ('close-door' or 'move', from user clicking on context menu after clicking on open door)
 	 */
-	checkIfTileOrObject = (tilePos, direction) => {
+	checkIfTileOrObject = (tilePos, direction, actionType = null) => {
 		let tileData = this.state.mapLayout[tilePos];
 		let newPos = tilePos;
 		const activePCCoords = this.props.playerCharacters[this.props.activeCharacter].coords;
@@ -1514,21 +1518,10 @@ class Map extends React.PureComponent {
 				if (tileData.type === 'floor') {
 					this.moveCharacter({tilePath: [newPos]});
 				} else if (tileData.type === 'door') {
-					if (tileData.doorIsOpen) {
-						const showDialog = true;
-						const dialogProps = {
-							dialogContent: 'Close the door or move into the doorway?',
-							closeButtonText: 'Close door',
-							closeButtonCallback: () => {this.toggleDoor(newPos)},
-							disableCloseButton: false,
-							actionButtonVisible: true,
-							actionButtonText: 'Move',
-							actionButtonCallback: () => {this.moveCharacter({tilePath: [newPos]})},
-							dialogClasses: ''
-						};
-						this.props.setShowDialogProps(showDialog, dialogProps);
-					} else {
+					if (actionType === 'close-door' || !tileData.doorIsOpen) {
 						this.toggleDoor(newPos);
+					} else {
+						this.moveCharacter({tilePath: [newPos]});
 					}
 				}
 			} else if (tileData.type !== 'wall') {
@@ -1552,7 +1545,7 @@ class Map extends React.PureComponent {
 			let dialogProps = {};
 			if (this.props.threatList.length > 0) {
 				dialogProps = {
-					dialogContent: "You can't exit while in combat.",
+					dialogContent: "You can't exit the level while in combat.",
 					closeButtonText: 'Ok',
 					closeButtonCallback: null,
 					disableCloseButton: false,
@@ -2593,7 +2586,7 @@ class Map extends React.PureComponent {
 					// if player char is within attack range, then attack
 					if (targetPlayerDistance <= creatureData.range) {
 						// this.props.updateLog(`${creatureID} attacks player at ${JSON.stringify(targetPlayerPos)}`);
-						this.props.mapCreatures[creatureID].attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog);
+						this.props.mapCreatures[creatureID].attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog, this.props.toggleAudio);
 					}
 					// then move away from player
 					for (let i = 1; i <= creatureData.moveSpeed; i++) {
@@ -2618,7 +2611,7 @@ class Map extends React.PureComponent {
 						// if player char is within attack range, then attack
 						if (targetPlayerDistance <= creatureData.range) {
 							// this.props.updateLog(`${creatureID} attacks player at ${JSON.stringify(targetPlayerPos)}`);
-							this.props.mapCreatures[creatureID].attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog, updateThreatAndCurrentTurn);
+							this.props.mapCreatures[creatureID].attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog, this.props.toggleAudio, updateThreatAndCurrentTurn);
 						} else {
 							this.props.updateCurrentTurn();
 						}
@@ -2626,7 +2619,7 @@ class Map extends React.PureComponent {
 				// otherwise player is in attack range, so attack
 				} else {
 					// this.props.updateLog(`${creatureID} attacks player at ${JSON.stringify(targetPlayerPos)}`);
-					this.props.mapCreatures[creatureID].attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog, updateThreatAndCurrentTurn);
+					this.props.mapCreatures[creatureID].attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog, this.props.toggleAudio, updateThreatAndCurrentTurn);
 				}
 				creatureDidAct = true;
 			} else {
@@ -2672,7 +2665,10 @@ class Map extends React.PureComponent {
 		if (surroundingCoords[randomIndex]) {
 			this._storeNewCreatureCoords(activeCreatureID, [surroundingCoords[randomIndex]]);
 		}
-		// this.props.updateLog(`Moving ${creatureID} randomly to ${newRandX}, ${newRandY}`);
+		const willPlaySound = diceRoll(10) <= this.chanceForCreatureSound;
+		if (willPlaySound) {
+			this.props.toggleAudio('characters', removeIdNumber(activeCreatureID), {useVolume: true, useReverb: true, soundCoords: creatureCoords});
+		}
 	}
 
 	// TODO: No longer needed? Was being used in moveCharacter, but from old map paradigm using tile sides to determine valid moves
@@ -2707,7 +2703,8 @@ class Map extends React.PureComponent {
 		const screenData = this.props.screenData;
 		const screenZoom = this.props.gameOptions.screenZoom;
 		const halfCharIconSize = Math.round((this.tileSize * screenZoom) / 2);
-		const pcCoords = this.props.playerCharacters[this.props.activeCharacter].coords;
+		const activePc = this.props.playerCharacters[this.props.activeCharacter] || this.props.playerCharacters[this.props.playerFollowOrder[0]];
+		const pcCoords = activePc.coords;
 		const mapViewXcenter = this.props.screenData.isShort ? Math.round((screenData.width - this.props.objectPanelWidth) / 2) + this.props.objectPanelWidth : Math.round(screenData.width / 2);
 		this.worldTransform.x = Math.round(-pcCoords.xPos * this.tileSize * screenZoom) + mapViewXcenter - halfCharIconSize;
 		this.worldTransform.y = Math.round(-pcCoords.yPos * this.tileSize * screenZoom) + Math.round(screenData.height / 2) - halfCharIconSize;
@@ -2725,7 +2722,7 @@ class Map extends React.PureComponent {
 	 * @param doorTilePos: string
 	 */
 	toggleDoor = (doorTilePos) => {
-		this.toggleAudio('door');
+		this.props.toggleAudio('environments', this.props.currentLocation + 'Door', {useReverb: true});
 		this.setState(prevState => ({
 			mapLayout: {
 				...prevState.mapLayout,
@@ -2751,16 +2748,6 @@ class Map extends React.PureComponent {
 				}
 			});
 		});
-	}
-
-	toggleAudio = (selectorName) => {
-		const audio = this.sfxSelectors[this.props.currentLocation][selectorName];
-		if (audio.paused && this.props.gameOptions.playFx) {
-			audio.volume = this.props.gameOptions.fxVolume;
-			audio.play().catch(e => console.log(e));
-		} else if (!audio.paused) {
-			audio.pause().catch(e => console.log(e));
-		}
 	}
 
 	dragWorld = (evt, previousEvt) => {
@@ -2847,26 +2834,6 @@ class Map extends React.PureComponent {
 	 ***********************/
 
 	/**
-	 * Called by render() to set up array of sound effects elements
-	 * @returns {*[]}
-	 */
-	setupSoundEffects = () => {
-		let effects = [];
-
-		effects.push(<SoundEffect key='sfx-stoneDoor' idProp='sfx-stoneDoor' sourceName='stoneDoor' />);
-
-		return effects;
-	}
-
-	/**
-	 * Sets up selectors for sound effect elements
-	 * @private
-	 */
-	_populateSfxSelectors() {
-		this.sfxSelectors[this.props.currentLocation]['door'] = document.getElementById('sfx-stoneDoor');
-	}
-
-	/**
 	 * Sets up listeners for key commands
 	 * @private
 	 */
@@ -2918,7 +2885,10 @@ class Map extends React.PureComponent {
 	componentDidMount() {
 		if (this.initialMapLoad) {
 			this.layoutPieces();
-			this._populateSfxSelectors();
+
+			// note: this won't play until user interacts with page
+			// (which will happen with prod version but not testing if login and char creation are skipped)
+			this.props.toggleAudio('environments', this.props.currentLocation + 'Background');
 		}
 	}
 
@@ -2934,7 +2904,7 @@ class Map extends React.PureComponent {
 			}
 		}
 		if (this.props.contextMenuChoice && prevProps.contextMenuChoice !== this.props.contextMenuChoice) {
-			this.checkIfTileOrObject(this.props.contextMenuChoice.tilePos);
+			this.checkIfTileOrObject(this.props.contextMenuChoice.tilePos, null, this.props.contextMenuChoice.actionType);
 		}
 		if (prevProps.contextMenu && !this.props.contextMenu) {
 			this.contextMenuOpen = false;
@@ -3009,7 +2979,6 @@ class Map extends React.PureComponent {
 				<div className='characters' draggable={false}>
 					{ this.state.mapLayoutDone && this.state.playerPlaced && this.state.creaturesPlaced && <this.addCharacters /> }
 				</div>
-				{ <this.setupSoundEffects /> }
 				<MapCover styleProp={{opacity: this.state.mapMoved ? '0' : '1.0'}} />
 			</div>
 		);
