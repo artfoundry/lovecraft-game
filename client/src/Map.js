@@ -2701,7 +2701,8 @@ class Map extends React.PureComponent {
 		const screenData = this.props.screenData;
 		const screenZoom = this.props.gameOptions.screenZoom;
 		const halfCharIconSize = Math.round((this.tileSize * screenZoom) / 2);
-		const pcCoords = this.props.playerCharacters[this.props.activeCharacter].coords;
+		const activePc = this.props.playerCharacters[this.props.activeCharacter] || this.props.playerCharacters[this.props.playerFollowOrder[0]];
+		const pcCoords = activePc.coords;
 		const mapViewXcenter = this.props.screenData.isShort ? Math.round((screenData.width - this.props.objectPanelWidth) / 2) + this.props.objectPanelWidth : Math.round(screenData.width / 2);
 		this.worldTransform.x = Math.round(-pcCoords.xPos * this.tileSize * screenZoom) + mapViewXcenter - halfCharIconSize;
 		this.worldTransform.y = Math.round(-pcCoords.yPos * this.tileSize * screenZoom) + Math.round(screenData.height / 2) - halfCharIconSize;
