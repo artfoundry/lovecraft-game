@@ -901,6 +901,7 @@ class UI extends React.PureComponent {
 					characterIsSelected={this.props.characterIsSelected}
 					updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
 					characterInfo={this.props.selectedCharacterInfo}
+					assignLevelUpPoints={this.props.assignLevelUpPoints}
 					switchEquipment={this.switchEquipment}
 					updateCharacters={this.props.updateCharacters}
 					characterInventoryIds={this.props.selectedCharacterInfo.inventory}

@@ -407,6 +407,36 @@ h3 {
 	overflow: auto;
 }
 
+.character-stat-text {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-size: 18px;
+	padding: 5px;
+	margin: 2px 0;
+	border-radius: 5px;
+}
+
+.level-up-header {
+	padding-top: 5px;
+	border-radius: 5px;
+}
+
+.highlight-row {
+	background-color: lightseagreen;
+}
+
+.level-up-button-container {
+	width: 90px;
+	display: flex;
+}
+
+.level-up-button {
+	display: inline-block;
+	width: 20px;
+	margin: 0 7px;
+}
+
 .char-info-item-drop-zone {
 	display: inline-block;
 	width: 64px;
@@ -450,8 +480,11 @@ h3 {
 
 .char-info-skills-skill-container {
 	display: flex;
+	align-items: center;
 	gap: 10px;
-	padding-bottom: 20px;
+	padding: 5px 5px 20px 5px;
+	margin: 2px 0;
+	border-radius: 5px;
 }
 
 .char-info-skill-name {
@@ -654,6 +687,11 @@ h3 {
 	z-index: 1;
 }
 
+.control-bar-tab {
+	display: flex;
+	justify-content: space-between;
+}
+
 .control-bar-tab-container {
 	display: flex;
 	flex-direction: column;
@@ -670,12 +708,24 @@ h3 {
 	outline: 2px solid limegreen;
 }
 
-.control-bar-tab-icon {
+.control-bar-tab-icon, .character-status-icon {
 	display: inline-block;
 	width: 24px;
 	height: 24px;
 	vertical-align: middle;
 	margin: 0 5px 0 0;
+}
+
+.character-status-icon {
+	margin-left: 5px;
+}
+
+.level-up-status-icon {
+	background-image: url('../assets/ui/levelUp.png');
+}
+
+.sanity-buff-status-icon {
+	background-image: url('../assets/ui/sanityBuff.png');
 }
 
 .character-name {
@@ -1489,6 +1539,10 @@ select {
 	}
 
 	#control-bar-statuses-container:not(#control-bar-tab-1 #control-bar-statuses-container)  {
+		display: none;
+	}
+
+	.control-bar-tab-container:not(#control-bar-tab-1.control-bar-tab-container) .character-status-icons {
 		display: none;
 	}
 

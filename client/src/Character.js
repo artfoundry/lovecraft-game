@@ -19,8 +19,6 @@ class Character extends React.PureComponent {
 		this.gender = props.gender;
 		this.type = props.type;
 		this.profession = props.profession;
-		this.level = 1;
-		this.xp = 0;
 		this.strength = props.strength;
 		this.agility = props.agility;
 		this.mentalAcuity = props.mentalAcuity;
@@ -50,6 +48,7 @@ class Character extends React.PureComponent {
 		this.lightRange = this.equippedLight ? this.items[this.equippedLight].range : 0;
 		this.lightTime = this.equippedLight ? this.items[this.equippedLight].time : null;
 		this.statuses = {};
+		this.levelUpPoints = 0;
 	}
 
 	_prePopulateInv(invLimit) {
@@ -545,20 +544,37 @@ class Character extends React.PureComponent {
 	 * @param props: object {
 	 *     partyData: object,
 	 *     currentRound: number,
+	 *     unitsTurnOrder: array,
 	 *     updateCharacters: function (App),
 	 *     updateLog: function (App),
 	 *     updateActivePlayerActions: function (App)
 	 * }
 	 */
 	comfortTheFearful = (props) => {
-		const {partyData, currentRound, updateCharacters, updateLog, updateActivePlayerActions} = props;
+		const {partyData, currentRound, unitsTurnOrder, updateCharacters, updateLog, updateActivePlayerActions} = props;
 		let updatedPartyData = deepCopy(partyData);
 		const comfortSkillData = updatedPartyData.priest.skills.comfortTheFearful;
+		let pcOrder = {};
+		const numberOfPcs = Object.keys(partyData).length;
+		let foundPcs = 0;
+		let counter = 0;
+		let unitTurnData = {};
+
+		// Need to get the turn order of the pcs to determine effect's startingRound for each one (set below in sanityBuff object
+		while (foundPcs < numberOfPcs) {
+			unitTurnData = Object.values(unitsTurnOrder[counter])[0];
+			if (unitTurnData.unitType === 'playerCharacters') {
+				pcOrder[unitTurnData.id] = counter;
+				foundPcs++;
+			}
+			counter++;
+		}
 
 		for (const id of Object.keys(partyData)) {
 			updatedPartyData[id].statuses.sanityBuff = {
 				attribute: 'sanity',
-				startingRound: currentRound,
+				// pcs coming before the priest in turn order need a later startingRound as they won't start getting the benefit until the next currentRound
+				startingRound: pcOrder.priest <= pcOrder[id] ? currentRound : currentRound + 1,
 				turnsLeft: comfortSkillData.turnsLeft[comfortSkillData.level],
 				modifier: comfortSkillData.modifier[comfortSkillData.level]
 			}

@@ -36,7 +36,7 @@ document.querySelector('meta[name="viewport"]').setAttribute("content", "width=d
 
 root.render(
   <React.StrictMode>
-    <Game gameAttributes={testAttributes} />
+    <Game gameAttributes={prodAttributes} />
   </React.StrictMode>
 );
 

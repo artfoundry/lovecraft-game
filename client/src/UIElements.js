@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {convertObjIdToClassId, notEnoughSpaceInInventory, handleItemOverDropZone} from './Utils';
+import {deepCopy, convertObjIdToClassId, notEnoughSpaceInInventory, handleItemOverDropZone} from './Utils';
 import {Music} from './Audio';
 
 function CharacterControls(props) {
@@ -7,6 +7,7 @@ function CharacterControls(props) {
 	const equippedItems = props.equippedItems.loadout1;
 	const invItems = props.invItems;
 	const pcSkills = currentPCdata.skills;
+	const statuses = [];
 	const actionableItems = {
 		weapons: [],
 		medicine: [],
@@ -330,6 +331,20 @@ function CharacterControls(props) {
 		</div>
 	);
 
+	if (currentPCdata.levelUpPoints > 0) {
+		statuses.push('level-up');
+	}
+	for (const statusType of Object.keys(currentPCdata.statuses)) {
+		statuses.push(statusType);
+	}
+	const statusIcons = (
+		<span className={'character-status-icons'}>
+			{statuses.map(status => {
+				return <span key={status} className={`character-status-icon ${convertObjIdToClassId(status)}-status-icon`}></span>
+			})}
+		</span>
+	);
+
 	const displayCharName = !props.screenData.isSmall || (props.screenData.isSmall && props.characterId === props.selectedControlTab);
 	const healthLevel = (currentPCdata.currentHealth / currentPCdata.startingHealth) * 100;
 	const sanityLevel = (currentPCdata.currentSanity / currentPCdata.startingSanity) * 100;
@@ -346,9 +361,12 @@ function CharacterControls(props) {
 			onDragOver={(evt) => handleItemOverDropZone(evt)}
 			onDrop={(evt) => props.dropItemToPC(evt, props.characterId)}>
 
-			<div className='control-bar-tab character-name font-fancy' onClick={() => props.setSelectedControlTab(props.characterId)}>
-				<span className={`control-bar-tab-icon ${convertObjIdToClassId(props.characterId)}`}></span>
-				{displayCharName ? props.characterName : ''}
+			<div className='control-bar-tab' onClick={() => props.setSelectedControlTab(props.characterId)}>
+				<span className='character-name font-fancy'>
+					<span className={`control-bar-tab-icon ${convertObjIdToClassId(props.characterId)}`}></span>
+					{displayCharName ? props.characterName : ''}
+				</span>
+				{statusIcons}
 			</div>
 			<div id='control-bar-statuses-container'>
 				<div className='control-bar-status-bars'>
@@ -396,6 +414,17 @@ function CharacterControls(props) {
 }
 
 function CharacterInfoPanel(props) {
+	const [levelUpPointAllocations, updatePointAllocations] = useState({stats: {}, skills: {}});
+	const updateLevelPointAlloc = (statOrSkill, statOrSkillName, action) => {
+		let updateData = deepCopy(levelUpPointAllocations);
+		if (levelUpPointAllocations[statOrSkill][statOrSkillName]) {
+			updateData[statOrSkill][statOrSkillName] = action === 'add' ? levelUpPointAllocations[statOrSkill][statOrSkillName] + 1 : levelUpPointAllocations[statOrSkill][statOrSkillName] - 1;
+		} else {
+			updateData[statOrSkill][statOrSkillName] = 1;
+		}
+		updatePointAllocations(updateData);
+	}
+	const [availableLevelUpPoints, updateLevelUpPoints] = useState(props.characterInfo.levelUpPoints);
 	const skillList = Object.entries(props.characterInfo.skills).map(skillInfo => {
 		const skillId = skillInfo[0];
 		const skill = skillInfo[1];
@@ -404,33 +433,47 @@ function CharacterInfoPanel(props) {
 			const compKey = cost[0];
 			let compVal = cost[1];
 			if (Array.isArray(compVal)) {
-				compVal = compVal[skill.level];
+				compVal = compVal[skill.level + (levelUpPointAllocations.skills[skillId] || 0)];
 			}
 			const compName = compKey.substring(0,1).toUpperCase() + compKey.substring(1, compKey.length);
 			return <li key={compName + '-' + compVal} className='char-info-skill-component-list-item'>{compName}: {compVal}</li>;
 		}) : null;
-		const skillModValue = skill.modifier ? skill.modifier[skill.level] : null;
+		const skillModValue = skill.modifier ? skill.modifier[skill.level + (levelUpPointAllocations.skills[skillId] || 0)] : null;
 		// if modifier is between 1 and -1 and is a decimal, it needs to be displayed as a percentage
 		const modifier = skillModValue && ((skillModValue < 1) && (skillModValue > -1) && (skillModValue - Math.floor(skillModValue)) !== 0) ? skillModValue * 100 : skillModValue;
 		return (
-			<div key={skill.name + Math.random()} className='char-info-skills-skill-container'>
+			<div key={skill.name + Math.random()}
+			     className={`char-info-skills-skill-container${(props.characterInfo.levelUpPoints > 0 && skill.level < skill.maxLevel) ? ' highlight-row' : ''}`}>
 				<div className='char-info-skill-icon-column'>
 					<div className={`char-info-skill-icon skill-icon-${convertObjIdToClassId(skillId)}`}></div>
 				</div>
 				<div>
 					<div className='char-info-skill-name'>{skill.name}</div>
 					<div>{skill.description}</div>
-					<div>Skill level: {skill.level +1}</div>
+					{skill.maxLevel > 0 ? <div>Skill level: {skill.level + 1 + (levelUpPointAllocations.skills[skillId] || 0)} (Max level: {skill.maxLevel + 1})</div> : null}
 					{skill.modifier ? <div>Effect: {skill.modType}{modifier}{skill.affects}</div> : null}
+					{skill.turnsLeft ? <div>Number of turns effect lasts: {skill.turnsLeft[skill.level]}</div>: null}
 					{skill.mustBeOutOfDanger ? <div>Can't be used during combat</div> : null}
 					{skill.cost && skill.name !== 'Sacrificial Strike' ? <div>Required components: {compList}</div> : null}
 					{skill.cost && skill.name === 'Sacrificial Strike' ? <div>Cost: {compList}</div> : null}
-					{skill.light ? <div>Required time (light): {skill.light[skill.level]}</div> : null}
-					{skill.spirit ? <div>Required Spirit: {skill.spirit[skill.level]}</div> : null}
+					{skill.light ? <div>Required time (light): {skill.light[skill.level + (levelUpPointAllocations.skills[skillId] || 0)]}</div> : null}
+					{skill.spirit ? <div>Required Spirit: {skill.spirit[skill.level + (levelUpPointAllocations.skills[skillId] || 0)]}</div> : null}
 					{skill.requiresEquippedGunType ? <div>Requires equipped {skill.requiresEquippedGunType}</div> : null}
 					{skill.requiresEquippedMeleeWeapon ? <div>Requires equipped melee weapon</div> : null}
 					{skill.requiresEquippedItem ? <div>Requires equipped {skill.requiresEquippedItem}</div> : null}
 				</div>
+				{props.characterInfo.levelUpPoints > 0 && skill.maxLevel > skill.level &&
+					<div className='level-up-button-container'>
+						<span className={`general-button level-up-button${availableLevelUpPoints === 0 ? ' button-disabled' : ''}`} onClick={() => {
+							updateLevelPointAlloc('skills', skillId, 'add');
+							updateLevelUpPoints(availableLevelUpPoints - 1);
+						}}>+</span>
+						<span className={`general-button level-up-button${!levelUpPointAllocations.skills[skillId] ? ' button-disabled' : ''}`} onClick={() => {
+							updateLevelPointAlloc('skills', skillId, 'subtract');
+							updateLevelUpPoints(availableLevelUpPoints + 1);
+						}}>-</span>
+					</div>
+				}
 			</div>
 		);
 	});
@@ -500,9 +543,20 @@ function CharacterInfoPanel(props) {
 
 			<div className='char-info-all-contents-container'>
 				<div className='char-info-tabs-container'>
-					<div className={`char-info-tab ${activeTab === 'inv' ? 'char-info-active-tab' : ''}`} onClick={() => updateActiveTab('inv')}>Inventory</div>
-					<div className={`char-info-tab ${activeTab === 'stats' ? 'char-info-active-tab' : ''}`} onClick={() => updateActiveTab('stats')}>Attributes</div>
-					<div className={`char-info-tab ${activeTab === 'skills' ? 'char-info-active-tab' : ''}`} onClick={() => updateActiveTab('skills')}>Skills</div>
+					<div className={`char-info-tab ${activeTab === 'inv' ? 'char-info-active-tab' : ''}`}
+					     onClick={() => updateActiveTab('inv')}>Inventory</div>
+					<div className={`char-info-tab ${activeTab === 'stats' ? 'char-info-active-tab' : ''}`}
+					     onClick={() => updateActiveTab('stats')}>Attributes
+						{props.characterInfo.levelUpPoints > 0 &&
+							<span className='character-status-icon level-up-status-icon'></span>
+						}
+					</div>
+					<div className={`char-info-tab ${activeTab === 'skills' ? 'char-info-active-tab' : ''}`}
+					     onClick={() => updateActiveTab('skills')}>Skills
+						{props.characterInfo.levelUpPoints > 0 &&
+							<span className='character-status-icon level-up-status-icon'></span>
+						}
+					</div>
 				</div>
 
 				<div className={`char-info-inv-container ${activeTab !== 'inv' ? 'hide' : ''}`}>
@@ -588,22 +642,90 @@ function CharacterInfoPanel(props) {
 				</div>
 
 				<div className={`char-info-stats-container ${activeTab !== 'stats' ? 'hide' : ''}`}>
-					<div>{props.characterInfo.profession}</div>
-					<div>Gender: {props.characterInfo.gender}</div>
-					<div>Health: {props.characterInfo.currentHealth} / {props.characterInfo.startingHealth}</div>
-					<div>Sanity: {props.characterInfo.currentSanity} / {props.characterInfo.startingSanity}</div>
-					<div>Spirit: {props.characterInfo.currentSpirit} / {props.characterInfo.startingSpirit}</div>
-					<div>Level: {props.characterInfo.level}</div>
-					<div>XP: {props.characterInfo.xp}</div>
-					<div>Strength: {props.characterInfo.strength}</div>
-					<div>Agility: {props.characterInfo.agility}</div>
-					<div>Mental Acuity: {props.characterInfo.mentalAcuity}</div>
-					<div>Initiative: {props.characterInfo.initiative}</div>
-					<div>Defense: {props.characterInfo.defense}</div>
-					<div>Damage Reduction: {props.characterInfo.damageReduction}{equippedItems.armor ? ` (from ${itemsPossessed[equippedItems.armor].name})` : ''}</div>
+					{props.characterInfo.levelUpPoints > 0 &&
+						<div className='level-up-header highlight-row'>
+							<div className='character-stat-text'>Investigator has increased in expertise.</div>
+							<div className='character-stat-text'>
+								<span>Points to add: {availableLevelUpPoints}</span>
+								<span className={`general-button${availableLevelUpPoints === props.characterInfo.levelUpPoints ? ' button-disabled' : ''}`}
+								      onClick={() => {
+										props.assignLevelUpPoints(props.characterInfo.id, levelUpPointAllocations);
+										updatePointAllocations({stats: {}, skills: {}});
+									  }}
+								>Save</span>
+							</div>
+						</div>
+					}
+					<div className='character-stat-text'>Profession: {props.characterInfo.profession}</div>
+					<div className='character-stat-text'>Gender: {props.characterInfo.gender}</div>
+					<div className='character-stat-text'>Health: {props.characterInfo.currentHealth} / {props.characterInfo.startingHealth}</div>
+					<div className='character-stat-text'>Sanity: {props.characterInfo.currentSanity} / {props.characterInfo.startingSanity}</div>
+					<div className='character-stat-text'>Spirit: {props.characterInfo.currentSpirit} / {props.characterInfo.startingSpirit}</div>
+					<div className={`character-stat-text${props.characterInfo.levelUpPoints > 0 ? ' highlight-row' : ''}`}>
+						<span>Strength: {props.characterInfo.strength + (levelUpPointAllocations.stats.strength || 0)}</span>
+						{props.characterInfo.levelUpPoints > 0 &&
+							<span>
+								<span className={`general-button level-up-button${availableLevelUpPoints === 0 ? ' button-disabled' : ''}`} onClick={() => {
+									updateLevelPointAlloc('stats', 'strength', 'add');
+									updateLevelUpPoints(availableLevelUpPoints - 1);
+								}}>+</span>
+								<span className={`general-button level-up-button${!levelUpPointAllocations.stats.strength ? ' button-disabled' : ''}`} onClick={() => {
+									updateLevelPointAlloc('stats', 'strength', 'subtract');
+									updateLevelUpPoints(availableLevelUpPoints + 1);
+								}}>-</span>
+							</span>
+						}
+					</div>
+					<div className={`character-stat-text${props.characterInfo.levelUpPoints > 0 ? ' highlight-row' : ''}`}>
+						<span>Agility: {props.characterInfo.agility + (levelUpPointAllocations.stats.agility || 0)}</span>
+						{props.characterInfo.levelUpPoints > 0 &&
+							<span>
+								<span className={`general-button level-up-button${availableLevelUpPoints === 0 ? ' button-disabled' : ''}`} onClick={() => {
+									updateLevelPointAlloc('stats', 'agility', 'add');
+									updateLevelUpPoints(availableLevelUpPoints - 1);
+								}}>+</span>
+								<span className={`general-button level-up-button${!levelUpPointAllocations.stats.agility ? ' button-disabled' : ''}`} onClick={() => {
+									updateLevelPointAlloc('stats', 'agility', 'subtract');
+									updateLevelUpPoints(availableLevelUpPoints + 1);
+								}}>-</span>
+							</span>
+						}
+					</div>
+					<div className={`character-stat-text${props.characterInfo.levelUpPoints > 0 ? ' highlight-row' : ''}`}>
+						<span>Mental Acuity: {props.characterInfo.mentalAcuity + (levelUpPointAllocations.stats.mentalAcuity || 0)}</span>
+						{props.characterInfo.levelUpPoints > 0 &&
+							<span>
+								<span className={`general-button level-up-button${availableLevelUpPoints === 0 ? ' button-disabled' : ''}`} onClick={() => {
+									updateLevelPointAlloc('stats', 'mentalAcuity', 'add');
+									updateLevelUpPoints(availableLevelUpPoints - 1);
+								}}>+</span>
+								<span className={`general-button level-up-button${!levelUpPointAllocations.stats.mentalAcuity ? ' button-disabled' : ''}`} onClick={() => {
+									updateLevelPointAlloc('stats', 'mentalAcuity', 'subtract');
+									updateLevelUpPoints(availableLevelUpPoints + 1);
+								}}>-</span>
+							</span>
+						}
+					</div>
+					<div className='character-stat-text'>Initiative: {props.characterInfo.initiative}</div>
+					<div className='character-stat-text'>Defense: {props.characterInfo.defense}</div>
+					<div className='character-stat-text'>Damage Reduction: {props.characterInfo.damageReduction}{equippedItems.armor ? ` (from ${itemsPossessed[equippedItems.armor].name})` : ''}</div>
 				</div>
 
 				<div className={`char-info-skills-container ${activeTab !== 'skills' ? 'hide' : ''}`}>
+					{props.characterInfo.levelUpPoints > 0 &&
+						<div className='level-up-header highlight-row'>
+							<div className='character-stat-text'>Investigator has increased in expertise.</div>
+							<div className='character-stat-text'>
+								<span>Points to add: {availableLevelUpPoints}</span>
+								<span className={`general-button${availableLevelUpPoints === props.characterInfo.levelUpPoints ? ' button-disabled' : ''}`}
+								      onClick={() => {
+									      props.assignLevelUpPoints(props.characterInfo.id, levelUpPointAllocations);
+									      updatePointAllocations({stats: {}, skills: {}});
+								      }}
+								>Save</span>
+							</div>
+						</div>
+					}
 					{skillList}
 				</div>
 			</div>

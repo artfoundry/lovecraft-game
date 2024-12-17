@@ -26,6 +26,8 @@ class Game extends React.PureComponent {
 		this.startingLocation = this.gameAttr.startingLocation;
 		this.spawnCreatures = this.gameAttr.spawnCreatures;
 
+		this.maxPartyLevel = 10;
+		this.pointsPerLevelUp = 2;
 		this.initialDialogContent = '';
 		this.playerMovesLimit = 3;
 		this.playerActionsLimit = 2;
@@ -45,6 +47,17 @@ class Game extends React.PureComponent {
 			'expertMining': 10,
 			'create': 30,
 			'search': 2
+		};
+		this.expertisePointLevels = {
+			2: 100,
+			3: 300,
+			4: 600,
+			5: 1000,
+			6: 1500,
+			7: 2100,
+			8: 2800,
+			9: 3600,
+			10: 4500
 		};
 		// collection of audio fx DOM nodes by ID
 		this.sfxSelectors = {
@@ -186,6 +199,11 @@ class Game extends React.PureComponent {
 			gameSetupComplete: false,
 			playerCharacters: {},
 			pcTypes: PlayerCharacterTypes,
+			partyLevel: 1,
+			partyExpertise: 0,
+			partyJournal: {
+				quests: {}
+			},
 			currentLocation: '',
 			currentFloor: 1,
 			playerFollowOrder: [],
@@ -713,6 +731,7 @@ class Game extends React.PureComponent {
 				currentPcData: characterData,
 				partyData: this.state.playerCharacters,
 				currentRound: this.state.currentRound,
+				unitsTurnOrder: this.state.unitsTurnOrder,
 				updateCharacters: this.updateCharacters,
 				updateLog: this.updateLog,
 				setShowDialogProps: this.setShowDialogProps,
@@ -856,6 +875,51 @@ class Game extends React.PureComponent {
 	}
 
 	/**
+	 * Increases party expertise count and level if count has crossed threshold
+	 * @param points: number
+	 */
+	updateExpertise = (points) => {
+		let partyExpertise = this.state.partyExpertise;
+		let partyLevel = this.state.partyLevel;
+		let partyHasLeveled = false;
+		if (partyLevel < this.maxPartyLevel) {
+			partyExpertise += points;
+			if (partyExpertise >= this.expertisePointLevels[partyLevel + 1]) {
+				partyLevel++;
+				partyHasLeveled = true;
+			}
+		}
+		this.setState({partyExpertise, partyLevel}, () => {
+			let partyData = null;
+			if (partyHasLeveled) {
+				partyData = deepCopy(this.state.playerCharacters);
+				for (const charData of Object.values(partyData)) {
+					charData.levelUpPoints += this.pointsPerLevelUp;
+				}
+			}
+			this.updateCharacters('player', partyData, null, false, false, false);
+		});
+	}
+
+	/**
+	 * Adds allotted points from user's leveling to appropriate pc and deducts available leveling points from that pc
+	 * note: leveling points can be held indefinitely (no reason a player would do it, but they can)
+	 * @param pcId: string
+	 * @param allocationChoices: object (of objects: {stats: {name: points}, skills: {name: points}}, name being stat/skill name)
+	 */
+	assignLevelUpPoints = (pcId, allocationChoices) => {
+		const pcData = deepCopy(this.state.playerCharacters[pcId]);
+
+		for (const [skillsOrStats, skillOrStatNames] of Object.entries(allocationChoices))
+		for (const [name, points] of Object.entries(skillOrStatNames)) {
+			skillsOrStats === 'stats' ? pcData[name] += points : pcData.skills[name].level += points;
+			pcData.levelUpPoints--;
+		}
+
+		this.updateCharacters('player', pcData, pcId, false, false, false);
+	}
+
+	/**
 	 * User click handler for clicking on units to determine if it's being selected or acted upon (ie. attacked, healed, etc.)
 	 * @param id: string (target ID)
 	 * @param target: string ('player' or 'creature')
@@ -888,6 +952,7 @@ class Game extends React.PureComponent {
 							} else {
 								this.updateLog(`The ${this.state.mapCreatures[id].name} is dead!`);
 							}
+							this.updateExpertise(this.state.mapCreatures[id].expertisePoints);
 							this._removeDeadFromTurnOrder(id, this.updateActivePlayerActions, checkLineOfSightToParty);
 						} else {
 							if (target === 'object') {
@@ -1882,6 +1947,7 @@ class Game extends React.PureComponent {
 						refillLight={this.refillLight}
 						lightTimeCosts={this.lightTimeCosts}
 						notEnoughLightDialogProps={this.notEnoughLightDialogProps}
+
 						handleContextMenuSelection={this.handleContextMenuSelection}
 						contextMenu={this.state.contextMenu}
 						toggleCenterOnPlayer={this.toggleCenterOnPlayer}
@@ -1893,14 +1959,21 @@ class Game extends React.PureComponent {
 						playerCharacters={this.state.playerCharacters}
 						actionsCompleted={{moves: this.state.activePlayerMovesCompleted, actions: this.state.activePlayerActionsCompleted}}
 						playerLimits={{moves: playerMoveLimit, actions: this.playerActionsLimit}}
+
 						threatList={this.state.threatList}
 						inTacticalMode={this.state.inTacticalMode}
 						toggleTacticalMode={this.toggleTacticalMode}
 						isPartyNearby={this.state.partyIsNearby}
 						modeInfo={{inTacticalMode: this.state.inTacticalMode, turn: this.state.currentTurn + 1}}
 						updateFollowModePositions={this.updateFollowModePositions}
+
 						inSearchMode={this.state.inSearchMode}
 						toggleSearchMode={this.toggleSearchMode}
+
+						partyLevel={this.state.partyLevel}
+						partyExpertise={this.state.partyExpertise}
+						assignLevelUpPoints={this.assignLevelUpPoints}
+						partyJournal={this.state.partyJournal}
 					/>
 				}
 
