@@ -6,6 +6,7 @@
     "profession": ["general", "doctor"],
     "description": "Create 1 First Aid Kit.",
     "mustBeOutOfDanger": true,
+    "maxLevel": 0,
     "cost": {
       "cloth": 2,
       "alcohol": 2
@@ -18,6 +19,7 @@
     "profession": ["general"],
     "description": "Create 1 Molotov Cocktail.",
     "mustBeOutOfDanger": true,
+    "maxLevel": 0,
     "cost": {
       "cloth": 1,
       "alcohol": 3
@@ -30,6 +32,7 @@
     "profession": ["general", "archaeologist"],
     "description": "Create 1 Torch.",
     "mustBeOutOfDanger": true,
+    "maxLevel": 0,
     "cost": {
       "cloth": 1,
       "alcohol": 1,
@@ -43,6 +46,7 @@
     "profession": ["general", "chemist"],
     "description": "Create 1 Acid Concoction.",
     "mustBeOutOfDanger": true,
+    "maxLevel": 0,
     "cost": {
       "chemical": 3
     }
@@ -54,6 +58,7 @@
     "profession": ["chemist", "doctor"],
     "description": "Create 1 vial of Pharmaceuticals.",
     "mustBeOutOfDanger": true,
+    "maxLevel": 0,
     "cost": {
       "chemical": 2,
       "alcohol": 1
@@ -66,6 +71,7 @@
     "profession": ["priest"],
     "description": "Create 1 vial of Holy Water.",
     "mustBeOutOfDanger": true,
+    "maxLevel": 0,
     "cost": {
       "water": 3
     }
@@ -74,19 +80,22 @@
     "name": "Handgun Knowledge",
     "skillType": "knowledge",
     "profession": ["general", "privateEye", "veteran", "thief"],
-    "description": "Knowledge of how to use handguns, thus removing 50% penalty to hit targets."
+    "description": "Knowledge of how to use handguns, thus removing 50% penalty to hit targets.",
+    "maxLevel": 0
   },
   "shotgunKnowledge": {
     "name": "Shotgun Knowledge",
     "skillType": "knowledge",
     "profession": ["general", "privateEye", "veteran"],
-    "description": "Knowledge of how to use shotguns, thus removing 50% penalty to hit targets."
+    "description": "Knowledge of how to use shotguns, thus removing 50% penalty to hit targets.",
+    "maxLevel": 0
   },
   "machineGunKnowledge": {
     "name": "Machine Gun Knowledge",
     "skillType": "knowledge",
     "profession": ["general", "veteran"],
-    "description": "Knowledge of how to use machine guns, thus removing 50% penalty to hit targets."
+    "description": "Knowledge of how to use machine guns, thus removing 50% penalty to hit targets.",
+    "maxLevel": 0
   },
   "mine": {
     "name": "Mine",
@@ -95,7 +104,8 @@
     "description": "Use a pickaxe to mine in certain locations (rocky mounds) in order to find rocks, gems, precious metals, etc.",
     "hasTarget": false,
     "mustBeOutOfDanger": true,
-    "requiresEquippedItem": "pickaxe"
+    "requiresEquippedItem": "pickaxe",
+    "maxLevel": 0
   },
   "sureShot": {
     "name": "Sure Shot",
@@ -104,7 +114,8 @@
     "description": "Improved accuracy with all guns (bonus to Agility when shooting with any gun).",
     "modifier": [1, 2, 3, 4, 5],
     "modType": "+",
-    "affects": "Agility"
+    "affects": "Agility",
+    "maxLevel": 4
   },
   "quickReload": {
     "name": "Quick Reload",
@@ -114,7 +125,8 @@
     "hasTarget": false,
     "mustBeOutOfDanger": false,
     "requiresEquippedGunType": ["handgun"],
-    "spirit": [40, 30, 20, 10]
+    "spirit": [40, 30, 20, 10],
+    "maxLevel": 3
   },
   "keenInvestigation": {
     "name": "Keen Investigation",
@@ -123,7 +135,8 @@
     "description": "Improved chance of finding secrets for the party when doing a search.",
     "modifier": [0.1, 0.15, 0.2, 0.25, 0.3],
     "modType": "+",
-    "affects": "%"
+    "affects": "%",
+    "maxLevel": 4
   },
   "steadyHand": {
     "name": "Steady Hand",
@@ -132,7 +145,8 @@
     "description": "Improved accuracy with handguns (bonus to Agility when shooting with a handgun).",
     "modifier": [1, 2, 3],
     "modType": "+",
-    "affects": " Agility"
+    "affects": " Agility",
+    "maxLevel": 2
   },
   "alwaysOnTheLookout": {
     "name": "Always On The Lookout",
@@ -141,7 +155,8 @@
     "description": "Increased chance of finding Relics.",
     "modifier": [0.2, 0.3, 0.4, 0.5, 0.6],
     "modType": "+",
-    "affects": "%"
+    "affects": "%",
+    "maxLevel": 4
   },
   "expertMining": {
     "name": "Expert Mining",
@@ -151,7 +166,8 @@
     "hasTarget": false,
     "mustBeOutOfDanger": true,
     "requiresEquippedItem": "pickaxe",
-    "spirit": [45, 40, 35, 30, 25]
+    "spirit": [45, 40, 35, 30, 25],
+    "maxLevel": 4
   },
   "betterLivingThroughChemicals": {
     "name": "Better Living Through Chemicals",
@@ -161,10 +177,11 @@
     "hasTarget": false,
     "mustBeOutOfDanger": false,
     "requiresItem": "pharmaceuticals0",
-    "modifier": [0.1, 0.2, 0.3, 0.4],
-    "spirit": [40, 40, 30, 30],
+    "modifier": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6],
+    "spirit": [40, 40, 35, 35, 30, 30],
     "modType": "+",
-    "affects": "%"
+    "affects": "%",
+    "maxLevel": 5
   },
   "resuscitate": {
     "name": "Resuscitate",
@@ -176,7 +193,8 @@
     "modifier": [5, 5, 5, 5, 5],
     "spirit": [70, 65, 60, 55, 50],
     "modType": "Revived with ",
-    "affects": " Health"
+    "affects": " Health",
+    "maxLevel": 4
   },
   "medicalExpertise": {
     "name": "Medical Expertise",
@@ -185,7 +203,8 @@
     "description": "Improved healing with First Aid Kits.",
     "modifier": [0.25, 0.5, 0.75, 1, 1.5],
     "modType": "+",
-    "affects": "% healing"
+    "affects": "% healing",
+    "maxLevel": 4
   },
   "comfortTheFearful": {
     "name": "Comfort The Fearful",
@@ -198,7 +217,8 @@
     "turnsLeft": [2, 2, 3, 3, 4],
     "spirit": [70, 60, 50, 40, 30],
     "modType": "-",
-    "affects": " Sanity damage per Investigator"
+    "affects": " Sanity damage per Investigator",
+    "maxLevel": 4
   },
   "spiritualInspiration": {
     "name": "Spiritual Inspiration",
@@ -210,7 +230,8 @@
     "requiresBothActions": true,
     "modifier": [10, 20, 30, 40, 50],
     "modType": "+",
-    "affects": " Spirit per Investigator"
+    "affects": " Spirit per Investigator",
+    "maxLevel": 4
   },
   "feelThePain": {
     "name": "Feel The Pain",
@@ -218,7 +239,8 @@
     "profession": ["veteran"],
     "description": "For the next Psychic attack that reduces Sanity, Sanity reduction is converted to 2x Health damage, ignoring any health damage reductions.",
     "active": false,
-    "spirit": [40, 35, 30, 25, 20]
+    "spirit": [40, 35, 30, 25, 20],
+    "maxLevel": 4
   },
   "goBallistic": {
     "name": "Go Ballistic",
@@ -231,7 +253,8 @@
     "modifier": [0.4, 0.35, 0.3, 0.25, 0.2],
     "modType": "-",
     "affects": "%",
-    "spirit": [80, 75, 70, 65, 60]
+    "spirit": [80, 75, 70, 65, 60],
+    "maxLevel": 4
   },
   "moveIt": {
     "name": "Move It!",
@@ -240,7 +263,8 @@
     "description": "Permanent increase to movement.",
     "modifier": [1, 2, 3],
     "modType": "+",
-    "affects": " Move(s)"
+    "affects": " Move(s)",
+    "maxLevel": 2
   },
   "attackFromTheShadows": {
     "name": "Attack From The Shadows",
@@ -249,7 +273,8 @@
     "description": "While Stealthy, increased hit chance and damage with melee attacks.",
     "modifier": [0.1, 0.2, 0.3, 0.4, 0.5],
     "modType": "+",
-    "affects": "%"
+    "affects": "%",
+    "maxLevel": 4
   },
   "stealthy": {
     "name": "Stealthy",
@@ -261,7 +286,8 @@
     "modifier": [1, 2, 3, 4, 5],
     "modType": "+",
     "affects": " Agility",
-    "spirit": [3, 3, 2, 2, 1]
+    "spirit": [3, 3, 2, 2, 1],
+    "maxLevel": 4
   },
   "disarmTrap": {
     "name": "Disarm Trap",
@@ -271,7 +297,8 @@
     "hasTarget": true,
     "mustBeOutOfDanger": true,
     "light": [30, 25, 20, 15, 10],
-    "spirit": [40, 35, 30, 25, 20]
+    "spirit": [40, 35, 30, 25, 20],
+    "maxLevel": 4
   },
   "identifyRelic": {
     "name": "Identify Relic",
@@ -280,7 +307,8 @@
     "description": "Discern what a Relic does (item must be in inventory).",
     "mustBeOutOfDanger": true,
     "light": [30, 25, 20, 15, 10],
-    "spirit": [30, 25, 20, 15, 10]
+    "spirit": [30, 25, 20, 15, 10],
+    "maxLevel": 4
   },
   "sacrificialStrike": {
     "name": "Sacrificial Strike",
@@ -297,7 +325,8 @@
       "health": [3, 5, 7, 9, 11, 20],
       "sanity": [3, 5, 7, 9, 11, 20]
     },
-    "spirit": [30, 30, 30, 30, 30, 30]
+    "spirit": [30, 30, 30, 30, 30, 30],
+    "maxLevel": 5
   },
   "relicExpertise": {
     "name": "Relic Expertise",
@@ -306,7 +335,8 @@
     "description": "Suffer less Sanity loss when using Relics.",
     "modifier": [0.2, 0.4, 0.6],
     "modType": "-",
-    "affects": "% Sanity damage"
+    "affects": "% Sanity damage",
+    "maxLevel": 2
   },
   "krisKnifeExpertise": {
     "name": "Kris Knife Expertise",
@@ -315,6 +345,7 @@
     "description": "Knowledge of how to strike with precision in order to do the most damage possible.",
     "modifier": [0.1, 0.15, 0.2, 0.25],
     "modType": "+",
-    "affects": "% Damage"
+    "affects": "% Damage",
+    "maxLevel": 3
   }
 }
