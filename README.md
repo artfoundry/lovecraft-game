@@ -13,6 +13,8 @@ Mobile friendly but works best on desktop!
 ---
 #### Current status:
 
+12/16/24: Adding character leveling
+
 12/4/24: Adding audio processing to allow dynamic addition of reverb and volume changes (based on distance from sound); adding sfx for weapons, characters, creatures, some actions/items.
 
 8/22/24: Massive update from adding-characters branch - adding character and party creation; adding skills for each profession; adding numerous usable items, interactive environment objects, and hidden secrets; adding title screen and image.
