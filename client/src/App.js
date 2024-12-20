@@ -890,14 +890,13 @@ class Game extends React.PureComponent {
 			}
 		}
 		this.setState({partyExpertise, partyLevel}, () => {
-			let partyData = null;
 			if (partyHasLeveled) {
-				partyData = deepCopy(this.state.playerCharacters);
+				const partyData = deepCopy(this.state.playerCharacters);
 				for (const charData of Object.values(partyData)) {
 					charData.levelUpPoints += this.pointsPerLevelUp;
 				}
+				this.updateCharacters('player', partyData, null, false, false, false);
 			}
-			this.updateCharacters('player', partyData, null, false, false, false);
 		});
 	}
 
@@ -910,12 +909,12 @@ class Game extends React.PureComponent {
 	assignLevelUpPoints = (pcId, allocationChoices) => {
 		const pcData = deepCopy(this.state.playerCharacters[pcId]);
 
-		for (const [skillsOrStats, skillOrStatNames] of Object.entries(allocationChoices))
-		for (const [name, points] of Object.entries(skillOrStatNames)) {
-			skillsOrStats === 'stats' ? pcData[name] += points : pcData.skills[name].level += points;
-			pcData.levelUpPoints--;
+		for (const [skillsOrStats, skillOrStatNames] of Object.entries(allocationChoices)) {
+			for (const [name, points] of Object.entries(skillOrStatNames)) {
+				skillsOrStats === 'stats' ? pcData[name] += points : pcData.skills[name].level += points;
+				pcData.levelUpPoints--;
+			}
 		}
-
 		this.updateCharacters('player', pcData, pcId, false, false, false);
 	}
 
