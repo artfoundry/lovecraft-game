@@ -13,6 +13,8 @@ Mobile friendly but works best on desktop!
 ---
 #### Current status:
 
+12/27/24: Adding map level saving
+
 12/16/24: Adding character leveling
 
 12/4/24: Adding audio processing to allow dynamic addition of reverb and volume changes (based on distance from sound); adding sfx for weapons, characters, creatures, some actions/items.

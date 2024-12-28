@@ -204,10 +204,11 @@ class Game extends React.PureComponent {
 			partyJournal: {
 				quests: {}
 			},
+			savedMaps: {},
 			currentLocation: '',
 			currentFloor: 1,
+			previousFloor: null,
 			playerFollowOrder: [],
-			followModePositions: [],
 			currentRound: 1, // starts on 1 because always enter a new area in tactical mode but updateCurrentTurn isn't called on entry
 			showDialog: false,
 			dialogProps: {
@@ -231,6 +232,7 @@ class Game extends React.PureComponent {
 			activeCharacter: !this.showCharacterCreation ? this.startingPlayerCharacters[0] : null,
 			activePlayerMovesCompleted: 0,
 			activePlayerActionsCompleted: 0,
+			followModePositions: [],
 			characterIsSelected: false,
 			creatureIsSelected: false,
 			selectedCharacter: '',
@@ -266,6 +268,7 @@ class Game extends React.PureComponent {
 			activeCharacter: this.startingPlayerCharacters[0],
 			activePlayerMovesCompleted: 0,
 			activePlayerActionsCompleted: 0,
+			followModePositions: [],
 			characterIsSelected: false,
 			creatureIsSelected: false,
 			selectedCharacter: '',
@@ -399,6 +402,38 @@ class Game extends React.PureComponent {
 	}
 
 	/**
+	 * saves map data for moving to different floor or saving game
+	 * @param mapData: object (deepcopies of playerVisited, mapLayout,
+	 *      and copies of previousAreaExitCoords, nextAreaExitCoords, worldWidth, worldHeight from Map)
+	 * @param callback: function
+	 */
+	saveMapData = (mapData, callback) => {
+		const {playerVisited, mapLayout, previousAreaExitCoords, nextAreaExitCoords, worldWidth, worldHeight, newFloorNum} = {...mapData};
+		const savedMaps = deepCopy(this.state.savedMaps);
+		const previousFloor = this.state.currentFloor;
+		const dataToSave = {
+			playerVisited,
+			mapLayout,
+			previousAreaExitCoords,
+			nextAreaExitCoords,
+			worldWidth,
+			worldHeight,
+			mapObjects: deepCopy(this.state.mapObjects),
+			mapCreatures: deepCopy(this.state.mapCreatures),
+			envObjects: deepCopy(this.state.envObjects)
+		};
+		if (savedMaps[this.state.currentLocation]) {
+			savedMaps[this.state.currentLocation][this.state.currentFloor] = dataToSave;
+		} else {
+			savedMaps[this.state.currentLocation] = {[this.state.currentFloor]: dataToSave};
+		}
+
+		this.setState({savedMaps, previousFloor, currentFloor: newFloorNum}, () => {
+			if (callback) callback();
+		});
+	}
+
+	/**
 	 * Updates collection of mapObjects in state for when object is picked up or dropped or during map init
 	 * @param mapObjects: object (modified copy of this.state.mapObjects)
 	 * @param lightingHasChanged: boolean
@@ -451,13 +486,13 @@ class Game extends React.PureComponent {
 		const collection =
 			type === 'player' ? this.state.playerCharacters :
 			type === 'creature' ? this.state.mapCreatures :
-			Object.assign({}, this.state.playerCharacters, this.state.mapCreatures); // copy all to empty object to avoid modifying originals
+			{...this.state.playerCharacters, ...this.state.mapCreatures};
 
 		for (const [id, characterData] of Object.entries(collection)) {
 			const isLivingCreature = characterData.type === 'creature' && characterData.currentHealth > 0;
 			const isLivingPc = characterData.type === 'player' && !characterData.isDeadOrInsane;
 			if (isLivingCreature || isLivingPc) {
-				let coords = format === 'pos' ? `${characterData.coords.xPos}-${characterData.coords.yPos}` : characterData.coords;
+				let coords = format === 'pos' ? `${characterData.coords.xPos}-${characterData.coords.yPos}` : {...characterData.coords};
 				allCharactersPos.push({id, [format]: coords});
 			}
 		}
@@ -890,14 +925,13 @@ class Game extends React.PureComponent {
 			}
 		}
 		this.setState({partyExpertise, partyLevel}, () => {
-			let partyData = null;
 			if (partyHasLeveled) {
-				partyData = deepCopy(this.state.playerCharacters);
+				const partyData = deepCopy(this.state.playerCharacters);
 				for (const charData of Object.values(partyData)) {
 					charData.levelUpPoints += this.pointsPerLevelUp;
 				}
+				this.updateCharacters('player', partyData, null, false, false, false);
 			}
-			this.updateCharacters('player', partyData, null, false, false, false);
 		});
 	}
 
@@ -910,12 +944,12 @@ class Game extends React.PureComponent {
 	assignLevelUpPoints = (pcId, allocationChoices) => {
 		const pcData = deepCopy(this.state.playerCharacters[pcId]);
 
-		for (const [skillsOrStats, skillOrStatNames] of Object.entries(allocationChoices))
-		for (const [name, points] of Object.entries(skillOrStatNames)) {
-			skillsOrStats === 'stats' ? pcData[name] += points : pcData.skills[name].level += points;
-			pcData.levelUpPoints--;
+		for (const [skillsOrStats, skillOrStatNames] of Object.entries(allocationChoices)) {
+			for (const [name, points] of Object.entries(skillOrStatNames)) {
+				skillsOrStats === 'stats' ? pcData[name] += points : pcData.skills[name].level += points;
+				pcData.levelUpPoints--;
+			}
 		}
-
 		this.updateCharacters('player', pcData, pcId, false, false, false);
 	}
 
@@ -1632,7 +1666,7 @@ class Game extends React.PureComponent {
 		if (this.startingLocation) {
 			this.setState({currentLocation: this.startingLocation, gameOptions}, gameReadyCallback);
 		} else {
-			// handle location change
+			//todo: handle location change
 		}
 	}
 
@@ -2000,6 +2034,8 @@ class Game extends React.PureComponent {
 						calcPcLightChanges={this.calcPcLightChanges}
 						lightTimeCosts={this.lightTimeCosts}
 
+						saveMapData={this.saveMapData}
+						savedMaps={this.state.savedMaps}
 						updateMapObjects={this.updateMapObjects}
 						updateMapEnvObjects={this.updateMapEnvObjects}
 						mapObjects={this.state.mapObjects}
@@ -2015,6 +2051,7 @@ class Game extends React.PureComponent {
 
 						currentLocation={this.state.currentLocation}
 						currentFloor={this.state.currentFloor}
+						previousFloor={this.state.previousFloor}
 						resetDataForNewFloor={this.resetDataForNewFloor}
 
 						updateLog={this.updateLog}
