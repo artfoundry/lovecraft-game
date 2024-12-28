@@ -53,7 +53,6 @@ class Map extends React.PureComponent {
 		// total number of map pieces in currentMapData: 17;
 		this.currentMapData = GameLocations[this.props.currentLocation];
 		this.pageFirstLoaded = true;
-		this.initialMapLoad = true;
 		this.mapLayoutTemp = {};
 		this.numberOpeningsPerPiece = {};
 
@@ -77,11 +76,12 @@ class Map extends React.PureComponent {
 			objectsPlaced: false,
 			envObjectsPlaced: false,
 			lightingCalculated: false,
+			usingSavedMapData: false,
 			playerVisited: {},
 			mapLayout: {},
 			mapLayoutDone: false,
-			previousAreaExitCoords: {},
-			nextAreaExitCoords: {},
+			previousAreaExitCoords: null,
+			nextAreaExitCoords: null,
 			exitPlaced: false,
 			mapMoved: false,
 			worldWidth: 0,
@@ -93,7 +93,6 @@ class Map extends React.PureComponent {
 	 * Resets state and other vars related to map - used for moving from one floor to another
 	 */
 	resetMap = () => {
-		this.initialMapLoad = true;
 		this.mapLayoutTemp = {};
 
 		this.setState({
@@ -102,11 +101,12 @@ class Map extends React.PureComponent {
 			objectsPlaced: false,
 			envObjectsPlaced: false,
 			lightingCalculated: false,
+			usingSavedMapData: this.props.savedMaps[this.props.currentLocation] && this.props.savedMaps[this.props.currentLocation][this.props.currentFloor],
 			playerVisited: {},
 			mapLayout: {},
 			mapLayoutDone: false,
-			previousAreaExitCoords: {},
-			nextAreaExitCoords: {},
+			previousAreaExitCoords: null,
+			nextAreaExitCoords: null,
 			exitPlaced: false,
 			mapMoved: false,
 			worldWidth: 0,
@@ -130,69 +130,73 @@ class Map extends React.PureComponent {
 	 * @private
 	 */
 	layoutPieces = () => {
-		let numPiecesTried = 0;
-		let attemptedPieces = [];
-		const numPieceTemplates = Object.keys(MapData).length;
+		const usingSavedMapData = this.state.usingSavedMapData;
+		const savedMapData = usingSavedMapData ? this.props.savedMaps[this.props.currentLocation][this.props.currentFloor] : null;
 
-		for (const [pieceName, pieceData] of Object.entries(MapData)) {
-			let openings = 0;
-			for (const tileSides of Object.values(pieceData)) {
-				for (const value of Object.values(tileSides)) {
-					if (value === 'opening') {
-						openings++;
+		if (!usingSavedMapData) {
+			let numPiecesTried = 0;
+			let attemptedPieces = [];
+			const numPieceTemplates = Object.keys(MapData).length;
+
+			for (const [pieceName, pieceData] of Object.entries(MapData)) {
+				let openings = 0;
+				for (const tileSides of Object.values(pieceData)) {
+					for (const value of Object.values(tileSides)) {
+						if (value === 'opening') {
+							openings++;
+						}
 					}
 				}
+				this.numberOpeningsPerPiece[pieceName] = openings;
 			}
-			this.numberOpeningsPerPiece[pieceName] = openings;
+
+			while (numPiecesTried < numPieceTemplates && Object.keys(this.mapLayoutTemp).length < this.mapTileLimit) {
+				const {newPiece, pieceName} = this._chooseNewRandomPiece(attemptedPieces);
+				attemptedPieces.push(pieceName);
+				const {positionFound, updatedPiece, mapOpening, pieceOpening} = this._findNewPiecePosition(newPiece, pieceName);
+
+				if (positionFound) {
+					this._updateMapLayout(updatedPiece, mapOpening, pieceOpening, pieceName);
+					attemptedPieces = [];
+					numPiecesTried = 0;
+				} else numPiecesTried++;
+			}
+			this._mapCleanup();
+		} else {
+			this.mapLayoutTemp = deepCopy(savedMapData.mapLayout);
 		}
 
-		while (numPiecesTried < numPieceTemplates && Object.keys(this.mapLayoutTemp).length < this.mapTileLimit) {
-			const {newPiece, pieceName} = this._chooseNewRandomPiece(attemptedPieces);
-			attemptedPieces.push(pieceName);
-			const {positionFound, updatedPiece, mapOpening, pieceOpening} = this._findNewPiecePosition(newPiece, pieceName);
-
-			if (positionFound) {
-				this._updateMapLayout(updatedPiece, mapOpening, pieceOpening, pieceName);
-				attemptedPieces = [];
-				numPiecesTried = 0;
-			} else numPiecesTried++;
-		}
-		this._mapCleanup();
-
-		if (this.initialMapLoad) {
-			this.initialMapLoad = false;
-			const worldWidth = (this.worldFarthestX * this.tileSize) + this.uiPadding;
-			const worldHeight = (this.worldFarthestY * this.tileSize) + this.uiPadding;
-			this.setState({
-				mapLayoutDone: true,
-				mapLayout: {...this.mapLayoutTemp},
-				worldWidth,
-				worldHeight
-			}, () => {
-				this._setExitPosition('previousArea', () => {
-					this._setInitialCharacterCoords(() => {
-						this._setExitPosition('nextArea', () => {
-							this._setInitialCreatureData(() => {
-								this._setInitialObjectData(() => {
-									this._setInitialEnvObjectData(() => {
-										this._calculateLighting(() => {
-											const creaturePositions = this.props.getAllCharactersPos('creature', 'pos');
-											const playerPositions = this.props.getAllCharactersPos('player', 'pos');
-											const threatLists = this._findChangesToNearbyThreats(playerPositions, creaturePositions);
-											this.props.updateThreatList(threatLists.threatListToAdd, [], null, this.isInLineOfSight);
-										});
-									})
-								});
+		const worldWidth = usingSavedMapData ? savedMapData.worldWidth : (this.worldFarthestX * this.tileSize) + this.uiPadding;
+		const worldHeight = usingSavedMapData ? savedMapData.worldHeight: (this.worldFarthestY * this.tileSize) + this.uiPadding;
+		this.setState({
+			mapLayoutDone: true,
+			mapLayout: {...this.mapLayoutTemp},
+			worldWidth,
+			worldHeight
+		}, () => {
+			this._setExitPosition('previousArea', () => {
+				this._setInitialCharacterCoords(() => {
+					this._setExitPosition('nextArea', () => {
+						this._setInitialCreatureData(() => {
+							this._setInitialObjectData(() => {
+								this._setInitialEnvObjectData(() => {
+									this._calculateLighting(() => {
+										const creaturePositions = this.props.getAllCharactersPos('creature', 'pos');
+										const playerPositions = this.props.getAllCharactersPos('player', 'pos');
+										const threatLists = this._findChangesToNearbyThreats(playerPositions, creaturePositions);
+										this.props.updateThreatList(threatLists.threatListToAdd, [], null, this.isInLineOfSight);
+									});
+								})
 							});
-							if (this.pageFirstLoaded) {
-								this.pageFirstLoaded = false;
-								this._setupKeyListeners();
-							}
 						});
+						if (this.pageFirstLoaded) {
+							this.pageFirstLoaded = false;
+							this._setupKeyListeners();
+						}
 					});
 				});
 			});
-		}
+		});
 	}
 
 	/**
@@ -624,24 +628,32 @@ class Map extends React.PureComponent {
 	 */
 	_setInitialCharacterCoords(initialSetupCallback) {
 		let updatedPlayerData = deepCopy(this.props.playerCharacters);
-		let playerVisited = {};
+		const savedMapData = this.state.usingSavedMapData ? this.props.savedMaps[this.props.currentLocation][this.props.currentFloor] : null;
+		let playerVisited = this.state.usingSavedMapData ? deepCopy(savedMapData.playerVisited) : {};
 		let previousPlayerCoords = null;
 		let playerPositions = [];
 
 		for (const playerID of Object.keys(this.props.playerCharacters)) {
 			let tilePos = '';
-			let newCoords = [];
+			let newCoords = {};
 			if (!previousPlayerCoords) {
-				tilePos = convertCoordsToPos(this.state.previousAreaExitCoords);
+				let startingCoords = {...this.state.previousAreaExitCoords};
+				if (this.props.previousFloor && this.props.previousFloor > this.props.currentFloor) {
+					startingCoords = {...savedMapData.nextAreaExitCoords};
+				}
+				tilePos = convertCoordsToPos(startingCoords);
+				newCoords = {...startingCoords};
 			} else {
 				// look for empty nearby tile to place 2nd/3rd PC
 				tilePos = this._findNearbyAvailableTile(previousPlayerCoords, playerPositions);
+				newCoords = convertPosToCoords(tilePos);
 			}
 			playerPositions.push(tilePos);
-			newCoords = convertPosToCoords(tilePos);
-			previousPlayerCoords = newCoords;
-			playerVisited = Object.assign(playerVisited, this._findNewVisitedTiles(newCoords, playerID));
-			updatedPlayerData[playerID].coords = newCoords;
+			previousPlayerCoords = {...newCoords};
+			if (!this.state.usingSavedMapData) {
+				playerVisited = Object.assign(playerVisited, this._findNewVisitedTiles(newCoords, playerID));
+			}
+			updatedPlayerData[playerID].coords = {...newCoords};
 		}
 
 		this.props.updateCharacters('player', updatedPlayerData, null, false, false, true, () => {
@@ -668,16 +680,20 @@ class Map extends React.PureComponent {
 			});
 		} else {
 			let mapCreatures = {};
-			let creatureCoords = {};
-			for (const [genericId, stats] of Object.entries(this.currentMapData.creatures)) {
-		//TODO: change this logic and data in gameLocations.json to use same level/count format as objects
-				for (let i=0; i < stats.count; i++) {
-					const coords = convertPosToCoords(this._generateRandomLocation(creatureCoords));
-					const creatureId = genericId + i;
-					CreatureData[genericId].creatureId = creatureId;
-					mapCreatures[creatureId] = new Creature(CreatureData[genericId]);
-					mapCreatures[creatureId].coords = coords;
-					creatureCoords[creatureId] = coords;
+			if (this.state.usingSavedMapData) {
+				mapCreatures = deepCopy(this.props.savedMaps[this.props.currentLocation][this.props.currentFloor].mapCreatures);
+			} else {
+				let creatureCoords = {};
+				for (const [genericId, stats] of Object.entries(this.currentMapData.creatures)) {
+			//TODO: change this logic and data in gameLocations.json to use same level/count format as objects
+					for (let i=0; i < stats.count; i++) {
+						const coords = convertPosToCoords(this._generateRandomLocation(creatureCoords));
+						const creatureId = genericId + i;
+						CreatureData[genericId].creatureId = creatureId;
+						mapCreatures[creatureId] = new Creature(CreatureData[genericId]);
+						mapCreatures[creatureId].coords = coords;
+						creatureCoords[creatureId] = coords;
+					}
 				}
 			}
 			this.props.updateCharacters('creature', mapCreatures, null, false, true, false, () => {
@@ -695,35 +711,39 @@ class Map extends React.PureComponent {
 	 */
 	_setInitialObjectData(callback) {
 		let mapItems = {};
-		let itemCoords = {};
-		for (const [objectType, objectTypesInfo] of Object.entries(this.currentMapData.objects)) {
-			const alwaysOnTheLookoutSkillInfo = this.props.playerCharacters.archaeologist ? this.props.playerCharacters.archaeologist.skills.alwaysOnTheLookout : null;
-			let relicChance = alwaysOnTheLookoutSkillInfo ? alwaysOnTheLookoutSkillInfo.modifier[alwaysOnTheLookoutSkillInfo.level] : 0;
-			for (const [itemName, itemInfo] of Object.entries(objectTypesInfo)) {
-				if (objectType === 'Relic') {
-					relicChance = (relicChance + itemInfo.chancePerFloor[this.props.currentFloor]) * 100;
-				}
-				if (objectType !== 'Relic' || (objectType === 'Relic' && (diceRoll(100) <= relicChance))) {
-					for (let i=0; i < itemInfo.countPerFloor[this.props.currentFloor]; i++) {
-						const itemInfo = objectType === 'Weapon' ? WeaponTypes[itemName] : ItemTypes[itemName];
-						const tileType = itemName === 'Torch' ? 'wall' : 'floor';
-						const lowerCaseName = itemName.slice(0, 1).toLowerCase() + itemName.slice(1, itemName.length).replaceAll(' ', '');
-						const itemID = lowerCaseName + (i + 1);
-						const gunType = objectType === 'Weapon' && itemInfo.gunType ? itemInfo.gunType : null;
-						const weaponCurrentRounds = gunType ? Math.round(Math.random() * itemInfo.rounds) : objectType === 'Weapon' ? 1 : null;
-						const coords = convertPosToCoords(this._generateRandomLocation(itemCoords, tileType)); // use this.props.playerCharacters['privateEye'].coords instead to easily test objects
-						mapItems[itemID] = {
-							...itemInfo,
-							name: itemName,
-							isIdentified: objectType !== 'Relic',
-							currentRounds: weaponCurrentRounds,
-							coords
-						};
-						mapItems[itemID].amount =
-							objectType === 'Ammo' ? Math.floor(Math.random() * 10) + 2 :
-							itemName === 'Oil' ? Math.floor(Math.random() * 90) + 10 :
-							objectType === 'Medicine' || objectType === 'Component' ? 1 : null;
-						itemCoords[itemID] = coords;
+		if (this.state.usingSavedMapData) {
+			mapItems = deepCopy(this.props.savedMaps[this.props.currentLocation][this.props.currentFloor].mapObjects);
+		} else {
+			let itemCoords = {};
+			for (const [objectType, objectTypesInfo] of Object.entries(this.currentMapData.objects)) {
+				const alwaysOnTheLookoutSkillInfo = this.props.playerCharacters.archaeologist ? this.props.playerCharacters.archaeologist.skills.alwaysOnTheLookout : null;
+				let relicChance = alwaysOnTheLookoutSkillInfo ? alwaysOnTheLookoutSkillInfo.modifier[alwaysOnTheLookoutSkillInfo.level] : 0;
+				for (const [itemName, itemInfo] of Object.entries(objectTypesInfo)) {
+					if (objectType === 'Relic') {
+						relicChance = (relicChance + itemInfo.chancePerFloor[this.props.currentFloor]) * 100;
+					}
+					if (objectType !== 'Relic' || (objectType === 'Relic' && (diceRoll(100) <= relicChance))) {
+						for (let i=0; i < itemInfo.countPerFloor[this.props.currentFloor]; i++) {
+							const itemInfo = objectType === 'Weapon' ? WeaponTypes[itemName] : ItemTypes[itemName];
+							const tileType = itemName === 'Torch' ? 'wall' : 'floor';
+							const lowerCaseName = itemName.slice(0, 1).toLowerCase() + itemName.slice(1, itemName.length).replaceAll(' ', '');
+							const itemID = lowerCaseName + (i + 1);
+							const gunType = objectType === 'Weapon' && itemInfo.gunType ? itemInfo.gunType : null;
+							const weaponCurrentRounds = gunType ? Math.round(Math.random() * itemInfo.rounds) : objectType === 'Weapon' ? 1 : null;
+							const coords = convertPosToCoords(this._generateRandomLocation(itemCoords, tileType)); // use this.props.playerCharacters['privateEye'].coords instead to easily test objects
+							mapItems[itemID] = {
+								...itemInfo,
+								name: itemName,
+								isIdentified: objectType !== 'Relic',
+								currentRounds: weaponCurrentRounds,
+								coords
+							};
+							mapItems[itemID].amount =
+								objectType === 'Ammo' ? Math.floor(Math.random() * 10) + 2 :
+								itemName === 'Oil' ? Math.floor(Math.random() * 90) + 10 :
+								objectType === 'Medicine' || objectType === 'Component' ? 1 : null;
+							itemCoords[itemID] = coords;
+						}
 					}
 				}
 			}
@@ -740,54 +760,57 @@ class Map extends React.PureComponent {
 	 */
 	_setInitialEnvObjectData(callback) {
 		let envObjects = {};
-		let itemCoords = {};
-
-		for (const [itemId, appearanceInfo] of Object.entries(this.currentMapData.envObjects)) {
-			for (let i=0; i < appearanceInfo.countPerFloor[this.props.currentFloor]; i++) {
-				const envItemInfo = EnvObjectTypes[itemId];
-				const lowerCaseName = itemId.slice(0, 1).toLowerCase() + itemId.slice(1, itemId.length).replaceAll(' ', '');
-				const uniqueItemId = lowerCaseName + (i + 1);
-				const coords = convertPosToCoords(this._generateRandomLocation(itemCoords, 'floor', true, envItemInfo.isPassable)); // this.props.playerCharacters['privateEye'].coords (to easily test objects)
-				let containerContents = [];
-				if (envItemInfo.type === 'container' || envItemInfo.type === 'mineable') {
-					// adding null option so container could have nothing
-					const itemNames = [...Object.keys(envItemInfo.mayContain), null];
-					const selectedItemIndex = diceRoll(itemNames.length) - 1;
-					if (itemNames[selectedItemIndex]) {
-						const selectedItemName = itemNames[selectedItemIndex];
-						const selectedItemUniqueId = selectedItemName.slice(0, 1).toLowerCase() + selectedItemName.slice(1, selectedItemName.length).replaceAll(' ', '') + '0';
-						const objectType = ItemTypes[selectedItemName] ? 'item' : 'weapon';
-						const selectedItemBaseInfo = objectType === 'item' ? ItemTypes[selectedItemName] : WeaponTypes[selectedItemName];
-						let selectedItemInfo = {
-							...selectedItemBaseInfo,
-							id: selectedItemUniqueId,
-							name: selectedItemName,
-							isIdentified: selectedItemBaseInfo.itemType !== 'Relic',
-							coords
-						};
-						const count = diceRoll(envItemInfo.mayContain[selectedItemName].max);
-						if (objectType === 'item' && selectedItemBaseInfo.stackable) {
-							selectedItemInfo.amount = count;
-						} else if (objectType === 'weapon' && (selectedItemBaseInfo.stackable || selectedItemBaseInfo.rounds)) {
-							selectedItemInfo.currentRounds = count
+		if (this.state.usingSavedMapData) {
+			envObjects = deepCopy(this.props.savedMaps[this.props.currentLocation][this.props.currentFloor].envObjects);
+		} else {
+			let itemCoords = {};
+			for (const [itemId, appearanceInfo] of Object.entries(this.currentMapData.envObjects)) {
+				for (let i=0; i < appearanceInfo.countPerFloor[this.props.currentFloor]; i++) {
+					const envItemInfo = EnvObjectTypes[itemId];
+					const lowerCaseName = itemId.slice(0, 1).toLowerCase() + itemId.slice(1, itemId.length).replaceAll(' ', '');
+					const uniqueItemId = lowerCaseName + (i + 1);
+					const coords = convertPosToCoords(this._generateRandomLocation(itemCoords, 'floor', true, envItemInfo.isPassable)); // this.props.playerCharacters['privateEye'].coords (to easily test objects)
+					let containerContents = [];
+					if (envItemInfo.type === 'container' || envItemInfo.type === 'mineable') {
+						// adding null option so container could have nothing
+						const itemNames = [...Object.keys(envItemInfo.mayContain), null];
+						const selectedItemIndex = diceRoll(itemNames.length) - 1;
+						if (itemNames[selectedItemIndex]) {
+							const selectedItemName = itemNames[selectedItemIndex];
+							const selectedItemUniqueId = selectedItemName.slice(0, 1).toLowerCase() + selectedItemName.slice(1, selectedItemName.length).replaceAll(' ', '') + '0';
+							const objectType = ItemTypes[selectedItemName] ? 'item' : 'weapon';
+							const selectedItemBaseInfo = objectType === 'item' ? ItemTypes[selectedItemName] : WeaponTypes[selectedItemName];
+							let selectedItemInfo = {
+								...selectedItemBaseInfo,
+								id: selectedItemUniqueId,
+								name: selectedItemName,
+								isIdentified: selectedItemBaseInfo.itemType !== 'Relic',
+								coords
+							};
+							const count = diceRoll(envItemInfo.mayContain[selectedItemName].max);
+							if (objectType === 'item' && selectedItemBaseInfo.stackable) {
+								selectedItemInfo.amount = count;
+							} else if (objectType === 'weapon' && (selectedItemBaseInfo.stackable || selectedItemBaseInfo.rounds)) {
+								selectedItemInfo.currentRounds = count
+							}
+							containerContents = [selectedItemInfo];
 						}
-						containerContents = [selectedItemInfo];
 					}
+					envObjects[uniqueItemId] = {
+						...envItemInfo,
+						name: itemId,
+						isIdentified: true,
+						isDestructible: envItemInfo.isDestructible,
+						isDestroyed: false,
+						containerContents,
+						isOpen: envItemInfo.type === 'container' ? false : null,
+						coords
+					};
+					if (envItemInfo.isHidden) {
+						envObjects[uniqueItemId].isDiscovered = false;
+					}
+					itemCoords[uniqueItemId] = coords;
 				}
-				envObjects[uniqueItemId] = {
-					...envItemInfo,
-					name: itemId,
-					isIdentified: true,
-					isDestructible: envItemInfo.isDestructible,
-					isDestroyed: false,
-					containerContents,
-					isOpen: envItemInfo.type === 'container' ? false : null,
-					coords
-				};
-				if (envItemInfo.isHidden) {
-					envObjects[uniqueItemId].isDiscovered = false;
-				}
-				itemCoords[uniqueItemId] = coords;
 			}
 		}
 		this.props.updateMapEnvObjects(envObjects, null, () => {
@@ -821,7 +844,8 @@ class Map extends React.PureComponent {
 		let newObjectList = Object.values(objectCoords).length > 0 ? Object.values(objectCoords).map(object => convertCoordsToPos(object)) : null;
 		let randomIndex = 0;
 		let tilePos = '';
-		const exitPos = Object.values(this.state.nextAreaExitCoords).length > 0 ? convertCoordsToPos(this.state.nextAreaExitCoords) : null;
+		const nextExitPos = this.state.nextAreaExitCoords ? convertCoordsToPos(this.state.nextAreaExitCoords) : null;
+		const prevExitPos = this.state.previousAreaExitCoords ? convertCoordsToPos(this.state.previousAreaExitCoords) : null;
 		let allCharacterPos = [];
 		const listOfMapObjectsPos = isEnvObj ? Object.values(this.props.mapObjects).map(object => convertCoordsToPos(object.coords)) : null;
 
@@ -860,7 +884,8 @@ class Map extends React.PureComponent {
 			// no other env objs adjacent, and obj passability matches tile passibility attr,
 			// then loc is good to use
 			// First two comparisons formatted like !(a && b) because 'null && false' equals null, not false, while '!(null && true)' equals true
-			if ((!exitPos || tilePos !== exitPos) &&
+			if ((!nextExitPos || tilePos !== nextExitPos) &&
+				(!prevExitPos || tilePos !== prevExitPos) &&
 				(!newObjectList || !newObjectList.includes(tilePos)) &&
 				!allCharacterPos.includes(tilePos) &&
 				(!isEnvObj ||
@@ -1038,21 +1063,34 @@ class Map extends React.PureComponent {
 	 * @private
 	 */
 	_setExitPosition(exitType, callback) {
-		let allPlayerPos = exitType === 'nextArea' ? this.props.getAllCharactersPos('player', 'pos').map(player => player.pos) : null;
-		const tilePositions = Object.keys(this.state.mapLayout).filter(tilePos => {
-			let isValidPreviousAreaExit = false;
-			if (exitType === 'previousArea' && this.state.mapLayout[tilePos].piece.includes('room')) {
-				const adjacentTiles = this._getAllSurroundingTilesToRange(tilePos, 1)['1Away'].filter(pos => this.state.mapLayout[pos].type === 'floor');
-				isValidPreviousAreaExit = adjacentTiles.length >= 3;
-			}
-			return this.state.mapLayout[tilePos].type === 'floor' &&
-				!this.state.mapLayout[tilePos].piece.includes('secret') &&
-				((exitType === 'nextArea' && !allPlayerPos.includes(tilePos)) || isValidPreviousAreaExit);
-		});
-		let exitPosition = tilePositions[Math.floor(Math.random() * tilePositions.length)];
-		const exitCoords = convertPosToCoords(exitPosition);
+		let exitCoords = {};
+		if (this.state.usingSavedMapData) {
+			const savedMapData = this.props.savedMaps[this.props.currentLocation][this.props.currentFloor];
+			exitCoords = exitType === 'nextArea' ? {...savedMapData.nextAreaExitCoords} : {...savedMapData.previousAreaExitCoords};
+		} else if (exitType === 'previousArea' || this.props.currentFloor < this.currentMapData.numOfFloors) {
+			let allPlayerPos = exitType === 'nextArea' ? this.props.getAllCharactersPos('player', 'pos').map(player => player.pos) : null;
+			const tilePositions = Object.keys(this.state.mapLayout).filter(tilePos => {
+				let isValidPreviousAreaExit = false;
+				if (exitType === 'previousArea' && this.state.mapLayout[tilePos].piece.includes('room')) {
+					const adjacentTiles = this._getAllSurroundingTilesToRange(tilePos, 1)['1Away'].filter(pos => this.state.mapLayout[pos].type === 'floor');
+					isValidPreviousAreaExit = adjacentTiles.length >= 3;
+				}
+				return this.state.mapLayout[tilePos].type === 'floor' &&
+					!this.state.mapLayout[tilePos].piece.includes('secret') &&
+					((exitType === 'nextArea' && !allPlayerPos.includes(tilePos)) || isValidPreviousAreaExit);
+			});
+			let exitPosition = tilePositions[Math.floor(Math.random() * tilePositions.length)];
+			exitCoords = convertPosToCoords(exitPosition);
+		}
 		if (exitType === 'nextArea') {
-			this.setState({nextAreaExitCoords: exitCoords}, callback);
+			if (this.props.currentFloor < this.currentMapData.numOfFloors) {
+				// for testing: to put two stairs next to each other, uncomment below and comment out third line
+				// const prevArea = {...this.state.previousAreaExitCoords};
+				// this.setState({nextAreaExitCoords: {xPos: prevArea.xPos+1, yPos: prevArea.yPos}}, callback);
+				this.setState({nextAreaExitCoords: exitCoords}, callback);
+			} else if (callback) {
+				callback();
+			}
 		} else {
 			this.setState({previousAreaExitCoords: exitCoords, exitPlaced: true}, callback);
 		}
@@ -1329,10 +1367,14 @@ class Map extends React.PureComponent {
 	 * @private
 	 */
 	_addExits() {
-		return [
-			{class: 'stairs-up', coords: this.state.previousAreaExitCoords},
-			{class: 'stairs-down', coords: this.state.nextAreaExitCoords}
-		].map(info => {
+		let exits = [];
+		if (this.state.previousAreaExitCoords) {
+			exits.push({class: 'stairs-up', coords: this.state.previousAreaExitCoords});
+		}
+		if (this.state.nextAreaExitCoords) {
+			exits.push({class: 'stairs-down', coords: this.state.nextAreaExitCoords});
+		}
+		return exits.map(info => {
 			return (<Exit
 				key={'exit-' + convertCoordsToPos(info.coords)}
 				class={info.class}
@@ -1540,8 +1582,9 @@ class Map extends React.PureComponent {
 	 */
 	_checkForExit() {
 		const activePCCoords = this.props.playerCharacters[this.props.activeCharacter].coords;
-		if (activePCCoords.xPos === this.state.nextAreaExitCoords.xPos &&
-			activePCCoords.yPos === this.state.nextAreaExitCoords.yPos) {
+		const goingToNextArea = this.state.nextAreaExitCoords ? (activePCCoords.xPos === this.state.nextAreaExitCoords.xPos && activePCCoords.yPos === this.state.nextAreaExitCoords.yPos) : false;
+		const goingToPrevArea = this.state.previousAreaExitCoords ? (activePCCoords.xPos === this.state.previousAreaExitCoords.xPos && activePCCoords.yPos === this.state.previousAreaExitCoords.yPos) : false;
+		if (goingToNextArea || goingToPrevArea) {
 			let dialogProps = {};
 			if (this.props.threatList.length > 0) {
 				dialogProps = {
@@ -1565,15 +1608,38 @@ class Map extends React.PureComponent {
 					actionButtonCallback: null,
 					dialogClasses: ''
 				};
+			} else if (goingToPrevArea && this.props.currentFloor === 1) {
+				//todo: can remove this block once world map is in place
+				dialogProps = {
+					dialogContent: "No exiting the dungeon at this time.",
+					closeButtonText: 'Ok',
+					closeButtonCallback: null,
+					disableCloseButton: false,
+					actionButtonVisible: false,
+					actionButtonText: '',
+					actionButtonCallback: null,
+					dialogClasses: ''
+				};
 			} else {
 				dialogProps = {
-					dialogContent: 'Do you want to descend to the next level?',
+					dialogContent: `Do you want to take the stairs to the ${goingToNextArea ? 'next' : 'previous'} level?`,
 					closeButtonText: 'Stay here',
 					closeButtonCallback: null,
 					disableCloseButton: false,
 					actionButtonVisible: true,
-					actionButtonText: 'Descend',
-					actionButtonCallback: this.resetMap,
+					actionButtonText: 'Take the stairs',
+					actionButtonCallback: () => {
+						const mapData = {
+							playerVisited: deepCopy(this.state.playerVisited),
+							mapLayout: deepCopy(this.state.mapLayout),
+							previousAreaExitCoords: {...this.state.previousAreaExitCoords},
+							nextAreaExitCoords: {...this.state.nextAreaExitCoords},
+							worldWidth: this.state.worldWidth,
+							worldHeight: this.state.worldHeight,
+							newFloorNum: this.props.currentFloor + (goingToNextArea ? 1 : -1)
+						};
+						this.props.saveMapData(mapData, this.resetMap);
+					},
 					dialogClasses: ''
 				};
 			}
@@ -2196,7 +2262,7 @@ class Map extends React.PureComponent {
 		const activePC = this.props.inTacticalMode || !followerId ? this.props.activeCharacter : followerId;
 		let inFollowMode = !this.props.inTacticalMode && this.props.partyIsNearby;
 
-		const followModePositions = inFollowMode ? [...this.props.followModePositions] : [];
+		let followModePositions = inFollowMode ? [...this.props.followModePositions] : [];
 		// only update followModePositions if we're moving the leader
 		// newest pos at end, oldest pos at beginning of array
 		if (inFollowMode && activePC === this.props.activeCharacter) {
@@ -2286,7 +2352,7 @@ class Map extends React.PureComponent {
 						// If either in combat or not in combat but party not nearby
 						if (this.props.inTacticalMode) {
 							updatePlayerMovesAndPartyStatus();
-							// can do follow mode as long as not in tactical mode either from before most recent move or after
+						// can do follow mode as long as not in tactical mode either from before most recent move or after
 						} else {
 							// strip out the ids to make finding available pos easier
 							const listOfPlayerPos = playerPositions.map(player => player.pos);
@@ -2883,12 +2949,21 @@ class Map extends React.PureComponent {
 	 ***************************/
 
 	componentDidMount() {
-		if (this.initialMapLoad) {
-			this.layoutPieces();
+		// need this check to prevent running twice, as StrictMode causes components to mount twice
+		if (Object.keys(this.mapLayoutTemp).length === 0) {
+			const setupMap = () => {
+				this.layoutPieces();
 
-			// note: this won't play until user interacts with page
-			// (which will happen with prod version but not testing if login and char creation are skipped)
-			this.props.toggleAudio('environments', this.props.currentLocation + 'Background');
+				// note: this won't play until user interacts with page
+				// (which will happen with prod version but not testing if login and char creation are skipped)
+				this.props.toggleAudio('environments', this.props.currentLocation + 'Background');
+			}
+
+			if (this.props.savedMaps[this.props.currentLocation] && this.props.savedMaps[this.props.currentLocation][this.props.currentFloor]) {
+				this.setState({usingSavedMapData: true}, setupMap);
+			} else {
+				setupMap();
+			}
 		}
 	}
 

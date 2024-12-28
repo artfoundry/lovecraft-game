@@ -1,6 +1,7 @@
 {
 	"catacombs": {
 		"name": "Catacombs",
+		"numOfFloors": 3,
 		"creatures": {
 			"elderThing": {
 				"count": 1,
