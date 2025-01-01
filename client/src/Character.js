@@ -22,33 +22,34 @@ class Character extends React.PureComponent {
 		this.strength = props.strength;
 		this.agility = props.agility;
 		this.mentalAcuity = props.mentalAcuity;
-		this.initiative = this._calculateInitiative();
+		this.initiative = props.isSavedData ? props.initiative : this._calculateInitiative();
 		this.startingHealth = props.startingHealth;
-		this.currentHealth = props.startingHealth;
-		this.turnsSinceDeath = 0;
-		this.isDeadOrInsane = false;
+		this.currentHealth = props.isSavedData ? props.currentHealth : props.startingHealth;
+		// starts at -1 because updateCurrentTurn will advance to 0 immediately after dying
+		this.turnsSinceDeath = props.isSavedData ? props.turnsSinceDeath : -1;
+		this.isDeadOrInsane = props.isSavedData ? props.isDeadOrInsane : false;
 		this.startingSanity = props.startingSanity;
-		this.currentSanity = props.startingSanity;
+		this.currentSanity = props.isSavedData ? props.currentSanity : props.startingSanity;
 		this.startingSpirit = (this.startingHealth / 2) + (this.startingSanity / 2);
-		this.currentSpirit = (this.startingHealth / 2) + (this.startingSanity / 2);
-		this.skills = this._copySkillData(props.skills);
-		this.inventory = this._prePopulateInv(props.playerInventoryLimit);
-		this.weapons = this._populateInvInfo('weapon', props.weapons, props.equippedItems);
-		this.equippedItems = {
+		this.currentSpirit = props.isSavedData ? props.currentSpirit : (this.startingHealth / 2) + (this.startingSanity / 2);
+		this.skills = props.isSavedData ? props.skills : this._copySkillData(props.skills);
+		this.inventory = props.isSavedData ? [...props.inventory] : this._prePopulateInv(props.playerInventoryLimit);
+		this.weapons = props.isSavedData ? props.weapons : this._populateInvInfo('weapon', props.weapons, props.equippedItems);
+		this.equippedItems = props.isSavedData ? props.equippedItems : {
 			loadout1: {right: props.equippedItems.right, left: this._weaponIsTwoHanded(props.equippedItems.right) ? props.equippedItems.right : props.equippedItems.left},
 			loadout2: {right: '', left: ''},
 			armor: props.equippedItems.armor || ''
 		};
-		this.items = this._populateInvInfo('item', props.items, props.equippedItems);
+		this.items = props.isSavedData ? props.items : this._populateInvInfo('item', props.items, props.equippedItems);
 		this.maxItems = 12;
-		this.defense = this.calculateDefense(props.agility, props.equippedItems.armor ? this.items[props.equippedItems.armor].defense : 0);
+		this.defense = props.isSavedData ? props.defense : this.calculateDefense(props.agility, props.equippedItems.armor ? this.items[props.equippedItems.armor].defense : 0);
 		this.damageReduction = this.equippedItems.armor ? this.items[this.equippedItems.armor].damageReduction : 0;
-		this.coords = {};
+		this.coords = props.isSavedData ? {...props.coords} : {};
 		this.equippedLight = props.equippedLight || null;
 		this.lightRange = this.equippedLight ? this.items[this.equippedLight].range : 0;
 		this.lightTime = this.equippedLight ? this.items[this.equippedLight].time : null;
-		this.statuses = {};
-		this.levelUpPoints = 0;
+		this.statuses = props.isSavedData ? props.statuses : {};
+		this.levelUpPoints = props.isSavedData ? props.levelUpPoints : 0;
 	}
 
 	_prePopulateInv(invLimit) {
@@ -530,7 +531,8 @@ class Character extends React.PureComponent {
 		let updatedHealerData = deepCopy(pcData);
 		const resusSkillData = pcData.skills.resuscitate;
 		updatedTargetData.currentHealth = resusSkillData.modifier[resusSkillData.level];
-		updatedTargetData.turnsSinceDeath = 0;
+		// starts at -1 because updateCurrentTurn will advance to 0 immediately after dying
+		updatedTargetData.turnsSinceDeath = -1;
 		updatedHealerData.currentSpirit -= resusSkillData.spirit[resusSkillData.level];
 		updateCharacters('player', updatedTargetData, targetData.id, false, false, false, () => {
 			updateLog(`${pcData.name} resuscitates  ${targetData.name} back to life!`);

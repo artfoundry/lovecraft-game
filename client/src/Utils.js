@@ -79,20 +79,42 @@ export function handleItemOverDropZone(evt) {
 	evt.dataTransfer.dropEffect = 'move';
 }
 
-export function deepCopy(object) {
+// for saving data to firebase, can't save values of undefined, FB removes values of null, and don't need to save functions
+export function deepCopy(object, savingForFB = false) {
 	let objectCopy = null;
 
 	if (Array.isArray(object)) {
 		objectCopy = [];
 		object.forEach((arrayItem, index) => {
-			objectCopy[index] = deepCopy(arrayItem);
+			objectCopy[index] = deepCopy(arrayItem, savingForFB);
 		});
+	} else if (savingForFB && object === undefined) {
+		objectCopy = 'undefined';
+	} else if (savingForFB && typeof object === 'function') {
+		// use default value of null (which means FB won't save it)
+	} else if (savingForFB && object === null) {
+		objectCopy = 'null';
 	} else if (!object || typeof object !== 'object') {
-		objectCopy = object;
+		objectCopy = object === 'undefined' ? undefined : object === 'null' ? null : object === 'emptyObject' ? {} : object;
 	} else {
 		objectCopy = {};
 		for (const [key, value] of Object.entries(object)) {
-			objectCopy[key] = typeof value === 'object' ? deepCopy(value) : value;
+			if (savingForFB && value === undefined) {
+				objectCopy[key] = 'undefined';
+			} else if (savingForFB && typeof value === 'function') {
+				objectCopy[key] = null;
+			} else if (savingForFB && value === null) {
+				objectCopy[key] = 'null';
+			} else {
+				objectCopy[key] = typeof value === 'object' ?
+					deepCopy(value, savingForFB) : value === 'undefined' ?
+					undefined : value === 'null' ?
+					null : value === 'emptyObject' ?
+					{} : value;
+			}
+		}
+		if (savingForFB && Object.keys(objectCopy).length === 0) {
+			objectCopy = 'emptyObject';
 		}
 	}
 

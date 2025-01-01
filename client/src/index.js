@@ -23,6 +23,7 @@ const testAttributes = {
     spawnCreatures: true
 };
 const prodAttributes = {
+    forProduction: true,
     showLogin: true,
     showCharacterCreation: true,
     startingCharacters: ['privateEye', 'chemist', 'archaeologist'],

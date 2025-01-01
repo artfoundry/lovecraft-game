@@ -1,7 +1,7 @@
 import React from 'react';
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, set } from 'firebase/database';
-import { getAnalytics } from 'firebase/analytics';
+import { getDatabase, ref, set, get, child } from 'firebase/database';
+// import { getAnalytics } from 'firebase/analytics';
 import {
 	getAuth,
 	signInWithRedirect,
@@ -17,7 +17,7 @@ import { GoogleAuthProvider } from "firebase/auth";
 import './css/ui.css';
 import './css/login.css';
 
-// TODO: Add SDKs for Firebase products that you want to use
+// For adding SDKs for Firebase services:
 // https://firebase.google.com/docs/web/setup#available-libraries
 
 export default class Firebase extends React.PureComponent {
@@ -38,7 +38,7 @@ export default class Firebase extends React.PureComponent {
 
 		// Initialize Firebase
 		const app = initializeApp(firebaseConfig);
-		const analytics = getAnalytics(app);
+		// const analytics = getAnalytics(app);
 
 		this.database = getDatabase(app);
 
@@ -49,9 +49,11 @@ export default class Firebase extends React.PureComponent {
 		}
 	}
 
-	updateLogin(userData) {
+	_updateLogin(userData) {
 		this.setState({showDialog: false});
-		this.props.updateLoggedIn(userData);
+		this._getData(userData.uid, (gameData) => {
+			this.props.updateLoggedIn(userData, gameData);
+		});
 	}
 
 	addGoogleScript = () => {
@@ -132,32 +134,32 @@ export default class Firebase extends React.PureComponent {
 		);
 	}
 
-	authByGoogle = () => {
-		const googleAuthProvider = new GoogleAuthProvider();
-		const auth = getAuth();
-
-		signInWithRedirect(auth, googleAuthProvider).then(() => {
-			getRedirectResult(auth)
-				.then((result) => {
-					// This gives a Google Access Token. Can use it to access Google APIs.
-					const credential = GoogleAuthProvider.credentialFromResult(result);
-					const token = credential.accessToken;
-					// The signed-in user info.
-					const user = result.user;
-					// IdP data available using getAdditionalUserInfo(result)
-
-					this.updateLogin(user);
-				}).catch((error) => {
-					// The email of the user's account used.
-					const email = error.customData.email;
-					// The AuthCredential type that was used.
-					const credential = GoogleAuthProvider.credentialFromError(error);
-
-					console.log(error.code, error.message);
-			});
-		});
-
-	}
+	// not currently in use
+	// authByGoogle = () => {
+	// 	const googleAuthProvider = new GoogleAuthProvider();
+	// 	const auth = getAuth();
+	//
+	// 	signInWithRedirect(auth, googleAuthProvider).then(() => {
+	// 		getRedirectResult(auth)
+	// 			.then((result) => {
+	// 				// This gives a Google Access Token. Can use it to access Google APIs.
+	// 				const credential = GoogleAuthProvider.credentialFromResult(result);
+	// 				const token = credential.accessToken;
+	// 				// The signed-in user info.
+	// 				const user = result.user;
+	// 				// IdP data available using getAdditionalUserInfo(result)
+	//
+	// 				this._updateLogin(user);
+	// 			}).catch((error) => {
+	// 				// The email of the user's account used.
+	// 				const email = error.customData.email;
+	// 				// The AuthCredential type that was used.
+	// 				const credential = GoogleAuthProvider.credentialFromError(error);
+	//
+	// 				console.log(error.code, error.message);
+	// 		});
+	// 	});
+	// }
 
 	authByEmailLink = (e) => {
 		e.preventDefault();
@@ -193,7 +195,7 @@ export default class Firebase extends React.PureComponent {
 			});
 	}
 
-	verifySignInWithEmailLink() {
+	_verifySignInWithEmailLink() {
 		const auth = getAuth();
 		if (isSignInWithEmailLink(auth, window.location.href)) {
 			// Additional state parameters can also be passed via URL.
@@ -219,7 +221,7 @@ export default class Firebase extends React.PureComponent {
 					// result.additionalUserInfo.isNewUser
 
 					const user = result.user;
-					this.updateLogin(user);
+					this._updateLogin(user);
 				})
 				.catch((error) => {
 					// Some error occurred, you can inspect the code: error.code
@@ -239,7 +241,7 @@ export default class Firebase extends React.PureComponent {
 			.then((userCredential) => {
 				// Signed in
 				const user = userCredential.user;
-				this.updateLogin(user);
+				this._updateLogin(user);
 			})
 			.catch((error) => {
 				alert('Incorrect email or password. Please try again.');
@@ -256,15 +258,44 @@ export default class Firebase extends React.PureComponent {
 		});
 	}
 
-	setData(userId, data) {
-		set(ref(this.database, 'users/' + userId), {
-			data
+	/**
+	 * Save data to FB. Called by saveGameData in App.
+	 * Callback is updateLog
+	 * @param userId: string
+	 * @param data: object
+	 * @param callback: function
+	 */
+	setData = (userId, data, callback) => {
+		set(ref(this.database, `users/${userId}`), {...data}).then(() => {
+			callback('Game saved!');
+		}).catch((error) => {
+			console.error(error);
+		});
+	}
+
+	/**
+	 * Gets saved data from FB
+	 * @param userId: string
+	 * @param callback: function
+	 */
+	_getData(userId, callback) {
+		const dbRef = ref(this.database);
+		get(child(dbRef, `users/${userId}`)).then((snapshot) => {
+			if (snapshot.exists()) {
+				callback(snapshot.val());
+			} else {
+				console.log("No data available");
+				callback(null);
+			}
+		}).catch((error) => {
+			console.error(error);
+			callback(null);
 		});
 	}
 
 	componentDidMount() {
-		this.addGoogleScript();
-		this.verifySignInWithEmailLink();
+		// this.addGoogleScript();
+		this._verifySignInWithEmailLink();
 	}
 
 	render() {
