@@ -1200,6 +1200,27 @@ function GameOptions(props) {
 					</button>
 					<div className='small-text'>(Game autosaves when changing levels/areas but does NOT save when the app is closed!)</div>
 				</div>
+				<div className='game-options-row game-options-row-button-first'>
+					<button
+						className='general-button game-options-row-button'
+						onClick={() => {
+							const dialogProps = {
+								dialogContent: 'Are you sure you want to delete your saved data and restart?',
+								closeButtonText: 'Cancel',
+								closeButtonCallback: null,
+								disableCloseButton: false,
+								actionButtonVisible: true,
+								actionButtonText: 'Yes',
+								actionButtonCallback: props.resetAllData,
+								dialogClasses: ''
+							};
+							props.setShowDialogProps(true, dialogProps);
+							props.toggleOptionsPanel();
+						}}>
+						Restart Game
+					</button>
+					<div className='small-text'>This will delete all saved data (except game options) and restart the game from character creation.</div>
+				</div>
 			</div>
 			<button
 				className='dialog-button'

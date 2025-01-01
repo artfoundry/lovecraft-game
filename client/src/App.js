@@ -193,9 +193,9 @@ class Game extends React.PureComponent {
 				isIOS: navigator.userAgent.includes('iPhone OS')
 			},
 			userData: {},
-			firebaseGameData: null,
 			isLoginWindowRequested: false,
 			isLoggedIn: false,
+			firebaseGameData: null,
 			characterCreated: false,
 			createdCharData: null,
 			gameSetupComplete: false,
@@ -294,6 +294,72 @@ class Game extends React.PureComponent {
 		}, () => {
 			if (callback) callback();
 		})
+	}
+
+	resetAllData = () => {
+		this.setState({
+			firebaseGameData: null,
+			characterCreated: false,
+			createdCharData: null,
+			gameSetupComplete: false,
+			playerCharacters: {},
+			pcObjectOrdering: [],
+			pcTypes: PlayerCharacterTypes,
+			partyLevel: 1,
+			partyExpertise: 0,
+			partyJournal: {
+				quests: {}
+			},
+			savedMaps: {},
+			needToSaveData: false,
+			currentLocation: '',
+			currentFloor: 1,
+			previousFloor: null,
+			playerFollowOrder: [],
+			currentRound: 0,
+			showDialog: false,
+			dialogProps: {
+				dialogContent: this.initialDialogContent,
+				closeButtonText: 'Close',
+				closeButtonCallback: null,
+				disableCloseButton: false,
+				actionButtonVisible: false,
+				actionButtonText: '',
+				actionButtonCallback:  null,
+				dialogClasses: ''
+			},
+			sfxReverbProcessed: {},
+			// these need resetting on floor change
+			mapCreatures: {},
+			mapObjects: {},
+			envObjects: {},
+			creatureSpawnInfo: null,
+			unitsTurnOrder: [],
+			currentTurn: 0,
+			activeCharacter: !this.showCharacterCreation ? this.startingPlayerCharacters[0] : null,
+			activePlayerMovesCompleted: 0,
+			activePlayerActionsCompleted: 0,
+			followModePositions: [],
+			characterIsSelected: false,
+			creatureIsSelected: false,
+			selectedCharacter: '',
+			selectedCreature: '',
+			actionButtonSelected: null,
+			skillModeActive: null,
+			objectSelected: null,
+			objHasBeenDropped: false,
+			lightingHasChanged: false,
+			inTacticalMode: true,
+			threatList: [],
+			partyIsNearby: true,
+			inSearchMode: false,
+			contextMenuChoice: null,
+			centerOnPlayer: false,
+			centeredPlayer: '',
+			logText: []
+		}, () => {
+			this._saveGameData(null, true);
+		});
 	}
 
 	getScreenDimensions = () => {
@@ -1626,7 +1692,7 @@ class Game extends React.PureComponent {
 	 *********************/
 
 
-	_saveGameData(callback) {
+	_saveGameData(callback, isReset = false) {
 		const userId = this.state.userData.uid;
 		const dataToSave = {
 			gameOptions: this.state.gameOptions, // object
@@ -1651,7 +1717,9 @@ class Game extends React.PureComponent {
 			threatList: this.state.threatList // array
 		};
 		this.firebase.setData(userId, deepCopy(dataToSave, true), (logMessage) => {
-			this.updateLog(logMessage);
+			if (!isReset) {
+				this.updateLog(logMessage);
+			}
 			if (callback) callback();
 		});
 	}
@@ -2078,6 +2146,7 @@ class Game extends React.PureComponent {
 						updateGameOptions={this.updateGameOptions}
 						gameOptions={this.state.gameOptions}
 						toggleNeedToSaveData={this.toggleNeedToSaveData}
+						resetAllData={this.resetAllData}
 						objectPanelWidth={this.objectPanelWidth}
 						objectPanelHeight={this.objectPanelHeight}
 						contextMenuWidth={this.contextMenuWidth}

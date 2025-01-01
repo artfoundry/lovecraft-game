@@ -960,6 +960,8 @@ class UI extends React.PureComponent {
 					adjustMusicComponentVolume={this.adjustMusicComponentVolume}
 					screenData={this.props.screenData}
 					toggleNeedToSaveData={this.props.toggleNeedToSaveData}
+					setShowDialogProps={this.props.setShowDialogProps}
+					resetAllData={this.props.resetAllData}
 				/>
 			</div>
 		);
