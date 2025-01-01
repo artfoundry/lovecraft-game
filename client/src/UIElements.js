@@ -960,11 +960,12 @@ function CreatureInfoPanel(props) {
 function ModeInfoPanel(props) {
 	const ListOptions = () => {
 		let list = [];
-		for (const [id, player] of Object.entries(props.players)) {
+		props.pcObjectOrdering.forEach(id => {
+			const player = props.players[id];
 			if (!player.isDeadOrInsane) {
 				list.push(<option key={id} value={id}>{player.name}</option>);
 			}
-		}
+		});
 		return list;
 	};
 	let dyingPcName = '';
@@ -1191,6 +1192,14 @@ function GameOptions(props) {
 					idProp={`music-${props.gameOptions.songName}-theme`}
 					sourceName={props.gameOptions.songName}
 				/>
+				<div className='game-options-row game-options-row-button-first'>
+					<button
+						className='general-button game-options-row-button'
+						onClick={() => props.toggleNeedToSaveData(true)}>
+						Save Game
+					</button>
+					<div className='small-text'>(Game autosaves when changing levels/areas but does NOT save when the app is closed!)</div>
+				</div>
 			</div>
 			<button
 				className='dialog-button'

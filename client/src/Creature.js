@@ -7,7 +7,7 @@ class Creature extends React.PureComponent {
 		this.hitDie = 10;
 		this.defenseDie = 4;
 
-		this.id = props.creatureId;
+		this.id = props.id;
 		this.name = props.name;
 		this.type = props.type;
 		this.race = props.race;
@@ -23,16 +23,16 @@ class Creature extends React.PureComponent {
 		this.defense = props.defense;
 		this.damageReduction = props.damageReduction;
 		this.startingHealth = props.startingHealth;
-		this.currentHealth = props.startingHealth;
+		this.currentHealth = props.isSavedData ? props.currentHealth : props.startingHealth;
 		this.startingSpirit = props.startingSpirit;
-		this.currentSpirit = props.startingSpirit;
+		this.currentSpirit = props.isSavedData ? props.currentSpirit : props.startingSpirit;
 		this.range = props.range;
 		this.attackType = props.attackType;
 		this.moveSpeed = props.moveSpeed;
 		this.perception = props.perception;
 		this.skills = props.skills;
-		this.statuses = {};
-		this.isRemoved = false;
+		this.statuses = props.isSavedData ? props.statuses : {};
+		this.isRemoved = props.isSavedData ? props.isRemoved : false;
 	}
 
 	attack = (targetData, updateTarget, updateLog, toggleAudio, updateTurnCallback = null) => {

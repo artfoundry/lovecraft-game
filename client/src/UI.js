@@ -78,7 +78,8 @@ class UI extends React.PureComponent {
 	showControlBar = () => {
 		let controlPanels = [];
 
-		for (const [id, playerInfo] of Object.entries(this.props.playerCharacters)) {
+		this.props.pcObjectOrdering.forEach(id => {
+			const playerInfo = this.props.playerCharacters[id];
 			if (!playerInfo.isDeadOrInsane) {
 				// for setting up Pickup action and Open container/mineable action buttons
 				let mapObjectsOnPcTiles = [];
@@ -141,7 +142,7 @@ class UI extends React.PureComponent {
 					/>
 				)
 			}
-		}
+		});
 		return controlPanels;
 	}
 
@@ -888,6 +889,7 @@ class UI extends React.PureComponent {
 						players={this.props.playerCharacters}
 						activeCharacter={this.props.activeCharacter}
 						updateActiveCharacter={this.props.updateActiveCharacter}
+						pcObjectOrdering={this.props.pcObjectOrdering}
 						updateFollowModePositions={this.props.updateFollowModePositions}
 						updateCurrentTurn={this.props.updateCurrentTurn}
 					/>}
@@ -957,6 +959,7 @@ class UI extends React.PureComponent {
 					updateGameOptions={this.props.updateGameOptions}
 					adjustMusicComponentVolume={this.adjustMusicComponentVolume}
 					screenData={this.props.screenData}
+					toggleNeedToSaveData={this.props.toggleNeedToSaveData}
 				/>
 			</div>
 		);

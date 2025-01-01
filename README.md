@@ -13,6 +13,8 @@ Mobile friendly but works best on desktop!
 ---
 #### Current status:
 
+12/31/24: Adding game data saving to/loading from firebase
+
 12/27/24: Adding map level saving
 
 12/16/24: Adding character leveling
