@@ -122,9 +122,11 @@ function SoundEffect(props) {
 }
 
 function Music(props) {
-	return (<audio id={props.idProp} preload='auto' className='audio-music' loop>
-		<source src={musicMap[props.sourceName]} type='audio/mpeg' />
-	</audio>);
+	return (
+		<audio id={props.idProp} preload='auto' className='audio-music' loop>
+			<source src={musicMap[props.sourceName]} type='audio/mpeg' />
+		</audio>
+	);
 }
 
 export {ProcessAudio, SoundEffect, Music};

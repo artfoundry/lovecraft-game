@@ -1664,6 +1664,9 @@ class Game extends React.PureComponent {
 				}
 			}
 			ProcessAudio(selectorName, audioEl, processValues);
+			if (category === 'environments' && selectorName.includes('Background')) {
+				audioEl.loop = true;
+			}
 			audioEl.volume = this.state.gameOptions.fxVolume;
 			audioEl.play().catch(e => console.log(e));
 
