@@ -711,15 +711,20 @@ class Map extends React.PureComponent {
 				}
 			} else {
 				let creatureCoords = {};
-				for (const [genericId, stats] of Object.entries(this.currentMapData.creatures)) {
-			//TODO: change this logic and data in gameLocations.json to use same level/count format as objects
-					for (let i=0; i < stats.count; i++) {
-						const coords = convertPosToCoords(this._generateRandomLocation(creatureCoords));
-						const creatureId = genericId + i;
-						CreatureData[genericId].id = creatureId;
-						mapCreatures[creatureId] = new Creature(CreatureData[genericId]);
-						mapCreatures[creatureId].coords = coords;
-						creatureCoords[creatureId] = coords;
+				for (const [genericId, countInfo] of Object.entries(this.currentMapData.creatures)) {
+					const countPerFloorInfo = countInfo.countPerFloor[this.props.currentFloor];
+					if (countPerFloorInfo.number > 0 || countPerFloorInfo.variation > 0) {
+						const zeroOrPosOrNeg = diceRoll(3); // roll 1 = -1, roll 2 = 0, roll 3 = 1
+						const variation = (countPerFloorInfo.variation > 0 && zeroOrPosOrNeg !== 2) ? diceRoll(countPerFloorInfo.variation) * (zeroOrPosOrNeg === 1 ? -1 : 1) : 0;
+						const count = (countPerFloorInfo.number + variation) >= 0 ? countPerFloorInfo.number + variation : 0;
+						for (let i=0; i < count; i++) {
+							const coords = convertPosToCoords(this._generateRandomLocation(creatureCoords));
+							const creatureId = genericId + i;
+							CreatureData[genericId].id = creatureId;
+							mapCreatures[creatureId] = new Creature(CreatureData[genericId]);
+							mapCreatures[creatureId].coords = coords;
+							creatureCoords[creatureId] = coords;
+						}
 					}
 				}
 			}
@@ -746,30 +751,36 @@ class Map extends React.PureComponent {
 				const alwaysOnTheLookoutSkillInfo = this.props.playerCharacters.archaeologist ? this.props.playerCharacters.archaeologist.skills.alwaysOnTheLookout : null;
 				let relicChance = alwaysOnTheLookoutSkillInfo ? alwaysOnTheLookoutSkillInfo.modifier[alwaysOnTheLookoutSkillInfo.level] : 0;
 				for (const [itemName, itemInfo] of Object.entries(objectTypesInfo)) {
-					if (objectType === 'Relic') {
-						relicChance = (relicChance + itemInfo.chancePerFloor[this.props.currentFloor]) * 100;
-					}
-					if (objectType !== 'Relic' || (objectType === 'Relic' && (diceRoll(100) <= relicChance))) {
-						for (let i=0; i < itemInfo.countPerFloor[this.props.currentFloor]; i++) {
-							const itemInfo = objectType === 'Weapon' ? WeaponTypes[itemName] : ItemTypes[itemName];
-							const tileType = itemName === 'Torch' ? 'wall' : 'floor';
-							const lowerCaseName = itemName.slice(0, 1).toLowerCase() + itemName.slice(1, itemName.length).replaceAll(' ', '');
-							const itemID = lowerCaseName + (i + 1);
-							const gunType = objectType === 'Weapon' && itemInfo.gunType ? itemInfo.gunType : null;
-							const weaponCurrentRounds = gunType ? Math.round(Math.random() * itemInfo.rounds) : objectType === 'Weapon' ? 1 : null;
-							const coords = convertPosToCoords(this._generateRandomLocation(itemCoords, tileType)); // use this.props.playerCharacters['privateEye'].coords instead to easily test objects
-							mapItems[itemID] = {
-								...itemInfo,
-								name: itemName,
-								isIdentified: objectType !== 'Relic',
-								currentRounds: weaponCurrentRounds,
-								coords
-							};
-							mapItems[itemID].amount =
-								objectType === 'Ammo' ? Math.floor(Math.random() * 10) + 2 :
-								itemName === 'Oil' ? Math.floor(Math.random() * 90) + 10 :
-								objectType === 'Medicine' || objectType === 'Component' ? 1 : null;
-							itemCoords[itemID] = coords;
+					const countPerFloorInfo = itemInfo.countPerFloor[this.props.currentFloor];
+					if (countPerFloorInfo.number > 0 || countPerFloorInfo.variation > 0) {
+						if (objectType === 'Relic') {
+							relicChance = (relicChance + itemInfo.chancePerFloor[this.props.currentFloor]) * 100;
+						}
+						if (objectType !== 'Relic' || (objectType === 'Relic' && (diceRoll(100) <= relicChance))) {
+							const zeroOrPosOrNeg = diceRoll(3); // roll 1 = -1, roll 2 = 0, roll 3 = 1
+							const variation = (countPerFloorInfo.variation > 0 && zeroOrPosOrNeg !== 2) ? diceRoll(countPerFloorInfo.variation) * (zeroOrPosOrNeg === 1 ? -1 : 1) : 0;
+							const count = (countPerFloorInfo.number + variation) >= 0 ? countPerFloorInfo.number + variation : 0;
+							for (let i=0; i < count; i++) {
+								const itemInfo = objectType === 'Weapon' ? WeaponTypes[itemName] : ItemTypes[itemName];
+								const tileType = itemName === 'Torch' ? 'wall' : 'floor';
+								const lowerCaseName = itemName.slice(0, 1).toLowerCase() + itemName.slice(1, itemName.length).replaceAll(' ', '');
+								const itemID = lowerCaseName + (i + 1);
+								const gunType = objectType === 'Weapon' && itemInfo.gunType ? itemInfo.gunType : null;
+								const weaponCurrentRounds = gunType ? Math.round(Math.random() * itemInfo.rounds) : objectType === 'Weapon' ? 1 : null;
+								const coords = convertPosToCoords(this._generateRandomLocation(itemCoords, tileType)); // use this.props.playerCharacters['privateEye'].coords instead to easily test objects
+								mapItems[itemID] = {
+									...itemInfo,
+									name: itemName,
+									isIdentified: objectType !== 'Relic',
+									currentRounds: weaponCurrentRounds,
+									coords
+								};
+								mapItems[itemID].amount =
+									objectType === 'Ammo' ? Math.floor(Math.random() * 10) + 2 :
+									itemName === 'Oil' ? Math.floor(Math.random() * 90) + 10 :
+									objectType === 'Medicine' || objectType === 'Component' ? 1 : null;
+								itemCoords[itemID] = coords;
+							}
 						}
 					}
 				}
@@ -792,51 +803,57 @@ class Map extends React.PureComponent {
 		} else {
 			let itemCoords = {};
 			for (const [itemId, appearanceInfo] of Object.entries(this.currentMapData.envObjects)) {
-				for (let i=0; i < appearanceInfo.countPerFloor[this.props.currentFloor]; i++) {
-					const envItemInfo = EnvObjectTypes[itemId];
-					const lowerCaseName = itemId.slice(0, 1).toLowerCase() + itemId.slice(1, itemId.length).replaceAll(' ', '');
-					const uniqueItemId = lowerCaseName + (i + 1);
-					const coords = convertPosToCoords(this._generateRandomLocation(itemCoords, 'floor', true, envItemInfo.isPassable)); // this.props.playerCharacters['privateEye'].coords (to easily test objects)
-					let containerContents = [];
-					if (envItemInfo.type === 'container' || envItemInfo.type === 'mineable') {
-						// adding null option so container could have nothing
-						const itemNames = [...Object.keys(envItemInfo.mayContain), null];
-						const selectedItemIndex = diceRoll(itemNames.length) - 1;
-						if (itemNames[selectedItemIndex]) {
-							const selectedItemName = itemNames[selectedItemIndex];
-							const selectedItemUniqueId = selectedItemName.slice(0, 1).toLowerCase() + selectedItemName.slice(1, selectedItemName.length).replaceAll(' ', '') + '0';
-							const objectType = ItemTypes[selectedItemName] ? 'item' : 'weapon';
-							const selectedItemBaseInfo = objectType === 'item' ? ItemTypes[selectedItemName] : WeaponTypes[selectedItemName];
-							let selectedItemInfo = {
-								...selectedItemBaseInfo,
-								id: selectedItemUniqueId,
-								name: selectedItemName,
-								isIdentified: selectedItemBaseInfo.itemType !== 'Relic',
-								coords
-							};
-							const count = diceRoll(envItemInfo.mayContain[selectedItemName].max);
-							if (objectType === 'item' && selectedItemBaseInfo.stackable) {
-								selectedItemInfo.amount = count;
-							} else if (objectType === 'weapon' && (selectedItemBaseInfo.stackable || selectedItemBaseInfo.rounds)) {
-								selectedItemInfo.currentRounds = count
+				const countPerFloorInfo = appearanceInfo.countPerFloor[this.props.currentFloor];
+				if (countPerFloorInfo.number > 0 || countPerFloorInfo.variation > 0) {
+					const zeroOrPosOrNeg = diceRoll(3); // roll 1 = -1, roll 2 = 0, roll 3 = 1
+					const variation = (countPerFloorInfo.variation > 0 && zeroOrPosOrNeg !== 2) ? diceRoll(countPerFloorInfo.variation) * (zeroOrPosOrNeg === 1 ? -1 : 1) : 0;
+					const count = (countPerFloorInfo.number + variation) >= 0 ? countPerFloorInfo.number + variation : 0;
+					for (let i = 0; i < count; i++) {
+						const envItemInfo = EnvObjectTypes[itemId];
+						const lowerCaseName = itemId.slice(0, 1).toLowerCase() + itemId.slice(1, itemId.length).replaceAll(' ', '');
+						const uniqueItemId = lowerCaseName + (i + 1);
+						const coords = convertPosToCoords(this._generateRandomLocation(itemCoords, 'floor', true, envItemInfo.isPassable)); // this.props.playerCharacters['privateEye'].coords (to easily test objects)
+						let containerContents = [];
+						if (envItemInfo.type === 'container' || envItemInfo.type === 'mineable') {
+							// adding null option so container could have nothing
+							const itemNames = [...Object.keys(envItemInfo.mayContain), null];
+							const selectedItemIndex = diceRoll(itemNames.length) - 1;
+							if (itemNames[selectedItemIndex]) {
+								const selectedItemName = itemNames[selectedItemIndex];
+								const selectedItemUniqueId = selectedItemName.slice(0, 1).toLowerCase() + selectedItemName.slice(1, selectedItemName.length).replaceAll(' ', '') + '0';
+								const objectType = ItemTypes[selectedItemName] ? 'item' : 'weapon';
+								const selectedItemBaseInfo = objectType === 'item' ? ItemTypes[selectedItemName] : WeaponTypes[selectedItemName];
+								let selectedItemInfo = {
+									...selectedItemBaseInfo,
+									id: selectedItemUniqueId,
+									name: selectedItemName,
+									isIdentified: selectedItemBaseInfo.itemType !== 'Relic',
+									coords
+								};
+								const count = diceRoll(envItemInfo.mayContain[selectedItemName].max);
+								if (objectType === 'item' && selectedItemBaseInfo.stackable) {
+									selectedItemInfo.amount = count;
+								} else if (objectType === 'weapon' && (selectedItemBaseInfo.stackable || selectedItemBaseInfo.rounds)) {
+									selectedItemInfo.currentRounds = count
+								}
+								containerContents = [selectedItemInfo];
 							}
-							containerContents = [selectedItemInfo];
 						}
+						envObjects[uniqueItemId] = {
+							...envItemInfo,
+							name: itemId,
+							isIdentified: true,
+							isDestructible: envItemInfo.isDestructible,
+							isDestroyed: false,
+							containerContents,
+							isOpen: envItemInfo.type === 'container' ? false : null,
+							coords
+						};
+						if (envItemInfo.isHidden) {
+							envObjects[uniqueItemId].isDiscovered = false;
+						}
+						itemCoords[uniqueItemId] = coords;
 					}
-					envObjects[uniqueItemId] = {
-						...envItemInfo,
-						name: itemId,
-						isIdentified: true,
-						isDestructible: envItemInfo.isDestructible,
-						isDestroyed: false,
-						containerContents,
-						isOpen: envItemInfo.type === 'container' ? false : null,
-						coords
-					};
-					if (envItemInfo.isHidden) {
-						envObjects[uniqueItemId].isDiscovered = false;
-					}
-					itemCoords[uniqueItemId] = coords;
 				}
 			}
 		}

@@ -284,7 +284,7 @@ export default class Firebase extends React.PureComponent {
 			if (snapshot.exists()) {
 				callback(snapshot.val());
 			} else {
-				console.log("No data available");
+				console.log("No game save available");
 				callback(null);
 			}
 		}).catch((error) => {
