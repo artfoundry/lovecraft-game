@@ -120,8 +120,10 @@ class Map extends React.PureComponent {
 
 	/**
 	 * Save map data in App, which then saves all game data to FB
+	 * @param callback: function
+	 * @param areaChangeValue: number (1 or -1, otherwise undefined when not passed in)
 	 */
-	saveAllData = (callback, goingToNextArea) => {
+	saveAllData = (callback, areaChangeValue) => {
 		const mapData = {
 			playerVisited: deepCopy(this.state.playerVisited),
 			mapLayout: deepCopy(this.state.mapLayout),
@@ -129,7 +131,7 @@ class Map extends React.PureComponent {
 			nextAreaExitCoords: {...this.state.nextAreaExitCoords},
 			worldWidth: this.state.worldWidth,
 			worldHeight: this.state.worldHeight,
-			newFloorNum: goingToNextArea ? (this.props.currentFloor + (goingToNextArea ? 1 : -1)) : null
+			newFloorNum: areaChangeValue ? this.props.currentFloor + areaChangeValue : null
 		};
 		this.props.saveMapData(mapData, callback);
 	}
@@ -656,27 +658,25 @@ class Map extends React.PureComponent {
 		let previousPlayerCoords = null;
 		let playerPositions = [];
 
-		if (!this.state.usingSavedMapData) {
-			for (const playerID of Object.keys(this.props.playerCharacters)) {
-				let tilePos = '';
-				let newCoords = {};
-				if (!previousPlayerCoords) {
-					let startingCoords = {...this.state.previousAreaExitCoords};
-					if (this.props.previousFloor && this.props.previousFloor > this.props.currentFloor) {
-						startingCoords = {...savedMapData.nextAreaExitCoords};
-					}
-					tilePos = convertCoordsToPos(startingCoords);
-					newCoords = {...startingCoords};
-				} else {
-					// look for empty nearby tile to place 2nd/3rd PC
-					tilePos = this._findNearbyAvailableTile(previousPlayerCoords, playerPositions);
-					newCoords = convertPosToCoords(tilePos);
+		for (const playerID of Object.keys(this.props.playerCharacters)) {
+			let tilePos = '';
+			let newCoords = {};
+			if (!previousPlayerCoords) {
+				let startingCoords = {...this.state.previousAreaExitCoords};
+				if (this.props.previousFloor && this.props.previousFloor > this.props.currentFloor) {
+					startingCoords = {...savedMapData.nextAreaExitCoords};
 				}
-				playerPositions.push(tilePos);
-				previousPlayerCoords = {...newCoords};
-				playerVisited = Object.assign(playerVisited, this._findNewVisitedTiles(newCoords, playerID));
-				updatedPlayerData[playerID].coords = {...newCoords};
+				tilePos = convertCoordsToPos(startingCoords);
+				newCoords = {...startingCoords};
+			} else {
+				// look for empty nearby tile to place 2nd/3rd PC
+				tilePos = this._findNearbyAvailableTile(previousPlayerCoords, playerPositions);
+				newCoords = convertPosToCoords(tilePos);
 			}
+			playerPositions.push(tilePos);
+			previousPlayerCoords = {...newCoords};
+			playerVisited = Object.assign(playerVisited, this._findNewVisitedTiles(newCoords, playerID));
+			updatedPlayerData[playerID].coords = {...newCoords};
 		}
 
 		this.props.updateCharacters('player', updatedPlayerData, null, false, false, true, () => {
@@ -1129,9 +1129,9 @@ class Map extends React.PureComponent {
 		if (exitType === 'nextArea') {
 			if (this.props.currentFloor < this.currentMapData.numOfFloors) {
 				// for testing: to put two stairs next to each other, uncomment below and comment out third line
-				// const prevArea = {...this.state.previousAreaExitCoords};
-				// this.setState({nextAreaExitCoords: {xPos: prevArea.xPos+1, yPos: prevArea.yPos}}, callback);
-				this.setState({nextAreaExitCoords: exitCoords}, callback);
+				const prevArea = {...this.state.previousAreaExitCoords};
+				this.setState({nextAreaExitCoords: {xPos: prevArea.xPos+1, yPos: prevArea.yPos}}, callback);
+				// this.setState({nextAreaExitCoords: exitCoords}, callback);
 			} else if (callback) {
 				callback();
 			}
@@ -1673,7 +1673,7 @@ class Map extends React.PureComponent {
 					actionButtonVisible: true,
 					actionButtonText: 'Take the stairs',
 					actionButtonCallback: () => {
-						this.saveAllData(this.resetMap, goingToNextArea);
+						this.saveAllData(this.resetMap, goingToNextArea ? 1 : -1);
 					},
 					dialogClasses: ''
 				};
@@ -3039,6 +3039,9 @@ class Map extends React.PureComponent {
 		}
 		if (this.props.needToSaveData && prevProps.needToSaveData !== this.props.needToSaveData) {
 			this.saveAllData();
+		}
+		if (prevProps.currentLocation !== this.props.currentLocation || prevProps.currentFloor !== this.props.currentFloor) {
+			this.props.toggleAudio('environments', this.props.currentLocation + 'Background');
 		}
 	}
 

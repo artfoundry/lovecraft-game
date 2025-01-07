@@ -226,6 +226,7 @@ as box-shadow greatly dims the lighting */
 	pointer-events: none;
 	user-select: none;
 	transition: opacity 0.5s;
+	z-index: 1;
 }
 
 .sarcophagus {
