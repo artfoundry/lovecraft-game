@@ -63,7 +63,7 @@ h3 {
 	position: fixed;
 	display: grid;
 	grid-template-columns: 500px 1fr 300px 50px;
-	grid-template-rows: 130px 1fr 163px;
+	grid-template-rows: 140px 1fr 163px;
 	grid-template-areas:
         "turnInfo turnInfo turnInfo turnInfo"
         "characterInfo . creatureInfo creatureInfo"
@@ -281,7 +281,7 @@ h3 {
 	display: flex;
 	justify-self: center;
 	width: 100%;
-	max-height: 130px;
+	max-height: 140px;
 	border: 2px solid seagreen;
 	border-top: 0;
 	border-radius: 0 0 5px 5px;
@@ -321,6 +321,64 @@ h3 {
 	border-left: 1px solid seagreen;
 	border-right: 1px solid seagreen;
 	box-sizing: border-box;
+}
+
+.follow-order-list-container {
+	display: flex;
+	margin: 5px 0;
+}
+
+.follow-order-member-slot {
+	padding: 2px;
+	border: 1px solid seagreen;
+	border-radius: 3px;
+}
+
+.follow-order-index {
+	position: absolute;
+}
+
+.follow-order-member {
+	width: 32px;
+	height: 32px;
+	cursor: pointer;
+	touch-action: none;
+	user-select: none;
+	background-position: center;
+	background-repeat: no-repeat;
+	background-size: 32px 32px;
+}
+
+.follow-member-private-eye {
+	background-image: url('../assets/characters/players/private-eye.png');
+}
+
+.follow-member-archaeologist {
+	background-image: url('../assets/characters/players/archaeologist.png');
+}
+
+.follow-member-chemist {
+	background-image: url('../assets/characters/players/chemist.png');
+}
+
+.follow-member-doctor {
+	background-image: url('../assets/characters/players/doctor.png');
+}
+
+.follow-member-priest {
+	background-image: url('../assets/characters/players/priest.png');
+}
+
+.follow-member-veteran {
+	background-image: url('../assets/characters/players/veteran.png');
+}
+
+.follow-member-thief {
+	background-image: url('../assets/characters/players/thief.png');
+}
+
+.follow-member-occult-researcher {
+	background-image: url('../assets/characters/players/occult-researcher.png');
 }
 
 .character-info-container {

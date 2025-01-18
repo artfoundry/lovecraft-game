@@ -889,7 +889,7 @@ class UI extends React.PureComponent {
 						players={this.props.playerCharacters}
 						activeCharacter={this.props.activeCharacter}
 						updateActiveCharacter={this.props.updateActiveCharacter}
-						pcObjectOrdering={this.props.pcObjectOrdering}
+						playerFollowOrder={this.props.playerFollowOrder}
 						updateFollowModePositions={this.props.updateFollowModePositions}
 						updateCurrentTurn={this.props.updateCurrentTurn}
 					/>}

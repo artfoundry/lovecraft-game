@@ -200,7 +200,7 @@ class Game extends React.PureComponent {
 			createdCharData: null,
 			gameSetupComplete: false,
 			playerCharacters: {},
-			pcObjectOrdering: [],
+			pcObjectOrdering: [], // order of pcs for determining control bar order
 			pcTypes: PlayerCharacterTypes,
 			partyLevel: 1,
 			partyExpertise: 0,
@@ -212,7 +212,7 @@ class Game extends React.PureComponent {
 			currentLocation: '',
 			currentFloor: 1,
 			previousFloor: null,
-			playerFollowOrder: [],
+			playerFollowOrder: [], // order of pcs for follow mode
 			// 1 round is going through all chars' turns; used for keeping track of char statuses
 			currentRound: 0,
 			showDialog: false,
@@ -237,7 +237,7 @@ class Game extends React.PureComponent {
 			activeCharacter: !this.showCharacterCreation ? this.startingPlayerCharacters[0] : null,
 			activePlayerMovesCompleted: 0,
 			activePlayerActionsCompleted: 0,
-			followModePositions: [],
+			followModePositions: [], // list of tile positions used for moving pcs in order
 			characterIsSelected: false,
 			creatureIsSelected: false,
 			selectedCharacter: '',
@@ -1451,13 +1451,14 @@ class Game extends React.PureComponent {
 	 * Updates to state what character is active (PC or NPC)
 	 * @param callback: function (optional - at start, sets flag that chars are placed, then for PCs moves map to center)
 	 * @param id: String (optional)
+	 * @param newFollowOrder: Array (of strings - pc IDs - sent from Mode Info Panel in UIElements)
 	 * @param restoreFromFB: boolean (only true upon first loading game if fb data exists)
 	 */
-	updateActiveCharacter = (callback = null, id = null, restoreFromFB = false) => {
+	updateActiveCharacter = (callback = null, id = null, newFollowOrder = null, restoreFromFB = false) => {
 		const currentTurnUnitInfo = Object.values(this.state.unitsTurnOrder[this.state.currentTurn])[0];
 		const activeCharacter = restoreFromFB ? this.state.firebaseGameData.activeCharacter : (id || currentTurnUnitInfo.id);
-		let playerFollowOrder = [...this.state.playerFollowOrder];
-		if (!this.state.inTacticalMode) {
+		let playerFollowOrder = newFollowOrder ? [...newFollowOrder] : [...this.state.playerFollowOrder];
+		if (!this.state.inTacticalMode && !newFollowOrder) {
 			let newLeader = playerFollowOrder.splice(playerFollowOrder.indexOf(id), 1)[0];
 			playerFollowOrder.unshift(newLeader);
 		}
@@ -1934,7 +1935,7 @@ class Game extends React.PureComponent {
 		this.setState({unitsTurnOrder}, () => {
 			if (unitType === 'mapCreatures') {
 				if (fbGameData && !this.state.activeCharacter) {
-					this.updateActiveCharacter(callback, null, true);
+					this.updateActiveCharacter(callback, null, null, true);
 				} else {
 					this.updateActiveCharacter(callback);
 				}
@@ -2220,6 +2221,7 @@ class Game extends React.PureComponent {
 						toggleTacticalMode={this.toggleTacticalMode}
 						isPartyNearby={this.state.partyIsNearby}
 						modeInfo={{inTacticalMode: this.state.inTacticalMode, turn: this.state.currentTurn + 1}}
+						playerFollowOrder={this.state.playerFollowOrder}
 						updateFollowModePositions={this.updateFollowModePositions}
 						pcObjectOrdering={this.state.pcObjectOrdering}
 

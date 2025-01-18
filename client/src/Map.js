@@ -1129,9 +1129,9 @@ class Map extends React.PureComponent {
 		if (exitType === 'nextArea') {
 			if (this.props.currentFloor < this.currentMapData.numOfFloors) {
 				// for testing: to put two stairs next to each other, uncomment below and comment out third line
-				const prevArea = {...this.state.previousAreaExitCoords};
-				this.setState({nextAreaExitCoords: {xPos: prevArea.xPos+1, yPos: prevArea.yPos}}, callback);
-				// this.setState({nextAreaExitCoords: exitCoords}, callback);
+				// const prevArea = {...this.state.previousAreaExitCoords};
+				// this.setState({nextAreaExitCoords: {xPos: prevArea.xPos+1, yPos: prevArea.yPos}}, callback);
+				this.setState({nextAreaExitCoords: exitCoords}, callback);
 			} else if (callback) {
 				callback();
 			}
