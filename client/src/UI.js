@@ -225,6 +225,7 @@ class UI extends React.PureComponent {
 	 * @param recipientId: string
 	 */
 	dropItemToPC = (evt, recipientId) => {
+		if (!this.state.objectIsSelected) return; //prevent dragging of non-item (like follow ordering icon) to pc
 		const draggedItem = this.state.objectSelected;
 		const draggedObjectMetaData = this.state.draggedObjectMetaData;
 		const allPCdata = deepCopy(this.props.playerCharacters);
@@ -263,7 +264,7 @@ class UI extends React.PureComponent {
 				this.props.addItemToPlayerInventory(draggedItem, invId, recipientId, false, false);
 			});
 		}
-
+		this.resetObjectIsSelected();
 		if (dialogProps) {
 			this.props.setShowDialogProps(true, dialogProps);
 		}
@@ -275,7 +276,7 @@ class UI extends React.PureComponent {
 	 * @param evt
 	 */
 	dropItemToEquipped = (evt) => {
-		if (!this.state.objectSelected || Object.keys(this.state.objectSelected).length === 0) {
+		if (!this.state.objectIsSelected || !this.state.objectSelected || Object.keys(this.state.objectSelected).length === 0) {
 			return;
 		}
 		const draggedItem = this.state.objectSelected;
@@ -400,7 +401,9 @@ class UI extends React.PureComponent {
 			}
 		}
 
-		this.props.updateCharacters('player', updateData, this.props.selectedCharacterInfo.id, lightingChanged, false, false);
+		this.props.updateCharacters('player', updateData, this.props.selectedCharacterInfo.id, lightingChanged, false, false, () => {
+			this.resetObjectIsSelected();
+		});
 	}
 
 	/**
@@ -409,7 +412,7 @@ class UI extends React.PureComponent {
 	 * @param evt
 	 */
 	dropItemToInv = (evt) => {
-		if (!this.state.objectSelected || Object.keys(this.state.objectSelected).length === 0) {
+		if (!this.state.objectIsSelected || !this.state.objectSelected || Object.keys(this.state.objectSelected).length === 0) {
 			return;
 		}
 		const draggedItem = this.state.objectSelected;
@@ -465,7 +468,9 @@ class UI extends React.PureComponent {
 			// replace contents of source spot with replaced destination item
 			updateData.inventory.splice(sourceBoxIndex, 1, destBoxContents);
 		}
-		this.props.updateCharacters('player', updateData, this.props.selectedCharacterInfo.id, lightingChanged, false, false);
+		this.props.updateCharacters('player', updateData, this.props.selectedCharacterInfo.id, lightingChanged, false, false, () => {
+			this.resetObjectIsSelected();
+		});
 	}
 
 	/**
@@ -543,6 +548,7 @@ class UI extends React.PureComponent {
 		} else if (draggedObject.currentRounds) {
 			draggedObject.currentRounds = draggedItemCount;
 		}
+		this.resetObjectIsSelected();
 		this.updateSourcePcInvAfterTransfer(invObjectCategory, sourceItemCount, sourcePcData, false, () => {
 			const mapObjects = deepCopy(this.props.mapObjects);
 			const draggedObjGenericId = draggedObject.id.match(/\D+/)[0];
@@ -561,6 +567,10 @@ class UI extends React.PureComponent {
 			}
 			this.props.updateMapObjects(mapObjects, lightingChanged, () => this.props.setHasObjBeenDropped({objHasBeenDropped: false, evt: null}));
 		});
+	}
+
+	resetObjectIsSelected = () => {
+		this.setState({objectIsSelected: false});
 	}
 
 	/**
@@ -915,6 +925,7 @@ class UI extends React.PureComponent {
 					dropItemToEquipped={this.dropItemToEquipped}
 					setHasObjBeenDropped={this.props.setHasObjBeenDropped}
 					notEnoughSpaceDialogProps={this.props.notEnoughSpaceDialogProps}
+					objectIsSelected={this.state.objectIsSelected}
 				/>}
 
 				{this.props.selectedCreatureInfo &&

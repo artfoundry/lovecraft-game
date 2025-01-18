@@ -633,7 +633,11 @@ function CharacterInfoPanel(props) {
 					<div>
 						<div className='char-info-item-drop-zone'
 						     onDragOver={evt => handleItemOverDropZone(evt)}
-						     onDrop={evt => props.setHasObjBeenDropped({objHasBeenDropped: true, evt})}
+						     onDrop={evt => {
+							     if (props.objectIsSelected) {
+								     props.setHasObjBeenDropped({objHasBeenDropped: true, evt})
+							     }
+						     }}
 						></div>
 						<span>Drag item here to drop</span>
 					</div>
@@ -971,6 +975,7 @@ function ModeInfoPanel(props) {
 						className='follow-order-member-slot'
 						onDragOver={evt => handleItemOverDropZone(evt)}
 						onDrop={evt => {
+							if (!draggedFollowerIndex) return; //prevent dragging of other objects to these slots
 							const orderSlot = evt.target.parentNode;
 							const orderSlotIndex = orderSlot.id[0];
 							const swappedFollowerId = props.playerFollowOrder[orderSlotIndex];
