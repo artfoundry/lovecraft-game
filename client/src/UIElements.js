@@ -963,7 +963,7 @@ function CreatureInfoPanel(props) {
 
 function ModeInfoPanel(props) {
 	const ListOptions = () => {
-		let draggedFollowerIndex;
+		let draggedFollowerIndex = null;
 		let list = [];
 		props.playerFollowOrder.forEach((id, index) => {
 			const player = props.players[id];
@@ -973,9 +973,10 @@ function ModeInfoPanel(props) {
 						id={index + '-slot'}
 						key={id}
 						className='follow-order-member-slot'
+						draggable={false}
 						onDragOver={evt => handleItemOverDropZone(evt)}
 						onDrop={evt => {
-							if (!draggedFollowerIndex) return; //prevent dragging of other objects to these slots
+							if (draggedFollowerIndex === null) return; //prevent dragging of other objects to these slots
 							const orderSlot = evt.target.parentNode;
 							const orderSlotIndex = orderSlot.id[0];
 							const swappedFollowerId = props.playerFollowOrder[orderSlotIndex];
@@ -990,7 +991,6 @@ function ModeInfoPanel(props) {
 					>
 						<span className='follow-order-index'>{index+1}</span>
 						<div
-							id={index + 'follower'}
 							className={`follow-order-member follow-member-${convertObjIdToClassId(id)}`}
 							draggable={true}
 							onDragStart={() => draggedFollowerIndex = index}
