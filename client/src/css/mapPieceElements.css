@@ -26,11 +26,11 @@
 	position: absolute;
 	box-sizing: border-box;
 	transition: opacity 0.5s;
-	box-shadow: 0 0 64px 16px black; /* for blended lighting */
+	box-shadow: 0 0 64px 32px black; /* for blended lighting */
 }
 
 /* for blended lighting using above box-shadow, need to lower all light class opacities below
-from 0.4-0.8 (str 1-5), 0.9 (ambient) to 0-0.6 (str 1-5), 0.75 (ambient) (except no-light)
+from 0.4-0.8 (str 1-5), 0.9 (ambient) to 0-0.6 (str 1-5), 0.6 (ambient) (except no-light)
 as box-shadow greatly dims the lighting */
 
 .light-strength-5 {
@@ -38,19 +38,19 @@ as box-shadow greatly dims the lighting */
 }
 
 .light-strength-4 {
-	opacity: 0.1;
+	opacity: 0.07;
 }
 
 .light-strength-3 {
-	opacity: 0.2;
+	opacity: 0.14;
 }
 
 .light-strength-2 {
-	opacity: 0.3;
+	opacity: 0.21;
 }
 
 .light-strength-1 {
-	opacity: 0.4;
+	opacity: 0.28;
 }
 
 .ambient-light {
