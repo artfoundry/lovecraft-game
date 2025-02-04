@@ -1,5 +1,5 @@
 import React from 'react';
-import {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, DialogWindow, ContextMenu, HelpScreen, GameOptions} from './UIElements';
+import {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, PartyInfoPanel, JournalWindow, DialogWindow, ContextMenu, HelpScreen, GameOptions} from './UIElements';
 import {convertCoordsToPos, notEnoughSpaceInInventory, deepCopy} from './Utils';
 import './css/ui.css';
 
@@ -23,6 +23,7 @@ class UI extends React.PureComponent {
 		this.state = {
 			showGameOptions: false,
 			showHelpScreen: false,
+			showJournal: false,
 			logText: this.props.logText,
 			controlBarMinimized: false,
 			selectedControlTab: '',
@@ -57,6 +58,12 @@ class UI extends React.PureComponent {
 
 	closeDialog = () => {
 		this.props.setShowDialogProps(false);
+	}
+
+	setShowJournal = () => {
+		this.setState(prevState => ({
+			showJournal: !prevState.showJournal
+		}));
 	}
 
 	addLogLines = () => {
@@ -878,13 +885,29 @@ class UI extends React.PureComponent {
 				/>}
 
 				<div ref={this.uiRefs.turnInfo} className='turn-info-container ui-panel'>
-					<div ref={this.uiRefs.log} className='log-container'>
+					<div ref={this.uiRefs.log} id='log-container'>
 						{this.state.logText &&
 						<div className='log-lines'>
 							<this.addLogLines />
 						</div>
 						}
 					</div>
+
+					{this.props.currentLocation && this.props.partyExpertise && this.props.partyLevel &&
+					<PartyInfoPanel
+						currentLocation={this.props.currentLocation}
+						currentFloor={this.props.currentFloor}
+						partyLevel={this.props.partyLevel}
+						partyExpertise={this.props.partyExpertise}
+						expertisePointLevels={this.props.expertisePointLevels}
+						setShowJournal={this.setShowJournal}
+					/>}
+
+					{this.state.showJournal &&
+					<JournalWindow
+						partyJournal={this.props.partyJournal}
+						setShowJournal={this.setShowJournal}
+					/>}
 
 					{this.props.modeInfo &&
 					<ModeInfoPanel

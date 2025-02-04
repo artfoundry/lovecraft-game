@@ -205,7 +205,8 @@ class Game extends React.PureComponent {
 			partyLevel: 1,
 			partyExpertise: 0,
 			partyJournal: {
-				quests: {}
+				activeQuests: {},
+				completedQuests: {}
 			},
 			savedMaps: {},
 			needToSaveData: false,
@@ -2154,6 +2155,7 @@ class Game extends React.PureComponent {
 
 				{this.state.isLoggedIn && this.state.gameSetupComplete &&
 					<UI
+						// screen/ui data
 						screenData={this.state.screenData}
 						updateGameOptions={this.updateGameOptions}
 						gameOptions={this.state.gameOptions}
@@ -2164,16 +2166,16 @@ class Game extends React.PureComponent {
 						contextMenuWidth={this.contextMenuWidth}
 						contextMenuHeight={this.contextMenuHeight}
 						uiControlBarHeight={this.uiControlBarHeight}
-
+						// dialogs
 						showDialog={this.state.showDialog}
 						setShowDialogProps={this.setShowDialogProps}
 						dialogProps={this.state.dialogProps}
 						notEnoughSpaceDialogProps={this.notEnoughSpaceDialogProps}
 						noMoreActionsDialogProps={this.noMoreActionsDialogProps}
-
+						// logging
 						logText={this.state.logText}
 						updateLog={this.updateLog}
-
+						// character info
 						selectedCharacterInfo={this.state.playerCharacters[this.state.selectedCharacter]}
 						selectedCreatureInfo={this.state.mapCreatures[this.state.selectedCreature]}
 						characterIsSelected={this.state.characterIsSelected}
@@ -2182,7 +2184,7 @@ class Game extends React.PureComponent {
 						updateCharacters={this.updateCharacters}
 						getAllCharactersPos={this.getAllCharactersPos}
 						playerInventoryLimit={this.playerInventoryLimit}
-
+						// object info
 						setMapObjectSelected={this.setMapObjectSelected}
 						objectSelected={this.state.objectSelected}
 						objHasBeenDropped={this.state.objHasBeenDropped}
@@ -2190,12 +2192,12 @@ class Game extends React.PureComponent {
 						addItemToPlayerInventory={this.addItemToPlayerInventory}
 						toggleLightingHasChanged={this.toggleLightingHasChanged}
 						determineIfShouldSpawnCreature={this.determineIfShouldSpawnCreature}
-
+						// map object info
 						updateMapObjects={this.updateMapObjects}
 						mapObjects={this.state.mapObjects}
 						updateMapEnvObjects={this.updateMapEnvObjects}
 						envObjects={this.state.envObjects}
-
+						// control bars
 						actionButtonSelected={this.state.actionButtonSelected}
 						skillModeActive={this.state.skillModeActive}
 						toggleActionButton={this.toggleActionButton}
@@ -2203,19 +2205,17 @@ class Game extends React.PureComponent {
 						refillLight={this.refillLight}
 						lightTimeCosts={this.lightTimeCosts}
 						notEnoughLightDialogProps={this.notEnoughLightDialogProps}
-
-						handleContextMenuSelection={this.handleContextMenuSelection}
-						contextMenu={this.state.contextMenu}
-						toggleCenterOnPlayer={this.toggleCenterOnPlayer}
-
-						currentLocation={this.state.currentLocation}
-						updateCurrentTurn={this.updateCurrentTurn}
 						activeCharacter={this.state.activeCharacter}
-						updateActiveCharacter={this.updateActiveCharacter}
 						playerCharacters={this.state.playerCharacters}
 						actionsCompleted={{moves: this.state.activePlayerMovesCompleted, actions: this.state.activePlayerActionsCompleted}}
 						playerLimits={{moves: playerMoveLimit, actions: this.playerActionsLimit}}
-
+						// context menu
+						handleContextMenuSelection={this.handleContextMenuSelection}
+						contextMenu={this.state.contextMenu}
+						toggleCenterOnPlayer={this.toggleCenterOnPlayer}
+						// mode info panel
+						updateCurrentTurn={this.updateCurrentTurn}
+						updateActiveCharacter={this.updateActiveCharacter}
 						threatList={this.state.threatList}
 						inTacticalMode={this.state.inTacticalMode}
 						toggleTacticalMode={this.toggleTacticalMode}
@@ -2224,29 +2224,34 @@ class Game extends React.PureComponent {
 						playerFollowOrder={this.state.playerFollowOrder}
 						updateFollowModePositions={this.updateFollowModePositions}
 						pcObjectOrdering={this.state.pcObjectOrdering}
-
 						inSearchMode={this.state.inSearchMode}
 						toggleSearchMode={this.toggleSearchMode}
-
+						// party status panel
+						currentLocation={this.state.currentLocation}
+						currentFloor={this.state.currentFloor}
+						expertisePointLevels={this.expertisePointLevels}
+						// party journal panel
+						partyJournal={this.state.partyJournal}
+						// pc leveling
 						partyLevel={this.state.partyLevel}
 						partyExpertise={this.state.partyExpertise}
 						assignLevelUpPoints={this.assignLevelUpPoints}
-						partyJournal={this.state.partyJournal}
 					/>
 				}
 
 				{this.state.isLoggedIn && this.state.gameSetupComplete &&
 					<Map
+						// game/screen data
 						screenData={this.state.screenData}
 						gameOptions={this.state.gameOptions}
 						objectPanelWidth={this.objectPanelWidth}
 						needToSaveData={this.state.needToSaveData}
-
+						// dialogs
 						setShowDialogProps={this.setShowDialogProps}
 						notEnoughSpaceDialogProps={this.notEnoughSpaceDialogProps}
 						noMoreActionsDialogProps={this.noMoreActionsDialogProps}
 						noMoreMovesDialogProps={this.noMoreMovesDialogProps}
-
+						// character info
 						pcTypes={this.state.pcTypes}
 						playerCharacters={this.state.playerCharacters}
 						activeCharacter={this.state.activeCharacter}
@@ -2258,7 +2263,7 @@ class Game extends React.PureComponent {
 						updateCharacters={this.updateCharacters}
 						calcPcLightChanges={this.calcPcLightChanges}
 						lightTimeCosts={this.lightTimeCosts}
-
+						// map object data
 						saveMapData={this.saveMapData}
 						savedMaps={this.state.savedMaps}
 						updateMapObjects={this.updateMapObjects}
@@ -2270,15 +2275,15 @@ class Game extends React.PureComponent {
 						toggleLightingHasChanged={this.toggleLightingHasChanged}
 						creatureSpawnInfo={this.state.creatureSpawnInfo}
 						spawnCreature={this.spawnCreature}
-
+						// turn info
 						currentTurn={this.state.currentTurn}
 						updateCurrentTurn={this.updateCurrentTurn}
-
+						// environment info
 						currentLocation={this.state.currentLocation}
 						currentFloor={this.state.currentFloor}
 						previousFloor={this.state.previousFloor}
 						resetDataForNewFloor={this.resetDataForNewFloor}
-
+						// ui data/control
 						updateLog={this.updateLog}
 						actionButtonSelected={this.state.actionButtonSelected}
 						isContextMenuNeeded={this.isContextMenuNeeded}
@@ -2288,7 +2293,7 @@ class Game extends React.PureComponent {
 						centerOnPlayer={this.state.centerOnPlayer}
 						toggleCenterOnPlayer={this.toggleCenterOnPlayer}
 						toggleAudio={this.toggleAudio}
-
+						// modes info
 						updateThreatList={this.updateThreatList}
 						threatList={this.state.threatList}
 						toggleTacticalMode={this.toggleTacticalMode}
@@ -2298,7 +2303,6 @@ class Game extends React.PureComponent {
 						playerFollowOrder={this.state.playerFollowOrder}
 						updateFollowModePositions={this.updateFollowModePositions}
 						followModePositions={this.state.followModePositions}
-
 						inSearchMode={this.state.inSearchMode}
 						skillModeActive={this.state.skillModeActive}
 					/>

@@ -12,6 +12,10 @@ export function convertObjIdToClassId(id) {
 	return convertCamelToKabobCase(removeIdNumber(id));
 }
 
+export function capitalizeWord(word) {
+	return word[0].toUpperCase() + word.substring(1);
+}
+
 export function convertPosToCoords(pos) {
 	const coordArr = pos.split('-').map(val => parseInt(val));
 	return {xPos: coordArr[0], yPos: coordArr[1]};
