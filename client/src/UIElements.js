@@ -1116,15 +1116,23 @@ function PartyInfoPanel(props) {
 }
 
 function JournalWindow(props) {
+	const activeQuests = [];
+	const completedQuests = [];
+	props.partyJournal.activeQuests.forEach(quest => {
+		activeQuests.push(<div>{quest.name}: {quest.description}</div>);
+	});
+	props.partyJournal.completedQuests.forEach(quest => {
+		completedQuests.push(<div>{quest.name}: {quest.description}</div>);
+	});
 	return (
 		<div className='dialog ui-panel'>
 			<div className='general-button dialog-button-x' onClick={() => props.setShowJournal()}>X</div>
 			<div className='dialog-message'>Active missions:</div>
 			{/*placeholder*/}
-			<div>{props.partyJournal.activeQuests}</div>
+			<div>{activeQuests}</div>
 			<div className='dialog-message'>Completed missions:</div>
 			{/*placeholder*/}
-			<div>{props.partyJournal.completedQuests}</div>
+			<div>{completedQuests}</div>
 		</div>
 	);
 }

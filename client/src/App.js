@@ -213,8 +213,8 @@ class Game extends React.PureComponent {
 			partyLevel: 1,
 			partyExpertise: 0,
 			partyJournal: {
-				activeQuests: {},
-				completedQuests: {}
+				activeQuests: [],
+				completedQuests: []
 			},
 			savedMaps: {},
 			needToSaveData: false,

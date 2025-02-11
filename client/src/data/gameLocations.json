@@ -13,7 +13,7 @@
 			},
 			"flyingPolyp": {
 				"countPerFloor": {
-					"1": {"number": 20, "variation": 2},
+					"1": {"number": 2, "variation": 2},
 					"2": {"number": 5, "variation": 2},
 					"3": {"number": 7, "variation": 2}
 				}

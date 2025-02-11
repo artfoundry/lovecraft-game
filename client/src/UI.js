@@ -893,7 +893,7 @@ class UI extends React.PureComponent {
 						}
 					</div>
 
-					{this.props.currentLocation && this.props.partyExpertise && this.props.partyLevel &&
+					{this.props.currentLocation &&
 					<PartyInfoPanel
 						currentLocation={this.props.currentLocation}
 						currentFloor={this.props.currentFloor}
