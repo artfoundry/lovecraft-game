@@ -21,17 +21,22 @@
     "skills": {
       "Sleep": {
         "type": "active",
-        "description": "Put a target to sleep for 1-4 turns",
+        "description": "Puts a target to sleep for 1-4 turns.",
+        "status": "Sleeping",
+        "maxTurns": 4,
         "spirit": 30
       },
       "Confuse": {
         "type": "active",
-        "description": "Confuse a target, causing it to act randomly for 1-4 turns",
+        "description": "Confuses a target, causing it to act randomly for 1-4 turns.",
+        "status": "Confused",
+        "maxTurns": 4,
         "spirit": 40
       },
       "Re-energize": {
         "type": "passive",
-        "description": "Regenerate Spirit at a rate of 5 per turn"
+        "description": "Regenerates Spirit at a rate of 5 per turn.",
+        "amount": 5
       }
     }
   },
@@ -48,12 +53,25 @@
     "defense": 7,
     "damageReduction": 0,
     "startingHealth": 15,
-    "startingSpirit": 8,
+    "startingSpirit": 10,
     "range": 1,
     "attackType": "melee",
-    "moveSpeed": 1,
+    "moveSpeed": 2,
     "perception": 3,
-    "skills": {}
+    "skills": {
+      "Slow": {
+        "type": "active",
+        "description": "Poisons the target to reduce movement speed and action count to one each.",
+        "status": "Slowed",
+        "maxTurns": 2,
+        "spirit": 5
+      },
+      "Re-energize": {
+        "type": "passive",
+        "description": "Regenerates Spirit at a rate of 1 per turn.",
+        "amount": 1
+      }
+    }
   },
   "ghoul": {
     "name": "Ghoul",
@@ -73,7 +91,59 @@
     "attackType": "melee",
     "moveSpeed": 2,
     "perception": 3,
-    "skills": {}
+    "skills": {
+      "Curse of the Dead": {
+        "type": "active",
+        "description": "A simple touch curses the target to cause a chance of any skill or attack to fail.",
+        "status": "Cursed",
+        "maxTurns": 3,
+        "spirit": 5
+      },
+      "Re-energize": {
+        "type": "passive",
+        "description": "Regenerates Spirit at a rate of 1 per turn.",
+        "amount": 1
+      }
+    }
+  },
+  "flyingPolyp": {
+    "name": "Flying Polyp",
+    "type": "creature",
+    "race": "Creator",
+    "level": 4,
+    "expertisePoints": 10,
+    "strength": 4,
+    "agility": 7,
+    "mentalAcuity": 5,
+    "damage": 4,
+    "defense": 5,
+    "damageReduction": 0,
+    "startingHealth": 15,
+    "startingSpirit": 20,
+    "range": 1,
+    "attackType": "melee",
+    "moveSpeed": 4,
+    "perception": 4,
+    "skills": {
+      "Turn Invisible": {
+        "type": "active",
+        "description": "Becomes invisible for 2 turns, during which time it can't be targeted.",
+        "turns": 2,
+        "spirit": 5
+      },
+      "Wind Attack": {
+        "type": "active",
+        "description": "Uses a hallowing wind to draw its target to it and damage it.",
+        "move": 2,
+        "damage": 2,
+        "spirit": 5
+      },
+      "Re-energize": {
+        "type": "passive",
+        "description": "Regenerates Spirit at a rate of 2 per turn.",
+        "amount": 2
+      }
+    }
   },
   "shoggoth": {
     "name": "Shoggoth",
@@ -88,11 +158,25 @@
     "defense": 5,
     "damageReduction": 3,
     "startingHealth": 80,
-    "startingSpirit": 35,
+    "startingSpirit": 20,
     "range": 2,
     "attackType": "melee",
     "moveSpeed": 1,
     "perception": 5,
-    "skills": {}
+    "skills": {
+      "Drive Insane": {
+        "type": "active",
+        "description": "A horrifying, mind-piercing screech drives all around it closer to insanity.",
+        "range": 5,
+        "damageType": "Sanity",
+        "damagePercent": 0.3,
+        "spirit": 10
+      },
+      "Re-energize": {
+        "type": "passive",
+        "description": "Regenerates Spirit at a rate of 3 per turn.",
+        "amount": 3
+      }
+    }
   }
 }

@@ -71,7 +71,7 @@ class Creature extends React.PureComponent {
 		isHit = hitTotal >= defenseTotal;
 
 		if (isHit) {
-			const qualifier = damageTotal > 10 ? 'brutally' : '';
+			const qualifier = damageTotal > 20 ? 'brutally' : '';
 			const attackWord = this.attackType === 'psychic' ? ` invades ${targetData.name}'s sanity` : ` hits ${targetData.name}`;
 			logDamageMessage = `The ${this.name} ${qualifier}${attackWord}!`;
 		}

@@ -11,10 +11,24 @@
 				},
 				"variation": 0
 			},
+			"flyingPolyp": {
+				"countPerFloor": {
+					"1": {"number": 20, "variation": 2},
+					"2": {"number": 5, "variation": 2},
+					"3": {"number": 7, "variation": 2}
+				}
+			},
+			"ghast": {
+				"countPerFloor": {
+					"1": {"number": 8, "variation": 3},
+					"2": {"number": 12, "variation": 3},
+					"3": {"number": 5, "variation": 2}
+				}
+			},
 			"ghoul": {
 				"countPerFloor": {
 					"1": {"number": 12, "variation": 3},
-					"2": {"number": 10, "variation": 3},
+					"2": {"number": 8, "variation": 3},
 					"3": {"number": 5, "variation": 2}
 				}
 			},
