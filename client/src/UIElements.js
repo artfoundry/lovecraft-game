@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {deepCopy, convertObjIdToClassId, notEnoughSpaceInInventory, handleItemOverDropZone} from './Utils';
+import {capitalizeWord, deepCopy, convertObjIdToClassId, notEnoughSpaceInInventory, handleItemOverDropZone} from './Utils';
 import {Music} from './Audio';
 
 function CharacterControls(props) {
@@ -501,8 +501,8 @@ function CharacterInfoPanel(props) {
 						id={'invBox' + index}
 						key={'invBox' + index}
 						className='char-info-inv-item-box'
-						onDragOver={(evt) => {handleItemOverDropZone(evt)}}
-						onDrop={(evt) => { props.dropItemToInv(evt);}}
+						onDragOver={evt => handleItemOverDropZone(evt)}
+						onDrop={evt => props.dropItemToInv(evt)}
 					>
 						{itemId &&
 							<div
@@ -567,16 +567,16 @@ function CharacterInfoPanel(props) {
 						<div className='char-info-doll-boxes-container'>
 							<div
 								className='char-info-paper-doll-body char-info-paper-doll-box'
-								onDragOver={(evt) => {handleItemOverDropZone(evt)}}
-								onDrop={(evt) => props.dropItemToEquipped(evt)}
+								onDragOver={evt => handleItemOverDropZone(evt)}
+								onDrop={evt => props.dropItemToEquipped(evt)}
 							>
 								{(equippedItems.armor &&
 									<div
 										id={equippedItems.armor ? equippedItems.armor : 'body'}
 										className={`inv-object ${convertObjIdToClassId(equippedItems.armor)}-inv`}
 										draggable={true}
-										onDragStart={(evt) => {dragItem(evt, equippedItems.armor)}}
-										onClick={(evt) => {
+										onDragStart={evt => dragItem(evt, equippedItems.armor)}
+										onClick={evt => {
 											props.setObjectSelected({...itemsPossessed[equippedItems.armor], id: equippedItems.armor}, null);
 											props.setObjectPanelDisplayOption(true, evt);
 										}}
@@ -585,16 +585,16 @@ function CharacterInfoPanel(props) {
 
 							<div
 								className='char-info-paper-doll-right-arm char-info-paper-doll-box'
-								onDragOver={(evt) => {handleItemOverDropZone(evt)}}
-								onDrop={(evt) => props.dropItemToEquipped(evt)}
+								onDragOver={evt => handleItemOverDropZone(evt)}
+								onDrop={evt => props.dropItemToEquipped(evt)}
 							>
 								{(equippedItems.loadout1.right &&
 									<div
 										id={equippedItems.loadout1.right ? equippedItems.loadout1.right : 'right-hand'}
 										className={`inv-object ${convertObjIdToClassId(equippedItems.loadout1.right)}-inv`}
 										draggable={true}
-										onDragStart={(evt) => {dragItem(evt, equippedItems.loadout1.right)}}
-										onClick={(evt) => {
+										onDragStart={evt => dragItem(evt, equippedItems.loadout1.right)}
+										onClick={evt => {
 											props.setObjectSelected({...rightEquippedItemInfo, id: equippedItems.loadout1.right}, null);
 											props.setObjectPanelDisplayOption(true, evt);
 										}}
@@ -603,8 +603,8 @@ function CharacterInfoPanel(props) {
 
 							<div
 								className='char-info-paper-doll-left-arm char-info-paper-doll-box'
-								onDragOver={(evt) => {handleItemOverDropZone(evt)}}
-								onDrop={(evt) => props.dropItemToEquipped(evt)}
+								onDragOver={evt => handleItemOverDropZone(evt)}
+								onDrop={evt => props.dropItemToEquipped(evt)}
 							>
 								{(equippedItems.loadout1.left &&
 									<div
@@ -612,8 +612,8 @@ function CharacterInfoPanel(props) {
 											equippedItems.loadout1.left ? equippedItems.loadout1.left : 'left-hand'}
 										className={`inv-object ${convertObjIdToClassId(equippedItems.loadout1.left)}-inv`}
 										draggable={true}
-										onDragStart={(evt) => {dragItem(evt, equippedItems.loadout1.left)}}
-										onClick={(evt) => {
+										onDragStart={evt => dragItem(evt, equippedItems.loadout1.left)}
+										onClick={evt => {
 											props.setObjectSelected({...leftEquippedItemInfo, id: equippedItems.loadout1.left}, null);
 											props.setObjectPanelDisplayOption(true, evt);
 										}}
@@ -632,8 +632,12 @@ function CharacterInfoPanel(props) {
 
 					<div>
 						<div className='char-info-item-drop-zone'
-						     onDragOver={(evt) => {handleItemOverDropZone(evt)}}
-						     onDrop={(evt) => {props.setHasObjBeenDropped({objHasBeenDropped: true, evt})}}
+						     onDragOver={evt => handleItemOverDropZone(evt)}
+						     onDrop={evt => {
+							     if (props.objectIsSelected) {
+								     props.setHasObjBeenDropped({objHasBeenDropped: true, evt})
+							     }
+						     }}
 						></div>
 						<span>Drag item here to drop</span>
 					</div>
@@ -959,11 +963,40 @@ function CreatureInfoPanel(props) {
 
 function ModeInfoPanel(props) {
 	const ListOptions = () => {
+		let draggedFollowerIndex = null;
 		let list = [];
-		props.pcObjectOrdering.forEach(id => {
+		props.playerFollowOrder.forEach((id, index) => {
 			const player = props.players[id];
 			if (!player.isDeadOrInsane) {
-				list.push(<option key={id} value={id}>{player.name}</option>);
+				list.push(
+					<div
+						id={index + '-slot'}
+						key={id}
+						className='follow-order-member-slot'
+						draggable={false}
+						onDragOver={evt => handleItemOverDropZone(evt)}
+						onDrop={evt => {
+							if (draggedFollowerIndex === null) return; //prevent dragging of other objects to these slots
+							const orderSlot = evt.target.parentNode;
+							const orderSlotIndex = orderSlot.id[0];
+							const swappedFollowerId = props.playerFollowOrder[orderSlotIndex];
+							const draggedFollowerId = props.playerFollowOrder[draggedFollowerIndex];
+							let newActivePc = '';
+							let newFollowList = [...props.playerFollowOrder];
+							newFollowList[orderSlotIndex] = draggedFollowerId;
+							newFollowList[draggedFollowerIndex] = swappedFollowerId;
+							newActivePc = newFollowList[0];
+							props.updateActiveCharacter(() => props.updateFollowModePositions([]), newActivePc, newFollowList);
+						}}
+					>
+						<span className='follow-order-index'>{index+1}</span>
+						<div
+							className={`follow-order-member follow-member-${convertObjIdToClassId(id)}`}
+							draggable={true}
+							onDragStart={() => draggedFollowerIndex = index}
+						></div>
+					</div>
+				);
 			}
 		});
 		return list;
@@ -995,7 +1028,7 @@ function ModeInfoPanel(props) {
 		props.inTacticalMode && props.threatList.length > 0 ? 'Enemies moving' : 'Wait...';
 
 	return (
-		<div className={`mode-info-container ${props.showDialog ? 'no-click' : ''}`}>
+		<div id='mode-info-container' className={`${props.showDialog ? 'no-click' : ''}`}>
 			<div className='mode-buttons-container'>
 				<div
 					className='general-button'
@@ -1040,12 +1073,11 @@ function ModeInfoPanel(props) {
 
 			{!props.inTacticalMode && props.isPartyNearby &&
 			<label>
-				<div>Leader</div>
-				<select name='leader' value={props.activeCharacter} onChange={evt => {
-					props.updateActiveCharacter(() => props.updateFollowModePositions([]), evt.target.value);
-				}}>
+				<div>Follow order:</div>
+				<div>(drag to reorder)</div>
+				<div className='follow-order-list-container'>
 					{props.players && <ListOptions />}
-				</select>
+				</div>
 			</label>
 			}
 
@@ -1057,6 +1089,50 @@ function ModeInfoPanel(props) {
 				}}>End Turn</div>
 			</div>
 			}
+		</div>
+	);
+}
+
+function PartyInfoPanel(props) {
+	const currentLevelThreshold = props.partyLevel === 1 ? 0 : props.expertisePointLevels[props.partyLevel];
+	// ex: if lvl 2 with 150 xp, equation would be ((150 - 100) / (300 - 100)) * 100 = (50 / 200) * 100 = 25%
+	const partyExpertisePercent = currentLevelThreshold === 0 ? 0 : ((props.partyExpertise - currentLevelThreshold) / (props.expertisePointLevels[props.partyLevel + 1] - currentLevelThreshold)) * 100;
+	const currentFloorText = props.currentFloor ? ` level ${props.currentFloor}` : '';
+	return (
+		<div id='party-info-container'>
+			<div id='party-info'>
+				<div id='party-exp-container'>
+					<div>Party level: {props.partyLevel}</div>
+					<div className='status-bar-container'>
+						<div className='status-bar-level' style={{width: partyExpertisePercent + '%'}}></div>
+					</div>
+					<div>{props.partyLevel + 1}</div>
+				</div>
+				<div>{capitalizeWord(props.currentLocation)}{currentFloorText}</div>
+			</div>
+			<div className='general-button' onClick={() => props.setShowJournal()}>Journal</div>
+		</div>
+	);
+}
+
+function JournalWindow(props) {
+	const activeQuests = [];
+	const completedQuests = [];
+	props.partyJournal.activeQuests.forEach(quest => {
+		activeQuests.push(<div>{quest.name}: {quest.description}</div>);
+	});
+	props.partyJournal.completedQuests.forEach(quest => {
+		completedQuests.push(<div>{quest.name}: {quest.description}</div>);
+	});
+	return (
+		<div className='dialog ui-panel'>
+			<div className='general-button dialog-button-x' onClick={() => props.setShowJournal()}>X</div>
+			<div className='dialog-message'>Active missions:</div>
+			{/*placeholder*/}
+			<div>{activeQuests}</div>
+			<div className='dialog-message'>Completed missions:</div>
+			{/*placeholder*/}
+			<div>{completedQuests}</div>
 		</div>
 	);
 }
@@ -1231,4 +1307,4 @@ function GameOptions(props) {
 	);
 }
 
-export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, DialogWindow, ContextMenu, HelpScreen, GameOptions};
+export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, PartyInfoPanel, JournalWindow, DialogWindow, ContextMenu, HelpScreen, GameOptions};

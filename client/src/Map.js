@@ -120,8 +120,10 @@ class Map extends React.PureComponent {
 
 	/**
 	 * Save map data in App, which then saves all game data to FB
+	 * @param callback: function
+	 * @param areaChangeValue: number (1 or -1, otherwise undefined when not passed in)
 	 */
-	saveAllData = (callback, goingToNextArea) => {
+	saveAllData = (callback, areaChangeValue) => {
 		const mapData = {
 			playerVisited: deepCopy(this.state.playerVisited),
 			mapLayout: deepCopy(this.state.mapLayout),
@@ -129,7 +131,7 @@ class Map extends React.PureComponent {
 			nextAreaExitCoords: {...this.state.nextAreaExitCoords},
 			worldWidth: this.state.worldWidth,
 			worldHeight: this.state.worldHeight,
-			newFloorNum: goingToNextArea ? (this.props.currentFloor + (goingToNextArea ? 1 : -1)) : null
+			newFloorNum: areaChangeValue ? this.props.currentFloor + areaChangeValue : null
 		};
 		this.props.saveMapData(mapData, callback);
 	}
@@ -656,27 +658,25 @@ class Map extends React.PureComponent {
 		let previousPlayerCoords = null;
 		let playerPositions = [];
 
-		if (!this.state.usingSavedMapData) {
-			for (const playerID of Object.keys(this.props.playerCharacters)) {
-				let tilePos = '';
-				let newCoords = {};
-				if (!previousPlayerCoords) {
-					let startingCoords = {...this.state.previousAreaExitCoords};
-					if (this.props.previousFloor && this.props.previousFloor > this.props.currentFloor) {
-						startingCoords = {...savedMapData.nextAreaExitCoords};
-					}
-					tilePos = convertCoordsToPos(startingCoords);
-					newCoords = {...startingCoords};
-				} else {
-					// look for empty nearby tile to place 2nd/3rd PC
-					tilePos = this._findNearbyAvailableTile(previousPlayerCoords, playerPositions);
-					newCoords = convertPosToCoords(tilePos);
+		for (const playerID of Object.keys(this.props.playerCharacters)) {
+			let tilePos = '';
+			let newCoords = {};
+			if (!previousPlayerCoords) {
+				let startingCoords = {...this.state.previousAreaExitCoords};
+				if (this.props.previousFloor && this.props.previousFloor > this.props.currentFloor) {
+					startingCoords = {...savedMapData.nextAreaExitCoords};
 				}
-				playerPositions.push(tilePos);
-				previousPlayerCoords = {...newCoords};
-				playerVisited = Object.assign(playerVisited, this._findNewVisitedTiles(newCoords, playerID));
-				updatedPlayerData[playerID].coords = {...newCoords};
+				tilePos = convertCoordsToPos(startingCoords);
+				newCoords = {...startingCoords};
+			} else {
+				// look for empty nearby tile to place 2nd/3rd PC
+				tilePos = this._findNearbyAvailableTile(previousPlayerCoords, playerPositions);
+				newCoords = convertPosToCoords(tilePos);
 			}
+			playerPositions.push(tilePos);
+			previousPlayerCoords = {...newCoords};
+			playerVisited = Object.assign(playerVisited, this._findNewVisitedTiles(newCoords, playerID));
+			updatedPlayerData[playerID].coords = {...newCoords};
 		}
 
 		this.props.updateCharacters('player', updatedPlayerData, null, false, false, true, () => {
@@ -711,15 +711,20 @@ class Map extends React.PureComponent {
 				}
 			} else {
 				let creatureCoords = {};
-				for (const [genericId, stats] of Object.entries(this.currentMapData.creatures)) {
-			//TODO: change this logic and data in gameLocations.json to use same level/count format as objects
-					for (let i=0; i < stats.count; i++) {
-						const coords = convertPosToCoords(this._generateRandomLocation(creatureCoords));
-						const creatureId = genericId + i;
-						CreatureData[genericId].id = creatureId;
-						mapCreatures[creatureId] = new Creature(CreatureData[genericId]);
-						mapCreatures[creatureId].coords = coords;
-						creatureCoords[creatureId] = coords;
+				for (const [genericId, countInfo] of Object.entries(this.currentMapData.creatures)) {
+					const countPerFloorInfo = countInfo.countPerFloor[this.props.currentFloor];
+					if (countPerFloorInfo.number > 0 || countPerFloorInfo.variation > 0) {
+						const zeroOrPosOrNeg = diceRoll(3); // roll 1 = -1, roll 2 = 0, roll 3 = 1
+						const variation = (countPerFloorInfo.variation > 0 && zeroOrPosOrNeg !== 2) ? diceRoll(countPerFloorInfo.variation) * (zeroOrPosOrNeg === 1 ? -1 : 1) : 0;
+						const count = (countPerFloorInfo.number + variation) >= 0 ? countPerFloorInfo.number + variation : 0;
+						for (let i=0; i < count; i++) {
+							const coords = convertPosToCoords(this._generateRandomLocation(creatureCoords));
+							const creatureId = genericId + i;
+							CreatureData[genericId].id = creatureId;
+							mapCreatures[creatureId] = new Creature(CreatureData[genericId]);
+							mapCreatures[creatureId].coords = coords;
+							creatureCoords[creatureId] = coords;
+						}
 					}
 				}
 			}
@@ -746,30 +751,36 @@ class Map extends React.PureComponent {
 				const alwaysOnTheLookoutSkillInfo = this.props.playerCharacters.archaeologist ? this.props.playerCharacters.archaeologist.skills.alwaysOnTheLookout : null;
 				let relicChance = alwaysOnTheLookoutSkillInfo ? alwaysOnTheLookoutSkillInfo.modifier[alwaysOnTheLookoutSkillInfo.level] : 0;
 				for (const [itemName, itemInfo] of Object.entries(objectTypesInfo)) {
-					if (objectType === 'Relic') {
-						relicChance = (relicChance + itemInfo.chancePerFloor[this.props.currentFloor]) * 100;
-					}
-					if (objectType !== 'Relic' || (objectType === 'Relic' && (diceRoll(100) <= relicChance))) {
-						for (let i=0; i < itemInfo.countPerFloor[this.props.currentFloor]; i++) {
-							const itemInfo = objectType === 'Weapon' ? WeaponTypes[itemName] : ItemTypes[itemName];
-							const tileType = itemName === 'Torch' ? 'wall' : 'floor';
-							const lowerCaseName = itemName.slice(0, 1).toLowerCase() + itemName.slice(1, itemName.length).replaceAll(' ', '');
-							const itemID = lowerCaseName + (i + 1);
-							const gunType = objectType === 'Weapon' && itemInfo.gunType ? itemInfo.gunType : null;
-							const weaponCurrentRounds = gunType ? Math.round(Math.random() * itemInfo.rounds) : objectType === 'Weapon' ? 1 : null;
-							const coords = convertPosToCoords(this._generateRandomLocation(itemCoords, tileType)); // use this.props.playerCharacters['privateEye'].coords instead to easily test objects
-							mapItems[itemID] = {
-								...itemInfo,
-								name: itemName,
-								isIdentified: objectType !== 'Relic',
-								currentRounds: weaponCurrentRounds,
-								coords
-							};
-							mapItems[itemID].amount =
-								objectType === 'Ammo' ? Math.floor(Math.random() * 10) + 2 :
-								itemName === 'Oil' ? Math.floor(Math.random() * 90) + 10 :
-								objectType === 'Medicine' || objectType === 'Component' ? 1 : null;
-							itemCoords[itemID] = coords;
+					const countPerFloorInfo = itemInfo.countPerFloor[this.props.currentFloor];
+					if (countPerFloorInfo.number > 0 || countPerFloorInfo.variation > 0) {
+						if (objectType === 'Relic') {
+							relicChance = (relicChance + itemInfo.chancePerFloor[this.props.currentFloor]) * 100;
+						}
+						if (objectType !== 'Relic' || (objectType === 'Relic' && (diceRoll(100) <= relicChance))) {
+							const zeroOrPosOrNeg = diceRoll(3); // roll 1 = -1, roll 2 = 0, roll 3 = 1
+							const variation = (countPerFloorInfo.variation > 0 && zeroOrPosOrNeg !== 2) ? diceRoll(countPerFloorInfo.variation) * (zeroOrPosOrNeg === 1 ? -1 : 1) : 0;
+							const count = (countPerFloorInfo.number + variation) >= 0 ? countPerFloorInfo.number + variation : 0;
+							for (let i=0; i < count; i++) {
+								const itemInfo = objectType === 'Weapon' ? WeaponTypes[itemName] : ItemTypes[itemName];
+								const tileType = itemName === 'Torch' ? 'wall' : 'floor';
+								const lowerCaseName = itemName.slice(0, 1).toLowerCase() + itemName.slice(1, itemName.length).replaceAll(' ', '');
+								const itemID = lowerCaseName + (i + 1);
+								const gunType = objectType === 'Weapon' && itemInfo.gunType ? itemInfo.gunType : null;
+								const weaponCurrentRounds = gunType ? Math.round(Math.random() * itemInfo.rounds) : objectType === 'Weapon' ? 1 : null;
+								const coords = convertPosToCoords(this._generateRandomLocation(itemCoords, tileType)); // use this.props.playerCharacters['privateEye'].coords instead to easily test objects
+								mapItems[itemID] = {
+									...itemInfo,
+									name: itemName,
+									isIdentified: objectType !== 'Relic',
+									currentRounds: weaponCurrentRounds,
+									coords
+								};
+								mapItems[itemID].amount =
+									objectType === 'Ammo' ? Math.floor(Math.random() * 10) + 2 :
+									itemName === 'Oil' ? Math.floor(Math.random() * 90) + 10 :
+									objectType === 'Medicine' || objectType === 'Component' ? 1 : null;
+								itemCoords[itemID] = coords;
+							}
 						}
 					}
 				}
@@ -792,51 +803,57 @@ class Map extends React.PureComponent {
 		} else {
 			let itemCoords = {};
 			for (const [itemId, appearanceInfo] of Object.entries(this.currentMapData.envObjects)) {
-				for (let i=0; i < appearanceInfo.countPerFloor[this.props.currentFloor]; i++) {
-					const envItemInfo = EnvObjectTypes[itemId];
-					const lowerCaseName = itemId.slice(0, 1).toLowerCase() + itemId.slice(1, itemId.length).replaceAll(' ', '');
-					const uniqueItemId = lowerCaseName + (i + 1);
-					const coords = convertPosToCoords(this._generateRandomLocation(itemCoords, 'floor', true, envItemInfo.isPassable)); // this.props.playerCharacters['privateEye'].coords (to easily test objects)
-					let containerContents = [];
-					if (envItemInfo.type === 'container' || envItemInfo.type === 'mineable') {
-						// adding null option so container could have nothing
-						const itemNames = [...Object.keys(envItemInfo.mayContain), null];
-						const selectedItemIndex = diceRoll(itemNames.length) - 1;
-						if (itemNames[selectedItemIndex]) {
-							const selectedItemName = itemNames[selectedItemIndex];
-							const selectedItemUniqueId = selectedItemName.slice(0, 1).toLowerCase() + selectedItemName.slice(1, selectedItemName.length).replaceAll(' ', '') + '0';
-							const objectType = ItemTypes[selectedItemName] ? 'item' : 'weapon';
-							const selectedItemBaseInfo = objectType === 'item' ? ItemTypes[selectedItemName] : WeaponTypes[selectedItemName];
-							let selectedItemInfo = {
-								...selectedItemBaseInfo,
-								id: selectedItemUniqueId,
-								name: selectedItemName,
-								isIdentified: selectedItemBaseInfo.itemType !== 'Relic',
-								coords
-							};
-							const count = diceRoll(envItemInfo.mayContain[selectedItemName].max);
-							if (objectType === 'item' && selectedItemBaseInfo.stackable) {
-								selectedItemInfo.amount = count;
-							} else if (objectType === 'weapon' && (selectedItemBaseInfo.stackable || selectedItemBaseInfo.rounds)) {
-								selectedItemInfo.currentRounds = count
+				const countPerFloorInfo = appearanceInfo.countPerFloor[this.props.currentFloor];
+				if (countPerFloorInfo.number > 0 || countPerFloorInfo.variation > 0) {
+					const zeroOrPosOrNeg = diceRoll(3); // roll 1 = -1, roll 2 = 0, roll 3 = 1
+					const variation = (countPerFloorInfo.variation > 0 && zeroOrPosOrNeg !== 2) ? diceRoll(countPerFloorInfo.variation) * (zeroOrPosOrNeg === 1 ? -1 : 1) : 0;
+					const count = (countPerFloorInfo.number + variation) >= 0 ? countPerFloorInfo.number + variation : 0;
+					for (let i = 0; i < count; i++) {
+						const envItemInfo = EnvObjectTypes[itemId];
+						const lowerCaseName = itemId.slice(0, 1).toLowerCase() + itemId.slice(1, itemId.length).replaceAll(' ', '');
+						const uniqueItemId = lowerCaseName + (i + 1);
+						const coords = convertPosToCoords(this._generateRandomLocation(itemCoords, 'floor', true, envItemInfo.isPassable)); // this.props.playerCharacters['privateEye'].coords (to easily test objects)
+						let containerContents = [];
+						if (envItemInfo.type === 'container' || envItemInfo.type === 'mineable') {
+							// adding null option so container could have nothing
+							const itemNames = [...Object.keys(envItemInfo.mayContain), null];
+							const selectedItemIndex = diceRoll(itemNames.length) - 1;
+							if (itemNames[selectedItemIndex]) {
+								const selectedItemName = itemNames[selectedItemIndex];
+								const selectedItemUniqueId = selectedItemName.slice(0, 1).toLowerCase() + selectedItemName.slice(1, selectedItemName.length).replaceAll(' ', '') + '0';
+								const objectType = ItemTypes[selectedItemName] ? 'item' : 'weapon';
+								const selectedItemBaseInfo = objectType === 'item' ? ItemTypes[selectedItemName] : WeaponTypes[selectedItemName];
+								let selectedItemInfo = {
+									...selectedItemBaseInfo,
+									id: selectedItemUniqueId,
+									name: selectedItemName,
+									isIdentified: selectedItemBaseInfo.itemType !== 'Relic',
+									coords
+								};
+								const count = diceRoll(envItemInfo.mayContain[selectedItemName].max);
+								if (objectType === 'item' && selectedItemBaseInfo.stackable) {
+									selectedItemInfo.amount = count;
+								} else if (objectType === 'weapon' && (selectedItemBaseInfo.stackable || selectedItemBaseInfo.rounds)) {
+									selectedItemInfo.currentRounds = count
+								}
+								containerContents = [selectedItemInfo];
 							}
-							containerContents = [selectedItemInfo];
 						}
+						envObjects[uniqueItemId] = {
+							...envItemInfo,
+							name: itemId,
+							isIdentified: true,
+							isDestructible: envItemInfo.isDestructible,
+							isDestroyed: false,
+							containerContents,
+							isOpen: envItemInfo.type === 'container' ? false : null,
+							coords
+						};
+						if (envItemInfo.isHidden) {
+							envObjects[uniqueItemId].isDiscovered = false;
+						}
+						itemCoords[uniqueItemId] = coords;
 					}
-					envObjects[uniqueItemId] = {
-						...envItemInfo,
-						name: itemId,
-						isIdentified: true,
-						isDestructible: envItemInfo.isDestructible,
-						isDestroyed: false,
-						containerContents,
-						isOpen: envItemInfo.type === 'container' ? false : null,
-						coords
-					};
-					if (envItemInfo.isHidden) {
-						envObjects[uniqueItemId].isDiscovered = false;
-					}
-					itemCoords[uniqueItemId] = coords;
 				}
 			}
 		}
@@ -1656,7 +1673,7 @@ class Map extends React.PureComponent {
 					actionButtonVisible: true,
 					actionButtonText: 'Take the stairs',
 					actionButtonCallback: () => {
-						this.saveAllData(this.resetMap, goingToNextArea);
+						this.saveAllData(this.resetMap, goingToNextArea ? 1 : -1);
 					},
 					dialogClasses: ''
 				};
@@ -1685,7 +1702,7 @@ class Map extends React.PureComponent {
 				const creaturePos = convertCoordsToPos(creatureCoords);
 				const visibleTiles = this._getAllLitTiles();
 
-				if (visibleTiles[creaturePos] && this.isInLineOfSight(activePlayerPos, creaturePos)) {
+				if (visibleTiles[creaturePos] && this.isInLineOfSight(activePlayerPos, creaturePos, true)) {
 					isInRangedWeaponRange = true;
 				}
 			} else if (Math.abs(creatureCoords.xPos - activePlayerCoords.xPos) <= 1 && Math.abs(creatureCoords.yPos - activePlayerCoords.yPos) <= 1) {
@@ -1895,30 +1912,31 @@ class Map extends React.PureComponent {
 
 	/**
 	 * Checks the most linear path from start to end for wall, closed door, or creature to see if path is blocked
-	 * Used for ranged attacks and for checking if party members are in LoS before starting Follow mode
+	 * Used for ranged attacks, checking for threats, and for checking if party members are in LoS before starting Follow mode
 	 * (doesn't check for PCs, as assumed that a PC in the way would duck or shooting PC would shoot around)
 	 * @param startPos: string
 	 * @param endPos: string
-	 * @param checkForCreatures: boolean (whether or not to check for creature blocking path - false for lighting checks)
+	 * @param checkForCreatures: boolean (whether or not to check for creature blocking path - true for ranged attacks, false for lighting checks and threat checks)
 	 * @returns {boolean}
 	 */
-	isInLineOfSight = (startPos, endPos, checkForCreatures = true) => {
+	isInLineOfSight = (startPos, endPos, checkForCreatures) => {
 		const endingCoords = convertPosToCoords(endPos);
 		const startingCoords = convertPosToCoords(startPos);
+		const tileSizeMinusOne = this.tileSize - 1;
 		// All corner coords and deltas are in pixel values, not tile values
 		const startTilePoints = {
 			center: {xPos: (startingCoords.xPos * this.tileSize) + (this.tileSize / 2), yPos: (startingCoords.yPos * this.tileSize) + (this.tileSize / 2)},
 			topLeft: {xPos: startingCoords.xPos * this.tileSize, yPos: startingCoords.yPos * this.tileSize},
-			topRight: {xPos: (startingCoords.xPos * this.tileSize) + this.tileSize - 1, yPos: startingCoords.yPos * this.tileSize},
-			bottomLeft: {xPos: startingCoords.xPos * this.tileSize, yPos: (startingCoords.yPos * this.tileSize) + this.tileSize - 1},
-			bottomRight: {xPos: (startingCoords.xPos * this.tileSize) + this.tileSize - 1, yPos: (startingCoords.yPos * this.tileSize) + this.tileSize - 1}
+			topRight: {xPos: (startingCoords.xPos * this.tileSize) + tileSizeMinusOne, yPos: startingCoords.yPos * this.tileSize},
+			bottomLeft: {xPos: startingCoords.xPos * this.tileSize, yPos: (startingCoords.yPos * this.tileSize) + tileSizeMinusOne},
+			bottomRight: {xPos: (startingCoords.xPos * this.tileSize) + tileSizeMinusOne, yPos: (startingCoords.yPos * this.tileSize) + tileSizeMinusOne}
 		}
 		const endTilePoints = {
 			center: {xPos: (endingCoords.xPos * this.tileSize) + (this.tileSize / 2), yPos: (endingCoords.yPos * this.tileSize) + (this.tileSize / 2)},
 			topLeft: {xPos: endingCoords.xPos * this.tileSize, yPos: endingCoords.yPos * this.tileSize},
-			topRight: {xPos: (endingCoords.xPos * this.tileSize) + this.tileSize - 1, yPos: endingCoords.yPos * this.tileSize},
-			bottomLeft: {xPos: endingCoords.xPos * this.tileSize, yPos: (endingCoords.yPos * this.tileSize) + this.tileSize - 1},
-			bottomRight: {xPos: (endingCoords.xPos * this.tileSize) + this.tileSize - 1, yPos: (endingCoords.yPos * this.tileSize) + this.tileSize - 1}
+			topRight: {xPos: (endingCoords.xPos * this.tileSize) + tileSizeMinusOne, yPos: endingCoords.yPos * this.tileSize},
+			bottomLeft: {xPos: endingCoords.xPos * this.tileSize, yPos: (endingCoords.yPos * this.tileSize) + tileSizeMinusOne},
+			bottomRight: {xPos: (endingCoords.xPos * this.tileSize) + tileSizeMinusOne, yPos: (endingCoords.yPos * this.tileSize) + tileSizeMinusOne}
 		}
 		const xDeltas = {
 			center: endTilePoints.center.xPos - startTilePoints.center.xPos,
@@ -1956,6 +1974,7 @@ class Map extends React.PureComponent {
 		let longerDeltas = xDeltas;
 		let shorterDeltas = yDeltas;
 		// reassigning in one go to avoid doing same if/then 5x
+		// if start tile and end tile are closer to each other horizontally than vertically
 		if (absXDeltas.topLeft < absYDeltas.topLeft) {
 			longerAxis = yDeltas.topLeft;
 			longerAxisStartingPos = 'yPos';
@@ -1973,16 +1992,21 @@ class Map extends React.PureComponent {
 			bottomLeft: true,
 			bottomRight: true
 		}
-		const minClearPaths = !checkForCreatures ? 1 : 3;
-		// numChecks - 1 only here because don't need to check the end tile, but still need full value for computing shorterAxisCheckLength
+		const minClearPaths = !checkForCreatures ? 2 : 3;
+		// 'numChecks - 1' here because don't need to check the end tile, but still need full value for computing shorterAxisCheckLength
 		while (numOfClearPaths >= minClearPaths && checkNum <= numChecks - 1) {
 			for (const [delta, distance] of Object.entries(longerDeltas)) {
 				if (clearPaths[delta]) {
 					// next 6 lines are to find the next tile along the ray (delta) that we need to check using _isCurrentTileBlocked
 					const longerAxisCheckLength = distance < 0 ? -this.tileSize : this.tileSize;
-					const shorterAxisCheckLength = shorterDeltas[delta] / numChecks;
+					// subtract 1 so if shorterAxisNewPos would normally equal an integer (instead of decimal),
+					// which would mean the position is right between two tiles
+					// (which causes calculation to always move choice toward the positive, regardless of whether delta moves in neg or pos direction),
+					// then the -1 will nudge the position to one side or the other (pos or neg)
+					// const shorterAxisCheckLength = shorterDeltas[delta] / numChecks;
+					const shorterAxisCheckLength = shorterDeltas[delta] === 0 ? shorterDeltas[delta] / numChecks : (shorterDeltas[delta] / numChecks) - 1;
 					const longerAxisNewPos = roundTowardZero((startTilePoints[delta][longerAxisStartingPos] + (longerAxisCheckLength * checkNum)) / this.tileSize);
-					// need to Math.floor shorter, as pos could be between tile coords (and round would shift coord to next tile)
+					// need to Math.floor shorter (which roundTowardZero does), as pos could be between tile coords (and round would shift coord to next tile)
 					const shorterAxisNewPos = roundTowardZero((startTilePoints[delta][shorterAxisStartingPos] + (shorterAxisCheckLength * checkNum)) / this.tileSize);
 					const xPos = longerAxisStartingPos === 'xPos' ? longerAxisNewPos : shorterAxisNewPos;
 					const yPos = xPos === longerAxisNewPos ? shorterAxisNewPos : longerAxisNewPos;
@@ -2175,7 +2199,7 @@ class Map extends React.PureComponent {
 			if (tilesInView[creature.pos]) {
 				if (!this.props.threatList.includes(creature.id)) {
 					playerPositions.forEach(player => {
-						if (!threatLists.threatListToAdd.includes(creature.id) && this.isInLineOfSight(player.pos, creature.pos)) {
+						if (!threatLists.threatListToAdd.includes(creature.id) && this.isInLineOfSight(player.pos, creature.pos, false)) {
 							threatLists.threatListToAdd.push(creature.id);
 						}
 					});
@@ -2188,6 +2212,12 @@ class Map extends React.PureComponent {
 		return threatLists;
 	}
 
+	/**
+	 * Collects all tile data for tiles that have any amount of light
+	 * @param mapData: object (optional)
+	 * @return {{}}
+	 * @private
+	 */
 	_getAllLitTiles(mapData = this.state.mapLayout) {
 		let litTiles = {};
 		for (const [pos, tileData] of Object.entries(mapData)) {
@@ -2705,7 +2735,14 @@ class Map extends React.PureComponent {
 			} else {
 				this._moveRandomly();
 				creatureDidAct = true;
-				this.props.updateCurrentTurn();
+				const playerPositions = this.props.getAllCharactersPos('player', 'pos');
+				const creaturePositions = this.props.getAllCharactersPos('creature', 'pos');
+				const threatLists = this._findChangesToNearbyThreats(playerPositions, creaturePositions);
+				if (threatLists.threatListToAdd.length > 0 || threatLists.threatListToRemove.length > 0) {
+					this.props.updateThreatList(threatLists.threatListToAdd, threatLists.threatListToRemove, this.props.updateCurrentTurn);
+				} else {
+					this.props.updateCurrentTurn();
+				}
 			}
 
 			// For creatures that don't act, still need to advance turn
@@ -3022,6 +3059,9 @@ class Map extends React.PureComponent {
 		}
 		if (this.props.needToSaveData && prevProps.needToSaveData !== this.props.needToSaveData) {
 			this.saveAllData();
+		}
+		if (prevProps.currentLocation !== this.props.currentLocation || prevProps.currentFloor !== this.props.currentFloor) {
+			this.props.toggleAudio('environments', this.props.currentLocation + 'Background');
 		}
 	}
 

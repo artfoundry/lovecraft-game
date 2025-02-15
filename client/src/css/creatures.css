@@ -11,7 +11,7 @@
 }
 
 .ghoul {
-	content: url('../assets/characters/creatures/ghoul.gif');
+	content: url('../assets/characters/creatures/ghoul.png');
 }
 
 .ghoul-dead {
@@ -19,6 +19,11 @@
 }
 
 .ghast {
+	content: url('../assets/characters/creatures/ghast.png');
+}
+
+.ghast-dead {
+	content: url('../assets/characters/creatures/ghast_dead.png');
 }
 
 .elder-thing {
@@ -27,6 +32,14 @@
 
 .elder-thing-dead {
 	content: url('../assets/characters/creatures/elder_128_dead.png');
+}
+
+.flying-polyp {
+	content: url('../assets/characters/creatures/flyingPolyp.png');
+}
+
+.flying-polyp-dead {
+	content: url('../assets/characters/creatures/flyingPolyp_dead.png');
 }
 
 .shoggoth {

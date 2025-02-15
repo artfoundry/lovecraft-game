@@ -71,14 +71,22 @@ class Game extends React.PureComponent {
 				elderThingAttack: null,
 				elderThingInjured: null,
 				elderThingDeath: null,
-				shoggoth: null,
-				shoggothAttack: null,
-				shoggothInjured: null,
-				shoggothDeath: null,
+				flyingPolyp: null,
+				flyingPolypAttack: null,
+				flyingPolypInjured: null,
+				flyingPolypDeath: null,
+				ghast: null,
+				ghastAttack: null,
+				ghastInjured: null,
+				ghastDeath: null,
 				ghoul: null,
 				ghoulAttack: null,
 				ghoulInjured: null,
 				ghoulDeath: null,
+				shoggoth: null,
+				shoggothAttack: null,
+				shoggothInjured: null,
+				shoggothDeath: null,
 				maleInjured: null,
 				maleDeath: null,
 				femaleInjured: null,
@@ -200,19 +208,20 @@ class Game extends React.PureComponent {
 			createdCharData: null,
 			gameSetupComplete: false,
 			playerCharacters: {},
-			pcObjectOrdering: [],
+			pcObjectOrdering: [], // order of pcs for determining control bar order
 			pcTypes: PlayerCharacterTypes,
 			partyLevel: 1,
 			partyExpertise: 0,
 			partyJournal: {
-				quests: {}
+				activeQuests: [],
+				completedQuests: []
 			},
 			savedMaps: {},
 			needToSaveData: false,
 			currentLocation: '',
 			currentFloor: 1,
 			previousFloor: null,
-			playerFollowOrder: [],
+			playerFollowOrder: [], // order of pcs for follow mode
 			// 1 round is going through all chars' turns; used for keeping track of char statuses
 			currentRound: 0,
 			showDialog: false,
@@ -237,7 +246,7 @@ class Game extends React.PureComponent {
 			activeCharacter: !this.showCharacterCreation ? this.startingPlayerCharacters[0] : null,
 			activePlayerMovesCompleted: 0,
 			activePlayerActionsCompleted: 0,
-			followModePositions: [],
+			followModePositions: [], // list of tile positions used for moving pcs in order
 			characterIsSelected: false,
 			creatureIsSelected: false,
 			selectedCharacter: '',
@@ -263,6 +272,7 @@ class Game extends React.PureComponent {
 	 * @param callback: function
 	 */
 	resetDataForNewFloor = (callback) => {
+		this.toggleAudio('environments', this.state.currentLocation + 'Background');
 		this.setState({
 			mapCreatures: {},
 			mapObjects: {},
@@ -289,7 +299,7 @@ class Game extends React.PureComponent {
 			inSearchMode: false,
 			contextMenuChoice: null,
 			centerOnPlayer: false,
-			centeredPlayer: '',
+			centeredPlayer: this.state.playerFollowOrder[0],
 			logText: []
 		}, () => {
 			if (callback) callback();
@@ -297,6 +307,7 @@ class Game extends React.PureComponent {
 	}
 
 	resetAllData = () => {
+		this.toggleAudio('environments', this.state.currentLocation + 'Background');
 		this.setState({
 			firebaseGameData: null,
 			characterCreated: false,
@@ -378,14 +389,14 @@ class Game extends React.PureComponent {
 	 * @param firebaseGameData: object (from Firebase, saved from previous play session)
 	 */
 	updateLoggedIn = (userData, firebaseGameData) => {
-		const characterCreated = firebaseGameData ? true : false;
+		const characterCreated = firebaseGameData && firebaseGameData.characterCreated;
 		this.setState({
 			isLoggedIn: true,
 			userData,
 			firebaseGameData: deepCopy(firebaseGameData),
 			characterCreated
 		}, () => {
-			if (firebaseGameData) {
+			if (this.state.characterCreated) {
 				this._restoreGameDataFromFB(this._setupGameState);
 			}
 		});
@@ -1449,13 +1460,14 @@ class Game extends React.PureComponent {
 	 * Updates to state what character is active (PC or NPC)
 	 * @param callback: function (optional - at start, sets flag that chars are placed, then for PCs moves map to center)
 	 * @param id: String (optional)
+	 * @param newFollowOrder: Array (of strings - pc IDs - sent from Mode Info Panel in UIElements)
 	 * @param restoreFromFB: boolean (only true upon first loading game if fb data exists)
 	 */
-	updateActiveCharacter = (callback = null, id = null, restoreFromFB = false) => {
+	updateActiveCharacter = (callback = null, id = null, newFollowOrder = null, restoreFromFB = false) => {
 		const currentTurnUnitInfo = Object.values(this.state.unitsTurnOrder[this.state.currentTurn])[0];
 		const activeCharacter = restoreFromFB ? this.state.firebaseGameData.activeCharacter : (id || currentTurnUnitInfo.id);
-		let playerFollowOrder = [...this.state.playerFollowOrder];
-		if (!this.state.inTacticalMode) {
+		let playerFollowOrder = newFollowOrder ? [...newFollowOrder] : [...this.state.playerFollowOrder];
+		if (!this.state.inTacticalMode && !newFollowOrder) {
 			let newLeader = playerFollowOrder.splice(playerFollowOrder.indexOf(id), 1)[0];
 			playerFollowOrder.unshift(newLeader);
 		}
@@ -1627,8 +1639,8 @@ class Game extends React.PureComponent {
 	 * Plays sound effects, processing them for reverb, panning, valume, etc. if needed beforehand
 	 * (reverb only processed once per sound file for a location)
 	 * @param category: string (sfx category - 'environments', 'characters', 'weapons', 'items', 'skills', 'game')
-	 * @param selectorName: string (sfx name - ex 'door', 'background', 'femaleDeath', etc.)
-	 * @param processors; object (params for ProcessAudio in Audio.js:
+	 * @param selectorName: string (sfx name - ex 'catacombsDoor', 'catacombsBackground', 'femaleDeath', etc.)
+	 * @param processors; object (optional; params for ProcessAudio in Audio.js):
 	 *  {
 	 *      useVolume: true/false,
 	 *      useReverb: true/false,
@@ -1640,6 +1652,8 @@ class Game extends React.PureComponent {
 	toggleAudio = (category, selectorName, processors) => {
 		const sfxReverbProcessed = {...this.state.sfxReverbProcessed};
 		const audioEl = this.sfxSelectors[category][selectorName].current;
+		const isBackgroundSfx = category === 'environments' && selectorName.includes('Background');
+
 		if (audioEl.paused && this.state.gameOptions.playFx) {
 			let processValues = null;
 			if (processors) {
@@ -1665,11 +1679,17 @@ class Game extends React.PureComponent {
 			}
 			ProcessAudio(selectorName, audioEl, processValues);
 			audioEl.volume = this.state.gameOptions.fxVolume;
+
+			if (isBackgroundSfx) {
+				audioEl.loop = true;
+			}
 			audioEl.play().catch(e => console.log(e));
 
 			if (sfxReverbProcessed[selectorName] !== this.state.sfxReverbProcessed[selectorName]) {
 				this.setState({sfxReverbProcessed});
 			}
+		} else if (isBackgroundSfx && !audioEl.paused) {
+			audioEl.pause();
 		}
 	}
 
@@ -1698,6 +1718,7 @@ class Game extends React.PureComponent {
 			gameOptions: this.state.gameOptions, // object
 			playerCharacters: this.state.playerCharacters, // object
 			pcObjectOrdering: this.state.pcObjectOrdering, // array
+			characterCreated: this.state.characterCreated, // boolean
 			createdCharData: this.state.createdCharData, // object
 			partyLevel: this.state.partyLevel, // number
 			partyExpertise: this.state.partyExpertise, // number
@@ -1713,7 +1734,6 @@ class Game extends React.PureComponent {
 			activePlayerMovesCompleted: this.state.activePlayerMovesCompleted, // number
 			activePlayerActionsCompleted: this.state.activePlayerActionsCompleted, // number
 			followModePositions: this.state.followModePositions, // array
-			inTacticalMode: this.state.inTacticalMode, // boolean
 			threatList: this.state.threatList // array
 		};
 		this.firebase.setData(userId, deepCopy(dataToSave, true), (logMessage) => {
@@ -1756,20 +1776,16 @@ class Game extends React.PureComponent {
 				};
 				if (this.state.firebaseGameData) {
 					const gameOptions = {...this.state.firebaseGameData.gameOptions};
-					const pcObjectOrdering = [...this.state.firebaseGameData.pcObjectOrdering];
-					const createdCharData = {...this.state.firebaseGameData.createdCharData};
+					const createdCharData = this.state.createdCharData || {...this.state.firebaseGameData.createdCharData};
 					const partyJournal = deepCopy(this.state.firebaseGameData.partyJournal);
 					const savedMaps = deepCopy(this.state.firebaseGameData.savedMaps);
-					const playerFollowOrder = [...this.state.firebaseGameData.playerFollowOrder];
 					const followModePositions = this.state.firebaseGameData.followModePositions ? [...this.state.firebaseGameData.followModePositions] : [];
 					const threatList = this.state.firebaseGameData.threatList ? [...this.state.firebaseGameData.threatList] : [];
 					this.setState({
 						gameOptions,
-						pcObjectOrdering,
 						createdCharData,
 						partyJournal,
 						savedMaps,
-						playerFollowOrder,
 						followModePositions,
 						threatList
 					}, finishSetup);
@@ -1782,6 +1798,7 @@ class Game extends React.PureComponent {
 
 	/**
 	 * Saves starting player chars to state as part of initialization, then runs callback to set gameSetupComplete to true
+	 * If restoring from saved data (and didn't restart the game then reload the page), activeCharacter is restored in updateActiveCharacter
 	 * @param gameSetupCallback: function
 	 * @private
 	 */
@@ -1792,7 +1809,7 @@ class Game extends React.PureComponent {
 		let pcObjectOrdering = [];
 		let activeCharacter = this.state.activeCharacter;
 
-		if (!firebaseDataLoaded) {
+		if (!firebaseDataLoaded || Object.keys(firebaseDataLoaded.playerCharacters).length === 0) {
 			this.startingPlayerCharacters.forEach(characterId => {
 				const props = {...PlayerCharacterTypes[characterId], playerInventoryLimit: this.playerInventoryLimit, lightTimeCosts: this.lightTimeCosts};
 				playerCharacters[characterId] = new Character(props);
@@ -1816,7 +1833,11 @@ class Game extends React.PureComponent {
 				const props = {isSavedData: true, ...pcsCopy[characterId]};
 				playerCharacters[characterId] = new Character(props);
 			});
-			this.setState({playerCharacters}, gameSetupCallback);
+			this.setState({
+				playerCharacters,
+				playerFollowOrder: [...firebaseDataLoaded.playerFollowOrder],
+				pcObjectOrdering: [...firebaseDataLoaded.pcObjectOrdering]
+			}, gameSetupCallback);
 		}
 	}
 
@@ -1910,7 +1931,7 @@ class Game extends React.PureComponent {
 		let unitsTurnOrder = [];
 		const fbGameData = this.state.firebaseGameData;
 
-		if (fbGameData) {
+		if (fbGameData && fbGameData.unitsTurnOrder) {
 			unitsTurnOrder = deepCopy(fbGameData.unitsTurnOrder);
 		} else {
 			unitsTurnOrder = deepCopy(this.state.unitsTurnOrder);
@@ -1922,8 +1943,8 @@ class Game extends React.PureComponent {
 
 		this.setState({unitsTurnOrder}, () => {
 			if (unitType === 'mapCreatures') {
-				if (fbGameData) {
-					this.updateActiveCharacter(callback, null, true);
+				if (fbGameData && !this.state.activeCharacter) {
+					this.updateActiveCharacter(callback, null, null, true);
 				} else {
 					this.updateActiveCharacter(callback);
 				}
@@ -2130,7 +2151,7 @@ class Game extends React.PureComponent {
 					/>
 				}
 
-				{this.state.isLoggedIn && this.showCharacterCreation && !this.state.characterCreated && !this.state.firebaseGameData &&
+				{this.state.isLoggedIn && this.showCharacterCreation && !this.state.characterCreated &&
 					<CharacterCreation
 						saveCreatedCharacter={this.saveCreatedCharacter}
 						objectPanelWidth={this.objectPanelWidth}
@@ -2142,6 +2163,7 @@ class Game extends React.PureComponent {
 
 				{this.state.isLoggedIn && this.state.gameSetupComplete &&
 					<UI
+						// screen/ui data
 						screenData={this.state.screenData}
 						updateGameOptions={this.updateGameOptions}
 						gameOptions={this.state.gameOptions}
@@ -2152,16 +2174,16 @@ class Game extends React.PureComponent {
 						contextMenuWidth={this.contextMenuWidth}
 						contextMenuHeight={this.contextMenuHeight}
 						uiControlBarHeight={this.uiControlBarHeight}
-
+						// dialogs
 						showDialog={this.state.showDialog}
 						setShowDialogProps={this.setShowDialogProps}
 						dialogProps={this.state.dialogProps}
 						notEnoughSpaceDialogProps={this.notEnoughSpaceDialogProps}
 						noMoreActionsDialogProps={this.noMoreActionsDialogProps}
-
+						// logging
 						logText={this.state.logText}
 						updateLog={this.updateLog}
-
+						// character info
 						selectedCharacterInfo={this.state.playerCharacters[this.state.selectedCharacter]}
 						selectedCreatureInfo={this.state.mapCreatures[this.state.selectedCreature]}
 						characterIsSelected={this.state.characterIsSelected}
@@ -2170,7 +2192,7 @@ class Game extends React.PureComponent {
 						updateCharacters={this.updateCharacters}
 						getAllCharactersPos={this.getAllCharactersPos}
 						playerInventoryLimit={this.playerInventoryLimit}
-
+						// object info
 						setMapObjectSelected={this.setMapObjectSelected}
 						objectSelected={this.state.objectSelected}
 						objHasBeenDropped={this.state.objHasBeenDropped}
@@ -2178,12 +2200,12 @@ class Game extends React.PureComponent {
 						addItemToPlayerInventory={this.addItemToPlayerInventory}
 						toggleLightingHasChanged={this.toggleLightingHasChanged}
 						determineIfShouldSpawnCreature={this.determineIfShouldSpawnCreature}
-
+						// map object info
 						updateMapObjects={this.updateMapObjects}
 						mapObjects={this.state.mapObjects}
 						updateMapEnvObjects={this.updateMapEnvObjects}
 						envObjects={this.state.envObjects}
-
+						// control bars
 						actionButtonSelected={this.state.actionButtonSelected}
 						skillModeActive={this.state.skillModeActive}
 						toggleActionButton={this.toggleActionButton}
@@ -2191,49 +2213,53 @@ class Game extends React.PureComponent {
 						refillLight={this.refillLight}
 						lightTimeCosts={this.lightTimeCosts}
 						notEnoughLightDialogProps={this.notEnoughLightDialogProps}
-
-						handleContextMenuSelection={this.handleContextMenuSelection}
-						contextMenu={this.state.contextMenu}
-						toggleCenterOnPlayer={this.toggleCenterOnPlayer}
-
-						currentLocation={this.state.currentLocation}
-						updateCurrentTurn={this.updateCurrentTurn}
 						activeCharacter={this.state.activeCharacter}
-						updateActiveCharacter={this.updateActiveCharacter}
 						playerCharacters={this.state.playerCharacters}
 						actionsCompleted={{moves: this.state.activePlayerMovesCompleted, actions: this.state.activePlayerActionsCompleted}}
 						playerLimits={{moves: playerMoveLimit, actions: this.playerActionsLimit}}
-
+						// context menu
+						handleContextMenuSelection={this.handleContextMenuSelection}
+						contextMenu={this.state.contextMenu}
+						toggleCenterOnPlayer={this.toggleCenterOnPlayer}
+						// mode info panel
+						updateCurrentTurn={this.updateCurrentTurn}
+						updateActiveCharacter={this.updateActiveCharacter}
 						threatList={this.state.threatList}
 						inTacticalMode={this.state.inTacticalMode}
 						toggleTacticalMode={this.toggleTacticalMode}
 						isPartyNearby={this.state.partyIsNearby}
 						modeInfo={{inTacticalMode: this.state.inTacticalMode, turn: this.state.currentTurn + 1}}
+						playerFollowOrder={this.state.playerFollowOrder}
 						updateFollowModePositions={this.updateFollowModePositions}
 						pcObjectOrdering={this.state.pcObjectOrdering}
-
 						inSearchMode={this.state.inSearchMode}
 						toggleSearchMode={this.toggleSearchMode}
-
+						// party status panel
+						currentLocation={this.state.currentLocation}
+						currentFloor={this.state.currentFloor}
+						expertisePointLevels={this.expertisePointLevels}
+						// party journal panel
+						partyJournal={this.state.partyJournal}
+						// pc leveling
 						partyLevel={this.state.partyLevel}
 						partyExpertise={this.state.partyExpertise}
 						assignLevelUpPoints={this.assignLevelUpPoints}
-						partyJournal={this.state.partyJournal}
 					/>
 				}
 
 				{this.state.isLoggedIn && this.state.gameSetupComplete &&
 					<Map
+						// game/screen data
 						screenData={this.state.screenData}
 						gameOptions={this.state.gameOptions}
 						objectPanelWidth={this.objectPanelWidth}
 						needToSaveData={this.state.needToSaveData}
-
+						// dialogs
 						setShowDialogProps={this.setShowDialogProps}
 						notEnoughSpaceDialogProps={this.notEnoughSpaceDialogProps}
 						noMoreActionsDialogProps={this.noMoreActionsDialogProps}
 						noMoreMovesDialogProps={this.noMoreMovesDialogProps}
-
+						// character info
 						pcTypes={this.state.pcTypes}
 						playerCharacters={this.state.playerCharacters}
 						activeCharacter={this.state.activeCharacter}
@@ -2245,7 +2271,7 @@ class Game extends React.PureComponent {
 						updateCharacters={this.updateCharacters}
 						calcPcLightChanges={this.calcPcLightChanges}
 						lightTimeCosts={this.lightTimeCosts}
-
+						// map object data
 						saveMapData={this.saveMapData}
 						savedMaps={this.state.savedMaps}
 						updateMapObjects={this.updateMapObjects}
@@ -2257,15 +2283,15 @@ class Game extends React.PureComponent {
 						toggleLightingHasChanged={this.toggleLightingHasChanged}
 						creatureSpawnInfo={this.state.creatureSpawnInfo}
 						spawnCreature={this.spawnCreature}
-
+						// turn info
 						currentTurn={this.state.currentTurn}
 						updateCurrentTurn={this.updateCurrentTurn}
-
+						// environment info
 						currentLocation={this.state.currentLocation}
 						currentFloor={this.state.currentFloor}
 						previousFloor={this.state.previousFloor}
 						resetDataForNewFloor={this.resetDataForNewFloor}
-
+						// ui data/control
 						updateLog={this.updateLog}
 						actionButtonSelected={this.state.actionButtonSelected}
 						isContextMenuNeeded={this.isContextMenuNeeded}
@@ -2275,7 +2301,7 @@ class Game extends React.PureComponent {
 						centerOnPlayer={this.state.centerOnPlayer}
 						toggleCenterOnPlayer={this.toggleCenterOnPlayer}
 						toggleAudio={this.toggleAudio}
-
+						// modes info
 						updateThreatList={this.updateThreatList}
 						threatList={this.state.threatList}
 						toggleTacticalMode={this.toggleTacticalMode}
@@ -2285,7 +2311,6 @@ class Game extends React.PureComponent {
 						playerFollowOrder={this.state.playerFollowOrder}
 						updateFollowModePositions={this.updateFollowModePositions}
 						followModePositions={this.state.followModePositions}
-
 						inSearchMode={this.state.inSearchMode}
 						skillModeActive={this.state.skillModeActive}
 					/>
