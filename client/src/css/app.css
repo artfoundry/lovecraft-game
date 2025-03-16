@@ -10,4 +10,6 @@ body {
   width: 100%;
   height: 100%;
   touch-action: none;
+  scrollbar-color: seagreen #225555;
+  scrollbar-width: thin;
 }

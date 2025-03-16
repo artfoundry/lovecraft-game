@@ -911,7 +911,7 @@ class UI extends React.PureComponent {
 					buttonStyle={{width: '32px', height: '32px', backgroundPosition: 'center'}}
 				/>}
 
-				<div ref={this.uiRefs.turnInfo} className='turn-info-container ui-panel'>
+				<div ref={this.uiRefs.turnInfo} id='turn-info-container' className='ui-panel'>
 					<div ref={this.uiRefs.log} id='log-container'>
 						{this.state.logText &&
 						<div className='log-lines'>

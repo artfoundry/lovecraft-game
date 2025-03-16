@@ -293,7 +293,7 @@ h3 {
 	font-size: 18px;
 }
 
-.turn-info-container {
+#turn-info-container {
 	grid-area: turnInfo;
 	display: flex;
 	justify-self: center;
@@ -882,8 +882,6 @@ h3 {
 
 .character-status-icons {
 	white-space: nowrap;
-	scrollbar-color: seagreen #225555;
-	scrollbar-width: thin;
 }
 
 .character-status-icon {
@@ -1765,7 +1763,7 @@ select {
 		"controlBar controlBar";
 	}
 
-	.turn-info-container {
+	#turn-info-container {
 		border: 0;
 		border-bottom: 2px solid seagreen;
 		border-radius: 0;
@@ -1832,24 +1830,44 @@ select {
 
 	#ui-container {
 		grid-template-columns: 1fr;
+		grid-template-rows: 200px 1fr 163px;
 		grid-template-areas:
 		"turnInfo"
 		"characterInfo"
 		"controlBar";
 	}
 
-	.turn-info-container {
+	#turn-info-container {
+		flex-direction: column;
+		max-height: 300px;
 		border: 0;
 		border-bottom: 2px solid seagreen;
 		border-radius: 0;
-	}
-
-	#mode-info-container {
-		border: 0;
+		font-size: 14px;
 	}
 
 	#log-container {
+		max-height: 150px;
+		border: 0;
+		border-bottom: 1px solid seagreen;
+		font-size: 14px;
+	}
+
+	#party-info-container {
+		flex-direction: row;
 		border-left: 0;
+		border-bottom: 1px solid seagreen;
+	}
+
+	#mode-info-container {
+		flex-direction: row;
+		border: 0;
+	}
+
+	#turn-info-container {
+		border: 0;
+		border-bottom: 2px solid seagreen;
+		border-radius: 0;
 	}
 
 	.character-info-container, .creature-info-container {
@@ -1917,7 +1935,7 @@ select {
 	}
 }
 
-/* Wide/short screens */
+/* Wide/short and mobile in landscape screens */
 @media (height < 768px) and (orientation: landscape) {
 	.login-methods-container {
 		flex-direction: row;
@@ -1943,7 +1961,7 @@ select {
 	}
 
 	/* Need max heights on this (220px) and log-container (100px) to allow for needed control bar height and account for browser toolbar */
-	.turn-info-container {
+	#turn-info-container {
 		flex-direction: column;
 		max-height: 220px;
 		border-left: 0;
