@@ -27,7 +27,7 @@
 			},
 			"ghoul": {
 				"countPerFloor": {
-					"1": {"number": 12, "variation": 3},
+					"1": {"number": 1, "variation": 3},
 					"2": {"number": 8, "variation": 3},
 					"3": {"number": 5, "variation": 2}
 				}

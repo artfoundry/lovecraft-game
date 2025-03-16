@@ -69,6 +69,12 @@
 	background-color: yellowgreen;
 }
 
-.stealthy {
+.player.stealthy {
 	opacity: 0.5;
+	transition: opacity 1s, transform 0.5s;
+}
+
+.creature.invisible {
+	opacity: 0;
+	transition: opacity 1s, transform 0.5s;
 }

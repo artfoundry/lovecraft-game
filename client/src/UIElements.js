@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {capitalizeWord, deepCopy, convertObjIdToClassId, notEnoughSpaceInInventory, handleItemOverDropZone} from './Utils';
+import {convertCamelToKabobCase, capitalizeWord, deepCopy, convertObjIdToClassId, notEnoughSpaceInInventory, handleItemOverDropZone} from './Utils';
 import {Music} from './Audio';
 
 function CharacterControls(props) {
@@ -130,14 +130,45 @@ function CharacterControls(props) {
 		actionableItems.misc.push('refill');
 	}
 
+	if (currentPCdata.levelUpPoints > 0) {
+		statuses.push('level-up');
+	}
+	for (const statusType of Object.keys(currentPCdata.statuses)) {
+		statuses.push(statusType);
+	}
+	const statusIcons = (
+		<span className={'character-status-icons'}>
+			{statuses.map(status => {
+				const iconClass = `character-status-icon ${convertObjIdToClassId(status)}-status-icon`;
+				return (
+					<span
+						key={status}
+						className={iconClass}
+						onClick={(evt) => {
+							props.toggleHelpPopup(
+								evt,
+								{
+									iconClass,
+									name: currentPCdata.statuses[status].name,
+									description: currentPCdata.statuses[status].description,
+									source: currentPCdata.statuses[status].source
+								}
+							);
+						}}
+					></span>
+				)
+			})}
+		</span>
+	);
+
 	const weaponButtons = (
 		<div className='weapon-buttons-container'>
 			{actionableItems.weapons.map(weapon => {
 				let button;
 				if (weapon.isGun) {
-					actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || weapon.ammo === 0) ? 'button-inactive' :
+					actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || weapon.ammo === 0 || statuses.includes('confused')) ? 'button-inactive' :
 						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.buttonId === weapon.weaponId) ? 'button-selected': '';
-					const reloadButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || props.actionButtonSelected || weapon.ammo === weapon.fullyLoaded || !hasExtraAmmo) ? 'button-inactive' :
+					const reloadButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || props.actionButtonSelected || weapon.ammo === weapon.fullyLoaded || !hasExtraAmmo || statuses.includes('confused')) ? 'button-inactive' :
 						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.buttonId === weapon.weaponId) ? 'button-selected': '';
 					actionButtonCount += 2;
 					button = (
@@ -157,7 +188,7 @@ function CharacterControls(props) {
 						</div>
 					);
 				} else {
-					actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || (weapon.ammo === 0 && !hasExtraAmmo)) ? 'button-inactive' :
+					actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || (weapon.ammo === 0 && !hasExtraAmmo) || statuses.includes('confused')) ? 'button-inactive' :
 						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.buttonId === weapon.weaponId) ? 'button-selected': '';
 					actionButtonCount++;
 					button = (
@@ -206,12 +237,13 @@ function CharacterControls(props) {
 					(skill.name === 'Stealthy' && !props.inTacticalMode) ||
 					(skill.mustNotHaveLightEquipped && currentPCdata.equippedLight) ||
 					(skill.name === 'Disarm Trap' && props.trapsNextToPc.length === 0) ||
+					statuses.includes('confused') ||
 					(skill.requiresBothActions && props.actionsRemaining < 2)) ? 'button-inactive' :
 					(props.isActiveCharacter &&
 					((props.actionButtonSelected &&
 					props.actionButtonSelected.characterId === props.characterId &&
 					props.actionButtonSelected.buttonId === skill.skillId && skill.hasTarget) ||
-					(skill.name === 'Stealthy' && skill.active) ||
+					(skill.name === 'Stealthy' && statuses.includes('stealthy')) ||
 					(skill.name === 'Go Ballistic' && props.skillModeActive === 'goBallistic') ||
 					(skill.name === 'Sacrificial Strike' && props.skillModeActive === 'sacrificialStrike'))) ? 'button-selected': '';
 				let skillClass = `${convertObjIdToClassId(skill.skillId)}-action`;
@@ -280,7 +312,7 @@ function CharacterControls(props) {
 				const itemCount = actionableItems.medicine[lastItemIndex].amount;
 				let button = null;
 				if (item.amount === itemCount) {
-					actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0) ? 'button-inactive' :
+					actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || statuses.includes('confused')) ? 'button-inactive' :
 						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.buttonId === item.itemId) ? 'button-selected': '';
 					actionButtonCount++;
 					button = (
@@ -300,6 +332,7 @@ function CharacterControls(props) {
 				let button = null;
 				actionButtonState = (!props.isActiveCharacter ||
 					props.actionsRemaining === 0 ||
+					statuses.includes('confused') ||
 					(item.spiritCost && currentPCdata.currentSpirit < item.spiritCost)) ? 'button-inactive' :
 					(props.actionButtonSelected &&
 					props.actionButtonSelected.characterId === props.characterId &&
@@ -329,20 +362,6 @@ function CharacterControls(props) {
 				return button;
 			})}
 		</div>
-	);
-
-	if (currentPCdata.levelUpPoints > 0) {
-		statuses.push('level-up');
-	}
-	for (const statusType of Object.keys(currentPCdata.statuses)) {
-		statuses.push(statusType);
-	}
-	const statusIcons = (
-		<span className={'character-status-icons'}>
-			{statuses.map(status => {
-				return <span key={status} className={`character-status-icon ${convertObjIdToClassId(status)}-status-icon`}></span>
-			})}
-		</span>
 	);
 
 	const displayCharName = !props.screenData.isSmall || (props.screenData.isSmall && props.characterId === props.selectedControlTab);
@@ -441,6 +460,12 @@ function CharacterInfoPanel(props) {
 		const skillModValue = skill.modifier ? skill.modifier[skill.level + (levelUpPointAllocations.skills[skillId] || 0)] : null;
 		// if modifier is between 1 and -1 and is a decimal, it needs to be displayed as a percentage
 		const modifier = skillModValue && ((skillModValue < 1) && (skillModValue > -1) && (skillModValue - Math.floor(skillModValue)) !== 0) ? skillModValue * 100 : skillModValue;
+		let skillDescription = skill.description;
+		if (skillDescription.includes('•')) {
+			skillDescription = skillDescription.split('.').map(str => {
+				return <div key={str.substring(0, 5)}>{str}</div>;
+			});
+		}
 		return (
 			<div key={skill.name + Math.random()}
 			     className={`char-info-skills-skill-container${(props.characterInfo.levelUpPoints > 0 && skill.level < skill.maxLevel) ? ' highlight-row' : ''}`}>
@@ -449,7 +474,7 @@ function CharacterInfoPanel(props) {
 				</div>
 				<div>
 					<div className='char-info-skill-name'>{skill.name}</div>
-					<div>{skill.description}</div>
+					<div>{skillDescription}</div>
 					{skill.maxLevel > 0 ? <div>Skill level: {skill.level + 1 + (levelUpPointAllocations.skills[skillId] || 0)} (Max level: {skill.maxLevel + 1})</div> : null}
 					{skill.modifier ? <div>Effect: {skill.modType}{modifier}{skill.affects}</div> : null}
 					{skill.turnsLeft ? <div>Number of turns effect lasts: {skill.turnsLeft[skill.level]}</div>: null}
@@ -533,6 +558,12 @@ function CharacterInfoPanel(props) {
 	const rightItemAmount = (rightEquippedItemInfo && rightEquippedItemInfo.amount) ? rightEquippedItemInfo.amount : (rightEquippedItemInfo && rightEquippedItemInfo.currentRounds) ? rightEquippedItemInfo.currentRounds : '';
 	const leftItemAmount = (leftEquippedItemInfo && leftEquippedItemInfo.amount) ? leftEquippedItemInfo.amount : (leftEquippedItemInfo && leftEquippedItemInfo.currentRounds) ? leftEquippedItemInfo.currentRounds : '';
 	const [activeTab, updateActiveTab] = useState('inv');
+	let currentStatuses = [];
+	for (const [statusId, statusInfo] of Object.entries(props.characterInfo.statuses)) {
+		let info = statusInfo;
+		info.id = statusId;
+		currentStatuses.push(info);
+	}
 
 	return (
 		<div className={`character-info-container ui-panel ${props.showDialog ? 'no-click' : ''}`}>
@@ -713,6 +744,18 @@ function CharacterInfoPanel(props) {
 					<div className='character-stat-text'>Initiative: {props.characterInfo.initiative}</div>
 					<div className='character-stat-text'>Defense: {props.characterInfo.defense}</div>
 					<div className='character-stat-text'>Damage Reduction: {props.characterInfo.damageReduction}{equippedItems.armor ? ` (from ${itemsPossessed[equippedItems.armor].name})` : ''}</div>
+					<div className='character-stat-text'>Current statuses:</div>
+					<div className='character-stat-text character-panel-statuses-list'>
+						{currentStatuses.map(statusInfo => {
+							return(
+								<div className='character-panel-status-row' key={statusInfo.name}>
+									<div className={`character-panel-status-icon ${convertCamelToKabobCase(statusInfo.id)}-status-icon`}></div>
+									<div className='character-panel-status-name'>{statusInfo.name}: {statusInfo.description}</div>
+									<div className='character-panel-status-turns'>Turns left: {statusInfo.turnsLeft}</div>
+								</div>
+							);
+						})}
+					</div>
 				</div>
 
 				<div className={`char-info-skills-container ${activeTab !== 'skills' ? 'hide' : ''}`}>
@@ -934,7 +977,7 @@ function ObjectInfoPanel(props) {
 
 function CreatureInfoPanel(props) {
 	return (
-		<div className={`creature-info-container ui-panel ${props.creatureIsSelected ? '' : 'hide'}`}>
+		<div className='creature-info-container ui-panel'>
 			<div className='general-button' onClick={() => props.updateUnitSelectionStatus(props.creatureInfo.id, 'creature')}>X</div>
 			<div className='creature-info-columns'>
 				<div className='creature-info-icon-column'>
@@ -1193,7 +1236,7 @@ function ContextMenu(props) {
 function HelpScreen(props) {
 	const [contentNum, updateContentNum] = useState(1);
 	return (
-		<div className={`help-screen ui-panel ${props.showHelpScreen ? '' : 'hide'}`}>
+		<div className='help-screen ui-panel'>
 			<div className='general-button help-screen-close' onClick={() => props.toggleHelpScreen()}>X</div>
 			<div id={`help-screen-content-${props.screenData.isShort ? 'mobile-landscape-' : props.screenData.isNarrow ? 'mobile-portrait-' : ''}${contentNum}`} className='help-screen-content'></div>
 			<div className='help-screen-nav-container'>
@@ -1212,19 +1255,27 @@ function HelpScreen(props) {
 	);
 }
 
-// function HelpPopUp(props) {
-// 	return (
-// 		<div className='help-popup ui-panel'>
-//
-// 		</div>
-// 	);
-// }
+function HelpPopup(props) {
+	return (
+		<div className='help-popup ui-panel' style={{'top': props.showHelpPopup.selectedIconPos.top, 'left': props.showHelpPopup.selectedIconPos.left}}>
+			<div className='general-button help-screen-close' onClick={() => props.toggleHelpPopup(null, null)}>X</div>
+			<div className='help-popup-container'>
+				<div className={props.showHelpPopup.iconClass}></div>
+				<div className='help-popup-text'>
+					<div>{props.showHelpPopup.name}</div>
+					<div>{props.showHelpPopup.description}</div>
+					{props.showHelpPopup.source && <div>Source: {props.showHelpPopup.source}</div>}
+				</div>
+			</div>
+		</div>
+	);
+}
 
 function GameOptions(props) {
 	const gameOptions = {...props.gameOptions};
 
 	return (
-		<div className={`dialog ui-panel ${props.showGameOptions ? '' : 'hide'}`}>
+		<div className='dialog ui-panel'>
 			<div className='font-fancy'>Game Options</div>
 			<div className='game-options-container'>
 				<div className='game-options-row'>
@@ -1264,10 +1315,6 @@ function GameOptions(props) {
 						props.updateGameOptions(gameOptions);
 					}} />
 				</div>
-				<Music
-					idProp={`music-${props.gameOptions.songName}-theme`}
-					sourceName={props.gameOptions.songName}
-				/>
 				<div className='game-options-row game-options-row-button-first'>
 					<button
 						className='general-button game-options-row-button'
@@ -1307,4 +1354,4 @@ function GameOptions(props) {
 	);
 }
 
-export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, PartyInfoPanel, JournalWindow, DialogWindow, ContextMenu, HelpScreen, GameOptions};
+export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, PartyInfoPanel, JournalWindow, DialogWindow, ContextMenu, HelpScreen, HelpPopup, GameOptions};

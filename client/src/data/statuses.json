@@ -1,14 +1,34 @@
 {
-  "Confused": {
-
+  "confused": {
+    "name": "Confused",
+    "description": "Target will act randomly between moving, attacking the nearest target, and doing nothing."
   },
-  "Cursed": {
-
+  "cursed": {
+    "name": "Cursed",
+    "description": "Any attack has a chance to fail."
   },
-  "Sleeping": {
-
+  "feelThePain": {
+    "name": "Protection: Sanity",
+    "description": "For the next psychic attack that hits, Investigator will take double Health damage instead of Sanity damage."
   },
-  "Slowed": {
-
+  "invisible": {
+    "name": "Invisible",
+    "description": "Target cannot be seen or targeted."
+  },
+  "sanityProtection": {
+    "name": "Protection: Sanity",
+    "description": "Target has some protection from attacks and effects that reduce sanity."
+  },
+  "slowed": {
+    "name": "Slowed",
+    "description": "Target can only move one space and take one action per turn."
+  },
+  "stealthy": {
+    "name": "Stealthy",
+    "description": "Target is less likely to be hit and may get bonuses to attacking."
+  },
+  "unconscious": {
+    "name": "Unconscious",
+    "description": "Target lies prone, unable to move or act. Attacking the unconscious target will awaken it."
   }
 }

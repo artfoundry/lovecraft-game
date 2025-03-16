@@ -12,6 +12,7 @@ import {
 	removeIdNumber,
 	convertPosToCoords,
 	convertCoordsToPos,
+	getDistanceBetweenTargets,
 	roundTowardZero,
 	deepCopy,
 	diceRoll} from './Utils';
@@ -46,6 +47,7 @@ class Map extends React.PureComponent {
 		};
 		this.creatureSurvivalHpPercent = 0.25;
 		this.playerMovementDelay = 50;
+		this.playerAutoTurnDelay = 500;
 		this.creatureMovementDelay = 200;
 		this.maxLightStrength = 5;
 		this.minPcTileLightStrength = 2;
@@ -1214,7 +1216,7 @@ class Map extends React.PureComponent {
 		let characterList = [];
 		let characterTransform = null;
 		let characterCoords = {};
-		let creatureIsHidden = false;
+		let creatureNotRendered = false;
 
 		characterIDs.forEach(id => {
 			characterCoords = characters[id].coords;
@@ -1234,7 +1236,7 @@ class Map extends React.PureComponent {
 				characterTransform = this._calculateObjectTransform(characterCoords.xPos, characterCoords.yPos);
 			} else {
 				// hide all creatures from rendering unless creature is in sight of any PC or map light
-				creatureIsHidden = this.state.mapLayout[characterPos].lightStrength === 0;
+				creatureNotRendered = this.state.mapLayout[characterPos].lightStrength === 0;
 				characterTransform = this._calculateObjectTransform(characterCoords.xPos, characterCoords.yPos);
 			}
 
@@ -1293,9 +1295,10 @@ class Map extends React.PureComponent {
 					charRef={this.charRefs[id]}
 					characterType={characterType}
 					idClassName={idConvertedToClassName}
-					isHidden={creatureIsHidden || characters[id].isRemoved}
+					isHidden={creatureNotRendered || characters[id].isRemoved}
+					isInvisible={characters[id].statuses.invisible}
 					isSelected={characters[id].isSelected}
-					isStealthy={id === 'thief' && characters[id].skills.stealthy.active}
+					isStealthy={id === 'thief' && characters[id].statuses.stealthy}
 					isDying={isDyingPc}
 					isDead={characters[id].currentHealth <= 0 && !isDyingPc}
 					isCatatonic={characters[id].currentSanity <= 0 && characters[id].currentHealth > 0}
@@ -1613,7 +1616,7 @@ class Map extends React.PureComponent {
 			} else if (tileData.type !== 'wall') {
 				// Can only click on a previously visited tile
 				if (this.state.playerVisited[newPos]) {
-					const pathData = this.pathFromAtoB(this.props.playerCharacters[this.props.activeCharacter].coords, newCoords);
+					const pathData = this._pathFromAtoB(this.props.playerCharacters[this.props.activeCharacter].coords, newCoords);
 					this.moveCharacter(pathData);
 				}
 			}
@@ -1720,8 +1723,9 @@ class Map extends React.PureComponent {
 	 * @param startTileCoords: Object (of x and y values)
 	 * @param endTileCoords: Object (of x and y values)
 	 * @returns Array (of strings (positions))
+	 * @private
 	 */
-	pathFromAtoB(startTileCoords, endTileCoords) {
+	_pathFromAtoB(startTileCoords, endTileCoords) {
 		const allPcPos = this.props.getAllCharactersPos('player', 'pos');
 		const allCreaturePos = this.props.getAllCharactersPos('creature', 'pos');
 		const allEnvObjectPos = [];
@@ -2151,7 +2155,7 @@ class Map extends React.PureComponent {
 
 	/**
 	 * Finds all visible/lit tiles within LOS of all PCs and/or other map lights
-	 * @param allLightPos: array of objects ({id, pos: string, (optional: range - used for map lights)}
+	 * @param allLightPos: array of objects ({id: string (pc ID), pos: string, (optional: range - used for map lights)}
 	 * @returns object {combined floors/walls from _unblockedPathsToNearbyTiles for all PCs}
 	 * @private
 	 */
@@ -2280,8 +2284,8 @@ class Map extends React.PureComponent {
 	moveCharacter = (pathData, newPos = null, followerId = null) => {
 		const newTilePos = newPos || pathData.tilePath[0];
 		const moveItSkill = this.props.playerCharacters[this.props.activeCharacter].skills.moveIt;
-		const playerMoveLimit = this.props.playerMovesLimit + (moveItSkill ? moveItSkill.modifier[moveItSkill.level] : 0);
-		if (this.props.inTacticalMode && this.props.activePlayerMovesCompleted >= playerMoveLimit) {
+		const playerMoveLimit = this.props.playerLimits.moves + (moveItSkill ? moveItSkill.modifier[moveItSkill.level] : 0);
+		if (this.props.inTacticalMode && this.props.actionsCompleted.moves >= playerMoveLimit) {
 			this.props.setShowDialogProps(true, this.props.noMoreMovesDialogProps);
 			return;
 		}
@@ -2638,6 +2642,62 @@ class Map extends React.PureComponent {
 	}
 
 	/**
+	 * Used by moveCreature to check for a skill to use instead of attacking
+	 * @param creatureData: object
+	 * @param targetStatuses: object (statuses of target pc)
+	 * @param skillProps: object (defined in moveCreature and updated directly (not passed back))
+	 * @param targetPlayerDistance: number (number of tiles target pc is away from creature)
+	 * @return creatureSkillToUse string
+	 * @private
+	 */
+	_checkForUsableSkill(creatureData, targetStatuses, skillProps, targetPlayerDistance) {
+		// if creature has skills, if skill priority list exists, check list in order, otherwise just check single skill
+		// if skill applies a status and target doesn't already have that status and if enough spirit, use that skill
+		// else if enough spirit, use skill
+		let creatureSkillToUse = null;
+		let creatureSkillNameToCheck = '';
+		let creatureSkillToCheck = {};
+		const numOfSkills = creatureData.skillPriority.length;
+
+		const checkIfSkillCanBeUsed = () => {
+			creatureSkillToCheck = creatureData.skills[creatureSkillNameToCheck];
+			const hasEnoughSpirit = creatureData.currentSpirit >= creatureSkillToCheck.spirit;
+			const targetInRange = creatureSkillToCheck.range && (creatureSkillToCheck.targetSelf || targetPlayerDistance <= creatureSkillToCheck.range);
+			const targetDoesNotHaveStatus = creatureSkillToCheck.status && !targetStatuses[creatureSkillToCheck.status];
+
+			if (hasEnoughSpirit && (targetInRange || !creatureSkillToCheck.range)) {
+				if (!creatureSkillToCheck.status || (creatureSkillToCheck.targetSelf && !creatureData.statuses[creatureSkillToCheck.status])) {
+					creatureSkillToUse = creatureSkillNameToCheck;
+					if (creatureSkillToCheck.multipleTargets) {
+						skillProps.pcData = {};
+						const pcPositions = this.props.getAllCharactersPos('player', 'coords');
+						pcPositions.forEach(coordData => {
+							const distance = getDistanceBetweenTargets(coordData.coords, creatureData.coords);
+							// if skill has a range and pc is within range or no range but pc is within creature perception range
+							// and if skill targets all targets in range or limited number of targets but haven't reached that number of targets yet
+							if (((creatureSkillToCheck.range && distance <= creatureSkillToCheck.range) || distance <= creatureData.perception) &&
+								(creatureSkillToCheck.multipleTargets === 'all' || Object.keys(skillProps.pcData).length <= creatureSkillToCheck.multipleTargets))
+							{
+								skillProps.pcData[coordData.id] = deepCopy(this.props.playerCharacters[coordData.id]);
+							}
+						});
+					}
+				} else if (targetDoesNotHaveStatus && !creatureSkillToCheck.targetSelf) {
+					creatureSkillToUse = 'attemptToApplyStatus';
+					skillProps.skillName = creatureSkillNameToCheck;
+				}
+			}
+		}
+		let skillNum = 0;
+		while (!creatureSkillToUse && skillNum < numOfSkills) {
+			creatureSkillNameToCheck = creatureData.skillPriority[skillNum];
+			checkIfSkillCanBeUsed(creatureSkillNameToCheck);
+			skillNum++;
+		}
+		return creatureSkillToUse;
+	}
+
+	/**
 	 * AI for creature behavior
 	 * Basically a creature with a PC in view will either move toward it and/or attack it if in range
 	 * or move away from it if its HP is below a threshold (set by this.creatureSurvivalHpPercent)
@@ -2645,13 +2705,13 @@ class Map extends React.PureComponent {
 	 */
 	_moveCreature() {
 		const creatureID = this.props.activeCharacter;
-		const creatureData = this.props.mapCreatures[creatureID];
+		const creatureData = deepCopy(this.props.mapCreatures[creatureID]);
 		let creatureDidAct = false;
 
 		if (creatureData.currentHealth > 0) {
 			let creatureCoords = creatureData.coords;
 			const creaturePos = convertCoordsToPos(creatureCoords);
-			const lineOfSightTiles = this._unblockedPathsToNearbyTiles(creaturePos, creatureData.perception, true);
+			const lineOfSightTiles = this._unblockedPathsToNearbyTiles(creaturePos, creatureData.perception, false);
 			const tilesToSearch = Object.values(lineOfSightTiles);
 			if (tilesToSearch.length === 0) {
 				return;
@@ -2662,15 +2722,39 @@ class Map extends React.PureComponent {
 			let targetPlayerPos = '';
 			let targetPlayerDistance = null;
 			let targetPlayerData = {};
+			let needToRecopyData = true;
+			const updateSpiritAndCurrentTurn = () => {
+				// need new copy of data if creature used skill or moved (but not if only attacked)
+				const updatedCreatureData = needToRecopyData ? deepCopy(this.props.mapCreatures[creatureID]) : creatureData;
+				if (updatedCreatureData.currentSpirit < updatedCreatureData.startingSpirit) {
+					const regeneratedSpirit = updatedCreatureData.currentSpirit + updatedCreatureData.spiritRegeneration;
+					updatedCreatureData.currentSpirit = regeneratedSpirit > updatedCreatureData.startingSpirit ? updatedCreatureData.startingSpirit : regeneratedSpirit;
+					this.props.updateCharacters('creature', updatedCreatureData, creatureID, false, false, false, this.props.updateCurrentTurn);
+				} else {
+					this.props.updateCurrentTurn();
+				}
+			};
+			const updateThreatAndCurrentTurn = () => {
+				const playerPositions = this.props.getAllCharactersPos('player', 'pos');
+				const creaturePositions = this.props.getAllCharactersPos('creature', 'pos');
+				const threatLists = this._findChangesToNearbyThreats(playerPositions, creaturePositions);
+				if (threatLists.threatListToAdd.length > 0 || threatLists.threatListToRemove.length > 0) {
+					this.props.updateThreatList(threatLists.threatListToAdd, threatLists.threatListToRemove, updateSpiritAndCurrentTurn, this.isInLineOfSight);
+				} else {
+					updateSpiritAndCurrentTurn();
+				}
+			};
 
-			// find closest player for creature to focus on
+			// find closest player within creature's perception for creature to focus on
 			for (const playerData of Object.values(this.props.playerCharacters)) {
-				if (playerData.currentHealth > 0 && playerData.currentSanity > 0) {
+				//todo: save unconscious target as a backup in case another target isn't available
+				if (playerData.currentHealth > 0 && playerData.currentSanity > 0 && !playerData.statuses.unconscious) {
 					playerPos = convertCoordsToPos(playerData.coords);
 					let playerDistance = 0;
 					let searchDistance = 0;
 					let tileAtSearchDistance = tilesToSearch[searchDistance];
 					while (playerDistance === 0 && searchDistance < tilesToSearch.length) {
+						// if searchDistance is within creature perception and a player is there, found a target
 						if (creatureData.perception >= (searchDistance + 1) && tileAtSearchDistance.floors[playerPos]) {
 							playerDistance = searchDistance + 1;
 						}
@@ -2678,70 +2762,104 @@ class Map extends React.PureComponent {
 						tileAtSearchDistance = tilesToSearch[searchDistance];
 					}
 
+					// if this is first target found or target is closer than previous target, update target for focus
 					if (playerDistance > 0 && (!targetPlayerDistance || playerDistance < targetPlayerDistance)) {
 						targetPlayerDistance = playerDistance;
 						targetPlayerPos = playerPos;
-						targetPlayerData = deepCopy(playerData);
+						targetPlayerData = playerData;
 					}
 				}
 			}
+			targetPlayerData = deepCopy(targetPlayerData);
 
 			// if a nearby PC was found
 			if (targetPlayerDistance) {
-				const updateThreatAndCurrentTurn = () => {
-					this.props.updateThreatList([creatureID], [], this.props.updateCurrentTurn, this.isInLineOfSight);
+				creatureDidAct = true;
+				let skillProps = {
+					pcData: targetPlayerData,
+					creatureData,
+					updateCharacters: this.props.updateCharacters,
+					updateLog: this.props.updateLog,
+					toggleAudio: this.props.toggleAudio,
+					updateTurnCallback: updateSpiritAndCurrentTurn,
+				};
+				let creatureSkillToUse = this._checkForUsableSkill(creatureData, targetPlayerData.statuses, skillProps, targetPlayerDistance);
+				let creatureBestRange = creatureData.range;
+
+				for (const skillData of Object.values(creatureData.skills)) {
+					if (skillData.range && skillData.range > creatureData.range) {
+						creatureBestRange = skillData.range;
+					}
 				}
+
 				// if creature is low on health
 				if (creatureData.currentHealth < (creatureData.startingHealth * this.creatureSurvivalHpPercent)) {
-					// if player char is within attack range, then attack
-					if (targetPlayerDistance <= creatureData.range) {
-						// this.props.updateLog(`${creatureID} attacks player at ${JSON.stringify(targetPlayerPos)}`);
-						this.props.mapCreatures[creatureID].attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog, this.props.toggleAudio);
+					const moveAfterActing = () => {
+						// now move away from player after attacking/using skill
+						// todo: if creature is flyingPolyp, try to use Phase skill
+						for (let i = 1; i <= creatureData.moveSpeed; i++) {
+							creatureCoords = this._findNewCreatureCoordsRelativeToChar(creatureCoords, -1);
+							newCreatureCoordsArray.push(creatureCoords);
+						}
+						this._storeNewCreatureCoords(creatureID, newCreatureCoordsArray, updateThreatAndCurrentTurn);
 					}
-					// then move away from player
-					for (let i = 1; i <= creatureData.moveSpeed; i++) {
-						creatureCoords = this._findNewCreatureCoordsRelativeToChar(creatureCoords, -1);
-						newCreatureCoordsArray.push(creatureCoords);
-						// this.props.updateLog(`Moving ${creatureID} away from player to ${JSON.stringify(newCreatureCoordsArray)}`);
+					// if player char is within attack range, then use skill or attack
+					if (targetPlayerDistance <= creatureBestRange) {
+						if (creatureSkillToUse) {
+							skillProps.updateTurnCallback = moveAfterActing;
+							creatureData[creatureSkillToUse](skillProps);
+						} else {
+							creatureData.attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog, this.props.toggleAudio, moveAfterActing);
+						}
 					}
-					this._storeNewCreatureCoords(creatureID, newCreatureCoordsArray, updateThreatAndCurrentTurn);
 				// or if player is out of attack range, move closer
-				} else if (targetPlayerDistance > creatureData.range) {
+				} else if (targetPlayerDistance > creatureBestRange) {
 					let moves = 1;
-					while (moves <= creatureData.moveSpeed && targetPlayerDistance > creatureData.range) {
+					while (moves <= creatureData.moveSpeed && targetPlayerDistance > creatureBestRange) {
 						creatureCoords = this._findNewCreatureCoordsRelativeToChar(creatureCoords, 1, targetPlayerPos);
 						newCreatureCoordsArray.push(creatureCoords);
 						moves++;
 						const xDistance = Math.abs(targetPlayerData.coords.xPos - creatureCoords.xPos);
 						const yDistance = Math.abs(targetPlayerData.coords.yPos - creatureCoords.yPos);
 						targetPlayerDistance = xDistance > yDistance ? xDistance : yDistance;
-						// this.props.updateLog(`Moving ${creatureID} toward player, to ${JSON.stringify(newCreatureCoordsArray)}`);
 					}
 					this._storeNewCreatureCoords(creatureID, newCreatureCoordsArray, () => {
-						// if player char is within attack range, then attack
-						if (targetPlayerDistance <= creatureData.range) {
-							// this.props.updateLog(`${creatureID} attacks player at ${JSON.stringify(targetPlayerPos)}`);
-							this.props.mapCreatures[creatureID].attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog, this.props.toggleAudio, updateThreatAndCurrentTurn);
+						// if player char is within attack range, then use skill or attack
+						if (targetPlayerDistance <= creatureBestRange) {
+							if (creatureSkillToUse) {
+								// need new copy as data changed (from move) since copying at beginning of moveCreature
+								skillProps.creatureData = deepCopy(this.props.mapCreatures[creatureID]);
+								creatureData[creatureSkillToUse](skillProps);
+							} else {
+								creatureData.attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog, this.props.toggleAudio, updateThreatAndCurrentTurn);
+							}
 						} else {
-							this.props.updateCurrentTurn();
+							updateThreatAndCurrentTurn();
 						}
 					});
-				// otherwise player is in attack range, so attack
+				// otherwise player is in attack range, so use skill or attack
 				} else {
-					// this.props.updateLog(`${creatureID} attacks player at ${JSON.stringify(targetPlayerPos)}`);
-					this.props.mapCreatures[creatureID].attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog, this.props.toggleAudio, updateThreatAndCurrentTurn);
+					if (creatureSkillToUse) {
+						creatureData[creatureSkillToUse](skillProps);
+					} else {
+						// for use in updateSpiritAndCurrentTurn - don't need to recopy data just for an attack (only for skills or movement)
+						needToRecopyData = false;
+						creatureData.attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog, this.props.toggleAudio, updateSpiritAndCurrentTurn);
+					}
 				}
-				creatureDidAct = true;
 			} else {
-				this._moveRandomly();
 				creatureDidAct = true;
+				this._moveRandomly();
 				const playerPositions = this.props.getAllCharactersPos('player', 'pos');
 				const creaturePositions = this.props.getAllCharactersPos('creature', 'pos');
 				const threatLists = this._findChangesToNearbyThreats(playerPositions, creaturePositions);
-				if (threatLists.threatListToAdd.length > 0 || threatLists.threatListToRemove.length > 0) {
-					this.props.updateThreatList(threatLists.threatListToAdd, threatLists.threatListToRemove, this.props.updateCurrentTurn);
+				if (threatLists.threatListToAdd.length > 0) {
+					this.props.updateThreatList(threatLists.threatListToAdd, threatLists.threatListToRemove, this.props.updateCurrentTurn, null);
 				} else {
 					this.props.updateCurrentTurn();
+				}
+				if (this.props.logText[this.props.logText.length -1] !== 'Something moves in the darkness...') {
+					this.props.updateLog('Something moves in the darkness...');
 				}
 			}
 
@@ -2753,23 +2871,25 @@ class Map extends React.PureComponent {
 	}
 
 	/**
-	 * Moves a creature in random direction
+	 * Moves a character in random direction
 	 * (looking at all surrounding tiles, first choice to examine is random, then cycles through remaining options in order)
+	 * @param callback function (either takeActionCallback passed from _randomizeTurn to call takeAction again if necessary
+	 * or updateThreatAndCurrentTurn callback from moveCreature)
 	 * @private
 	 */
-	_moveRandomly() {
-		const activeCreatureID = this.props.activeCharacter;
-		const creatureData = this.props.mapCreatures[activeCreatureID];
-		const creatureCoords = creatureData.coords;
+	_moveRandomly(callback = null) {
+		const activeCharID = this.props.activeCharacter;
+		const charData = this.props.mapCreatures[activeCharID] || this.props.playerCharacters[activeCharID];
+		const characterCoords = charData.coords;
 		let surroundingCoords = [
-			{xPos: creatureCoords.xPos + 1, yPos: creatureCoords.yPos},
-			{xPos: creatureCoords.xPos - 1, yPos: creatureCoords.yPos},
-			{xPos: creatureCoords.xPos + 1, yPos: creatureCoords.yPos + 1},
-			{xPos: creatureCoords.xPos - 1, yPos: creatureCoords.yPos + 1},
-			{xPos: creatureCoords.xPos + 1, yPos: creatureCoords.yPos - 1},
-			{xPos: creatureCoords.xPos - 1, yPos: creatureCoords.yPos - 1},
-			{xPos: creatureCoords.xPos + 1, yPos: creatureCoords.yPos + 1},
-			{xPos: creatureCoords.xPos + 1, yPos: creatureCoords.yPos - 1}
+			{xPos: characterCoords.xPos + 1, yPos: characterCoords.yPos},
+			{xPos: characterCoords.xPos - 1, yPos: characterCoords.yPos},
+			{xPos: characterCoords.xPos + 1, yPos: characterCoords.yPos + 1},
+			{xPos: characterCoords.xPos - 1, yPos: characterCoords.yPos + 1},
+			{xPos: characterCoords.xPos + 1, yPos: characterCoords.yPos - 1},
+			{xPos: characterCoords.xPos - 1, yPos: characterCoords.yPos - 1},
+			{xPos: characterCoords.xPos + 1, yPos: characterCoords.yPos + 1},
+			{xPos: characterCoords.xPos + 1, yPos: characterCoords.yPos - 1}
 		];
 		const numOptions = surroundingCoords.length;
 		let randomIndex = Math.floor(Math.random() * numOptions);
@@ -2780,11 +2900,106 @@ class Map extends React.PureComponent {
 		}
 		// if tile with current randomIndex value isn't null, then it's available to move
 		if (surroundingCoords[randomIndex]) {
-			this._storeNewCreatureCoords(activeCreatureID, [surroundingCoords[randomIndex]]);
+			if (charData.type === 'player') {
+				const updatedData = deepCopy(charData);
+				updatedData.coords = {...surroundingCoords[randomIndex]};
+				this.props.updateCharacters('player', updatedData, activeCharID, updatedData.lightTime > 0, false, false, () => {
+					this.props.updateActivePlayerMoves(callback);
+				});
+			} else {
+				this._storeNewCreatureCoords(activeCharID, [surroundingCoords[randomIndex]], callback);
+			}
+		} else if (callback) {
+			callback();
 		}
-		const willPlaySound = diceRoll(10) <= this.chanceForCreatureSound;
+		const willPlaySound = charData.type !== 'player' && diceRoll(10) <= this.chanceForCreatureSound;
 		if (willPlaySound) {
-			this.props.toggleAudio('characters', removeIdNumber(activeCreatureID), {useVolume: true, useReverb: true, soundCoords: creatureCoords});
+			this.props.toggleAudio('characters', removeIdNumber(activeCharID), {useVolume: true, useReverb: true, soundCoords: characterCoords});
+		}
+	}
+
+	/**
+	 * For making a pc take random actions and moves (for when it has a confused or other similar status)
+	 * Options are to move, attack, or use a healing item
+	 * @private
+	 */
+	_randomizeTurn() {
+		let activePcData = this.props.playerCharacters[this.props.activeCharacter];
+		const equippedItems = activePcData.equippedItems.loadout1;
+		const leftHandWeapon = activePcData.weapons[equippedItems.left];
+		const rightHandWeapon = activePcData.weapons[equippedItems.right];
+		const chosenWeapon = leftHandWeapon && rightHandWeapon ? (diceRoll(2) === 1 ? equippedItems.right : equippedItems.left) : (leftHandWeapon ? equippedItems.left : equippedItems.right);
+		const firstAidInInv = activePcData.items.firstAidKit0;
+		const pharmInInv = activePcData.items.pharmaceuticals0;
+		// options are 'move', {attack: chosenWeapon}, or {heal: healItem}
+		let availableOptions = {};
+
+		availableOptions.move = true;
+		if ((leftHandWeapon && (!leftHandWeapon.isRanged || leftHandWeapon.currentRounds > 0)) ||
+			(rightHandWeapon && (!rightHandWeapon.isRanged || rightHandWeapon.currentRounds > 0)))
+		{
+			availableOptions.attack = chosenWeapon;
+		}
+		if (firstAidInInv || pharmInInv) {
+			const healItem = firstAidInInv && pharmInInv ? (diceRoll(2) === 1 ? firstAidInInv : pharmInInv) : firstAidInInv || pharmInInv;
+			availableOptions.heal = healItem.id;
+		}
+
+		const optionsKeys = Object.keys(availableOptions);
+		const randomIndex = diceRoll(optionsKeys.length) - 1;
+		const chosenActName = optionsKeys[randomIndex];
+		const actionItem = availableOptions[chosenActName];
+		const takeActionCallback = () => {
+			const actionsRemaining = this.props.playerLimits.actions - this.props.actionsCompleted.actions;
+			const movesRemaining = this.props.playerLimits.moves - this.props.actionsCompleted.moves;
+			if ((actionsRemaining + movesRemaining) === 0) {
+				this.props.updateCurrentTurn();
+			} else {
+				// allow pause to show pc animation
+				setTimeout(() => {
+					this._randomizeTurn();
+				}, this.playerAutoTurnDelay);
+			}
+		};
+
+		// do the first move/action (rest will be called recursively from within takeAction
+		if (chosenActName !== 'move') {
+			let target = null;
+			// find target
+			if (chosenActName === 'attack') {
+				const nearbyChars = [];
+				const allCharactersPos = this.props.getAllCharactersPos('all', 'coords');
+				// collect all PCs and creatures (that are threats) in LOS
+				allCharactersPos.forEach(nearbyChar => {
+					if (nearbyChar.id !== this.props.activeCharacter) {
+						const charIsPc = this.props.playerCharacters[nearbyChar.id];
+						const charIsThreatCreature = this.props.threatList.includes(nearbyChar.id);
+						const nearbyCharPos = convertCoordsToPos(charIsPc ? charIsPc.coords : nearbyChar.coords);
+						if ((charIsPc || charIsThreatCreature) && this.isInLineOfSight(convertCoordsToPos(activePcData.coords), nearbyCharPos, true)) {
+							const distanceToChar = getDistanceBetweenTargets(activePcData.coords, convertPosToCoords(nearbyCharPos));
+							const nearbyCharData = charIsPc || this.props.mapCreatures[nearbyChar.id];
+							nearbyChars.push({distance: distanceToChar, nearbyCharData});
+						}
+					}
+				});
+				if (nearbyChars.length > 0) {
+					// sort collection based on distance keys
+					nearbyChars.sort((char1, char2) => char1.distance - char2.distance);
+					const weaponIsRanged = activePcData.weapons[chosenWeapon].ranged;
+					let i = 0;
+					// assign nearest target that can be hit by equipped weapon
+					while (!target && i < nearbyChars.length) {
+						if (weaponIsRanged || (!weaponIsRanged && nearbyChars[i].distance === 1)) {
+							target = deepCopy(nearbyChars[i].nearbyCharData);
+						}
+						i++;
+					}
+				}
+			}
+			this.props.takeAutomaticAction(chosenActName, actionItem, target, this.isInLineOfSight, takeActionCallback);
+		} else {
+			this.props.updateLog(`${activePcData.name} is confused and wanders aimlessly.`);
+			this._moveRandomly(takeActionCallback);
 		}
 	}
 
@@ -3021,13 +3236,17 @@ class Map extends React.PureComponent {
 
 	componentDidUpdate(prevProps, prevState, snapShot) {
 		if (prevProps.activeCharacter !== this.props.activeCharacter) {
+			const activePc = this.props.playerCharacters[this.props.activeCharacter];
 			if (this.props.mapCreatures[this.props.activeCharacter]) {
 				// timeout to allow UI to provide visible updates to player, like creatures moving in turn and turn indicator to show 'enemies moving'
 				setTimeout(() => {
 					this._moveCreature();
 				}, this.playerMovementDelay);
-			} else if (this.props.playerCharacters[this.props.activeCharacter]) {
+			} else if (activePc) {
 				this._moveMap();
+				if (activePc.statuses.confused) {
+					this._randomizeTurn();
+				}
 			}
 		}
 		if (this.props.contextMenuChoice && prevProps.contextMenuChoice !== this.props.contextMenuChoice) {
