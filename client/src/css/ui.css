@@ -1847,7 +1847,7 @@ select {
 	}
 
 	#log-container {
-		max-height: 150px;
+		max-height: 80px;
 		border: 0;
 		border-bottom: 1px solid seagreen;
 		font-size: 14px;
