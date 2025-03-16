@@ -130,11 +130,28 @@ h3 {
 	font-size: medium;
 }
 
-/*.help-popup {*/
-/*	position: absolute;*/
-/*	width: 300px;*/
-/*	height: 200px;*/
-/*}*/
+.help-popup {
+	position: absolute;
+	width: 300px;
+	height: 150px;
+	padding: 20px;
+}
+
+.help-popup-container {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	align-items: center;
+	margin-top: 50px;
+}
+
+.help-popup-container .character-status-icon {
+	width: 64px;
+}
+
+.help-popup-text {
+	width: 230px;
+}
 
 .help-screen {
 	display: flex;
@@ -530,6 +547,35 @@ h3 {
 	border-radius: 5px;
 }
 
+.character-panel-statuses-list {
+	display: flex;
+	flex-direction: column;
+	padding: 0;
+}
+
+.character-panel-status-row {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	padding: 5px 0;
+}
+
+.character-panel-status-icon {
+	width: 24px;
+	background-position: center;
+	background-repeat: no-repeat;
+}
+
+.character-panel-status-name {
+	flex-basis: 60%;
+}
+
+.character-panel-status-turns {
+	flex-basis: 30%;
+	align-self: center;
+	text-align: right;
+}
+
 .level-up-header {
 	padding-top: 5px;
 	border-radius: 5px;
@@ -803,6 +849,8 @@ h3 {
 .control-bar-tab {
 	display: flex;
 	justify-content: space-between;
+	align-items: center;
+	height: 30px;
 }
 
 .control-bar-tab-container {
@@ -827,6 +875,15 @@ h3 {
 	height: 24px;
 	vertical-align: middle;
 	margin: 0 5px 0 0;
+	background-repeat: no-repeat;
+	background-position: center;
+	cursor: pointer;
+}
+
+.character-status-icons {
+	white-space: nowrap;
+	scrollbar-color: seagreen #225555;
+	scrollbar-width: thin;
 }
 
 .character-status-icon {
@@ -837,8 +894,28 @@ h3 {
 	background-image: url('../assets/ui/levelUp.png');
 }
 
-.sanity-buff-status-icon {
-	background-image: url('../assets/ui/sanityBuff.png');
+.sanity-protection-status-icon, .feel-the-pain-status-icon {
+	background-image: url('../assets/ui/sanity-protection-status.png');
+}
+
+.stealthy-status-icon {
+	background-image: url('../assets/ui/stealthy-status.png');
+}
+
+.confused-status-icon {
+	background-image: url('../assets/ui/confused-status.png');
+}
+
+.unconscious-status-icon {
+	background-image: url('../assets/ui/unconscious-status.png');
+}
+
+.slowed-status-icon {
+	background-image: url('../assets/ui/slowed-status.png');
+}
+
+.cursed-status-icon {
+	background-image: url('../assets/ui/cursed-status.png');
 }
 
 .character-name {
@@ -846,6 +923,7 @@ h3 {
 	margin-bottom: 3px;
 	font-size: 16px;
 	border-bottom: 1px solid #225555;
+	white-space: nowrap;
 }
 
 #control-bar-statuses-container {

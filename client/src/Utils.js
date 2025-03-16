@@ -25,6 +25,12 @@ export function convertCoordsToPos(coords) {
 	return `${coords.xPos}-${coords.yPos}`;
 }
 
+export function getDistanceBetweenTargets(coords1, coords2) {
+	const xDelta = Math.abs(coords1.xPos - coords2.xPos);
+	const yDelta = Math.abs(coords1.yPos - coords2.yPos);
+	return xDelta > yDelta ? xDelta : yDelta;
+}
+
 export function articleType(word, isCapital = false) {
 	const vowels = ['a', 'e', 'i', 'o', 'u'];
 	const firstLetter = word.substring(0,1);

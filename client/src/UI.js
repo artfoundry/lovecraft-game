@@ -1,5 +1,19 @@
 import React from 'react';
-import {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, PartyInfoPanel, JournalWindow, DialogWindow, ContextMenu, HelpScreen, GameOptions} from './UIElements';
+import {
+	CharacterControls,
+	CharacterInfoPanel,
+	CreatureInfoPanel,
+	ObjectInfoPanel,
+	ModeInfoPanel,
+	PartyInfoPanel,
+	JournalWindow,
+	DialogWindow,
+	ContextMenu,
+	HelpScreen,
+	HelpPopup,
+	GameOptions
+} from './UIElements';
+import {Music} from './Audio';
 import {convertCoordsToPos, notEnoughSpaceInInventory, deepCopy} from './Utils';
 import './css/ui.css';
 
@@ -23,6 +37,7 @@ class UI extends React.PureComponent {
 		this.state = {
 			showGameOptions: false,
 			showHelpScreen: false,
+			showHelpPopup: null,
 			showJournal: false,
 			logText: this.props.logText,
 			controlBarMinimized: false,
@@ -146,6 +161,7 @@ class UI extends React.PureComponent {
 						screenData={this.props.screenData}
 						selectedControlTab={this.state.selectedControlTab}
 						setSelectedControlTab={this.setSelectedControlTab}
+						toggleHelpPopup={this.toggleHelpPopup}
 					/>
 				)
 			}
@@ -328,8 +344,8 @@ class UI extends React.PureComponent {
 			if (updateData.equippedLight && sourceBoxIndex) {
 				lightBeingSwapped = updateData.equippedLight;
 			}
-			if (updateData.id === 'thief' && updateData.skills.stealthy.active) {
-				updateData.skills.stealthy.active = false;
+			if (updateData.id === 'thief' && updateData.statuses.stealthy) {
+				delete updateData.statuses.stealthy;
 				this.props.updateLog(`After equipping a light source, ${updateData.name} is no longer hiding in the shadows`);
 			}
 			itemBeingReplaced = updateData.equippedLight;
@@ -601,7 +617,7 @@ class UI extends React.PureComponent {
 	}
 
 	/**
-	 *
+	 * For containers (sarcophagi, rubble mounds, etc.), calls App function updateMapEnvObjects to set them to open (user interacted with them)
 	 * @param envObjectId: string
 	 */
 	setContainerOpenState = (envObjectId) => {
@@ -763,7 +779,7 @@ class UI extends React.PureComponent {
 		if (this.props.gameOptions.playMusic) {
 			music.volume = this.props.gameOptions.musicVolume;
 			music.play().catch(e => console.log(e));
-		} else {
+		} else if (music) {
 			music.pause();
 		}
 	}
@@ -786,6 +802,17 @@ class UI extends React.PureComponent {
 
 	toggleHelpScreen = () => {
 		this.setState(prevState => ({showHelpScreen: !prevState.showHelpScreen}));
+	}
+
+	/**
+	 * UI elements call this when user clicks on them to show popup help
+	 * @param evt object (for getting position of click/tap)
+	 * @param helpContent object ({iconClass: [string], name: [string], description: [string]}) or null (to close popup)
+	 */
+	toggleHelpPopup = (evt, helpContent) => {
+		const selectedIconPos = evt ? this.calculatePanelCoords(evt.clientX, evt.clientY, 'object') : null;
+		const showHelpPopup = helpContent && (!this.state.showHelpPopup || helpContent.description !== this.state.showHelpPopup.description) ? {selectedIconPos, ...helpContent} : null;
+		this.setState({showHelpPopup});
 	}
 
 	updateControlBarColumnCount = (playerCount) => {
@@ -903,12 +930,6 @@ class UI extends React.PureComponent {
 						setShowJournal={this.setShowJournal}
 					/>}
 
-					{this.state.showJournal &&
-					<JournalWindow
-						partyJournal={this.props.partyJournal}
-						setShowJournal={this.setShowJournal}
-					/>}
-
 					{this.props.modeInfo &&
 					<ModeInfoPanel
 						inTacticalMode={this.props.modeInfo.inTacticalMode}
@@ -930,6 +951,13 @@ class UI extends React.PureComponent {
 					{/*	this.minimizePanel('turnInfo');*/}
 					{/*}}>_</div>*/}
 				</div>
+
+				{this.state.showJournal &&
+					<JournalWindow
+						partyJournal={this.props.partyJournal}
+						setShowJournal={this.setShowJournal}
+					/>
+				}
 
 				{this.props.selectedCharacterInfo &&
 				<CharacterInfoPanel
@@ -980,22 +1008,36 @@ class UI extends React.PureComponent {
 					{this.props.playerCharacters && <this.showControlBar />}
 				</div>
 
+				{this.state.showHelpScreen &&
 				<HelpScreen
-					showHelpScreen={this.state.showHelpScreen}
 					toggleHelpScreen={this.toggleHelpScreen}
 					screenData={this.props.screenData}
 				/>
+				}
 
+				{this.state.showHelpPopup &&
+				<HelpPopup
+					toggleHelpPopup={this.toggleHelpPopup}
+					showHelpPopup={this.state.showHelpPopup}
+				/>
+				}
+
+				{this.state.showGameOptions &&
 				<GameOptions
 					gameOptions={this.props.gameOptions}
 					toggleOptionsPanel={this.toggleOptionsPanel}
-					showGameOptions={this.state.showGameOptions}
 					updateGameOptions={this.props.updateGameOptions}
 					adjustMusicComponentVolume={this.adjustMusicComponentVolume}
 					screenData={this.props.screenData}
 					toggleNeedToSaveData={this.props.toggleNeedToSaveData}
 					setShowDialogProps={this.props.setShowDialogProps}
 					resetAllData={this.props.resetAllData}
+				/>
+				}
+
+				<Music
+					idProp={`music-${this.props.gameOptions.songName}-theme`}
+					sourceName={this.props.gameOptions.songName}
 				/>
 			</div>
 		);

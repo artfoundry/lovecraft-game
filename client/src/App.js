@@ -172,6 +172,16 @@ class Game extends React.PureComponent {
 			actionButtonCallback: null,
 			dialogClasses: ''
 		};
+		this.invisibleTargetDialogProps = {
+			dialogContent: "The air seems to shimmer there, as if something is there, but the investigator can neither see it nor move past it.",
+			closeButtonText: 'Ok',
+			closeButtonCallback: null,
+			disableCloseButton: false,
+			actionButtonVisible: false,
+			actionButtonText: '',
+			actionButtonCallback: null,
+			dialogClasses: ''
+		};
 
 		/**
 		 * Creature data structure : {
@@ -222,8 +232,6 @@ class Game extends React.PureComponent {
 			currentFloor: 1,
 			previousFloor: null,
 			playerFollowOrder: [], // order of pcs for follow mode
-			// 1 round is going through all chars' turns; used for keeping track of char statuses
-			currentRound: 0,
 			showDialog: false,
 			dialogProps: {
 				dialogContent: this.initialDialogContent,
@@ -327,7 +335,6 @@ class Game extends React.PureComponent {
 			currentFloor: 1,
 			previousFloor: null,
 			playerFollowOrder: [],
-			currentRound: 0,
 			showDialog: false,
 			dialogProps: {
 				dialogContent: this.initialDialogContent,
@@ -413,7 +420,7 @@ class Game extends React.PureComponent {
 	 * Updates either creature or player character data collection to state
 	 * If id is passed in, updating only one creature; otherwise updating all
 	 * @param type: String ('player' or 'creature')
-	 * @param updateData: Object (always a deepCopy is passed in; can be any number of data objects unless updating all characters of a type, then must be all data)
+	 * @param updateData: Object (always a deepCopy of entire data of one char or collection of all characters of type if updating multiple characters)
 	 * @param id: String (char/creature Id) or null
 	 * @param lightingHasChanged: boolean
 	 * @param isInitialCreatureSetup: Boolean
@@ -694,10 +701,20 @@ class Game extends React.PureComponent {
 		this.setState({inTacticalMode}, () => {
 			if (!inTacticalMode) {
 				const resetCounters = () => this._resetCounters(callback);
-				if (this.state.playerCharacters.thief && this.state.playerCharacters.thief.skills.stealthy.active) {
-					const updatedCharData = deepCopy(this.state.playerCharacters.thief);
-					updatedCharData.skills.stealthy.active = false;
-					this.updateCharacters('player', updatedCharData, 'thief', false, false, false, resetCounters);
+				let updatedPlayerCharacters = null;
+				let dataIsCopied = false;
+				const playerCharacters = this.state.playerCharacters;
+				for (const pcId of Object.keys(playerCharacters)) {
+					if (Object.keys(playerCharacters[pcId].statuses).length > 0) {
+						if (!dataIsCopied) {
+							updatedPlayerCharacters = deepCopy(playerCharacters);
+							dataIsCopied = true;
+						}
+						updatedPlayerCharacters[pcId].statuses = {};
+					}
+				}
+				if (updatedPlayerCharacters) {
+					this.updateCharacters('player', updatedPlayerCharacters, null, false, false, false, resetCounters);
 				} else {
 					resetCounters();
 				}
@@ -735,7 +752,7 @@ class Game extends React.PureComponent {
 
 	/**
 	 * Adds IDs to or removes IDs from threat list and saves list to state,
-	 * then if there's a additions to the list and none before, calls toggleTacticalMode,
+	 * then if there's 0 additions to the list and none before, calls toggleTacticalMode,
 	 * and if list becomes empty, calls updateIfPartyIsNearby
 	 * This is the primary entry point for changing/determining whether game is in Follow mode or Tactical mode
 	 * @param threatIdsToAdd: Array (of strings - IDs of creatures attacking player - empty array if none)
@@ -863,8 +880,6 @@ class Game extends React.PureComponent {
 			} : {
 				currentPcData: characterData,
 				partyData: this.state.playerCharacters,
-				currentRound: this.state.currentRound,
-				unitsTurnOrder: this.state.unitsTurnOrder,
 				updateCharacters: this.updateCharacters,
 				updateLog: this.updateLog,
 				setShowDialogProps: this.setShowDialogProps,
@@ -1059,14 +1074,17 @@ class Game extends React.PureComponent {
 	 * @param checkLineOfSightToParty: function (from Map)
 	 */
 	handleUnitClick = (id, target, isInRange, checkLineOfSightToParty) => {
-		if (this.state.actionButtonSelected && isInRange) {
+		const targetData = target === 'creature' ? this.state.mapCreatures[id] : this.state.playerCharacters[id]
+		if (targetData.statuses.invisible) {
+			this.setShowDialogProps(true, this.invisibleTargetDialogProps);
+		} else if (this.state.actionButtonSelected && isInRange) {
 			// clicked unit is getting acted upon
 			const selectedItemInfo = this.state.actionButtonSelected;
 			const activePC = this.state.playerCharacters[this.state.activeCharacter];
 			const actionProps = {
 				actionId: selectedItemInfo.buttonId,
 				actionStats: selectedItemInfo.stats,
-				targetData: target === 'creature' ? this.state.mapCreatures[id] : this.state.playerCharacters[id],
+				targetData,
 				pcData: activePC,
 				partyData: this.state.playerCharacters,
 				updateCharacters: this.updateCharacters,
@@ -1186,11 +1204,14 @@ class Game extends React.PureComponent {
 	 */
 	updateCurrentTurn = (startTurns = false, callback) => {
 		let currentTurn = (startTurns || this.state.currentTurn === this.state.unitsTurnOrder.length - 1) ? 0 : this.state.currentTurn + 1;
-		const currentRound = (currentTurn === 0 && !startTurns) ? this.state.currentRound + 1 : this.state.currentRound;
 		const nextActiveCharId = Object.values(this.state.unitsTurnOrder[currentTurn])[0].id;
-		let nextActiveChar = deepCopy(this.state.playerCharacters[nextActiveCharId]);
+		const nextActiveCharIsPc = this.state.playerCharacters[nextActiveCharId];
+		let nextActiveChar = nextActiveCharIsPc ? deepCopy(nextActiveCharIsPc) : deepCopy(this.state.mapCreatures[nextActiveCharId]);
 		let updateOrRemoveChar = null;
-		if (nextActiveChar && (nextActiveChar.currentHealth <= 0 || nextActiveChar.currentSanity <= 0)) {
+		let activePlayerActionsCompleted = 0;
+		let activePlayerMovesCompleted = 0;
+
+		if (nextActiveCharIsPc && (nextActiveChar.currentHealth <= 0 || nextActiveChar.currentSanity <= 0 || nextActiveChar.statuses.unconscious)) {
 			currentTurn++;
 			if (nextActiveChar.currentHealth <= 0 && nextActiveChar.turnsSinceDeath < this.maxTurnsToReviveDeadPlayer) {
 				nextActiveChar.turnsSinceDeath++;
@@ -1202,19 +1223,23 @@ class Game extends React.PureComponent {
 				}
 			}
 		}
-		if (nextActiveChar && Object.keys(nextActiveChar.statuses).length > 0) {
+		if (Object.keys(nextActiveChar.statuses).length > 0) {
+			const moveItSkill = this.state.playerCharacters.veteran ? this.state.playerCharacters.veteran.skills.moveIt : null;
+			const playerMoveLimit = this.playerMovesLimit + (moveItSkill ? moveItSkill.modifier[moveItSkill.level] : 0);
 			updateOrRemoveChar = true;
 			for (const [statusName, statusData] of Object.entries(nextActiveChar.statuses)) {
-				if (statusData.startingRound !== currentRound) {
-					if (statusData.turnsLeft === 1) {
-						delete nextActiveChar.statuses[statusName];
-					} else {
-						statusData.turnsLeft--;
-					}
+				if (statusName === 'slowed') {
+					activePlayerActionsCompleted = this.playerActionsLimit - 1;
+					activePlayerMovesCompleted = playerMoveLimit - 1;
+				}
+				if (statusData.turnsLeft === 0) {
+					delete nextActiveChar.statuses[statusName];
+				} else {
+					statusData.turnsLeft--;
 				}
 			}
 		}
-		this.setState({currentTurn, currentRound, activePlayerActionsCompleted: 0, activePlayerMovesCompleted: 0}, () => {
+		this.setState({currentTurn, activePlayerActionsCompleted, activePlayerMovesCompleted}, () => {
 			const updateActiveChar = () => {
 				if (this.state.playerCharacters[this.state.activeCharacter] && this.state.actionButtonSelected) {
 					this.toggleActionButton('', '', '', '', () => {
@@ -1228,7 +1253,7 @@ class Game extends React.PureComponent {
 				if (updateOrRemoveChar === 'isDying') {
 					this.updateLog(`${nextActiveChar.name} is dying and has ${this.maxTurnsToReviveDeadPlayer - nextActiveChar.turnsSinceDeath} turns to be resuscitated!`);
 				}
-				this.updateCharacters('player', nextActiveChar, nextActiveCharId, false, false, false, updateActiveChar);
+				this.updateCharacters(nextActiveCharIsPc ? 'player' : 'creature', nextActiveChar, nextActiveCharId, false, false, false, updateActiveChar);
 			} else {
 				updateActiveChar();
 			}
@@ -1247,27 +1272,31 @@ class Game extends React.PureComponent {
 
 	/**
 	 * Increments and sets to state the number of moves made by the active PC
+	 * @param takeActionCallback function (from moveRandomly in Map, which would have been called by randomizeTurn)
 	 */
-	updateActivePlayerMoves = () => {
+	updateActivePlayerMoves = (takeActionCallback = null) => {
 		const activePlayerMovesCompleted = this.state.activePlayerMovesCompleted + 1;
 		this.setState({activePlayerMovesCompleted}, () => {
-			if (this.state.activeCharacter === 'thief' && this.state.playerCharacters.thief.skills.stealthy.active) {
+			if (this.state.activeCharacter === 'thief' && this.state.playerCharacters.thief.statuses.stealthy) {
 				this.updateSpiritForStealthySkill();
 			}
+			if (takeActionCallback) takeActionCallback();
 		});
 	}
 
 	/**
 	 * Increments and updates to state number of actions the active PC has done
-	 * @param completeTwoActions: boolean (for skills that use two actions)
+	 * @param completeTwoActions boolean (optional, for skills that use two actions)
+	 * @param takeActionCallback function (optional, from takeAutomaticAction, which would have been called by randomizeTurn in Map)
 	 */
-	updateActivePlayerActions = (completeTwoActions = false) => {
+	updateActivePlayerActions = (completeTwoActions = false, takeActionCallback = null) => {
 		if (this.state.inTacticalMode) {
 			const activePlayerActionsCompleted = this.state.activePlayerActionsCompleted + (completeTwoActions ? 2 : 1);
 			this.setState({activePlayerActionsCompleted}, () => {
-				if (this.state.activeCharacter === 'thief' && this.state.playerCharacters.thief.skills.stealthy.active) {
+				if (this.state.activeCharacter === 'thief' && this.state.playerCharacters.thief.statuses.stealthy) {
 					this.updateSpiritForStealthySkill();
 				}
+				if (takeActionCallback) takeActionCallback();
 			});
 		}
 	}
@@ -1628,6 +1657,54 @@ class Game extends React.PureComponent {
 		this.updateMapObjects(mapObjects, lightingChanged, callback);
 	}
 
+	/**
+	 * Call relevant pc function to carry out action for _randomizeTurn in Map
+	 * @param actionName string/key (can be attack or heal)
+	 * @param actionItem string (weapon/item id)
+	 * @param target object (optional (used for attack or targeted skill) deepcopy of target char data obj, from playerCharacters or mapCreatures)
+	 * @param checkLineOfSightToParty function (isInLineOfSight from Map)
+	 * @param takeActionCallback function (passed from _randomizeTurn in Map to call takeAction again if necessary)
+	 */
+	takeAutomaticAction = (actionName, actionItem, target, checkLineOfSightToParty, takeActionCallback) => {
+		const pcData = this.state.playerCharacters[this.state.activeCharacter];
+		const targetId = target ? target.id : this.state.activeCharacter;
+		const actionStats = actionName === 'attack' ? pcData.weapons[actionItem] : pcData.items[actionItem];
+		const props = {
+			actionId: actionItem,
+			actionStats,
+			targetData: target || pcData,
+			pcData,
+			partyData: this.state.playerCharacters,
+			updateCharacters: this.updateCharacters,
+			updateLog: this.updateLog,
+			setShowDialogProps: this.setShowDialogProps,
+			notEnoughLightDialogProps: this.notEnoughLightDialogProps,
+			calcPcLightChanges: this.calcPcLightChanges,
+			toggleAudio: this.toggleAudio,
+			sfxSelectors: this.sfxActionSelectorAliases,
+			callback: () => {
+				const updateActionsAndTakeNextAction = () => {
+					this.updateActivePlayerActions(false, takeActionCallback);
+				};
+				if (target && target.currentHealth <= 0) {
+					if (target.type === 'player') {
+						this.updateLog(`${pcData.name} has killed ${target.name}!`);
+					} else {
+						this.updateLog(`The ${target.name} is dead!`);
+						this.updateExpertise(this.state.mapCreatures[targetId].expertisePoints);
+					}
+					this._removeDeadFromTurnOrder(targetId, updateActionsAndTakeNextAction, checkLineOfSightToParty);
+				} else {
+					updateActionsAndTakeNextAction();
+				}
+			}
+		};
+		const targetName = target ? (target.type === 'player' ? target.name : `a nearby ${target.name}`) : null;
+		const logAction = actionName === 'attack' ? `attacks ${targetName}!` : `uses a ${pcData.items[actionItem].name}.`;
+		this.updateLog(`${pcData.name} is confused and ${logAction}`);
+		pcData[actionName](props);
+	}
+
 	toggleCenterOnPlayer = () => {
 		this.setState(prevState => ({
 			centerOnPlayer: !prevState.centerOnPlayer,
@@ -1688,7 +1765,7 @@ class Game extends React.PureComponent {
 			if (sfxReverbProcessed[selectorName] !== this.state.sfxReverbProcessed[selectorName]) {
 				this.setState({sfxReverbProcessed});
 			}
-		} else if (isBackgroundSfx && !audioEl.paused) {
+		} else if (isBackgroundSfx && (!audioEl.paused || !this.state.gameOptions.playFx)) {
 			audioEl.pause();
 		}
 	}
@@ -1727,7 +1804,6 @@ class Game extends React.PureComponent {
 			currentLocation: this.state.currentLocation, // string
 			currentFloor: this.state.currentFloor, // number
 			playerFollowOrder: this.state.playerFollowOrder, // array
-			currentRound: this.state.currentRound, // number
 			unitsTurnOrder: this.state.unitsTurnOrder, // array
 			currentTurn: this.state.currentTurn, // number
 			activeCharacter: this.state.activeCharacter, // string
@@ -1960,7 +2036,7 @@ class Game extends React.PureComponent {
 	 * @private
 	 */
 	_resetCounters(callback) {
-		this.setState({activePlayerMovesCompleted: 0, activePlayerActionsCompleted: 0, currentTurn: 0, currentRound: 0}, () => {
+		this.setState({activePlayerMovesCompleted: 0, activePlayerActionsCompleted: 0, currentTurn: 0}, () => {
 			this.updateActiveCharacter(callback, this.state.playerFollowOrder[0]);
 		});
 	}
@@ -2124,6 +2200,12 @@ class Game extends React.PureComponent {
 		}
 	}
 
+	componentDidUpdate(prevProps, prevState, snapShot) {
+		if (prevState.gameOptions.playFx !== this.state.gameOptions.playFx) {
+			this.toggleAudio('environments', this.state.currentLocation + 'Background');
+		}
+	}
+
 	render() {
 		const moveItSkill = this.state.playerCharacters[this.state.activeCharacter] ? this.state.playerCharacters[this.state.activeCharacter].skills.moveIt : null;
 		const playerMoveLimit = this.playerMovesLimit + (moveItSkill ? moveItSkill.modifier[moveItSkill.level] : 0);
@@ -2264,13 +2346,14 @@ class Game extends React.PureComponent {
 						playerCharacters={this.state.playerCharacters}
 						activeCharacter={this.state.activeCharacter}
 						getAllCharactersPos={this.getAllCharactersPos}
-						activePlayerMovesCompleted={this.state.activePlayerMovesCompleted}
-						playerMovesLimit={this.playerMovesLimit}
+						actionsCompleted={{moves: this.state.activePlayerMovesCompleted, actions: this.state.activePlayerActionsCompleted}}
+						playerLimits={{moves: playerMoveLimit, actions: this.playerActionsLimit}}
 						updateActivePlayerMoves={this.updateActivePlayerMoves}
 						mapCreatures={this.state.mapCreatures}
 						updateCharacters={this.updateCharacters}
 						calcPcLightChanges={this.calcPcLightChanges}
 						lightTimeCosts={this.lightTimeCosts}
+						takeAutomaticAction={this.takeAutomaticAction}
 						// map object data
 						saveMapData={this.saveMapData}
 						savedMaps={this.state.savedMaps}
@@ -2293,6 +2376,7 @@ class Game extends React.PureComponent {
 						resetDataForNewFloor={this.resetDataForNewFloor}
 						// ui data/control
 						updateLog={this.updateLog}
+						logText={this.state.logText}
 						actionButtonSelected={this.state.actionButtonSelected}
 						isContextMenuNeeded={this.isContextMenuNeeded}
 						updateContextMenu={this.updateContextMenu}

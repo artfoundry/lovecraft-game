@@ -4,6 +4,7 @@ import './css/mapPieceElements.css';
 
 function Character(props) {
 	const isHiddenClass = props.isHidden ? ' hidden' : '';
+	const isInvisible = props.isInvisible ? ' invisible' : '';
 	const isSelectedClass = !props.isHidden && props.isSelected ? ' selected' : '';
 	const isDyingClass = !props.isHidden && props.isDying ? ` ${props.idClassName}-dead` : '';
 	const isDeadClass = !props.isHidden && (props.isDead || props.isCatatonic) ? ` ${props.idClassName}-dead dead` : '';
@@ -15,7 +16,7 @@ function Character(props) {
 		     ref={props.charRef}
 			 alt={props.classes}
 		     draggable={false}
-		     className={props.characterType + ' ' + props.idClassName + isHiddenClass + isSelectedClass + isDyingClass + isDeadClass + isInRangeClass + isOnTopClass + isStealthyClass}
+		     className={props.characterType + ' ' + props.idClassName + isHiddenClass + isInvisible + isSelectedClass + isDyingClass + isDeadClass + isInRangeClass + isOnTopClass + isStealthyClass}
 		     style={props.styles}
 		     data-location={props.charPos}
 			 onClick={(evt) => {

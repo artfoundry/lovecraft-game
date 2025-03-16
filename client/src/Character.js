@@ -3,6 +3,7 @@ import {removeIdNumber, diceRoll, deepCopy} from './Utils';
 import ItemTypes from './data/itemTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
 import Skills from './data/skills.json';
+import Statuses from './data/statuses.json';
 
 class Character extends React.PureComponent {
 	constructor(props) {
@@ -82,11 +83,6 @@ class Character extends React.PureComponent {
 		let skillData = {};
 		charSkills.forEach(skillId => {
 			skillData[skillId] = {...Skills[skillId], level: 0};
-			if (skillData[skillId].description.includes(';')) {
-				skillData[skillId].description = skillData[skillId].description.split('; ').map(str => {
-					return <div key={str.substring(0, 5)}>{str}</div>;
-				});
-			}
 			if (skillData[skillId].skillType === 'create') {
 				skillData[skillId].light = [this.lightTimeCosts.create];
 			} else if (skillId === 'mine') {
@@ -117,7 +113,9 @@ class Character extends React.PureComponent {
 	 *  pcData: object,
 	 *  updateCharacters: function (from App),
 	 *  updateLog: function (from App),
-	 *  callback: function (from App - calls toggleWeapon, _removeDeadFromTurnOrder if creature dies, then _updateActivePlayerActions)
+	 *  toggleAudio function (from App),
+	 *  sfxSelectors object (sound fx el selectors from App)
+	 *  callback: function (from App - calls toggleWeapon, _removeDeadFromTurnOrder if creature dies, then updateActivePlayerActions)
 	 * )
 	 */
 	attack = (props) => {
@@ -127,7 +125,9 @@ class Character extends React.PureComponent {
 		let damageTotal = 0;
 		let rangedStrHitModifier = actionStats.usesStr ? Math.round(pcData.strength / 2) : 0;
 		let updatedPcData = deepCopy(pcData);
-		let updatedCreatureData = deepCopy(targetData);
+		let updatedTargetData = deepCopy(targetData);
+		const pcPronoun = pcData.gender === 'Male' ? 'his' : 'her';
+		const targetName = targetData.type === 'player' ? targetData.name : 'the ' + targetData.name;
 		const weaponInfo = updatedPcData.weapons[actionId];
 		const equippedSide = pcData.equippedItems.loadout1.right === actionId ? 'right' : 'left';
 		const equippedGunType = weaponInfo.gunType;
@@ -136,9 +136,10 @@ class Character extends React.PureComponent {
 			(!pcData.skills.shotgunKnowledge && equippedGunType === 'shotgun') ||
 			(!pcData.skills.machineGunKnowledge && equippedGunType === 'machineGun') ? this.noGunKnowledgePenalty : 0;
 		const goBallistic = actionStats.goBallistic;
-		const attackFromTheShadowsMod = (pcData.id === 'thief' && pcData.skills.stealthy.active) ? pcData.skills.attackFromTheShadows.modifier[pcData.skills.attackFromTheShadows.level] : 0;
+		const attackFromTheShadowsMod = (pcData.id === 'thief' && pcData.statuses.stealthy) ? pcData.skills.attackFromTheShadows.modifier[pcData.skills.attackFromTheShadows.level] : 0;
 		const sacrificialStrikeSkill = actionStats.sacrificialStrike;
 		const krisKnifeExpertiseMod = pcData.id === 'occultResearcher' ? pcData.skills.krisKnifeExpertise.modifier[pcData.skills.krisKnifeExpertise.level] : 0;
+		const failFromCurse = pcData.statuses.cursed ? Math.random() < pcData.statuses.cursed.chanceOfEffect : false;
 
 		if (actionStats.ranged) {
 			let numOfAttacks = goBallistic ? weaponInfo.currentRounds : 1;
@@ -159,7 +160,7 @@ class Character extends React.PureComponent {
 				attackTotal = hitRoll + pcData.agility + steadyHandModifier + sureShotModifier + rangedStrHitModifier;
 				attackTotal -= (Math.round(noGunKnowledgeMod * attackTotal) + Math.round(goBallisticModifier * attackTotal));
 				isHit = attackTotal >= defenseTotal;
-				if (isHit) {
+				if (isHit && !failFromCurse) {
 					const attackDifference = attackTotal - defenseTotal;
 					const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 2);
 					damage = rangedStrHitModifier + actionStats.damage + damageModBasedOnAttack;
@@ -171,7 +172,11 @@ class Character extends React.PureComponent {
 					delete updatedPcData.weapons[actionId];
 					updatedPcData.equippedItems.loadout1[equippedSide] = '';
 				}
-				updateLog(`${pcData.name} attacks with the ${weaponInfo.name}, scores ${attackTotal} to hit...and ${isHit ? `does ${damage} damage!` : `misses (${targetData.name} scored ${defenseTotal} for defense).`}`);
+				if (failFromCurse) {
+					updateLog(`${pcData.name} tries to attack ${targetName}, but ${pcPronoun} curse causes the attack to fail!`);
+				} else {
+					updateLog(`${pcData.name} attacks ${targetName} with the ${weaponInfo.name}, scores ${attackTotal} to hit...and ${isHit ? `does ${damage} damage!` : `misses (${targetData.name} scored ${defenseTotal} for defense).`}`);
+				}
 			}
 		} else {
 			hitRoll = diceRoll(this.hitDie);
@@ -185,7 +190,7 @@ class Character extends React.PureComponent {
 				attackTotal = defenseTotal;
 			}
 			isHit = attackTotal >= defenseTotal;
-			if (isHit) {
+			if (isHit && !failFromCurse) {
 				const attackDifference = attackTotal - defenseTotal;
 				const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 2);
 				damageTotal = pcData.strength + actionStats.damage + damageModBasedOnAttack;
@@ -204,7 +209,11 @@ class Character extends React.PureComponent {
 			}
 			const fromShadowsText = attackFromTheShadowsMod > 0 ? 'from the shadows ' : '';
 			const sacrificialStrikeText = sacrificialStrikeSkill ? 'sacrifices Health and Sanity and ' : '';
-			updateLog(`${pcData.name} ${sacrificialStrikeText}attacks ${fromShadowsText}with the ${weaponInfo.name}, scores ${attackTotal} to hit...and ${isHit ? `does ${damageTotal} damage!` : `misses (${targetData.name} scored ${defenseTotal} for defense).`}`);
+			if (failFromCurse) {
+				updateLog(`${pcData.name} tries to attack ${targetName}, but ${pcPronoun} curse causes the attack to fail!`);
+			} else {
+				updateLog(`${pcData.name} ${sacrificialStrikeText}attacks ${targetName} ${fromShadowsText}with the ${weaponInfo.name}, scores ${attackTotal} to hit...and ${isHit ? `does ${damageTotal} damage!` : `misses (${targetData.name} scored ${defenseTotal} for defense).`}`);
+			}
 		}
 
 		updateCharacters('player', updatedPcData, pcData.id, false, false, false, () => {
@@ -212,14 +221,15 @@ class Character extends React.PureComponent {
 				if (equippedGunType === 'handgun') {
 					toggleAudio('weapons', sfxSelectors.handgun, {useReverb: true});
 				}
-			} else if (isHit) {
+			} else if (isHit && !failFromCurse) {
 				toggleAudio('weapons', sfxSelectors[weaponInfo.damageType], {useReverb: true});
 			} else {
 				toggleAudio('weapons', 'attackMiss', {useReverb: true});
 			}
 			if (damageTotal > 0) {
-				updatedCreatureData.currentHealth -= damageTotal;
-				updateCharacters('creature', updatedCreatureData, targetData.id, false, false, false, callback);
+				updatedTargetData.currentHealth -= damageTotal;
+				const targetType = updatedTargetData.type === 'player' ? 'player' : 'creature';
+				updateCharacters(targetType, updatedTargetData, targetData.id, false, false, false, callback);
 			} else if (callback) {
 				callback();
 			}
@@ -545,39 +555,24 @@ class Character extends React.PureComponent {
 	 * Called from toggleActionButton in App
 	 * @param props: object {
 	 *     partyData: object,
-	 *     currentRound: number,
-	 *     unitsTurnOrder: array,
 	 *     updateCharacters: function (App),
 	 *     updateLog: function (App),
 	 *     updateActivePlayerActions: function (App)
 	 * }
 	 */
 	comfortTheFearful = (props) => {
-		const {partyData, currentRound, unitsTurnOrder, updateCharacters, updateLog, updateActivePlayerActions} = props;
+		const {partyData, updateCharacters, updateLog, updateActivePlayerActions} = props;
 		let updatedPartyData = deepCopy(partyData);
 		const comfortSkillData = updatedPartyData.priest.skills.comfortTheFearful;
-		let pcOrder = {};
-		const numberOfPcs = Object.keys(partyData).length;
-		let foundPcs = 0;
-		let counter = 0;
-		let unitTurnData = {};
-
-		// Need to get the turn order of the pcs to determine effect's startingRound for each one (set below in sanityBuff object
-		while (foundPcs < numberOfPcs) {
-			unitTurnData = Object.values(unitsTurnOrder[counter])[0];
-			if (unitTurnData.unitType === 'playerCharacters') {
-				pcOrder[unitTurnData.id] = counter;
-				foundPcs++;
-			}
-			counter++;
-		}
 
 		for (const id of Object.keys(partyData)) {
-			updatedPartyData[id].statuses.sanityBuff = {
+			updatedPartyData[id].statuses.sanityProtection = {
+				name: Statuses.sanityProtection.name,
+				description: Statuses.sanityProtection.description,
+				source: 'Comfort The Fearful',
 				attribute: 'sanity',
-				// pcs coming before the priest in turn order need a later startingRound as they won't start getting the benefit until the next currentRound
-				startingRound: pcOrder.priest <= pcOrder[id] ? currentRound : currentRound + 1,
-				turnsLeft: comfortSkillData.turnsLeft[comfortSkillData.level],
+				// priest gets one less round as his current turn is the first turn of the effect
+				turnsLeft: id === 'priest' ? comfortSkillData.turnsLeft[comfortSkillData.level] - 1 : comfortSkillData.turnsLeft[comfortSkillData.level],
 				modifier: comfortSkillData.modifier[comfortSkillData.level]
 			}
 		}
@@ -629,7 +624,12 @@ class Character extends React.PureComponent {
 		let updatedPcData = deepCopy(currentPcData);
 		const feelThePainSkill = updatedPcData.skills.feelThePain;
 
-		feelThePainSkill.active = true;
+		updatedPcData.statuses.feelThePain = {
+			name: Statuses.feelThePain.name,
+			description: Statuses.feelThePain.description,
+			source: 'Feel The Pain',
+			attribute: 'sanity'
+		}
 		updatedPcData.currentSpirit -= feelThePainSkill.spirit[feelThePainSkill.level];
 		updateCharacters('player', updatedPcData, 'veteran', false, false, false, () => {
 			updateLog(`${updatedPcData.name} prepares for a psychic attack...`);
@@ -639,6 +639,7 @@ class Character extends React.PureComponent {
 
 	/**
 	 * Skill (Thief): When active, gives bonus to Agility, allows Attack From The Shadows skill, and reduces Spirit each move/action
+	 * Applies stealthy status
 	 * Called from toggleActionButton in App
 	 * @param props: object {
 	 *     currentPcData: object,
@@ -651,9 +652,18 @@ class Character extends React.PureComponent {
 		let updatedPcData = deepCopy(currentPcData);
 		const stealthySkill = updatedPcData.skills.stealthy;
 
-		stealthySkill.active = !stealthySkill.active;
+		if (!currentPcData.statuses.stealthy) {
+			updatedPcData.statuses.stealthy = {
+				name: Statuses.stealthy.name,
+				description: Statuses.stealthy.description,
+				attribute: 'agility',
+				modifier: stealthySkill.modifier[stealthySkill.level]
+			}
+		} else {
+			delete updatedPcData.statuses.stealthy;
+		}
 		updateCharacters('player', updatedPcData, 'thief', false, false, false, () => {
-			if (stealthySkill.active) {
+			if (updatedPcData.statuses.stealthy) {
 				updateLog(`${updatedPcData.name} goes stealthy, slipping through the shadows...`);
 			} else {
 				updateLog(`${updatedPcData.name} leaves the shadows.`);

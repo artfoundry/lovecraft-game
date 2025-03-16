@@ -2,6 +2,7 @@
 	position: absolute;
 	transition: transform 0.5s;
 	user-select: none;
+	opacity: 1;
 	filter: drop-shadow(4px 4px 2px black);
 	z-index: 1;
 }

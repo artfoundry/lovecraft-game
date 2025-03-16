@@ -14,29 +14,30 @@
     "damageReduction": 0,
     "startingHealth": 60,
     "startingSpirit": 50,
+    "spiritRegeneration": 5,
     "range": 3,
     "attackType": "psychic",
     "moveSpeed": 2,
     "perception": 5,
+    "skillPriority": ["confuse", "induceSleep"],
     "skills": {
-      "Sleep": {
+      "induceSleep": {
+        "name": "Induce Sleep",
         "type": "active",
         "description": "Puts a target to sleep for 1-4 turns.",
-        "status": "Sleeping",
+        "status": "unconscious",
+        "stat": "mentalAcuity",
         "maxTurns": 4,
         "spirit": 30
       },
-      "Confuse": {
+      "confuse": {
+        "name": "Confuse",
         "type": "active",
         "description": "Confuses a target, causing it to act randomly for 1-4 turns.",
-        "status": "Confused",
+        "status": "confused",
+        "stat": "mentalAcuity",
         "maxTurns": 4,
         "spirit": 40
-      },
-      "Re-energize": {
-        "type": "passive",
-        "description": "Regenerates Spirit at a rate of 5 per turn.",
-        "amount": 5
       }
     }
   },
@@ -46,30 +47,29 @@
     "race": "Undead",
     "level": 3,
     "expertisePoints": 5,
-    "strength": 4,
-    "agility": 6,
+    "strength": 5,
+    "agility": 4,
     "mentalAcuity": 2,
     "damage": 4,
     "defense": 7,
     "damageReduction": 0,
     "startingHealth": 15,
     "startingSpirit": 10,
+    "spiritRegeneration": 1,
     "range": 1,
     "attackType": "melee",
     "moveSpeed": 2,
-    "perception": 3,
+    "perception": 4,
+    "skillPriority": ["slow"],
     "skills": {
-      "Slow": {
+      "slow": {
+        "name": "Slow",
         "type": "active",
         "description": "Poisons the target to reduce movement speed and action count to one each.",
-        "status": "Slowed",
+        "status": "slowed",
+        "stat": "agility",
         "maxTurns": 2,
         "spirit": 5
-      },
-      "Re-energize": {
-        "type": "passive",
-        "description": "Regenerates Spirit at a rate of 1 per turn.",
-        "amount": 1
       }
     }
   },
@@ -79,30 +79,30 @@
     "race": "Undead",
     "level": 2,
     "expertisePoints": 2,
-    "strength": 2,
-    "agility": 4,
+    "strength": 3,
+    "agility": 3,
     "mentalAcuity": 1,
     "damage": 3,
     "defense": 5,
     "damageReduction": 0,
     "startingHealth": 10,
     "startingSpirit": 5,
+    "spiritRegeneration": 1,
     "range": 1,
     "attackType": "melee",
     "moveSpeed": 2,
-    "perception": 3,
+    "perception": 4,
+    "skillPriority": ["curse"],
     "skills": {
-      "Curse of the Dead": {
+      "curse": {
+        "name": "Curse of the Dead",
         "type": "active",
-        "description": "A simple touch curses the target to cause a chance of any skill or attack to fail.",
-        "status": "Cursed",
+        "description": "A simple touch curses the target to cause a chance of any attack to fail.",
+        "status": "cursed",
+        "stat": "agility",
+        "chanceOfEffect": 0.5,
         "maxTurns": 3,
         "spirit": 5
-      },
-      "Re-energize": {
-        "type": "passive",
-        "description": "Regenerates Spirit at a rate of 1 per turn.",
-        "amount": 1
       }
     }
   },
@@ -112,36 +112,39 @@
     "race": "Creator",
     "level": 4,
     "expertisePoints": 10,
-    "strength": 4,
+    "strength": 5,
     "agility": 7,
     "mentalAcuity": 5,
     "damage": 4,
     "defense": 5,
     "damageReduction": 0,
     "startingHealth": 15,
-    "startingSpirit": 20,
+    "startingSpirit": 10,
+    "spiritRegeneration": 2,
     "range": 1,
     "attackType": "melee",
     "moveSpeed": 4,
     "perception": 4,
+    "skillPriority": ["phase", "cyclone"],
     "skills": {
-      "Turn Invisible": {
+      "phase": {
+        "name": "Phase",
         "type": "active",
         "description": "Becomes invisible for 2 turns, during which time it can't be targeted.",
+        "status": "invisible",
+        "targetSelf": true,
         "turns": 2,
-        "spirit": 5
+        "spirit": 10
       },
-      "Wind Attack": {
+      "cyclone": {
+        "name": "Cyclone",
         "type": "active",
-        "description": "Uses a hallowing wind to draw its target to it and damage it.",
-        "move": 2,
-        "damage": 2,
+        "description": "Uses a hallowing wind to drain its target of its Spirit, funnelling a portion of it to itself.",
+        "range": 4,
+        "damage": 10,
+        "percentReturned": 0.5,
+        "damageType": "spirit",
         "spirit": 5
-      },
-      "Re-energize": {
-        "type": "passive",
-        "description": "Regenerates Spirit at a rate of 2 per turn.",
-        "amount": 2
       }
     }
   },
@@ -153,29 +156,27 @@
     "expertisePoints": 25,
     "strength": 8,
     "agility": 1,
-    "mentalAcuity": 1,
+    "mentalAcuity": 3,
     "damage": 7,
     "defense": 5,
     "damageReduction": 3,
     "startingHealth": 80,
-    "startingSpirit": 20,
+    "startingSpirit": 10,
+    "spiritRegeneration": 3,
     "range": 2,
     "attackType": "melee",
     "moveSpeed": 1,
     "perception": 5,
+    "skillPriority": ["piercingWail"],
     "skills": {
-      "Drive Insane": {
+      "piercingWail": {
+        "name": "Piercing Wail",
         "type": "active",
-        "description": "A horrifying, mind-piercing screech drives all around it closer to insanity.",
-        "range": 5,
+        "description": "A horrifying, mind-piercing wail drives all around it closer to insanity.",
+        "multipleTargets": "all",
         "damageType": "Sanity",
-        "damagePercent": 0.3,
+        "damagePercent": 0.2,
         "spirit": 10
-      },
-      "Re-energize": {
-        "type": "passive",
-        "description": "Regenerates Spirit at a rate of 3 per turn.",
-        "amount": 3
       }
     }
   }
