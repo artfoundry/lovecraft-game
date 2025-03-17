@@ -1674,7 +1674,7 @@ select {
 	}
 
 	#mode-info-container, #log-container, #party-info-container {
-		min-width: 185px;
+		min-width: 190px;
 		padding: 5px;
 	}
 
@@ -1834,7 +1834,7 @@ select {
 
 	#ui-container {
 		grid-template-columns: 1fr;
-		grid-template-rows: 200px 1fr 163px;
+		grid-template-rows: 225px 1fr 163px;
 		grid-template-areas:
 		"turnInfo"
 		"characterInfo"
@@ -1843,6 +1843,7 @@ select {
 
 	#turn-info-container {
 		flex-direction: column;
+		justify-content: space-around;
 		max-height: 300px;
 		border: 0;
 		border-bottom: 2px solid seagreen;
@@ -1961,7 +1962,7 @@ select {
 	/* Need max heights on this (220px) and log-container (100px) to allow for needed control bar height and account for browser toolbar */
 	#turn-info-container {
 		flex-direction: column;
-		max-height: 220px;
+		max-height: 230px;
 		border-left: 0;
 		border-right: 2px solid seagreen;
 		border-bottom-left-radius: 0;
@@ -1970,7 +1971,7 @@ select {
 	}
 
 	#log-container {
-		max-height: 100px;
+		max-height: 90px;
 		border: 0;
 		border-bottom: 1px solid seagreen;
 		font-size: 14px;
