@@ -1678,6 +1678,10 @@ select {
 		padding: 5px;
 	}
 
+	#turn-control-container {
+		width: 150px;
+	}
+
 	.char-info-inv-container {
 		padding-bottom: 10px;
 	}
@@ -1862,12 +1866,6 @@ select {
 	#mode-info-container {
 		flex-direction: row;
 		border: 0;
-	}
-
-	#turn-info-container {
-		border: 0;
-		border-bottom: 2px solid seagreen;
-		border-radius: 0;
 	}
 
 	.character-info-container, .creature-info-container {

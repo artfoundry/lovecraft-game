@@ -1126,7 +1126,7 @@ function ModeInfoPanel(props) {
 
 			{(props.inTacticalMode || !props.isPartyNearby) &&
 			<div>
-				<div>Turn: {charactersTurn}</div>
+				<div id='turn-control-container'>Turn: {charactersTurn}</div>
 				<div className='general-button' onClick={() => {
 					props.updateCurrentTurn();
 				}}>End Turn</div>
