@@ -164,7 +164,7 @@ class Creature extends React.PureComponent {
 				name: Statuses[status].name,
 				description: Statuses[status].description,
 				turnsLeft: diceRoll(skill.maxTurns),
-				chanceOfEffect: Statuses[status].chanceOfEffect
+				chanceOfEffect: skill.chanceOfEffect
 			}
 			logMessage = `A ${this.name} ${logMessageAction} to ${pcData.name} and causes ${targetPronoun} to be ${status}!`;
 			//todo: add skill specific audio?
