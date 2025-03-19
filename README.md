@@ -13,6 +13,8 @@ Mobile friendly but works best on desktop!
 ---
 #### Current status:
 
+3/15/25: Adding creature skills and pc/creature statuses; adding framework for popup help
+
 12/31/24: Adding game data saving to/loading from firebase
 
 12/27/24: Adding map level saving
