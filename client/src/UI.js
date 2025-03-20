@@ -163,6 +163,7 @@ class UI extends React.PureComponent {
 						setSelectedControlTab={this.setSelectedControlTab}
 						helpPopupButton={this.helpPopupButton}
 						showHelpSystem={this.state.showHelpSystem}
+						toggleHelpPopup={this.toggleHelpPopup}
 					/>
 				)
 			}
@@ -816,10 +817,11 @@ class UI extends React.PureComponent {
 		this.setState({showHelpPopup});
 	}
 
-	helpPopupButton = (contentKey, style) => {
+	helpPopupButton = (content, style) => {
+		const helpContent = PopupHelp[content] || content;
 		return (
 			<div className='system-button help-button popup-help-icon font-fancy' style={style} onClick={evt => {
-				this.toggleHelpPopup(evt, PopupHelp[contentKey]);
+				this.toggleHelpPopup(evt, helpContent);
 			}}>?</div>
 		)
 	}

@@ -76,7 +76,8 @@ function CharacterControls(props) {
 			actionableItems.medicine.push({
 				itemId,
 				name: itemInfo.name,
-				amount: itemInfo.amount
+				amount: itemInfo.amount,
+				description: itemInfo.description
 			});
 		} else if (itemInfo.itemType === 'Relic' && itemInfo.useType === 'active') {
 			actionableItems.misc.push({
@@ -85,7 +86,8 @@ function CharacterControls(props) {
 				itemType: itemInfo.itemType,
 				hasTarget: itemInfo.hasTarget,
 				sanityCost: itemInfo.sanityCost,
-				spiritCost: itemInfo.spiritCost
+				spiritCost: itemInfo.spiritCost,
+				description: itemInfo.description
 			});
 		}
 	}
@@ -109,7 +111,8 @@ function CharacterControls(props) {
 				mustNotHaveLightEquipped: skillInfo.mustNotHaveLightEquipped,
 				spirit: skillInfo.spirit,
 				level: skillInfo.level,
-				active: skillInfo.active
+				active: skillInfo.active,
+				description: skillInfo.description
 			});
 		}
 	}
@@ -164,40 +167,56 @@ function CharacterControls(props) {
 		<div className='weapon-buttons-container'>
 			{actionableItems.weapons.map(weapon => {
 				let button;
+				const weaponClass = convertObjIdToClassId(weapon.weaponId) + '-action';
 				if (weapon.isGun) {
-					actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || weapon.ammo === 0 || statuses.includes('confused')) ? 'button-inactive' :
-						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.buttonId === weapon.weaponId) ? 'button-selected': '';
-					const reloadButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || props.actionButtonSelected || weapon.ammo === weapon.fullyLoaded || !hasExtraAmmo || statuses.includes('confused')) ? 'button-inactive' :
-						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.buttonId === weapon.weaponId) ? 'button-selected': '';
+					actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || weapon.ammo === 0 || statuses.includes('confused')) ? ' button-inactive' :
+						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.buttonId === weapon.weaponId) ? ' button-selected': '';
+					const reloadButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || props.actionButtonSelected || weapon.ammo === weapon.fullyLoaded || !hasExtraAmmo || statuses.includes('confused')) ? ' button-inactive' :
+						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.buttonId === weapon.weaponId) ? ' button-selected': '';
 					actionButtonCount += 2;
+					// help button needs to be at same level in tree as clickable element.
+					// If clickable element may not have any content, it's height would be 0, so it needs to have button classes
 					button = (
-						<div key={weapon.weaponId} className={`action-button-pair ${shouldActionButtonShow() ? '' : 'hide'}`}>
-							<div
-								className={`action-button ${convertObjIdToClassId(weapon.weaponId)}-action ${actionButtonState}`}
-								onClick={() => {
-									handleWeaponClick(weapon);
-								}}
-							>{weapon.ammo}</div>
-							<div
-								className={`action-button gun-reload-icon ${convertObjIdToClassId(weapon.weaponId)}-action ${reloadButtonState}`}
-								onClick={() => {
-									handleWeaponClick(weapon, true);
-								}}
-							></div>
+						<div key={weapon.weaponId} className={`action-button-pair${shouldActionButtonShow() ? '' : ' hide'}`}>
+							<div className={`action-button ${weaponClass}${actionButtonState}`}>
+								{props.showHelpSystem && props.helpPopupButton({
+									iconClass: `action-button ${weaponClass}`,
+									name: weapon.weaponName,
+									description: 'Attack with this weapon.',
+									source: null
+								})}
+								<div onClick={() => handleWeaponClick(weapon)}>{weapon.ammo}</div>
+							</div>
+							<div className={`action-button ${weaponClass}${reloadButtonState}`}>
+								{props.showHelpSystem && props.helpPopupButton({
+									iconClass: `action-button gun-reload-icon ${weaponClass}`,
+									name: weapon.weaponName,
+									description: 'Reload this weapon.',
+									source: null
+								})}
+								<div className='gun-reload-icon' onClick={() => handleWeaponClick(weapon, true)}></div>
+							</div>
 						</div>
 					);
 				} else {
-					actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || (weapon.ammo === 0 && !hasExtraAmmo) || statuses.includes('confused')) ? 'button-inactive' :
-						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.buttonId === weapon.weaponId) ? 'button-selected': '';
+					actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || (weapon.ammo === 0 && !hasExtraAmmo) || statuses.includes('confused')) ? ' button-inactive' :
+						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.buttonId === weapon.weaponId) ? ' button-selected': '';
 					actionButtonCount++;
+					// help button needs to be at same level in tree as clickable element.
+					// If clickable element may not have any content, it's height would be 0, so it needs to have button classes
 					button = (
-						<div
-							key={weapon.weaponId}
-							className={`action-button ${shouldActionButtonShow() ? '' : 'hide'} ${convertObjIdToClassId(weapon.weaponId)}-action ${actionButtonState} ${weapon.ammo === 0 ? 'gun-reload-icon' : ''}`}
-							onClick={() => {
-								handleWeaponClick(weapon);
-							}}
-						>{weapon.ammo || ''}</div>
+						<div key={weapon.weaponId}>
+							{props.showHelpSystem && props.helpPopupButton({
+								iconClass: `action-button ${weaponClass}`,
+								name: weapon.weaponName,
+								description: weapon.weaponName === 'Pickaxe' ? 'Use to mine or attack.' : 'Attack with this weapon.',
+								source: null
+							}, {'transform': 'translate(6px, 6px)'})}
+							<div
+								className={`action-button${shouldActionButtonShow() ? '' : ' hide'} ${weaponClass}${actionButtonState}`}
+								onClick={() => handleWeaponClick(weapon)}
+							>{weapon.ammo || ''}</div>
+						</div>
 					);
 				}
 				return button;
@@ -226,6 +245,57 @@ function CharacterControls(props) {
 				const requiresActionsRemaining = skill.name !== 'Quick Reload' && skill.name !== 'Mine' && skill.name !== 'Expert Mining';
 				// all active and only active skills require spirit
 				const hasEnoughSpirit = skill.spirit && currentPCdata.currentSpirit >= skill.spirit[skill.level];
+				let skillClass = `${convertObjIdToClassId(skill.skillId)}-action`;
+				const handleSkillClick = (evt) => {
+					if (skill.name === 'Quick Reload') {
+						const setWeapon = (id) => {
+							const weapon = {weaponId: id};
+							handleWeaponClick(weapon, true, true);
+						}
+						if (leftWeaponNeedsReloading && rightWeaponNeedsReloading) {
+							const dialogProps = {
+								dialogContent: 'Which weapon do you want to reload?',
+								closeButtonText: `${leftWeapon.name}`,
+								closeButtonCallback: () => {
+									setWeapon(equippedItems.left);
+								},
+								disableCloseButton: false,
+								actionButtonVisible: true,
+								actionButtonText: `${rightWeapon.name}`,
+								actionButtonCallback: () => {
+									setWeapon(equippedItems.right);
+								},
+								dialogClasses: ''
+							};
+							props.setShowDialogProps(true, dialogProps);
+						} else {
+							leftWeaponNeedsReloading ? setWeapon(equippedItems.left) : setWeapon(equippedItems.right);
+						}
+					} else if (skill.name === 'Go Ballistic' || skill.name === 'Sacrificial Strike') {
+						const weapon = skill.name === 'Go Ballistic' ? {
+							weaponId: leftGunHasAmmo ? equippedItems.left : equippedItems.right,
+							weaponName: leftGunHasAmmo ? leftWeapon.name : rightWeapon.name
+						} : {weaponId: 'krisKnife0', weaponName: 'Kris Knife'};
+						const handleWeaponClickCallback = () => {
+							handleWeaponClick(weapon);
+						};
+						if (props.skillModeActive) {
+							props.toggleActionButton('', '', '', '', null);
+						} else {
+							props.toggleActionButton(props.characterId, skill.skillId, skill.name, 'skill', handleWeaponClickCallback);
+						}
+					} else if (skill.skillId === 'expertMining' || skill.skillId === 'mine') {
+						if (props.hasEnoughLight) {
+							props.setMapObjectSelected(props.mineablesNextToPc, evt, true, {miningAction: skill.skillId});
+						} else {
+							props.setShowDialogProps(true, props.notEnoughLightDialogProps);
+						}
+					} else if (skill.skillId === 'disarmTrap') {
+						props.toggleActionButton(props.characterId, skill.skillId, skill.name, 'skill', null, props.trapsNextToPc);
+					} else {
+						props.toggleActionButton(props.characterId, skill.skillId, skill.name, 'skill');
+					}
+				};
 				actionButtonState =
 					(!props.isActiveCharacter ||
 					(props.actionsRemaining === 0 && requiresActionsRemaining) ||
@@ -237,67 +307,27 @@ function CharacterControls(props) {
 					(skill.mustNotHaveLightEquipped && currentPCdata.equippedLight) ||
 					(skill.name === 'Disarm Trap' && props.trapsNextToPc.length === 0) ||
 					statuses.includes('confused') ||
-					(skill.requiresBothActions && props.actionsRemaining < 2)) ? 'button-inactive' :
+					(skill.requiresBothActions && props.actionsRemaining < 2)) ? ' button-inactive' :
 					(props.isActiveCharacter &&
 					((props.actionButtonSelected &&
 					props.actionButtonSelected.characterId === props.characterId &&
 					props.actionButtonSelected.buttonId === skill.skillId && skill.hasTarget) ||
 					(skill.name === 'Stealthy' && statuses.includes('stealthy')) ||
 					(skill.name === 'Go Ballistic' && props.skillModeActive === 'goBallistic') ||
-					(skill.name === 'Sacrificial Strike' && props.skillModeActive === 'sacrificialStrike'))) ? 'button-selected': '';
-				let skillClass = `${convertObjIdToClassId(skill.skillId)}-action`;
+					(skill.name === 'Sacrificial Strike' && props.skillModeActive === 'sacrificialStrike'))) ? ' button-selected': '';
 				actionButtonCount++;
+				// help button needs to be at same level in tree as clickable element.
+				// If clickable element may not have any content, it's height would be 0, so it needs to have button classes
 				button = (
-					<div key={skill.skillId} className={`action-button ${shouldActionButtonShow() ? '' : 'hide'} ${skillClass} ${actionButtonState}`} onClick={(evt) => {
-						if (skill.name === 'Quick Reload') {
-							const setWeapon = (id) => {
-								const weapon = {weaponId: id};
-								handleWeaponClick(weapon, true, true);
-							}
-							if (leftWeaponNeedsReloading && rightWeaponNeedsReloading) {
-								const dialogProps = {
-									dialogContent: 'Which weapon do you want to reload?',
-									closeButtonText: `${leftWeapon.name}`,
-									closeButtonCallback: () => {
-										setWeapon(equippedItems.left);
-									},
-									disableCloseButton: false,
-									actionButtonVisible: true,
-									actionButtonText: `${rightWeapon.name}`,
-									actionButtonCallback: () => {
-										setWeapon(equippedItems.right);
-									},
-									dialogClasses: ''
-								};
-								props.setShowDialogProps(true, dialogProps);
-							} else {
-								leftWeaponNeedsReloading ? setWeapon(equippedItems.left) : setWeapon(equippedItems.right);
-							}
-						} else if (skill.name === 'Go Ballistic' || skill.name === 'Sacrificial Strike') {
-							const weapon = skill.name === 'Go Ballistic' ? {
-								weaponId: leftGunHasAmmo ? equippedItems.left : equippedItems.right,
-								weaponName: leftGunHasAmmo ? leftWeapon.name : rightWeapon.name
-							} : {weaponId: 'krisKnife0', weaponName: 'Kris Knife'};
-							const handleWeaponClickCallback = () => {
-								handleWeaponClick(weapon);
-							};
-							if (props.skillModeActive) {
-								props.toggleActionButton('', '', '', '', null);
-							} else {
-								props.toggleActionButton(props.characterId, skill.skillId, skill.name, 'skill', handleWeaponClickCallback);
-							}
-						} else if (skill.skillId === 'expertMining' || skill.skillId === 'mine') {
-							if (props.hasEnoughLight) {
-								props.setMapObjectSelected(props.mineablesNextToPc, evt, true, {miningAction: skill.skillId});
-							} else {
-								props.setShowDialogProps(true, props.notEnoughLightDialogProps);
-							}
-						} else if (skill.skillId === 'disarmTrap') {
-							props.toggleActionButton(props.characterId, skill.skillId, skill.name, 'skill', null, props.trapsNextToPc);
-						} else {
-							props.toggleActionButton(props.characterId, skill.skillId, skill.name, 'skill');
-						}
-					}}></div>
+					<div key={skill.skillId} className={shouldActionButtonShow() ? '' : ' hide'}>
+						{props.showHelpSystem && props.helpPopupButton({
+							iconClass: `action-button ${skillClass}`,
+							name: skill.name,
+							description: skill.description,
+							source: null
+						}, {'transform': 'translate(6px, 6px)'})}
+						<div className={`action-button ${skillClass}${actionButtonState}`} onClick={evt => handleSkillClick(evt)}></div>
+					</div>
 				);
 				return button;
 			})}
@@ -311,13 +341,24 @@ function CharacterControls(props) {
 				const itemCount = actionableItems.medicine[lastItemIndex].amount;
 				let button = null;
 				if (item.amount === itemCount) {
-					actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || statuses.includes('confused')) ? 'button-inactive' :
-						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.buttonId === item.itemId) ? 'button-selected': '';
+					const itemClass = convertObjIdToClassId(item.itemId) + '-action';
+					actionButtonState = (!props.isActiveCharacter || props.actionsRemaining === 0 || statuses.includes('confused')) ? ' button-inactive' :
+						(props.isActiveCharacter && props.actionButtonSelected && props.actionButtonSelected.characterId === props.characterId && props.actionButtonSelected.buttonId === item.itemId) ? ' button-selected': '';
 					actionButtonCount++;
+					// help button needs to be at same level in tree as clickable element.
+					// If clickable element may not have any content, it's height would be 0, so it needs to have button classes
 					button = (
-						<div key={item.itemId} className={`action-button ${shouldActionButtonShow() ? '' : 'hide'} ${convertObjIdToClassId(item.itemId)}-action ${actionButtonState}`} onClick={() => {
-							props.toggleActionButton(props.characterId, item.itemId, item.name, 'item');
-						}}>{itemCount}</div>
+						<div key={item.itemId} className={`action-button${shouldActionButtonShow() ? '' : ' hide'} ${itemClass}${actionButtonState}`}>
+							{props.showHelpSystem && props.helpPopupButton({
+								iconClass: `action-button ${itemClass}`,
+								name: item.name,
+								description: item.description,
+								source: null
+							})}
+							<div onClick={() => {
+								props.toggleActionButton(props.characterId, item.itemId, item.name, 'item');
+							}}>{itemCount}</div>
+						</div>
 					);
 				}
 				return button;
@@ -332,31 +373,81 @@ function CharacterControls(props) {
 				actionButtonState = (!props.isActiveCharacter ||
 					props.actionsRemaining === 0 ||
 					statuses.includes('confused') ||
-					(item.spiritCost && currentPCdata.currentSpirit < item.spiritCost)) ? 'button-inactive' :
+					(item.spiritCost && currentPCdata.currentSpirit < item.spiritCost)) ? ' button-inactive' :
 					(props.actionButtonSelected &&
 					props.actionButtonSelected.characterId === props.characterId &&
-					(props.actionButtonSelected.buttonId === item.itemId && item.hasTarget)) ? 'button-selected' : '';
+					(props.actionButtonSelected.buttonId === item.itemId && item.hasTarget)) ? ' button-selected' : '';
 				actionButtonCount++;
+				// help button needs to be at same level in tree as clickable element.
+				// If clickable element may not have any content, it's height would be 0, so it needs to have button classes
 				if (item === 'pickup') {
-					button = <div
-						key={item + index}
-						className={`action-button ${item}-action ${shouldActionButtonShow() ? '' : 'hide'} ${actionButtonState}`}
-						onClick={(evt) => props.setMapObjectSelected(props.mapObjectsOnPcTiles, evt, true)}></div>;
+					button = (
+						<div
+							key={item + index}
+							className={shouldActionButtonShow() ? '' : 'hide'}
+						>
+							{props.showHelpSystem && props.helpPopupButton({
+								iconClass: `action-button ${item}-action`,
+								name: 'Pick up item',
+								description: 'Pick up items on the ground from the tile on which the investigator is standing.',
+								source: null
+							}, {'transform': 'translate(6px, 6px)'})}
+							<div className={`action-button ${item}-action${actionButtonState}`}
+								onClick={(evt) => props.setMapObjectSelected(props.mapObjectsOnPcTiles, evt, true)}></div>
+						</div>
+					);
 				} else if (item === 'open-container') {
-					button = <div
-						key={item + index}
-						className={`action-button ${item}-action ${shouldActionButtonShow() ? '' : 'hide'} ${actionButtonState}`}
-						onClick={(evt) => props.setMapObjectSelected(props.containersNextToPc, evt, true)}></div>;
+					button = (
+						<div
+							key={item + index}
+							className={shouldActionButtonShow() ? '' : 'hide'}
+						>
+							{props.showHelpSystem && props.helpPopupButton({
+								iconClass: `action-button ${item}-action`,
+								name: 'Open',
+								description: 'Open the nearby container.',
+								source: null
+							}, {'transform': 'translate(6px, 6px)'})}
+							<div
+								className={`action-button ${item}-action${actionButtonState}`}
+								onClick={(evt) => props.setMapObjectSelected(props.containersNextToPc, evt, true)}></div>
+						</div>
+					);
 				} else if (item === 'refill') {
-					button = <div
-						key={item + index}
-						className={`action-button ${item}-action ${shouldActionButtonShow() ? '' : 'hide'} ${actionButtonState}`}
-						onClick={props.refillLight}></div>;
+					button = (
+						<div
+							key={item + index}
+							className={shouldActionButtonShow() ? '' : 'hide'}
+						>
+							{props.showHelpSystem && props.helpPopupButton({
+								iconClass: `action-button ${item}-action`,
+								name: 'Refill light',
+								description: "Refill a lantern or re-oil a torch to extend its usefulness. Requires Oil in the investigator's inventory.",
+								source: null
+							}, {'transform': 'translate(6px, 6px)'})}
+							<div
+								className={`action-button ${item}-action${actionButtonState}`}
+								onClick={props.refillLight}></div>
+						</div>
+					);
 				} else if (typeof item === 'object' && item.itemType === 'Relic') {
-					button = <div
-						key={item + index}
-						className={`action-button ${convertObjIdToClassId(item.itemId)}-action ${shouldActionButtonShow() ? '' : 'hide'} ${actionButtonState}`}
-						onClick={(evt) => props.toggleActionButton(props.characterId, item.itemId, item.name, 'item')}></div>;
+					const itemClass = convertObjIdToClassId(item.itemId) + '-action';
+					button = (
+						<div
+							key={item + index}
+							className={shouldActionButtonShow() ? '' : 'hide'}
+							>
+							{props.showHelpSystem && props.helpPopupButton({
+								iconClass: `action-button ${itemClass}`,
+								name: 'Use Relic',
+								description: "Use a Relic. Requires the Relic to be identified and in the investigator's inventory.",
+								source: null
+							}, {'transform': 'translate(6px, 6px)'})}
+							<div
+								className={`action-button ${itemClass}${actionButtonState}`}
+								onClick={() => props.toggleActionButton(props.characterId, item.itemId, item.name, 'item')}></div>
+						</div>
+					);
 				}
 				return button;
 			})}
@@ -421,7 +512,6 @@ function CharacterControls(props) {
 				id={`char-control-${props.characterId}`}
 				className={`control-bar-buttons-container ${(props.screenData.isSmall && props.characterId !== props.selectedControlTab) ? 'hide' : ''}`}
 			>
-				{props.showHelpSystem && props.helpPopupButton('actionButtons')}
 				{(actionButtonCount > actionButtonMax) && (skillPaginationNum > 1) &&
 					<div className='action-button action-button-scroll' onClick={() => updateSkillPageNum(skillPaginationNum - 1)}>⬅</div>
 				}

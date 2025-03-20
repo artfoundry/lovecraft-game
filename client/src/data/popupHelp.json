@@ -5,12 +5,6 @@
     "description": "Remaining actions and moves for the current investigator's turn in Tactical Mode.",
     "source": null
   },
-  "actionButtons": {
-    "iconClass": "",
-    "name": "Action Buttons",
-    "description": "Buttons for attacks, skills, and other actions. Some actions require a target on the map, an item in the inventory, or other conditions to work or be available.",
-    "source": null
-  },
   "attributeBars": {
     "iconClass": "",
     "name": "Attribute Bars",

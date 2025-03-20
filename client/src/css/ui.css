@@ -135,6 +135,7 @@ h3 {
 	background-color: blue;
 	border-radius: 20px;
 	filter: drop-shadow(4px 4px 2px black);
+	z-index: 2;
 }
 
 .help-popup {
@@ -156,6 +157,10 @@ h3 {
 
 .help-popup-container .character-status-icon {
 	width: 64px;
+}
+
+.help-popup-container .action-button:hover {
+	cursor: default;
 }
 
 .help-popup-text {
@@ -1015,8 +1020,10 @@ h3 {
 }
 
 .gun-reload-icon {
+	height: 32px;
 	font-size: 30px;
 	line-height: 26px;
+	text-align: center;
 }
 
 .gun-reload-icon::after {
