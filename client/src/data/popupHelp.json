@@ -1,0 +1,104 @@
+{
+  "actionsAndMoves": {
+    "iconClass": "",
+    "name": "Action and Move Count",
+    "description": "Remaining actions and moves for the current investigator's turn in Tactical Mode.",
+    "source": null
+  },
+  "actionButtons": {
+    "iconClass": "",
+    "name": "Action Buttons",
+    "description": "Buttons for attacks, skills, and other actions. Some actions require a target on the map, an item in the inventory, or other conditions to work or be available.",
+    "source": null
+  },
+  "attributeBars": {
+    "iconClass": "",
+    "name": "Attribute Bars",
+    "description": "Status bars for health (red), sanity (blue), and spirit (pink). Invetigator dies at 0 health, goes insane at 0 sanity, and can't perform spirit based skills without enough spirit.",
+    "source": null
+  },
+  "attributes": {
+    "iconClass": "",
+    "name": "Attributes",
+    "description": "All attributes and statuses are displayed here. When party levels up, points can be added here to increase certain attributes.",
+    "source": null
+  },
+  "equipment": {
+    "iconClass": "",
+    "name": "Equipment",
+    "description": "Items, armor, and weapons can be equipped by dragging them to the three slots. Weapons show remaining ammunition. If light is equipped, remaining time is displayed.",
+    "source": null
+  },
+  "characterTabs": {
+    "iconClass": "",
+    "name": "Character Tabs",
+    "description": "Shows investigator name and icon. On smaller screens/mobile, tap on a character's icon to display that character's Control Bar.",
+    "source": null
+  },
+  "creatureInfo": {
+    "iconClass": "",
+    "name": "Creature Information",
+    "description": "Shows any information investigators have learned about the creature. Will only show the creature's image if nothing is known.",
+    "source": null
+  },
+  "dropEquipment": {
+    "iconClass": "",
+    "name": "Drop Equipment",
+    "description": "Drag any inventory or equipped item here to drop it to the ground.",
+    "source": null
+  },
+  "gameLog": {
+    "iconClass": "",
+    "name": "Log",
+    "description": "Displays information on investigator and creature actions as well as changes in the investigators' surroundings.",
+    "source": null
+  },
+  "inventory": {
+    "iconClass": "",
+    "name": "Inventory",
+    "description": "All unequipped items are stored here. They may be dragged around to reorder, drop, equip, or traded to other investigators. To trade, drag the item to the investigator's Control Bar below.",
+    "source": null
+  },
+  "map": {
+    "iconClass": "",
+    "name": "Map",
+    "description": "Select investigators, creatures, and objects to get info, target them for actions, or interact with them. Click/tap anywhere to move the active investigator. Context menu appears if multiple options.",
+    "source": null
+  },
+  "modeInfo": {
+    "iconClass": "",
+    "name": "Mode Info and Controls",
+    "description": "In Follow Mode one investigator leads, the others follow. In Tactical Mode each investigator takes a turn. In Search Mode (magnifying glass) all investigators search surroundings every move.",
+    "source": null
+  },
+  "partyInfo": {
+    "iconClass": "",
+    "name": "Party Info",
+    "description": "Displays progress toward next party level and where the party currently is.",
+    "source": null
+  },
+  "skills": {
+    "iconClass": "",
+    "name": "Skills",
+    "description": "Investigator's known skills are listed here. When party levels up, points can be added here to improve certain skills.",
+    "source": null
+  },
+  "statusIndicators": {
+    "iconClass": "",
+    "name": "Status Indicators",
+    "description": "Icons indicating temporary statuses. Click/tap on an icon for more info on the status.",
+    "source": null
+  },
+  "switchEquipment": {
+    "iconClass": "",
+    "name": "Switch Equipment",
+    "description": "Allows for quick swapping of equipment sets. Press the button to swap out currently equipped items. Then equip others. Press again to swap back to the previous set. Inventory must have enough open slots to swap out.",
+    "source": null
+  },
+  "systemButtons": {
+    "iconClass": "",
+    "name": "Game System Controls",
+    "description": "Controls for turning on/off this popup help, zooming in/out on the map, centering on the active investigator, and opening the game's options.",
+    "source": null
+  }
+}

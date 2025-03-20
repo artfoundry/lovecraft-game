@@ -1,6 +1,5 @@
 import React, {useState} from 'react';
 import {convertCamelToKabobCase, capitalizeWord, deepCopy, convertObjIdToClassId, notEnoughSpaceInInventory, handleItemOverDropZone} from './Utils';
-import {Music} from './Audio';
 
 function CharacterControls(props) {
 	const currentPCdata = props.playerCharacters[props.characterId];
@@ -381,6 +380,8 @@ function CharacterControls(props) {
 			onDrop={(evt) => props.dropItemToPC(evt, props.characterId)}>
 
 			<div className='control-bar-tab' onClick={() => props.setSelectedControlTab(props.characterId)}>
+				{props.showHelpScreen && props.helpPopupButton('characterTabs')}
+				{props.showHelpScreen && props.helpPopupButton('statusIndicators', {'transform': 'translate(250px, 0)'})}
 				<span className='character-name font-fancy'>
 					<span className={`control-bar-tab-icon ${convertObjIdToClassId(props.characterId)}`}></span>
 					{displayCharName ? props.characterName : ''}
@@ -389,6 +390,7 @@ function CharacterControls(props) {
 			</div>
 			<div id='control-bar-statuses-container'>
 				<div className='control-bar-status-bars'>
+					{props.showHelpScreen && props.helpPopupButton('attributeBars')}
 					<div className='control-bar-status-row'>
 						<div className='status-bar-icon heart-icon'></div>
 						<div className='status-bar-container'>
@@ -410,13 +412,16 @@ function CharacterControls(props) {
 				</div>
 				{props.inTacticalMode &&
 				<div className='control-bar-actions-moves'>
+					{props.showHelpScreen && props.helpPopupButton('actionsAndMoves')}
 					<div id='control-bar-moves-title'>Moves: </div><div id='control-bar-moves-value'>{props.isActiveCharacter ? props.movesRemaining : '0'}</div>
 					<div id='control-bar-actions-title'>Actions: </div><div id='control-bar-actions-value'>{props.isActiveCharacter ? props.actionsRemaining : '0'}</div>
 				</div>}
 			</div>
 			<div
 				id={`char-control-${props.characterId}`}
-				className={`control-bar-buttons-container ${(props.screenData.isSmall && props.characterId !== props.selectedControlTab) ? 'hide' : ''}`}>
+				className={`control-bar-buttons-container ${(props.screenData.isSmall && props.characterId !== props.selectedControlTab) ? 'hide' : ''}`}
+			>
+				{props.showHelpScreen && props.helpPopupButton('actionButtons')}
 				{(actionButtonCount > actionButtonMax) && (skillPaginationNum > 1) &&
 					<div className='action-button action-button-scroll' onClick={() => updateSkillPageNum(skillPaginationNum - 1)}>⬅</div>
 				}
@@ -519,13 +524,15 @@ function CharacterInfoPanel(props) {
 	}
 	const itemsIntoElements = (
 		<div className='char-info-inv-items'>
+			{props.showHelpScreen && props.helpPopupButton('inventory', {'transform': 'translate(180px, 50px)'})}
 			{inventoryItems.map((itemId, index) => {
 				const itemInfo = props.characterInfo.weapons[itemId] || props.characterInfo.items[itemId];
 				return (
+					// need index % 6 === 5 to calculate the two right-most boxes
 					<div
 						id={'invBox' + index}
 						key={'invBox' + index}
-						className='char-info-inv-item-box'
+						className={`char-info-inv-item-box${index % 6 === 5 ? ' char-info-inv-item-box-6n' : ''}${index > 5 ? ' char-info-inv-item-box-bottom-row' : ''}`}
 						onDragOver={evt => handleItemOverDropZone(evt)}
 						onDrop={evt => props.dropItemToInv(evt)}
 					>
@@ -593,6 +600,7 @@ function CharacterInfoPanel(props) {
 				<div className={`char-info-inv-container ${activeTab !== 'inv' ? 'hide' : ''}`}>
 					<div className='char-info-equipped-light'>Equipped Light: {props.characterInfo.equippedLight ? `${equippedLight.name} (Time left: ${equippedLight.time})`: 'none'}</div>
 
+					{props.showHelpScreen && props.helpPopupButton('equipment', {'transform': 'translate(-100px, 50px)'})}
 					<div className='char-info-doll-container'>
 						<div className='char-info-paper-doll'></div>
 						<div className='char-info-doll-boxes-container'>
@@ -659,7 +667,8 @@ function CharacterInfoPanel(props) {
 						} else {
 							props.setShowDialogProps(true, props.notEnoughSpaceDialogProps);
 						}
-					}}>Switch equipment</div>
+					}}>{props.showHelpScreen && props.helpPopupButton('switchEquipment', {'transform': 'translate(-50px, -7px)'})}Switch equipment</div>
+
 
 					<div>
 						<div className='char-info-item-drop-zone'
@@ -669,14 +678,16 @@ function CharacterInfoPanel(props) {
 								     props.setHasObjBeenDropped({objHasBeenDropped: true, evt})
 							     }
 						     }}
-						></div>
+						>{props.showHelpScreen && props.helpPopupButton('dropEquipment', {'transform': 'translate(15px, 15px)'})}</div>
 						<span>Drag item here to drop</span>
 					</div>
+					{/*{props.showHelpScreen && props.helpPopupButton('inventory', {'transform': 'translate(180px, 50px)'})}*/}
 
 					{itemsIntoElements}
 				</div>
 
 				<div className={`char-info-stats-container ${activeTab !== 'stats' ? 'hide' : ''}`}>
+					{props.showHelpScreen && props.helpPopupButton('attributes', {'transform': 'translate(220px, 50px)'})}
 					{props.characterInfo.levelUpPoints > 0 &&
 						<div className='level-up-header highlight-row'>
 							<div className='character-stat-text'>Investigator has increased in expertise.</div>
@@ -759,6 +770,7 @@ function CharacterInfoPanel(props) {
 				</div>
 
 				<div className={`char-info-skills-container ${activeTab !== 'skills' ? 'hide' : ''}`}>
+					{props.showHelpScreen && props.helpPopupButton('skills', {'transform': 'translate(220px, 50px)'})}
 					{props.characterInfo.levelUpPoints > 0 &&
 						<div className='level-up-header highlight-row'>
 							<div className='character-stat-text'>Investigator has increased in expertise.</div>
@@ -980,6 +992,7 @@ function CreatureInfoPanel(props) {
 		<div className='creature-info-container ui-panel'>
 			<div className='general-button' onClick={() => props.updateUnitSelectionStatus(props.creatureInfo.id, 'creature')}>X</div>
 			<div className='creature-info-columns'>
+				{props.showHelpScreen && props.helpPopupButton('creatureInfo', {'left': '50%'})}
 				<div className='creature-info-icon-column'>
 					<div className={`creature-icon ${convertObjIdToClassId(props.creatureInfo.id)}`}></div>
 				</div>
@@ -1073,6 +1086,7 @@ function ModeInfoPanel(props) {
 	return (
 		<div id='mode-info-container' className={`${props.showDialog ? 'no-click' : ''}`}>
 			<div className='mode-buttons-container'>
+				{props.showHelpScreen && props.helpPopupButton('modeInfo')}
 				<div
 					className='general-button'
 					onClick={() => {
@@ -1143,6 +1157,7 @@ function PartyInfoPanel(props) {
 	const currentFloorText = props.currentFloor ? ` level ${props.currentFloor}` : '';
 	return (
 		<div id='party-info-container'>
+			{props.showHelpScreen && props.helpPopupButton('partyInfo')}
 			<div id='party-info'>
 				<div id='party-exp-container'>
 					<div>Party level: {props.partyLevel}</div>
@@ -1262,7 +1277,7 @@ function HelpPopup(props) {
 			<div className='help-popup-container'>
 				<div className={props.showHelpPopup.iconClass}></div>
 				<div className='help-popup-text'>
-					<div>{props.showHelpPopup.name}</div>
+					<div className='font-fancy'>{props.showHelpPopup.name}</div>
 					<div>{props.showHelpPopup.description}</div>
 					{props.showHelpPopup.source && <div>Source: {props.showHelpPopup.source}</div>}
 				</div>
@@ -1321,7 +1336,7 @@ function GameOptions(props) {
 						onClick={() => props.toggleNeedToSaveData(true)}>
 						Save Game
 					</button>
-					<div className='small-text'>(Game autosaves when changing levels/areas but does NOT save when the app is closed!)</div>
+					<div className='small-text'>(Game autosaves when changing levels/areas but does NOT save when closing the app!)</div>
 				</div>
 				<div className='game-options-row game-options-row-button-first'>
 					<button

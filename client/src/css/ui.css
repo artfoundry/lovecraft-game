@@ -130,11 +130,20 @@ h3 {
 	font-size: medium;
 }
 
+.popup-help-icon {
+	position: absolute;
+	background-color: blue;
+	border-radius: 20px;
+	filter: drop-shadow(4px 4px 2px black);
+}
+
 .help-popup {
 	position: absolute;
 	width: 300px;
 	height: 150px;
 	padding: 20px;
+	border: 1px solid blue;
+	filter: drop-shadow(4px 4px 2px black);
 }
 
 .help-popup-container {
@@ -142,7 +151,7 @@ h3 {
 	flex-direction: row;
 	justify-content: space-between;
 	align-items: center;
-	margin-top: 50px;
+	height: 150px;
 }
 
 .help-popup-container .character-status-icon {
@@ -624,11 +633,11 @@ h3 {
 	border-bottom: 0;
 }
 
-.char-info-inv-item-box:nth-child(6n) {
+.char-info-inv-item-box-6n {
 	border-right: 1px solid seagreen;
 }
 
-.char-info-inv-item-box:nth-child(n + 7) {
+.char-info-inv-item-box-bottom-row {
 	border-bottom: 1px solid seagreen;
 }
 
@@ -802,6 +811,7 @@ h3 {
 }
 
 .creature-info-columns {
+	position: relative;
 	display: flex;
 	flex-direction: row;
 }
