@@ -9,7 +9,6 @@ import {
 	JournalWindow,
 	DialogWindow,
 	ContextMenu,
-	HelpScreen,
 	HelpPopup,
 	GameOptions
 } from './UIElements';
@@ -37,7 +36,7 @@ class UI extends React.PureComponent {
 
 		this.state = {
 			showGameOptions: false,
-			showHelpScreen: false,
+			showHelpSystem: false,
 			showHelpPopup: null,
 			showJournal: false,
 			logText: this.props.logText,
@@ -163,7 +162,7 @@ class UI extends React.PureComponent {
 						selectedControlTab={this.state.selectedControlTab}
 						setSelectedControlTab={this.setSelectedControlTab}
 						helpPopupButton={this.helpPopupButton}
-						showHelpScreen={this.state.showHelpScreen}
+						showHelpSystem={this.state.showHelpSystem}
 					/>
 				)
 			}
@@ -802,8 +801,8 @@ class UI extends React.PureComponent {
 		this.setState(prevState => ({showGameOptions: !prevState.showGameOptions}));
 	}
 
-	toggleHelpScreen = () => {
-		this.setState(prevState => ({showHelpScreen: !prevState.showHelpScreen}));
+	toggleHelpSystem = () => {
+		this.setState(prevState => ({showHelpSystem: !prevState.showHelpSystem}));
 	}
 
 	/**
@@ -904,7 +903,7 @@ class UI extends React.PureComponent {
 	render() {
 		return (
 			<div id='ui-container'>
-				{this.state.showHelpScreen && this.helpPopupButton('map', {'left': '50%', 'top': '50%'})}
+				{this.state.showHelpSystem && this.helpPopupButton('map', {'left': '50%', 'top': '50%'})}
 
 				{this.props.showDialog && this.props.dialogProps && <this.showDialog />}
 
@@ -925,7 +924,7 @@ class UI extends React.PureComponent {
 
 				<div ref={this.uiRefs.turnInfo} id='turn-info-container' className='ui-panel'>
 					<div ref={this.uiRefs.log} id='log-container'>
-						{this.state.showHelpScreen && this.helpPopupButton('gameLog')}
+						{this.state.showHelpSystem && this.helpPopupButton('gameLog')}
 						{this.state.logText &&
 						<div className='log-lines'>
 							<this.addLogLines />
@@ -941,7 +940,7 @@ class UI extends React.PureComponent {
 						partyExpertise={this.props.partyExpertise}
 						expertisePointLevels={this.props.expertisePointLevels}
 						setShowJournal={this.setShowJournal}
-						showHelpScreen={this.state.showHelpScreen}
+						showHelpSystem={this.state.showHelpSystem}
 						helpPopupButton={this.helpPopupButton}
 					/>}
 
@@ -961,7 +960,7 @@ class UI extends React.PureComponent {
 						playerFollowOrder={this.props.playerFollowOrder}
 						updateFollowModePositions={this.props.updateFollowModePositions}
 						updateCurrentTurn={this.props.updateCurrentTurn}
-						showHelpScreen={this.state.showHelpScreen}
+						showHelpSystem={this.state.showHelpSystem}
 						helpPopupButton={this.helpPopupButton}
 					/>}
 					{/*<div className='minimize-button general-button' onClick={() => {*/}
@@ -994,7 +993,7 @@ class UI extends React.PureComponent {
 					setHasObjBeenDropped={this.props.setHasObjBeenDropped}
 					notEnoughSpaceDialogProps={this.props.notEnoughSpaceDialogProps}
 					objectIsSelected={this.state.objectIsSelected}
-					showHelpScreen={this.state.showHelpScreen}
+					showHelpSystem={this.state.showHelpSystem}
 					helpPopupButton={this.helpPopupButton}
 				/>}
 
@@ -1003,13 +1002,13 @@ class UI extends React.PureComponent {
 					creatureIsSelected={this.props.creatureIsSelected}
 					updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
 					creatureInfo={this.props.selectedCreatureInfo}
-					showHelpScreen={this.state.showHelpScreen}
+					showHelpSystem={this.state.showHelpSystem}
 					helpPopupButton={this.helpPopupButton}
 				/>}
 
 				<div id='system-buttons-container'>
-					<div className='system-button help-button font-fancy' onClick={() => this.toggleHelpScreen()}>?</div>
-					{this.state.showHelpScreen && this.helpPopupButton('systemButtons', {'left': '-40px'})}
+					<div className='system-button help-button font-fancy' onClick={() => this.toggleHelpSystem()}>?</div>
+					{this.state.showHelpSystem && this.helpPopupButton('systemButtons', {'left': '-40px'})}
 					<div id='screen-zoom-container'>
 						<div className='screen-zoom-icon'>+</div>
 						<input id='screen-zoom-slider' type='range' min='0.5' max='1.5' step='0.1' value={this.props.gameOptions.screenZoom} onInput={evt => {

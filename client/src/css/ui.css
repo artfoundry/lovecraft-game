@@ -162,87 +162,7 @@ h3 {
 	width: 230px;
 }
 
-.help-screen {
-	display: flex;
-	flex-direction: column;
-	justify-content: space-between;
-	position: fixed;
-	top: 10%;
-	left: 10%;
-	width: 80%;
-	height: 80%;
-	padding: 8px;
-	border: 2px solid seagreen;
-	box-shadow: 0 0 10px black;
-}
-
-.help-screen-content {
-	width: 92%;
-	height: 92%;
-	margin: auto;
-	background-size: contain;
-	background-position: center;
-	background-repeat: no-repeat;
-}
-
-#help-screen-content-1 {
-	background-image: url('../assets/ui/help_screen_1.jpg');
-}
-
-#help-screen-content-2 {
-	background-image: url('../assets/ui/help_screen_2.jpg');
-}
-
-#help-screen-content-3 {
-	background-image: url('../assets/ui/help_screen_3.jpg');
-}
-
-#help-screen-content-4 {
-	background-image: url('../assets/ui/help_screen_4.jpg');
-}
-
-#help-screen-content-mobile-landscape-1 {
-	background-image: url('../assets/ui/help_screen_mobile_landscape_1.jpg');
-}
-
-#help-screen-content-mobile-landscape-2 {
-	background-image: url('../assets/ui/help_screen_mobile_landscape_2.jpg');
-}
-
-#help-screen-content-mobile-landscape-3 {
-	background-image: url('../assets/ui/help_screen_mobile_landscape_3.jpg');
-}
-
-#help-screen-content-mobile-landscape-4 {
-	background-image: url('../assets/ui/help_screen_mobile_landscape_4.jpg');
-}
-
-#help-screen-content-mobile-portrait-1 {
-	background-image: url('../assets/ui/help_screen_mobile_portrait_1.jpg');
-}
-
-#help-screen-content-mobile-portrait-2 {
-	background-image: url('../assets/ui/help_screen_mobile_portrait_2.jpg');
-}
-
-#help-screen-content-mobile-portrait-3 {
-	background-image: url('../assets/ui/help_screen_mobile_portrait_3.jpg');
-}
-
-#help-screen-content-mobile-portrait-4 {
-	background-image: url('../assets/ui/help_screen_mobile_portrait_4.jpg');
-}
-
-.help-screen-nav-container {
-	display: flex;
-	justify-content: center;
-	gap: 20px;
-	width: 50%;
-	margin: 5px auto;
-	transform: scaleX(1.5);
-}
-
-.help-screen-close {
+.help-popup-close {
 	position: absolute;
 }
 
@@ -1668,19 +1588,6 @@ select {
 
 	.dialog {
 		padding: 5px;
-	}
-
-	.help-screen {
-		width: 100%;
-		height: 100%;
-		top: 0;
-		left: 0;
-		box-sizing: border-box;
-	}
-
-	.help-screen-content {
-		width: 90%;
-		height: 80%;
 	}
 
 	#mode-info-container, #log-container, #party-info-container {
