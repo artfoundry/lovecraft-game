@@ -56,7 +56,7 @@ h3 {
 	border-radius: 5px;
 	transition: transform 0.5s;
 	user-select: none;
-	z-index: 2;
+	z-index: 4;
 }
 
 #ui-container {
@@ -130,11 +130,21 @@ h3 {
 	font-size: medium;
 }
 
+.popup-help-icon {
+	position: absolute;
+	background-color: blue;
+	border-radius: 20px;
+	filter: drop-shadow(4px 4px 2px black);
+	z-index: 3;
+}
+
 .help-popup {
 	position: absolute;
 	width: 300px;
 	height: 150px;
 	padding: 20px;
+	border: 1px solid blue;
+	filter: drop-shadow(4px 4px 2px black);
 }
 
 .help-popup-container {
@@ -142,98 +152,22 @@ h3 {
 	flex-direction: row;
 	justify-content: space-between;
 	align-items: center;
-	margin-top: 50px;
+	height: 150px;
 }
 
 .help-popup-container .character-status-icon {
 	width: 64px;
 }
 
+.help-popup-container .action-button:hover {
+	cursor: default;
+}
+
 .help-popup-text {
 	width: 230px;
 }
 
-.help-screen {
-	display: flex;
-	flex-direction: column;
-	justify-content: space-between;
-	position: fixed;
-	top: 10%;
-	left: 10%;
-	width: 80%;
-	height: 80%;
-	padding: 8px;
-	border: 2px solid seagreen;
-	box-shadow: 0 0 10px black;
-}
-
-.help-screen-content {
-	width: 92%;
-	height: 92%;
-	margin: auto;
-	background-size: contain;
-	background-position: center;
-	background-repeat: no-repeat;
-}
-
-#help-screen-content-1 {
-	background-image: url('../assets/ui/help_screen_1.jpg');
-}
-
-#help-screen-content-2 {
-	background-image: url('../assets/ui/help_screen_2.jpg');
-}
-
-#help-screen-content-3 {
-	background-image: url('../assets/ui/help_screen_3.jpg');
-}
-
-#help-screen-content-4 {
-	background-image: url('../assets/ui/help_screen_4.jpg');
-}
-
-#help-screen-content-mobile-landscape-1 {
-	background-image: url('../assets/ui/help_screen_mobile_landscape_1.jpg');
-}
-
-#help-screen-content-mobile-landscape-2 {
-	background-image: url('../assets/ui/help_screen_mobile_landscape_2.jpg');
-}
-
-#help-screen-content-mobile-landscape-3 {
-	background-image: url('../assets/ui/help_screen_mobile_landscape_3.jpg');
-}
-
-#help-screen-content-mobile-landscape-4 {
-	background-image: url('../assets/ui/help_screen_mobile_landscape_4.jpg');
-}
-
-#help-screen-content-mobile-portrait-1 {
-	background-image: url('../assets/ui/help_screen_mobile_portrait_1.jpg');
-}
-
-#help-screen-content-mobile-portrait-2 {
-	background-image: url('../assets/ui/help_screen_mobile_portrait_2.jpg');
-}
-
-#help-screen-content-mobile-portrait-3 {
-	background-image: url('../assets/ui/help_screen_mobile_portrait_3.jpg');
-}
-
-#help-screen-content-mobile-portrait-4 {
-	background-image: url('../assets/ui/help_screen_mobile_portrait_4.jpg');
-}
-
-.help-screen-nav-container {
-	display: flex;
-	justify-content: center;
-	gap: 20px;
-	width: 50%;
-	margin: 5px auto;
-	transform: scaleX(1.5);
-}
-
-.help-screen-close {
+.help-popup-close {
 	position: absolute;
 }
 
@@ -479,6 +413,7 @@ h3 {
 }
 
 .char-info-inv-container {
+	position: relative;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -608,6 +543,7 @@ h3 {
 }
 
 .char-info-inv-items {
+	position: relative;
 	display: flex;
 	flex-direction: row;
 	flex-wrap: wrap;
@@ -624,11 +560,11 @@ h3 {
 	border-bottom: 0;
 }
 
-.char-info-inv-item-box:nth-child(6n) {
+.char-info-inv-item-box-6n {
 	border-right: 1px solid seagreen;
 }
 
-.char-info-inv-item-box:nth-child(n + 7) {
+.char-info-inv-item-box-bottom-row {
 	border-bottom: 1px solid seagreen;
 }
 
@@ -802,6 +738,7 @@ h3 {
 }
 
 .creature-info-columns {
+	position: relative;
 	display: flex;
 	flex-direction: row;
 }
@@ -847,6 +784,7 @@ h3 {
 }
 
 .control-bar-tab {
+	position: relative;
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
@@ -1085,8 +1023,10 @@ h3 {
 }
 
 .gun-reload-icon {
+	height: 32px;
 	font-size: 30px;
 	line-height: 26px;
+	text-align: center;
 }
 
 .gun-reload-icon::after {
@@ -1223,7 +1163,7 @@ select {
 	border-radius: 5px;
 	transition: transform 0.5s;
 	box-shadow: 5px 5px 10px black;
-	z-index: 3;
+	z-index: 5;
 	box-sizing: border-box;
 	overflow: auto;
 }
@@ -1660,19 +1600,6 @@ select {
 		padding: 5px;
 	}
 
-	.help-screen {
-		width: 100%;
-		height: 100%;
-		top: 0;
-		left: 0;
-		box-sizing: border-box;
-	}
-
-	.help-screen-content {
-		width: 90%;
-		height: 80%;
-	}
-
 	#mode-info-container, #log-container, #party-info-container {
 		min-width: 190px;
 		padding: 5px;
@@ -1908,6 +1835,12 @@ select {
 		max-height: 300px;
 		overflow: scroll;
 		left: 5%;
+	}
+
+	/* override the  positioning set by javascript */
+	.help-popup {
+		top: calc(50% - 95px) !important;
+		left: calc(50% - 170px) !important;
 	}
 
 	#control-bar-container {
