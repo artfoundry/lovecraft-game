@@ -314,10 +314,14 @@ class Game extends React.PureComponent {
 		})
 	}
 
-	resetAllData = () => {
+	/**
+	 *
+	 * @param overwriteSavedData boolean (yes for restarting to create new char, no for reloading from saved game)
+	 */
+	resetAllData = (overwriteSavedData) => {
 		this.toggleAudio('environments', this.state.currentLocation + 'Background');
 		this.setState({
-			firebaseGameData: null,
+			firebaseGameData: overwriteSavedData ? null : this.state.firebaseGameData,
 			characterCreated: false,
 			createdCharData: null,
 			gameSetupComplete: false,
@@ -376,7 +380,11 @@ class Game extends React.PureComponent {
 			centeredPlayer: '',
 			logText: []
 		}, () => {
-			this._saveGameData(null, true);
+			if (overwriteSavedData) {
+				this._saveGameData(null, true);
+			} else {
+				this._restoreGameDataFromFB(this._setupGameState);
+			}
 		});
 	}
 
@@ -1251,7 +1259,9 @@ class Game extends React.PureComponent {
 			}
 			if (updateOrRemoveChar) {
 				if (updateOrRemoveChar === 'isDying') {
-					this.updateLog(`${nextActiveChar.name} is dying and has ${this.maxTurnsToReviveDeadPlayer - nextActiveChar.turnsSinceDeath} turns to be resuscitated!`);
+					const numTurns = this.maxTurnsToReviveDeadPlayer - nextActiveChar.turnsSinceDeath;
+					const turnsText = `${numTurns} ${numTurns > 1 ? 'turns' : 'turn'}`;
+					this.updateLog(`${nextActiveChar.name} is dying and has ${turnsText} to be resuscitated!`);
 				}
 				this.updateCharacters(nextActiveCharIsPc ? 'player' : 'creature', nextActiveChar, nextActiveCharId, false, false, false, updateActiveChar);
 			} else {
@@ -1782,6 +1792,32 @@ class Game extends React.PureComponent {
 		this.setState({needToSaveData});
 	}
 
+	endGame = () => {
+		const dialogProps = {
+			dialogContent: 'The main character has died or gone insane, so the game is over. You can create a new character or load from a saved game.',
+			closeButtonText: 'Restart',
+			closeButtonCallback: () => {
+				const dialogProps = {
+					dialogContent: 'Are you sure you want to delete your saved data and restart?',
+					closeButtonText: 'Cancel',
+					closeButtonCallback: this.endGame,
+					disableCloseButton: false,
+					actionButtonVisible: true,
+					actionButtonText: 'Yes',
+					actionButtonCallback: () => this.resetAllData(true),
+					dialogClasses: ''
+				};
+				this.setShowDialogProps(true, dialogProps);
+			},
+			disableCloseButton: false,
+			actionButtonVisible: true,
+			actionButtonText: 'Reload From Save',
+			actionButtonCallback: () => this.resetAllData(false),
+			dialogClasses: ''
+		}
+		this.setShowDialogProps(true, dialogProps);
+	}
+
 
 
 	/*********************
@@ -2080,7 +2116,7 @@ class Game extends React.PureComponent {
 			}
 			//check for this.state.createdCharData is active so game doesn't crash when char creation is turned off
 			if (this.state.createdCharData && id === this.state.createdCharData.id) {
-				this._endGame();
+				this.endGame();
 			} else {
 				this.dropAllItemsInPcInventory(id, () => {
 					this._removeDeadFromTurnOrder(id, callback);
@@ -2136,20 +2172,6 @@ class Game extends React.PureComponent {
 			delete updatedObjects[id];
 			this.updateMapObjects(updatedObjects, lightingHasChanged);
 		}
-	}
-
-	_endGame() {
-		const dialogProps = {
-			dialogContent: 'The main character has died or gone insane, so the game is over.  Try again!',
-			closeButtonText: 'Ok',
-			closeButtonCallback: null,
-			disableCloseButton: false,
-			actionButtonVisible: false,
-			actionButtonText: '',
-			actionButtonCallback: null,
-			dialogClasses: ''
-		}
-		this.setShowDialogProps(true, dialogProps);
 	}
 
 	/**
