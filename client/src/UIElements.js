@@ -472,7 +472,7 @@ function CharacterControls(props) {
 
 			<div className='control-bar-tab'>
 				{props.showHelpSystem && props.helpPopupButton('characterTabs')}
-				{props.showHelpSystem && props.helpPopupButton('statusIndicators', {'right': '0'})}
+				{props.showHelpSystem && props.helpPopupButton('statusIndicators', {'right': '0', 'zIndex': '2'})}
 				<div onClick={() => props.setSelectedControlTab(props.characterId)}>
 					<span className='character-name font-fancy'>
 						<span className={`control-bar-tab-icon ${convertObjIdToClassId(props.characterId)}`}></span>
@@ -616,7 +616,6 @@ function CharacterInfoPanel(props) {
 	}
 	const itemsIntoElements = (
 		<div className='char-info-inv-items'>
-			{props.showHelpSystem && props.helpPopupButton('inventory', {'transform': 'translate(180px, 50px)'})}
 			{inventoryItems.map((itemId, index) => {
 				const itemInfo = props.characterInfo.weapons[itemId] || props.characterInfo.items[itemId];
 				return (
@@ -628,6 +627,7 @@ function CharacterInfoPanel(props) {
 						onDragOver={evt => handleItemOverDropZone(evt)}
 						onDrop={evt => props.dropItemToInv(evt)}
 					>
+						{props.showHelpSystem && index === 0 && props.helpPopupButton('inventory', {'transform': 'translate(16px, 16px)'})}
 						{itemId &&
 							<div
 								id={itemId}
@@ -692,7 +692,7 @@ function CharacterInfoPanel(props) {
 				<div className={`char-info-inv-container ${activeTab !== 'inv' ? 'hide' : ''}`}>
 					<div className='char-info-equipped-light'>Equipped Light: {props.characterInfo.equippedLight ? `${equippedLight.name} (Time left: ${equippedLight.time})`: 'none'}</div>
 
-					{props.showHelpSystem && props.helpPopupButton('equipment', {'transform': 'translate(-100px, 50px)'})}
+					{props.showHelpSystem && props.helpPopupButton('equipment', {'transform': 'translate(-5px, 70px)'})}
 					<div className='char-info-doll-container'>
 						<div className='char-info-paper-doll'></div>
 						<div className='char-info-doll-boxes-container'>
@@ -770,7 +770,7 @@ function CharacterInfoPanel(props) {
 								     props.setHasObjBeenDropped({objHasBeenDropped: true, evt})
 							     }
 						     }}
-						>{props.showHelpSystem && props.helpPopupButton('dropEquipment', {'transform': 'translate(15px, 15px)'})}</div>
+						>{props.showHelpSystem && props.helpPopupButton('dropEquipment', {'transform': 'translate(15px, 15px)', 'position': 'relative'})}</div>
 						<span>Drag item here to drop</span>
 					</div>
 
