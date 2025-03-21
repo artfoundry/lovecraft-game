@@ -470,14 +470,16 @@ function CharacterControls(props) {
 			onDragOver={(evt) => handleItemOverDropZone(evt)}
 			onDrop={(evt) => props.dropItemToPC(evt, props.characterId)}>
 
-			<div className='control-bar-tab' onClick={() => props.setSelectedControlTab(props.characterId)}>
+			<div className='control-bar-tab'>
 				{props.showHelpSystem && props.helpPopupButton('characterTabs')}
-				{props.showHelpSystem && props.helpPopupButton('statusIndicators', {'transform': 'translate(250px, 0)'})}
-				<span className='character-name font-fancy'>
-					<span className={`control-bar-tab-icon ${convertObjIdToClassId(props.characterId)}`}></span>
-					{displayCharName ? props.characterName : ''}
-				</span>
-				{statusIcons}
+				{props.showHelpSystem && props.helpPopupButton('statusIndicators', {'right': '0'})}
+				<div onClick={() => props.setSelectedControlTab(props.characterId)}>
+					<span className='character-name font-fancy'>
+						<span className={`control-bar-tab-icon ${convertObjIdToClassId(props.characterId)}`}></span>
+						{displayCharName ? props.characterName : ''}
+					</span>
+					{statusIcons}
+				</div>
 			</div>
 			<div id='control-bar-statuses-container'>
 				<div className='control-bar-status-bars'>

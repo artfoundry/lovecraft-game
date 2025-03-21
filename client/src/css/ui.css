@@ -782,6 +782,7 @@ h3 {
 }
 
 .control-bar-tab {
+	position: relative;
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
@@ -1832,6 +1833,12 @@ select {
 		max-height: 300px;
 		overflow: scroll;
 		left: 5%;
+	}
+
+	/* override the  positioning set by javascript */
+	.help-popup {
+		top: calc(50% - 95px) !important;
+		left: calc(50% - 170px) !important;
 	}
 
 	#control-bar-container {
