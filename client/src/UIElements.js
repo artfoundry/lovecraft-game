@@ -753,13 +753,16 @@ function CharacterInfoPanel(props) {
 						</div>
 					</div>
 
-					<div className='char-info-equip-toggle-button general-button' onClick={() => {
-						if (!notEnoughSpaceInInventory(numItemsInLoadout1, numItemsInLoadout2, props.characterInfo)) {
-							props.switchEquipment(props.characterInfo.id)
-						} else {
-							props.setShowDialogProps(true, props.notEnoughSpaceDialogProps);
-						}
-					}}>{props.showHelpSystem && props.helpPopupButton('switchEquipment', {'transform': 'translate(-50px, -7px)'})}Switch equipment</div>
+					<div className='char-info-equip-toggle-button general-button'>
+						{props.showHelpSystem && props.helpPopupButton('switchEquipment', {'transform': 'translate(-50px, -7px)'})}
+						<div onClick={() => {
+							if (!notEnoughSpaceInInventory(numItemsInLoadout1, numItemsInLoadout2, props.characterInfo)) {
+								props.switchEquipment(props.characterInfo.id)
+							} else {
+								props.setShowDialogProps(true, props.notEnoughSpaceDialogProps);
+							}
+						}}>Switch equipment</div>
+					</div>
 
 
 					<div>

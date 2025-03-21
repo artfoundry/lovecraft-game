@@ -1163,7 +1163,7 @@ select {
 	border-radius: 5px;
 	transition: transform 0.5s;
 	box-shadow: 5px 5px 10px black;
-	z-index: 3;
+	z-index: 5;
 	box-sizing: border-box;
 	overflow: auto;
 }
