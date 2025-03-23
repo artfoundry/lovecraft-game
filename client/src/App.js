@@ -1848,7 +1848,7 @@ class Game extends React.PureComponent {
 			followModePositions: this.state.followModePositions, // array
 			threatList: this.state.threatList // array
 		};
-		this.firebase.setData(userId, deepCopy(dataToSave, true), (logMessage) => {
+		this.firebase.setData(userId, isReset ? null : deepCopy(dataToSave, true), (logMessage) => {
 			if (!isReset) {
 				this.updateLog(logMessage);
 			}
@@ -1877,7 +1877,9 @@ class Game extends React.PureComponent {
 	 * Restores objects/arrays from firebase: gameOptions, createdCharData, partyJournal, savedMaps,
 	 * playerFollowOrder, followModePositions, threatList
 	 * playerCharacters object from firebase gets restored in _setupPlayerCharacters
-	 * unitsTurnOrder array from firebase gets restored in _setAllUnitsTurnOrder after creatures are initialized in Map
+	 * activeCharacter gets set in _setupPlayerCharacters but updated by updateActiveCharacter after placing creatures in Map if no FB data
+	 * unitsTurnOrder array gets restored from fb (for both pcs and creatures) in _setAllUnitsTurnOrder after creatures are initialized in Map
+	 * otherwise, unitsTurnOrder gets set in _setAllUnitsTurnOrder first for pcs after they're initialized in Map, then again for creatures after they're initialized
 	 * @private
 	 */
 	_setupGameState() {
@@ -1910,7 +1912,6 @@ class Game extends React.PureComponent {
 
 	/**
 	 * Saves starting player chars to state as part of initialization, then runs callback to set gameSetupComplete to true
-	 * If restoring from saved data (and didn't restart the game then reload the page), activeCharacter is restored in updateActiveCharacter
 	 * @param gameSetupCallback: function
 	 * @private
 	 */
@@ -1947,6 +1948,7 @@ class Game extends React.PureComponent {
 			});
 			this.setState({
 				playerCharacters,
+				activeCharacter: firebaseDataLoaded.activeCharacter,
 				playerFollowOrder: [...firebaseDataLoaded.playerFollowOrder],
 				pcObjectOrdering: [...firebaseDataLoaded.pcObjectOrdering]
 			}, gameSetupCallback);
@@ -2054,12 +2056,8 @@ class Game extends React.PureComponent {
 		}
 
 		this.setState({unitsTurnOrder}, () => {
-			if (unitType === 'mapCreatures') {
-				if (fbGameData && !this.state.activeCharacter) {
-					this.updateActiveCharacter(callback, null, null, true);
-				} else {
-					this.updateActiveCharacter(callback);
-				}
+			if (!fbGameData && unitType === 'mapCreatures') {
+				this.updateActiveCharacter(callback);
 			} else {
 				callback();
 			}

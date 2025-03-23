@@ -266,7 +266,7 @@ export default class Firebase extends React.PureComponent {
 	 * @param callback: function
 	 */
 	setData = (userId, data, callback) => {
-		set(ref(this.database, `users/${userId}`), {...data}).then(() => {
+		set(ref(this.database, `users/${userId}/gameData`), {...data}).then(() => {
 			callback('Game saved!');
 		}).catch((error) => {
 			console.error(error);
@@ -280,7 +280,7 @@ export default class Firebase extends React.PureComponent {
 	 */
 	_getData(userId, callback) {
 		const dbRef = ref(this.database);
-		get(child(dbRef, `users/${userId}`)).then((snapshot) => {
+		get(child(dbRef, `users/${userId}/gameData`)).then((snapshot) => {
 			if (snapshot.exists()) {
 				callback(snapshot.val());
 			} else {
