@@ -214,6 +214,7 @@ class Game extends React.PureComponent {
 			isLoginWindowRequested: false,
 			isLoggedIn: false,
 			firebaseGameData: null,
+			loadedFromFB: false,
 			characterCreated: false,
 			createdCharData: null,
 			gameSetupComplete: false,
@@ -322,6 +323,7 @@ class Game extends React.PureComponent {
 		this.toggleAudio('environments', this.state.currentLocation + 'Background');
 		this.setState({
 			firebaseGameData: overwriteSavedData ? null : this.state.firebaseGameData,
+			loadedFromFB: false,
 			characterCreated: false,
 			createdCharData: null,
 			gameSetupComplete: false,
@@ -1869,7 +1871,7 @@ class Game extends React.PureComponent {
 				dataToRestore[stateKey] = stateValue;
 			}
 		}
-		this.setState({...dataToRestore}, callback);
+		this.setState({...dataToRestore, loadedFromFB: true}, callback);
 	}
 
 	/**
@@ -2356,6 +2358,7 @@ class Game extends React.PureComponent {
 						gameOptions={this.state.gameOptions}
 						objectPanelWidth={this.objectPanelWidth}
 						needToSaveData={this.state.needToSaveData}
+						loadedFromFB={this.state.loadedFromFB}
 						// dialogs
 						setShowDialogProps={this.setShowDialogProps}
 						notEnoughSpaceDialogProps={this.notEnoughSpaceDialogProps}

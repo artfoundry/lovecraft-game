@@ -668,7 +668,7 @@ class Map extends React.PureComponent {
 			});
 		}
 
-		if (!updatedPlayerData[this.props.activeCharacter].coords) {
+		if (!this.props.loadedFromFB) {
 			for (const playerID of Object.keys(this.props.playerCharacters)) {
 				let tilePos = '';
 				let newCoords = {};
