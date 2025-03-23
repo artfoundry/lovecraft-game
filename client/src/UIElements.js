@@ -1402,6 +1402,13 @@ function GameOptions(props) {
 						props.updateGameOptions(gameOptions);
 					}} />
 				</div>
+				<div className='game-options-row'>
+					<label>Brightness: </label>
+					<input className='audio-volume' type='range' min='0.5' max='2' step='0.1' value={gameOptions.brightness} onInput={evt => {
+						gameOptions.brightness = evt.target.value;
+						props.updateGameOptions(gameOptions);
+					}} />
+				</div>
 				<div className='game-options-row game-options-row-button-first'>
 					<button
 						className='general-button game-options-row-button'

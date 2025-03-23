@@ -3310,7 +3310,7 @@ class Map extends React.PureComponent {
 		return (
 			<div className='world'
 			     ref={this.worldRef}
-			     style={{width: `${this.state.worldWidth}px`, height: `${this.state.worldHeight}px`}}
+			     style={{width: `${this.state.worldWidth}px`, height: `${this.state.worldHeight}px`, filter: `brightness(${this.props.gameOptions.brightness})`}}
 			     onPointerDown={() => this.clickedOnWorld = true}
 			     onPointerMove={evt => {
 					 if (!previousPointerEvt) {

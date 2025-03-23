@@ -200,6 +200,7 @@ class Game extends React.PureComponent {
 				playMusic: this.gameAttr.playMusic,
 				songName: '',
 				screenZoom: 1.0,
+				brightness: 1.0,
 				spawnCreatures: this.gameAttr.spawnCreatures
 			},
 			screenData: {
