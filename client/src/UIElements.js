@@ -1415,6 +1415,27 @@ function GameOptions(props) {
 						className='general-button game-options-row-button'
 						onClick={() => {
 							const dialogProps = {
+								dialogContent: 'Are you sure you want to abandon your current progress and load from save?',
+								closeButtonText: 'Cancel',
+								closeButtonCallback: null,
+								disableCloseButton: false,
+								actionButtonVisible: true,
+								actionButtonText: 'Yes',
+								actionButtonCallback: () => props.resetAllData(false),
+								dialogClasses: ''
+							};
+							props.setShowDialogProps(true, dialogProps);
+							props.toggleOptionsPanel();
+						}}>
+						Load Saved Game
+					</button>
+					<div className='small-text'>Abandon current progress and load from save.</div>
+				</div>
+				<div className='game-options-row game-options-row-button-first'>
+					<button
+						className='general-button game-options-row-button'
+						onClick={() => {
+							const dialogProps = {
 								dialogContent: 'Are you sure you want to delete your saved data and restart?',
 								closeButtonText: 'Cancel',
 								closeButtonCallback: null,
