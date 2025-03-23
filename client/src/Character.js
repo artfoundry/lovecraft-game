@@ -45,7 +45,7 @@ class Character extends React.PureComponent {
 		this.maxItems = 12;
 		this.defense = props.isSavedData ? props.defense : this.calculateDefense(props.agility, props.equippedItems.armor ? this.items[props.equippedItems.armor].defense : 0);
 		this.damageReduction = this.equippedItems.armor ? this.items[this.equippedItems.armor].damageReduction : 0;
-		this.coords = props.isSavedData ? {...props.coords} : {};
+		this.coords = props.isSavedData ? {...props.coords} : null;
 		this.equippedLight = props.equippedLight || null;
 		this.lightRange = this.equippedLight ? this.items[this.equippedLight].range : 0;
 		this.lightTime = this.equippedLight ? this.items[this.equippedLight].time : null;

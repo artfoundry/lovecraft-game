@@ -1421,7 +1421,7 @@ function GameOptions(props) {
 								disableCloseButton: false,
 								actionButtonVisible: true,
 								actionButtonText: 'Yes',
-								actionButtonCallback: props.resetAllData,
+								actionButtonCallback: () => props.resetAllData(true),
 								dialogClasses: ''
 							};
 							props.setShowDialogProps(true, dialogProps);

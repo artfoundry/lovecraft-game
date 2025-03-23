@@ -214,6 +214,7 @@ class Game extends React.PureComponent {
 			isLoginWindowRequested: false,
 			isLoggedIn: false,
 			firebaseGameData: null,
+			loadedFromFB: false,
 			characterCreated: false,
 			createdCharData: null,
 			gameSetupComplete: false,
@@ -314,10 +315,15 @@ class Game extends React.PureComponent {
 		})
 	}
 
-	resetAllData = () => {
+	/**
+	 *
+	 * @param overwriteSavedData boolean (yes for restarting to create new char, no for reloading from saved game)
+	 */
+	resetAllData = (overwriteSavedData) => {
 		this.toggleAudio('environments', this.state.currentLocation + 'Background');
 		this.setState({
-			firebaseGameData: null,
+			firebaseGameData: overwriteSavedData ? null : this.state.firebaseGameData,
+			loadedFromFB: false,
 			characterCreated: false,
 			createdCharData: null,
 			gameSetupComplete: false,
@@ -376,7 +382,11 @@ class Game extends React.PureComponent {
 			centeredPlayer: '',
 			logText: []
 		}, () => {
-			this._saveGameData(null, true);
+			if (overwriteSavedData) {
+				this._saveGameData(null, true);
+			} else {
+				this._restoreGameDataFromFB(this._setupGameState);
+			}
 		});
 	}
 
@@ -1251,7 +1261,9 @@ class Game extends React.PureComponent {
 			}
 			if (updateOrRemoveChar) {
 				if (updateOrRemoveChar === 'isDying') {
-					this.updateLog(`${nextActiveChar.name} is dying and has ${this.maxTurnsToReviveDeadPlayer - nextActiveChar.turnsSinceDeath} turns to be resuscitated!`);
+					const numTurns = this.maxTurnsToReviveDeadPlayer - nextActiveChar.turnsSinceDeath;
+					const turnsText = `${numTurns} ${numTurns > 1 ? 'turns' : 'turn'}`;
+					this.updateLog(`${nextActiveChar.name} is dying and has ${turnsText} to be resuscitated!`);
 				}
 				this.updateCharacters(nextActiveCharIsPc ? 'player' : 'creature', nextActiveChar, nextActiveCharId, false, false, false, updateActiveChar);
 			} else {
@@ -1782,6 +1794,32 @@ class Game extends React.PureComponent {
 		this.setState({needToSaveData});
 	}
 
+	endGame = () => {
+		const dialogProps = {
+			dialogContent: 'The main character has died or gone insane, so the game is over. You can create a new character or load from a saved game.',
+			closeButtonText: 'Restart',
+			closeButtonCallback: () => {
+				const dialogProps = {
+					dialogContent: 'Are you sure you want to delete your saved data and restart?',
+					closeButtonText: 'Cancel',
+					closeButtonCallback: this.endGame,
+					disableCloseButton: false,
+					actionButtonVisible: true,
+					actionButtonText: 'Yes',
+					actionButtonCallback: () => this.resetAllData(true),
+					dialogClasses: ''
+				};
+				this.setShowDialogProps(true, dialogProps);
+			},
+			disableCloseButton: false,
+			actionButtonVisible: true,
+			actionButtonText: 'Reload From Save',
+			actionButtonCallback: () => this.resetAllData(false),
+			dialogClasses: ''
+		}
+		this.setShowDialogProps(true, dialogProps);
+	}
+
 
 
 	/*********************
@@ -1812,7 +1850,7 @@ class Game extends React.PureComponent {
 			followModePositions: this.state.followModePositions, // array
 			threatList: this.state.threatList // array
 		};
-		this.firebase.setData(userId, deepCopy(dataToSave, true), (logMessage) => {
+		this.firebase.setData(userId, isReset ? null : deepCopy(dataToSave, true), (logMessage) => {
 			if (!isReset) {
 				this.updateLog(logMessage);
 			}
@@ -1833,7 +1871,7 @@ class Game extends React.PureComponent {
 				dataToRestore[stateKey] = stateValue;
 			}
 		}
-		this.setState({...dataToRestore}, callback);
+		this.setState({...dataToRestore, loadedFromFB: true}, callback);
 	}
 
 	/**
@@ -1841,7 +1879,9 @@ class Game extends React.PureComponent {
 	 * Restores objects/arrays from firebase: gameOptions, createdCharData, partyJournal, savedMaps,
 	 * playerFollowOrder, followModePositions, threatList
 	 * playerCharacters object from firebase gets restored in _setupPlayerCharacters
-	 * unitsTurnOrder array from firebase gets restored in _setAllUnitsTurnOrder after creatures are initialized in Map
+	 * activeCharacter gets set in _setupPlayerCharacters but updated by updateActiveCharacter after placing creatures in Map if no FB data
+	 * unitsTurnOrder array gets restored from fb (for both pcs and creatures) in _setAllUnitsTurnOrder after creatures are initialized in Map
+	 * otherwise, unitsTurnOrder gets set in _setAllUnitsTurnOrder first for pcs after they're initialized in Map, then again for creatures after they're initialized
 	 * @private
 	 */
 	_setupGameState() {
@@ -1874,7 +1914,6 @@ class Game extends React.PureComponent {
 
 	/**
 	 * Saves starting player chars to state as part of initialization, then runs callback to set gameSetupComplete to true
-	 * If restoring from saved data (and didn't restart the game then reload the page), activeCharacter is restored in updateActiveCharacter
 	 * @param gameSetupCallback: function
 	 * @private
 	 */
@@ -1911,6 +1950,7 @@ class Game extends React.PureComponent {
 			});
 			this.setState({
 				playerCharacters,
+				activeCharacter: firebaseDataLoaded.activeCharacter,
 				playerFollowOrder: [...firebaseDataLoaded.playerFollowOrder],
 				pcObjectOrdering: [...firebaseDataLoaded.pcObjectOrdering]
 			}, gameSetupCallback);
@@ -2018,12 +2058,8 @@ class Game extends React.PureComponent {
 		}
 
 		this.setState({unitsTurnOrder}, () => {
-			if (unitType === 'mapCreatures') {
-				if (fbGameData && !this.state.activeCharacter) {
-					this.updateActiveCharacter(callback, null, null, true);
-				} else {
-					this.updateActiveCharacter(callback);
-				}
+			if (!fbGameData && unitType === 'mapCreatures') {
+				this.updateActiveCharacter(callback);
 			} else {
 				callback();
 			}
@@ -2080,7 +2116,7 @@ class Game extends React.PureComponent {
 			}
 			//check for this.state.createdCharData is active so game doesn't crash when char creation is turned off
 			if (this.state.createdCharData && id === this.state.createdCharData.id) {
-				this._endGame();
+				this.endGame();
 			} else {
 				this.dropAllItemsInPcInventory(id, () => {
 					this._removeDeadFromTurnOrder(id, callback);
@@ -2136,20 +2172,6 @@ class Game extends React.PureComponent {
 			delete updatedObjects[id];
 			this.updateMapObjects(updatedObjects, lightingHasChanged);
 		}
-	}
-
-	_endGame() {
-		const dialogProps = {
-			dialogContent: 'The main character has died or gone insane, so the game is over.  Try again!',
-			closeButtonText: 'Ok',
-			closeButtonCallback: null,
-			disableCloseButton: false,
-			actionButtonVisible: false,
-			actionButtonText: '',
-			actionButtonCallback: null,
-			dialogClasses: ''
-		}
-		this.setShowDialogProps(true, dialogProps);
 	}
 
 	/**
@@ -2336,6 +2358,7 @@ class Game extends React.PureComponent {
 						gameOptions={this.state.gameOptions}
 						objectPanelWidth={this.objectPanelWidth}
 						needToSaveData={this.state.needToSaveData}
+						loadedFromFB={this.state.loadedFromFB}
 						// dialogs
 						setShowDialogProps={this.setShowDialogProps}
 						notEnoughSpaceDialogProps={this.notEnoughSpaceDialogProps}

@@ -659,36 +659,40 @@ class Map extends React.PureComponent {
 		let playerVisited = this.state.usingSavedMapData ? deepCopy(savedMapData.playerVisited) : {};
 		let previousPlayerCoords = null;
 		let playerPositions = [];
-
-		for (const playerID of Object.keys(this.props.playerCharacters)) {
-			let tilePos = '';
-			let newCoords = {};
-			if (!previousPlayerCoords) {
-				let startingCoords = {...this.state.previousAreaExitCoords};
-				if (this.props.previousFloor && this.props.previousFloor > this.props.currentFloor) {
-					startingCoords = {...savedMapData.nextAreaExitCoords};
-				}
-				tilePos = convertCoordsToPos(startingCoords);
-				newCoords = {...startingCoords};
-			} else {
-				// look for empty nearby tile to place 2nd/3rd PC
-				tilePos = this._findNearbyAvailableTile(previousPlayerCoords, playerPositions);
-				newCoords = convertPosToCoords(tilePos);
-			}
-			playerPositions.push(tilePos);
-			previousPlayerCoords = {...newCoords};
-			playerVisited = Object.assign(playerVisited, this._findNewVisitedTiles(newCoords, playerID));
-			updatedPlayerData[playerID].coords = {...newCoords};
-		}
-
-		this.props.updateCharacters('player', updatedPlayerData, null, false, false, true, () => {
+		const updatePlayerStatesInMap = () => {
 			this.setState({
 				playerVisited,
 				playerPlaced: true
 			}, () => {
 				this._moveMap(initialSetupCallback);
 			});
-		});
+		}
+
+		if (!this.props.loadedFromFB) {
+			for (const playerID of Object.keys(this.props.playerCharacters)) {
+				let tilePos = '';
+				let newCoords = {};
+				if (!previousPlayerCoords) {
+					let startingCoords = {...this.state.previousAreaExitCoords};
+					if (this.props.previousFloor && this.props.previousFloor > this.props.currentFloor) {
+						startingCoords = {...savedMapData.nextAreaExitCoords};
+					}
+					tilePos = convertCoordsToPos(startingCoords);
+					newCoords = {...startingCoords};
+				} else {
+					// look for empty nearby tile to place 2nd/3rd PC
+					tilePos = this._findNearbyAvailableTile(previousPlayerCoords, playerPositions);
+					newCoords = convertPosToCoords(tilePos);
+				}
+				playerPositions.push(tilePos);
+				previousPlayerCoords = {...newCoords};
+				playerVisited = Object.assign(playerVisited, this._findNewVisitedTiles(newCoords, playerID));
+				updatedPlayerData[playerID].coords = {...newCoords};
+			}
+			this.props.updateCharacters('player', updatedPlayerData, null, false, false, true, updatePlayerStatesInMap);
+		} else {
+			updatePlayerStatesInMap();
+		}
 	}
 
 	/**
