@@ -1581,7 +1581,7 @@ select {
 
 /* MEDIA QUERIES */
 
-/* Narrow or short screens */
+/* Narrow or short screens (catchall for all smaller screens) */
 @media (width < 1000px) or (height < 768px) {
 	h1 {
 		font-size: revert;
@@ -1608,8 +1608,15 @@ select {
 		padding: 5px;
 	}
 
+	#log-container {
+		max-height: 110px;
+		border: 0;
+		border-bottom: 1px solid seagreen;
+		font-size: 14px;
+	}
+
 	#turn-control-container {
-		width: 150px;
+		width: 160px;
 	}
 
 	.char-info-inv-container {
@@ -1703,6 +1710,10 @@ select {
 		border-radius: 0;
 	}
 
+	#log-container {
+		max-height: unset;
+	}
+
 	.character-info-container {
 		border: 2px solid seagreen;
 		border-left: 0;
@@ -1778,13 +1789,6 @@ select {
 		border: 0;
 		border-bottom: 2px solid seagreen;
 		border-radius: 0;
-		font-size: 14px;
-	}
-
-	#log-container {
-		max-height: 80px;
-		border: 0;
-		border-bottom: 1px solid seagreen;
 		font-size: 14px;
 	}
 
@@ -1906,13 +1910,6 @@ select {
 		font-size: 14px;
 	}
 
-	#log-container {
-		max-height: 90px;
-		border: 0;
-		border-bottom: 1px solid seagreen;
-		font-size: 14px;
-	}
-
 	#party-info-container {
 		flex-direction: row;
 		gap: 20px;
@@ -1922,6 +1919,10 @@ select {
 	#mode-info-container {
 		flex-direction: row;
 		border: 0;
+	}
+
+	#turn-control-container {
+		width: 150px;
 	}
 
 	.character-info-container, .creature-info-container {

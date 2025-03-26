@@ -58,7 +58,7 @@ export function randomTileMovementValue() {
 }
 
 /**
- * Rounds numbers toward 0 (since Math.floor rounds neg numbers away from 0)
+ * Rounds decimal numbers toward 0 (since Math.floor rounds neg numbers away from 0)
  * @param value: decimal number
  * @returns {number}
  */
