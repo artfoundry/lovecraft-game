@@ -11,7 +11,8 @@ import {
 	isSignInWithEmailLink,
 	signInWithEmailLink,
 	createUserWithEmailAndPassword,
-	signInWithEmailAndPassword
+	signInWithEmailAndPassword,
+	sendPasswordResetEmail
 } from "firebase/auth";
 import { GoogleAuthProvider } from "firebase/auth";
 import './css/ui.css';
@@ -45,6 +46,7 @@ export default class Firebase extends React.PureComponent {
 		this.state = {
 			showDialog: true,
 			emailSent: false,
+			resetEmailSent: false,
 			createTabIsActive: true
 		}
 	}
@@ -88,10 +90,19 @@ export default class Firebase extends React.PureComponent {
 						</form>
 						<form
 							className={`login-method active-tab-content ${this.state.createTabIsActive ? 'hide' : ''}`}
-							onSubmit={(e) => {this.authByPassword(e, 'login');}}>
+							onSubmit={e => {
+								e.preventDefault();
+								if (e.nativeEvent.submitter.id === 'login-button') {
+									this.authByPassword(e, 'login');
+								} else {
+									this._resetPassword(e);
+								}
+							}}>
 							<div className='login-account-entry-row'><label>Email:</label><input type='email' name='email'></input></div>
 							<div className='login-account-entry-row'><label>Password:</label><input type='password' name='password'></input></div>
-							<button className='login-button' type='submit'>Login</button>
+							<button id='login-button' className='login-button' type='submit'>Login</button>
+							<button id='reset-pw-button' className='login-button' type='submit'>Reset your password</button>
+							<div className={this.state.resetEmailSent ? '' : 'message-hidden'}>Email sent!</div>
 						</form>
 					</div>
 
@@ -100,7 +111,8 @@ export default class Firebase extends React.PureComponent {
 						<form className='login-method' onSubmit={this.authByEmailLink}>
 							<div className='login-account-entry-row'><label>Email:</label><input type='email' name='email'></input></div>
 							<button className='login-button' type='submit'>Send me a login link!</button>
-							<div className={this.state.emailSent ? '' : 'login-email-message-hidden'}>Email sent!</div>
+							<div className='small-text'>If you created an account above and forgot your password, you can use this method to login with the same email.</div>
+							<div className={this.state.emailSent ? '' : 'message-hidden'}>Email sent!</div>
 						</form>
 					</div>
 
@@ -245,6 +257,18 @@ export default class Firebase extends React.PureComponent {
 			})
 			.catch((error) => {
 				alert('Incorrect email or password. Please try again.');
+				console.log(error.code, error.message);
+			});
+	}
+
+	_resetPassword(e) {
+		const auth = getAuth();
+		const email = e.target[0].value;
+		sendPasswordResetEmail(auth, email)
+			.then(() => {
+				this.setState({resetEmailSent: true});
+			})
+			.catch((error) => {
 				console.log(error.code, error.message);
 			});
 	}
