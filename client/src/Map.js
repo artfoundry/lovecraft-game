@@ -1931,66 +1931,38 @@ class Map extends React.PureComponent {
 		const endingCoords = convertPosToCoords(endPos);
 		const startingCoords = convertPosToCoords(startPos);
 		const tileSizeMinusOne = this.tileSize - 1;
+		const halfTileSize = this.tileSize / 2;
 		// All corner coords and deltas are in pixel values, not tile values
 		const startTilePoints = {
-			center: {xPos: (startingCoords.xPos * this.tileSize) + (this.tileSize / 2), yPos: (startingCoords.yPos * this.tileSize) + (this.tileSize / 2)},
+			center: {xPos: (startingCoords.xPos * this.tileSize) + halfTileSize, yPos: (startingCoords.yPos * this.tileSize) + halfTileSize},
 			topLeft: {xPos: startingCoords.xPos * this.tileSize, yPos: startingCoords.yPos * this.tileSize},
 			topRight: {xPos: (startingCoords.xPos * this.tileSize) + tileSizeMinusOne, yPos: startingCoords.yPos * this.tileSize},
 			bottomLeft: {xPos: startingCoords.xPos * this.tileSize, yPos: (startingCoords.yPos * this.tileSize) + tileSizeMinusOne},
 			bottomRight: {xPos: (startingCoords.xPos * this.tileSize) + tileSizeMinusOne, yPos: (startingCoords.yPos * this.tileSize) + tileSizeMinusOne}
-		}
-		const endTilePoints = {
-			center: {xPos: (endingCoords.xPos * this.tileSize) + (this.tileSize / 2), yPos: (endingCoords.yPos * this.tileSize) + (this.tileSize / 2)},
-			topLeft: {xPos: endingCoords.xPos * this.tileSize, yPos: endingCoords.yPos * this.tileSize},
-			topRight: {xPos: (endingCoords.xPos * this.tileSize) + tileSizeMinusOne, yPos: endingCoords.yPos * this.tileSize},
-			bottomLeft: {xPos: endingCoords.xPos * this.tileSize, yPos: (endingCoords.yPos * this.tileSize) + tileSizeMinusOne},
-			bottomRight: {xPos: (endingCoords.xPos * this.tileSize) + tileSizeMinusOne, yPos: (endingCoords.yPos * this.tileSize) + tileSizeMinusOne}
-		}
-		const xDeltas = {
-			center: endTilePoints.center.xPos - startTilePoints.center.xPos,
-			topLeft: endTilePoints.topLeft.xPos - startTilePoints.topLeft.xPos,
-			topRight: endTilePoints.topRight.xPos - startTilePoints.topRight.xPos,
-			bottomLeft: endTilePoints.bottomLeft.xPos - startTilePoints.bottomLeft.xPos,
-			bottomRight: endTilePoints.bottomRight.xPos - startTilePoints.bottomRight.xPos
 		};
-		const yDeltas = {
-			center: endTilePoints.center.yPos - startTilePoints.center.yPos,
-			topLeft: endTilePoints.topLeft.yPos - startTilePoints.topLeft.yPos,
-			topRight: endTilePoints.topRight.yPos - startTilePoints.topRight.yPos,
-			bottomLeft: endTilePoints.bottomLeft.yPos - startTilePoints.bottomLeft.yPos,
-			bottomRight: endTilePoints.bottomRight.yPos - startTilePoints.bottomRight.yPos
+		const endTileCenterPoint = {
+			xPos: (endingCoords.xPos * this.tileSize) + halfTileSize,
+			yPos: (endingCoords.yPos * this.tileSize) + halfTileSize
 		};
-		let absXDeltas = {
-			center: Math.abs(xDeltas.center),
-			topLeft: Math.abs(xDeltas.topLeft),
-			topRight: Math.abs(xDeltas.topRight),
-			bottomLeft: Math.abs(xDeltas.bottomLeft),
-			bottomRight: Math.abs(xDeltas.bottomRight)
-		};
-		let absYDeltas = {
-			center: Math.abs(yDeltas.center),
-			topLeft: Math.abs(yDeltas.topLeft),
-			topRight: Math.abs(yDeltas.topRight),
-			bottomLeft: Math.abs(yDeltas.bottomLeft),
-			bottomRight: Math.abs(yDeltas.bottomRight)
-		};
-
-		// initial assignment of longer vs shorter is arbitrary
-		let longerAxis = xDeltas.topLeft; // longer refers to longer side (axis) of triangle made up of the two axes and the path/delta
-		let longerAxisStartingPos = 'xPos';
-		let shorterAxisStartingPos = 'yPos';
-		let longerDeltas = xDeltas;
-		let shorterDeltas = yDeltas;
-		// reassigning in one go to avoid doing same if/then 5x
-		// if start tile and end tile are closer to each other horizontally than vertically
-		if (absXDeltas.topLeft < absYDeltas.topLeft) {
-			longerAxis = yDeltas.topLeft;
-			longerAxisStartingPos = 'yPos';
-			shorterAxisStartingPos = 'xPos';
-			longerDeltas = yDeltas;
-			shorterDeltas = xDeltas;
-		}
-		const numChecks = (Math.abs(longerAxis) / this.tileSize); // check done at each tile to see if ray (delta) is blocked
+		const tilePointNames = ['center', 'topLeft', 'topRight', 'bottomLeft', 'bottomRight'];
+		const xDelta = endTileCenterPoint.xPos - startTilePoints.center.xPos;
+		const yDelta = endTileCenterPoint.yPos - startTilePoints.center.yPos;
+		const absXDelta = Math.abs(xDelta);
+		const absYDelta = Math.abs(yDelta);
+		// longer refers to longer side (axis) of triangle made up of the two axes and the path/delta
+		let longerAxis = absXDelta < absYDelta ? absYDelta : absXDelta;
+		let longerAxisStartingPos = longerAxis === absYDelta ? 'yPos': 'xPos';
+		let shorterAxisStartingPos = longerAxis === absYDelta ? 'xPos': 'yPos';
+		let longerDelta = xDelta;
+		let shorterDelta = yDelta;
+		const numChecks = longerAxis / this.tileSize; // check done at each tile to see if ray (delta) is blocked
+		const longerAxisCheckLength = longerDelta < 0 ? -this.tileSize : this.tileSize;
+		// subtract 1 so if shorterAxisNewPos would normally equal an integer (instead of decimal),
+		// which would mean the position is right between two tiles
+		// (which causes calculation to always move choice toward the positive, regardless of whether delta moves in neg or pos direction),
+		// then the -1 will nudge the position to one side or the other (pos or neg)
+		// const shorterAxisCheckLength = shorterDelta / numChecks;
+		const shorterAxisCheckLength = shorterDelta === 0 ? 0 : (shorterDelta / numChecks) - 1;
 		let numOfClearPaths = 5;
 		let checkNum = 1;
 		let clearPaths = {
@@ -2003,30 +1975,23 @@ class Map extends React.PureComponent {
 		const minClearPaths = !checkForCreatures ? 2 : 3;
 		// 'numChecks - 1' here because don't need to check the end tile, but still need full value for computing shorterAxisCheckLength
 		while (numOfClearPaths >= minClearPaths && checkNum <= numChecks - 1) {
-			for (const [delta, distance] of Object.entries(longerDeltas)) {
-				if (clearPaths[delta]) {
-					// next 6 lines are to find the next tile along the ray (delta) that we need to check using _isCurrentTileBlocked
-					const longerAxisCheckLength = distance < 0 ? -this.tileSize : this.tileSize;
-					// subtract 1 so if shorterAxisNewPos would normally equal an integer (instead of decimal),
-					// which would mean the position is right between two tiles
-					// (which causes calculation to always move choice toward the positive, regardless of whether delta moves in neg or pos direction),
-					// then the -1 will nudge the position to one side or the other (pos or neg)
-					// const shorterAxisCheckLength = shorterDeltas[delta] / numChecks;
-					const shorterAxisCheckLength = shorterDeltas[delta] === 0 ? shorterDeltas[delta] / numChecks : (shorterDeltas[delta] / numChecks) - 1;
-					const longerAxisNewPos = roundTowardZero((startTilePoints[delta][longerAxisStartingPos] + (longerAxisCheckLength * checkNum)) / this.tileSize);
+			tilePointNames.forEach(pointName => {
+				if (clearPaths[pointName]) {
+					// next 5 lines are to find the next tile along the ray (delta) that we need to check using _isCurrentTileBlocked
+					const longerAxisNewPos = roundTowardZero((startTilePoints[pointName][longerAxisStartingPos] + (longerAxisCheckLength * checkNum)) / this.tileSize);
 					// need to Math.floor shorter (which roundTowardZero does), as pos could be between tile coords (and round would shift coord to next tile)
-					const shorterAxisNewPos = roundTowardZero((startTilePoints[delta][shorterAxisStartingPos] + (shorterAxisCheckLength * checkNum)) / this.tileSize);
+					const shorterAxisNewPos = roundTowardZero((startTilePoints[pointName][shorterAxisStartingPos] + (shorterAxisCheckLength * checkNum)) / this.tileSize);
 					const xPos = longerAxisStartingPos === 'xPos' ? longerAxisNewPos : shorterAxisNewPos;
-					const yPos = xPos === longerAxisNewPos ? shorterAxisNewPos : longerAxisNewPos;
-					const currentPos = `${xPos}-${yPos}`;
+					const yPos = shorterAxisStartingPos === 'yPos' ? shorterAxisNewPos : longerAxisNewPos;
+					const newPos = `${xPos}-${yPos}`;
 
-			//TODO: need to come up with a way to allow pc to have a clear path from around a corner
-					if (this._isCurrentTileBlocked(currentPos, checkForCreatures)) {
+					//TODO: need to come up with a way to allow pc to have a clear path from around a corner
+					if (this._isCurrentTileBlocked(newPos, checkForCreatures)) {
 						numOfClearPaths--;
-						clearPaths[delta] = false;
+						clearPaths[pointName] = false;
 					}
 				}
-			}
+			});
 			checkNum++;
 		}
 		return numOfClearPaths >= minClearPaths;
@@ -3007,26 +2972,6 @@ class Map extends React.PureComponent {
 		}
 	}
 
-	// TODO: No longer needed? Was being used in moveCharacter, but from old map paradigm using tile sides to determine valid moves
-	//
-	// getSidesBetweenAdjacentTiles(mainTileLoc, adjTileLoc) {
-	// 	let sides = [];
-	// 	const adjTile = this.state.mapLayout[adjTileLoc];
-	// 	const mainTile = this.state.mapLayout[mainTileLoc];
-	//
-	// 	if (mainTile.xPos - adjTile.xPos === -1) {
-	// 		sides.push('rightSide');
-	// 	} else if (mainTile.xPos - adjTile.xPos === 1) {
-	// 		sides.push('leftSide');
-	// 	}
-	// 	if (mainTile.yPos - adjTile.yPos === -1) {
-	// 		sides.push('bottomSide');
-	// 	} else if (mainTile.yPos - adjTile.yPos === 1) {
-	// 		sides.push('topSide');
-	// 	}
-	//
-	// 	return sides;
-	// }
 
 	/**
 	 * For moving world element to put active character in center of screen
