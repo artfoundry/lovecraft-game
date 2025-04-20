@@ -16,7 +16,7 @@ class Character extends React.PureComponent {
 
 		// For instantiation only - updated data is stored in App.state.playerCharacters
 		this.id = props.id;
-		this.name = props.name;
+		this.name = {...props.name};
 		this.gender = props.gender;
 		this.type = props.type;
 		this.profession = props.profession;
@@ -28,7 +28,7 @@ class Character extends React.PureComponent {
 		this.currentHealth = props.isSavedData ? props.currentHealth : props.startingHealth;
 		// starts at -1 because updateCurrentTurn will advance to 0 immediately after dying
 		this.turnsSinceDeath = props.isSavedData ? props.turnsSinceDeath : -1;
-		this.isDeadOrInsane = props.isSavedData ? props.isDeadOrInsane : false;
+		this.isDeadOrInsane = false;
 		this.startingSanity = props.startingSanity;
 		this.currentSanity = props.isSavedData ? props.currentSanity : props.startingSanity;
 		this.startingSpirit = (this.startingHealth / 2) + (this.startingSanity / 2);
@@ -51,6 +51,9 @@ class Character extends React.PureComponent {
 		this.lightTime = this.equippedLight ? this.items[this.equippedLight].time : null;
 		this.statuses = props.isSavedData ? props.statuses : {};
 		this.levelUpPoints = props.isSavedData ? props.levelUpPoints : 0;
+		this.conversationStatus = props.conversationStatus;
+		this.location = 'museum';
+		this.floor = 1;
 	}
 
 	_prePopulateInv(invLimit) {
@@ -144,7 +147,7 @@ class Character extends React.PureComponent {
 		if (actionStats.ranged) {
 			let numOfAttacks = goBallistic ? weaponInfo.currentRounds : 1;
 			if (goBallistic) {
-				updateLog(`${pcData.name} goes ballistic!`);
+				updateLog(`${pcData.name.first} goes ballistic!`);
 				updatedPcData.currentSpirit -= goBallistic.spirit[goBallistic.level];
 			}
 			for (let attackNum = 1; attackNum <= numOfAttacks; attackNum++) {
@@ -173,9 +176,9 @@ class Character extends React.PureComponent {
 					updatedPcData.equippedItems.loadout1[equippedSide] = '';
 				}
 				if (failFromCurse) {
-					updateLog(`${pcData.name} tries to attack ${targetName}, but ${pcPronoun} curse causes the attack to fail!`);
+					updateLog(`${pcData.name.first} tries to attack ${targetName}, but ${pcPronoun} curse causes the attack to miss!`);
 				} else {
-					updateLog(`${pcData.name} attacks ${targetName} with the ${weaponInfo.name}, scores ${attackTotal} to hit...and ${isHit ? `does ${damage} damage!` : `misses (${targetData.name} scored ${defenseTotal} for defense).`}`);
+					updateLog(`${pcData.name.first} attacks ${targetName} with the ${weaponInfo.name}, scores ${attackTotal} to hit...and ${isHit ? `does ${damage} damage!` : `misses (${targetData.name} scored ${defenseTotal} for defense).`}`);
 				}
 			}
 		} else {
@@ -210,9 +213,9 @@ class Character extends React.PureComponent {
 			const fromShadowsText = attackFromTheShadowsMod > 0 ? 'from the shadows ' : '';
 			const sacrificialStrikeText = sacrificialStrikeSkill ? 'sacrifices Health and Sanity and ' : '';
 			if (failFromCurse) {
-				updateLog(`${pcData.name} tries to attack ${targetName}, but ${pcPronoun} curse causes the attack to fail!`);
+				updateLog(`${pcData.name.first} tries to attack ${targetName}, but ${pcPronoun} curse causes the attack to miss!`);
 			} else {
-				updateLog(`${pcData.name} ${sacrificialStrikeText}attacks ${targetName} ${fromShadowsText}with the ${weaponInfo.name}, scores ${attackTotal} to hit...and ${isHit ? `does ${damageTotal} damage!` : `misses (${targetData.name} scored ${defenseTotal} for defense).`}`);
+				updateLog(`${pcData.name.first} ${sacrificialStrikeText}attacks ${targetName} ${fromShadowsText}with the ${weaponInfo.name}, scores ${attackTotal} to hit...and ${isHit ? `does ${damageTotal} damage!` : `misses (${targetData.name} scored ${defenseTotal} for defense).`}`);
 			}
 		}
 
@@ -282,8 +285,8 @@ class Character extends React.PureComponent {
 			if (targetStat === 'currentSanity') {
 				toggleAudio('items', sfxSelectors[removeIdNumber(actionId)]);
 			}
-			const target = pcData.name === targetData.name ? (targetData.gender === 'Male' ? 'his' : 'her') : targetData.name + "'s";
-			updateLog(`${pcData.name} uses ${healItem} to recover ${target} ${targetStat.substring(7)}`);
+			const target = pcData.id === targetData.id ? (targetData.gender === 'Male' ? 'his' : 'her') : targetData.name.first + "'s";
+			updateLog(`${pcData.name.first} uses ${healItem} to recover ${target} ${targetStat.substring(7)}`);
 			if (targetData.id !== pcData.id) {
 				updateCharacters('player', updatedHealerData, pcData.id, false, false, false, callback);
 			} else {
@@ -352,7 +355,7 @@ class Character extends React.PureComponent {
 		let activeCharItems = updatedPartyData[activeCharId].items;
 		let lightingHasChanged = false;
 		const notEnoughMatsDialogProps = {
-			dialogContent: `${currentPcData.name} doesn't have enough materials to create that item.`,
+			dialogContent: `${currentPcData.name.first} doesn't have enough materials to create that item.`,
 			closeButtonText: 'Ok',
 			closeButtonCallback: null,
 			disableCloseButton: false,
@@ -404,7 +407,7 @@ class Character extends React.PureComponent {
 			}
 		}
 
-		updateLog(`${currentPcData.name} spends time to create a${itemType === 'acidConcoction' ? 'n' : ''} ${itemName}.`);
+		updateLog(`${currentPcData.name.first} spends time to create a${itemType === 'acidConcoction' ? 'n' : ''} ${itemName}.`);
 		// update stackable counts if applicable and remove used materials
 		updateCharacters('player', updatedPartyData, null, lightingHasChanged, false, false, () => {
 			// if item is new (not stackable or is stackable but id not in items/weapons), add to items/weapons and inventory
@@ -483,7 +486,7 @@ class Character extends React.PureComponent {
 
 		if (currentPcData.currentSanity === currentPcData.startingSanity) {
 			const fullSanityDialogProps = {
-				dialogContent: `${currentPcData.name}'s Sanity is already at its highest!`,
+				dialogContent: `${currentPcData.name.first}'s Sanity is already at its highest!`,
 				closeButtonText: 'Ok',
 				closeButtonCallback: null,
 				disableCloseButton: false,
@@ -517,26 +520,11 @@ class Character extends React.PureComponent {
 	 *     pcData: object,
 	 *     updateCharacters: function (App),
 	 *     updateLog: function (App),
-	 *     setShowDialogProps: function (App),
 	 *     callback: function
 	 * }
 	 */
 	resuscitate = (props) => {
-		const {targetData, pcData, updateCharacters, updateLog, setShowDialogProps, callback} = props;
-		if (targetData.isDeadOrInsane) {
-			const dialogProps = {
-				dialogContent: `${targetData.name} has been dead for too long and can't be revived!`,
-				closeButtonText: 'Ok',
-				closeButtonCallback: null,
-				disableCloseButton: false,
-				actionButtonVisible: false,
-				actionButtonText: '',
-				actionButtonCallback: null,
-				dialogClasses: ''
-			}
-			setShowDialogProps(true, dialogProps);
-			return;
-		}
+		const {targetData, pcData, updateCharacters, updateLog, callback} = props;
 		let updatedTargetData = deepCopy(targetData);
 		let updatedHealerData = deepCopy(pcData);
 		const resusSkillData = pcData.skills.resuscitate;
@@ -545,7 +533,7 @@ class Character extends React.PureComponent {
 		updatedTargetData.turnsSinceDeath = -1;
 		updatedHealerData.currentSpirit -= resusSkillData.spirit[resusSkillData.level];
 		updateCharacters('player', updatedTargetData, targetData.id, false, false, false, () => {
-			updateLog(`${pcData.name} resuscitates  ${targetData.name} back to life!`);
+			updateLog(`${pcData.name.first} resuscitates ${targetData.name.first} back to life!`);
 			updateCharacters('player', updatedHealerData, pcData.id, false, false, false, callback);
 		});
 	}
@@ -578,7 +566,7 @@ class Character extends React.PureComponent {
 		}
 		updatedPartyData.priest.currentSpirit -= comfortSkillData.spirit[comfortSkillData.level];
 		updateCharacters('player', updatedPartyData, null, false, false, false, () => {
-			updateLog(`${updatedPartyData.priest.name} comforts the party, easing their minds from the horrors around them!`);
+			updateLog(`${updatedPartyData.priest.name.first} comforts the party, easing their minds from the horrors around them!`);
 			updateActivePlayerActions();
 		});
 	}
@@ -604,7 +592,7 @@ class Character extends React.PureComponent {
 			updatedPartyData[id].currentSpirit = modifiedSpirit > updatedPartyData[id].startingSpirit ? updatedPartyData[id].startingSpirit : modifiedSpirit;
 		}
 		updateCharacters('player', updatedPartyData, null, false, false, false, () => {
-			updateLog(`${updatedPartyData.priest.name} inspires the party, filling them with spiritual energy!`);
+			updateLog(`${updatedPartyData.priest.name.first} inspires the party, filling them with spiritual energy!`);
 			updateActivePlayerActions(true);
 		});
 	}
@@ -632,7 +620,7 @@ class Character extends React.PureComponent {
 		}
 		updatedPcData.currentSpirit -= feelThePainSkill.spirit[feelThePainSkill.level];
 		updateCharacters('player', updatedPcData, 'veteran', false, false, false, () => {
-			updateLog(`${updatedPcData.name} prepares for a psychic attack...`);
+			updateLog(`${updatedPcData.name.first} prepares for a psychic attack...`);
 			updateActivePlayerActions();
 		});
 	}
@@ -664,9 +652,9 @@ class Character extends React.PureComponent {
 		}
 		updateCharacters('player', updatedPcData, 'thief', false, false, false, () => {
 			if (updatedPcData.statuses.stealthy) {
-				updateLog(`${updatedPcData.name} goes stealthy, slipping through the shadows...`);
+				updateLog(`${updatedPcData.name.first} goes stealthy, slipping through the shadows...`);
 			} else {
-				updateLog(`${updatedPcData.name} leaves the shadows.`);
+				updateLog(`${updatedPcData.name.first} leaves the shadows.`);
 			}
 		});
 	}
@@ -686,7 +674,7 @@ class Character extends React.PureComponent {
 			lightingHasChanged = this._updatePcLights(updatedPartyData, calcPcLightChanges, lightCost);
 			updatedPartyData.thief.currentSpirit -= disarmTrapSkill.spirit[disarmTrapSkill.level];
 			updateCharacters('player', updatedPartyData, null, lightingHasChanged, null, null, callback);
-			updateLog(`${thiefData.name} disarmed the trap.`);
+			updateLog(`${thiefData.name.first} disarmed the trap.`);
 		}
 	}
 
@@ -701,7 +689,7 @@ class Character extends React.PureComponent {
 		let lightingHasChanged = false;
 		const lightCost = identifyRelicSkill.light[identifyRelicSkill.level];
 		const noRelicsDialogProps = {
-			dialogContent: `There are no Relics in ${currentPcData.name}'s inventory.`,
+			dialogContent: `There are no Relics in ${currentPcData.name.first}'s inventory.`,
 			closeButtonText: 'Ok',
 			closeButtonCallback: null,
 			disableCloseButton: false,
@@ -730,7 +718,7 @@ class Character extends React.PureComponent {
 
 			updatedPartyData.occultResearcher.currentSpirit -= identifyRelicSkill.spirit[identifyRelicSkill.level];
 			updateCharacters('player', updatedPartyData, null, lightingHasChanged, false, false, () => {
-				updateLog(`${currentPcData.name} spends time examining a Relic and identifies it as the ${itemFound.name}!`);
+				updateLog(`${currentPcData.name.first} spends time examining a Relic and identifies it as the ${itemFound.name}!`);
 			});
 		} else {
 			setShowDialogProps(true, noRelicsDialogProps);
@@ -756,7 +744,7 @@ class Character extends React.PureComponent {
 		}
 
 		updateCharacters('player', updatedPcData, pcData.id, false, false, false, () => {
-		    updateLog(`${pcData.name} uses the ${actionStats.name}, wreaking havoc on the ${targetData.name} but driving ${pcData.gender === 'Male' ? 'him' : 'her'}self closer to madness!`);
+		    updateLog(`${pcData.name.first} uses the ${actionStats.name}, wreaking havoc on the ${targetData.name} but driving ${pcData.gender === 'Male' ? 'him' : 'her'}self closer to madness!`);
 			updateCharacters('creature', updatedCreatureData, targetData.id, false, false, false, callback);
 		});
 	}

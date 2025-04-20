@@ -36,7 +36,7 @@ function Exit(props) {
 	return (
 		<img alt='exit'
 		     draggable={false}
-		     className={props.class}
+		     className={'stairs ' + props.class}
 		     style={props.style} />
 	)
 }
@@ -82,8 +82,8 @@ function Item(props) {
 	const isHiddenClass = !props.tileIsVisible ? ' hidden' : '';
 	return (
 		<img
-			alt={props.name}
-			className={`object ${props.name}${isHiddenClass}`}
+			alt={props.class}
+			className={`object ${props.class}${isHiddenClass}`}
 			style={props.styles}
 			draggable={false}
 			onClick={(evt) => {
@@ -100,17 +100,18 @@ function EnvObject(props) {
 	const isHiddenClass = (!props.tileIsVisible || props.isDiscovered === false) ? ' hidden' : '';
 	const isDiscoveredClass = (props.isDiscovered && !alreadyDiscovered) ? ' glow-pulse-once' : '';
 	const isTargetClass = props.isTargetForDisarm ? ' in-range' : '';
+	const isUnselectableClass = props.isUnselectable ? ' unselectable' : '';
 	if (props.isDiscovered && !alreadyDiscovered) {
 		setTimeout(() => {
 			updateAlreadyDiscovered(true);
 		}, 1000);
 	}
-	const objNameClass = props.name + (props.isContainerOpen ? '-open' : (props.isDestroyed && !props.name.includes('trap')) ? '-destroyed' : props.isSprung ? '-triggered' : '');
+	const objNameClass = props.class + (props.isContainerOpen ? '-open' : (props.isDestroyed && !props.class.includes('trap')) ? '-destroyed' : props.isSprung ? '-triggered' : '');
 
 	return (
 		<img
-			alt={props.name}
-			className={`env-object ${objNameClass}${isHiddenClass}${isDiscoveredClass}${isTargetClass}`}
+			alt={props.class}
+			className={`env-object ${objNameClass}${isHiddenClass}${isDiscoveredClass}${isTargetClass}${isUnselectableClass}`}
 			style={props.styles}
 			draggable={false}
 			onClick={(evt) => {

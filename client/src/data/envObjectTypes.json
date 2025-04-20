@@ -1,4 +1,21 @@
 {
+  "Desk With Chair": {
+    "unselectable": true,
+    "isPassable": false
+  },
+  "Display Case Vertical": {
+    "unselectable": true,
+    "isPassable": false
+  },
+  "Dinosaur Skeleton": {
+    "unselectable": true,
+    "isPassable": false
+  },
+  "Fancy Wall Light": {
+    "type": "light",
+    "range": 5,
+    "unselectable": true
+  },
   "Spike Trap": {
     "description": "A floor panel with holes in it (out of which nasty spikes project upon triggering), that seems to be triggered by stepping on it. If it can't be disarmed, probably best to go around...",
     "isEnvObject": true,

@@ -13,6 +13,8 @@ Mobile friendly but works best on desktop!
 ---
 #### Current status:
 
+4/20/25: Adding Museum lobby area; adding NPCs; adding conversations with NPCs and investigators; moving companion selection from character creation to Museum lobby through conversations; adding journal updates based on conversations
+
 3/15/25: Adding creature skills and pc/creature statuses; adding framework for popup help
 
 12/31/24: Adding game data saving to/loading from firebase
@@ -70,11 +72,11 @@ The build is minified and the filenames include the hashes.\
 ---
 ## Map Piece Creation Tool
 
-- Copy the mapData.json file from /client/src to /mapLayoutTool.
+- For new map files, create new file in /mapLayoutTool/data, then add the file to the map selection menu in App.js in render (around line 578)
 - From /mapLayoutTool, run `node fileAccessServer.js` to start the Express file access server.
 - Then run `npm start` to start the tool itself.  A browser window will open to http://localhost:3001/.
 
-When the tool loads, all map data pieces will be displayed in the left column. Click on any of them to load it onto the grid.
+When the tool loads, choose a map file from the menu, and then all map data pieces will be displayed in the left column. Click on any of them to load it onto the grid.
 Select tiles in the grid to edit or move them.  Select tiles in the top Tile Templates section and then click in the grid to place new tiles.
 Click Clear grid on the right to clear the grid of all tile data (this does not affect the mapData.json file).
 
@@ -85,8 +87,7 @@ If creating a new piece, enter a piece name and then click Save. Newly saved pie
 NOTE: On clicking Save piece, all map data will be written to the mapData.json file,
 so make sure you want to save before doing so!
 
-Once you've finished making all your edits and saved, copy the mapData.json file back to /client/src,
-renaming it if necessary to be used for different game areas.
+Once you've finished making all your edits and saved, copy the mapData json files back to /client/src/data.
 
 ### Deleting
 To delete a piece from the collection, simply select the piece on the left, then click Delete piece on the right.

@@ -1,5 +1,6 @@
 @font-face {
-	font-family: Copperplate; src: url('Copperplate-Gothic-Light-Regular.ttf');
+	font-family: Copperplate;
+	src: url('Copperplate-Gothic-Light-Regular.ttf');
 }
 
 .font-fancy {
@@ -94,6 +95,7 @@ h3 {
 	text-align: center;
 	padding: 20px;
 	font-size: 24px;
+	filter: drop-shadow(10px 10px 5px black);
 }
 
 .dialog-login {
@@ -184,6 +186,8 @@ h3 {
 	color: white;
 	background-color: #996633;
 	text-align: center;
+	font-size: 16px;
+	line-height: 20px;
 }
 
 .button-disabled {
@@ -303,11 +307,16 @@ h3 {
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
-	min-width: 200px;
+	min-width: 210px;
 	padding: 10px;
 	border-left: 1px solid seagreen;
 	border-right: 1px solid seagreen;
 	box-sizing: border-box;
+}
+
+#turn-control-container {
+	display: flex;
+	flex-direction: column;
 }
 
 .follow-order-list-container {
@@ -366,6 +375,97 @@ h3 {
 
 .follow-member-occult-researcher {
 	background-image: url('../assets/characters/players/occult-researcher.png');
+}
+
+#journal-container, #conversation-window {
+	justify-content: normal;
+	width: 80%;
+	height: 50%;
+	top: 25%;
+	left: 10%;
+	text-align: left;
+	box-sizing: border-box;
+	overflow-y: auto;
+}
+
+#journal-content {
+	position: absolute;
+	width: 85%;
+	margin: auto;
+}
+
+.tabs-container {
+	display: flex;
+	justify-content: space-between;
+	margin: 20px 0;
+	border-bottom: 2px solid burlywood;
+}
+
+.journal-header {
+	padding: 10px;
+	border: 2px solid transparent;
+}
+
+.journal-quest-detail {
+	font-size: 16px;
+	margin-bottom: 10px;
+}
+
+#conversation-window {
+	justify-content: start;
+	align-items: start;
+	width: 90%;
+	height: 70%;
+	top: 15%;
+	left: 5%;
+	padding: 40px 20px 20px;
+	text-align: left;
+	font-size: 20px;
+	line-height: 30px;
+}
+
+#conv-target-container {
+	display: flex;
+	width: 100%;
+	height: 50%;
+	margin-bottom: 20px;
+	border-bottom: 1px solid white;
+}
+
+#conv-target-info {
+	width: 64px;
+	margin-right: 16px;
+	font-size: 15px;
+	line-height: 15px;
+	text-align: center;
+}
+
+#conv-target-info div {
+	margin: auto;
+}
+
+#conv-target-message {
+	width: 100%;
+	overflow: auto;
+}
+
+#conv-target-message p {
+	margin-top: 0;
+	margin-bottom: .5em;
+}
+
+#responses-container {
+	width: 80%;
+	margin-left: 70px;
+	overflow: auto;
+}
+
+.pc-response {
+	margin: 10px;
+	padding: 10px;
+	font-style: italic;
+	border: 1px solid #cc9933;
+	cursor: pointer;
 }
 
 .character-info-container {
@@ -901,7 +1001,7 @@ h3 {
 	background-color: crimson;
 }
 
-#status-bar-sanity{
+#status-bar-sanity {
 	background-color: cornflowerblue;
 }
 
@@ -1271,11 +1371,11 @@ select {
 }
 
 .electric-torch-inv {
-	background-image:  url('../assets/objects/flashlight_lrg.png');
+	background-image: url('../assets/objects/flashlight_lrg.png');
 }
 
 .oil-inv {
-	background-image:  url('../assets/objects/oil_lrg.png');
+	background-image: url('../assets/objects/oil_lrg.png');
 }
 
 .handgun-ammo-inv {
@@ -1444,7 +1544,7 @@ select {
 	background-image: url('../assets/ui/magnifyingGlass_sml.png');
 }
 
-.player-action {
+.player-action, .npc-action, .playerNpc-action {
 	background-image: url('../assets/ui/player-icon_sml.png');
 }
 
@@ -1458,6 +1558,10 @@ select {
 
 .close-door-action {
 	background-image: url('../assets/ui/close-door_sml.png');
+}
+
+.talk-action {
+	background-image: url('../assets/ui/talk_sml.png');
 }
 
 .create-first-aid-kit-action {
@@ -1556,24 +1660,28 @@ select {
 }
 
 /* Specifies the size of the audio container */
-.audio-music  {
+.audio-music {
 	width: 125px;
 	height: 25px;
 	margin: 5px;
 	border: 1px solid #CC9933;
 	border-radius: 25px;
 }
+
 .audio-music::-webkit-media-controls-panel {
 	-webkit-justify-content: center;
 	height: 25px;
 	background-color: seagreen;
 }
+
 .audio-music::-webkit-media-controls-timeline {
 	display: none !important;
 }
+
 .audio-music::-webkit-media-controls-current-time-display {
 	display: none;
 }
+
 .audio-music::-webkit-media-controls-time-remaining-display {
 	display: none;
 }
@@ -1604,19 +1712,18 @@ select {
 	}
 
 	#mode-info-container, #log-container, #party-info-container {
-		min-width: 190px;
+		min-width: 210px;
 		padding: 5px;
 	}
 
-	#log-container {
-		max-height: 110px;
-		border: 0;
-		border-bottom: 1px solid seagreen;
-		font-size: 14px;
+	#conversation-window.dialog.ui-panel {
+		top: 15%;
+		font-size: 16px;
+		padding: 10px;
 	}
 
-	#turn-control-container {
-		width: 160px;
+	.pc-response {
+		padding: 5px 10px;
 	}
 
 	.char-info-inv-container {
@@ -1668,7 +1775,7 @@ select {
 		max-width: 40px;
 	}
 
-	#control-bar-statuses-container:not(#control-bar-tab-1 #control-bar-statuses-container)  {
+	#control-bar-statuses-container:not(#control-bar-tab-1 #control-bar-statuses-container) {
 		display: none;
 	}
 
@@ -1685,7 +1792,7 @@ select {
 	}
 
 	.control-bar-buttons-container {
-		width: 350px;
+		width: 300px;
 		border: none;
 	}
 
@@ -1710,10 +1817,6 @@ select {
 		border-radius: 0;
 	}
 
-	#log-container {
-		max-height: unset;
-	}
-
 	.character-info-container {
 		border: 2px solid seagreen;
 		border-left: 0;
@@ -1732,10 +1835,17 @@ select {
 	}
 
 	#control-bar-container {
-		grid-template-columns: 1fr 50px 50px;
 		border: 0;
 		border-top: 2px solid seagreen;
 		border-radius: 0;
+	}
+
+	#control-bar-container.control-bar-3-columns {
+		grid-template-columns: 1fr 50px 50px;
+	}
+
+	#control-bar-container.control-bar-2-columns {
+		grid-template-columns: 1fr 50px;
 	}
 
 	#control-bar-tab-1 {
@@ -1753,8 +1863,13 @@ select {
 
 /* Narrow/tall screens */
 @media (width < 768px) and (orientation: portrait) {
-	h2 { font-size: 26px; }
-	h3 { font-size: 20px; }
+	h2 {
+		font-size: 26px;
+	}
+
+	h3 {
+		font-size: 20px;
+	}
 
 	.login-methods-container {
 		flex-direction: column;
@@ -1801,6 +1916,26 @@ select {
 	#mode-info-container {
 		flex-direction: row;
 		border: 0;
+	}
+
+	#log-container {
+		max-height: 80px;
+		border: 0;
+		border-bottom: 1px solid seagreen;
+		font-size: 14px;
+	}
+
+	#turn-control-container {
+		align-items: end;
+	}
+
+	#turn-pcName {
+		text-align: right;
+	}
+
+	#responses-container {
+		width: 100%;
+		margin: 0;
 	}
 
 	.character-info-container, .creature-info-container {
@@ -1851,10 +1986,17 @@ select {
 	}
 
 	#control-bar-container {
-		grid-template-columns: 1fr 50px 50px;
 		border: 0;
 		border-top: 2px solid seagreen;
 		border-radius: 0;
+	}
+
+	#control-bar-container.control-bar-3-columns {
+		grid-template-columns: 1fr 50px 50px;
+	}
+
+	#control-bar-container.control-bar-2-columns {
+		grid-template-columns: 1fr 50px;
 	}
 
 	#control-bar-tab-1 {
@@ -1913,6 +2055,7 @@ select {
 	#party-info-container {
 		flex-direction: row;
 		gap: 20px;
+		border: 0;
 		border-bottom: 1px solid seagreen;
 	}
 
@@ -1922,7 +2065,18 @@ select {
 	}
 
 	#turn-control-container {
-		width: 150px;
+		align-items: end;
+	}
+
+	#turn-pcName {
+		text-align: right;
+	}
+
+	#log-container {
+		max-height: 80px;
+		border: 0;
+		border-bottom: 1px solid seagreen;
+		font-size: 14px;
 	}
 
 	.character-info-container, .creature-info-container {
@@ -1939,7 +2093,6 @@ select {
 	}
 
 	#control-bar-container {
-		grid-template-columns: 220px 1fr 1fr;
 		justify-self: left;
 		border-right: 2px solid seagreen;
 		border-left: 0;
@@ -1947,8 +2100,16 @@ select {
 		border-top-right-radius: 5px;
 	}
 
+	#control-bar-container.control-bar-3-columns {
+		grid-template-columns: 220px 1fr 1fr;
+	}
+
+	#control-bar-container.control-bar-2-columns {
+		grid-template-columns: 1fr 50px;
+	}
+
 	#control-bar-tab-1 {
-		width: unset;
+		width: 200px;
 	}
 
 	#control-bar-statuses-container {

@@ -2,8 +2,8 @@
 	--tile-size: -64px;
 }
 
-.catacombs {
-	background-image: url('../assets/tilesets/Catacombs/catacombs.png');
+.museum {
+	background-image: url('../assets/tilesets/Arkham/museum.png');
 	background-size: calc(var(--tile-size) * -8) calc(var(--tile-size) * -9) /* 512px 576px at 64px tile size */
 }
 
@@ -26,11 +26,11 @@
 }
 
 .floor-five {
-	background-position: 0 calc(var(--tile-size) * 7); /* 0 -448px at 64px tile size */
+	background-position: 0 calc(var(--tile-size) * 3.5); /* 0 -224px at 64px tile size */
 }
 
 .floor-six {
-	background-position: var(--tile-size) calc(var(--tile-size) * 7); /* -64px -448px at 64px tile size */
+	background-position: var(--tile-size) calc(var(--tile-size) * 3.5); /* -64px -224px at 64px tile size */
 }
 
 /* WALLS */
@@ -153,40 +153,12 @@
 	background-position: calc(var(--tile-size) * 6) calc(var(--tile-size) * 2); /* -384px -128px at 64px tile size */
 }
 
-.secret-front-door {
-	background-position: var(--tile-size) 0; /* -64px 0 at 64px tile size */
-}
-
-.secret-front-door-discovered {
-	background-position: calc(var(--tile-size) * 6) calc(var(--tile-size) * 3); /* -384px -192px at 64px tile size */
-}
-
-.secret-front-door-open {
-	background-position: calc(var(--tile-size) * 7) calc(var(--tile-size) * 3); /* -448px -192px at 64px tile size */
-}
-
-.secret-left-side-door {
-	background-position: 0 var(--tile-size); /* 0 -64px at 64px tile size */
-}
-
-.secret-right-side-door {
-	background-position: calc(var(--tile-size) * 5) var(--tile-size); /* -320px -64px at 64px tile size */
-}
-
-.secret-side-door-discovered {
-	background-position: calc(var(--tile-size) * 7) calc(var(--tile-size) * 2); /* -448px -128px at 64px tile size */
-}
-
-.secret-side-door-open {
-	background-position: calc(var(--tile-size) * 7) calc(var(--tile-size) * 4); /* -448px -256px at 64px tile size */
-}
-
-.catacombs.stairs-down {
-	content: url('../assets/tilesets/Catacombs/catacombs.png');
+.museum.stairs-down {
+	content: url('../assets/tilesets/Arkham/museum.png');
 	object-position: calc(var(--tile-size) * 7) calc(var(--tile-size) * 6); /* -448px -384px at 64px tile size */
 }
 
-.catacombs.stairs-up {
-	content: url('../assets/tilesets/Catacombs/catacombs.png');
+.museum.stairs-up {
+	content: url('../assets/tilesets/Arkham/museum.png');
 	object-position: calc(var(--tile-size) * 6) calc(var(--tile-size) * 6); /* -384px -384px at 64px tile size */
 }

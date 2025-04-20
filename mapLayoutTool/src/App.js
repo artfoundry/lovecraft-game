@@ -161,6 +161,7 @@ class Tool extends React.Component {
 		});
 
 		this.state = {
+			mapFile: 'dungeonMapData',
 			pieces: {},
 			piecesLoaded: false,
 			gridDataDone: false,
@@ -382,8 +383,12 @@ class Tool extends React.Component {
 		}
 	}
 
+	changeMapFile = (mapFile) => {
+		this.setState({mapFile}, this.populatePieceList);
+	}
+
 	populatePieceList = () => {
-		this.socket.emit('load-pieces');
+		this.socket.emit('load-pieces', this.state.mapFile);
 		this.socket.on('sending-pieces', (data) => {
 			this.setState({pieces: JSON.parse(data), piecesLoaded: true});
 		});
@@ -459,7 +464,6 @@ class Tool extends React.Component {
 					objectMustBePassable: tileData.objectMustBePassable || false
 				}
 			},
-			tileNameSelected: '',
 			gridTileIdSelected: ''
 		}));
 		if (prevGridPos !== '') {
@@ -503,7 +507,7 @@ class Tool extends React.Component {
 				[this.state.gridPieceName]: populatedGridTiles
 			}
 		}), () => {
-			this.socket.emit('save-map-data', JSON.stringify(this.state.pieces));
+			this.socket.emit('save-map-data', JSON.stringify(this.state.pieces), this.state.mapFile);
 		});
 	}
 
@@ -567,6 +571,15 @@ class Tool extends React.Component {
 				</div>
 
 				<div className="existing-pieces">
+					<form>
+						<label>
+							Map data files:
+							<select value={this.state.mapName} onChange={(evt) => this.changeMapFile(evt.target.value)}>
+								<option value="dungeonMapData">Dungeon</option>
+								<option value="museumMapData">Museum</option>
+							</select>
+						</label>
+					</form>
 					<h3>Existing Pieces</h3>
 					{this.state.piecesLoaded && this.layoutPieces()}
 				</div>

@@ -1,0 +1,152 @@
+{
+  "occultResearcher-1": {
+    "text": "Good day. Quite the interesting situation the professor described, no? These artifacts they found have me very curious about what more lies below.",
+    "responses": {
+      "occultResearcher-2": "Who are you and what's your background?",
+      "occultResearcher-3": "What's your reason for being here?",
+      "end": {
+        "message": "Nevermind",
+        "statusUpdate": {
+          "nextMessageKey": "occultResearcher-1a"
+        }
+      }
+    },
+    "classes": "occultResearcher"
+  },
+  "occultResearcher-1a": {
+    "text": "Greetings again. What can I do for you?",
+    "responses": {
+      "occultResearcher-2": "Who are you again?",
+      "occultResearcher-3": "Why are you here again?",
+      "end-1": {
+        "message": "I could use your services. Why don't you join me?",
+        "altNextMessageKey": "occultResearcher-4",
+        "statusUpdate": {
+          "nextMessageKey": "occultResearcher-5",
+          "joinParty": true
+        }
+      },
+      "end-2": {
+        "message": "Nevermind",
+        "statusUpdate": {
+          "nextMessageKey": "occultResearcher-1a"
+        }
+      }
+    },
+    "classes": "occultResearcher"
+  },
+  "occultResearcher-2": {
+    "text": "I am Philip Howard, a professor and researcher in the occult at Brown University in Providence, .",
+    "responses": {
+      "occultResearcher-3": "And what's your reason for being here?",
+      "end-1": {
+        "message": "Ok, I could definitely use you. Why don't you join me?",
+        "altNextMessageKey": "occultResearcher-4",
+        "statusUpdate": {
+          "nextMessageKey": "occultResearcher-5",
+          "joinParty": true
+        }
+      },
+      "end-2": {
+        "message": "Sorry, I need to go. I'll talk to you later.",
+        "statusUpdate": {
+          "nextMessageKey": "occultResearcher-1a"
+        }
+      }
+    },
+    "classes": "occultResearcher"
+  },
+  "occultResearcher-3": {
+    "text": "A colleague of mine at Brown, Professor Josiah Carberry who teaches Psychoceramics, a closely related field to the study of artifacts belonging to maniacal cults, told me about the discoveries here and recommended me to Professor Nymian.",
+    "responses": {
+      "occultResearcher-2": "And what's your background?",
+      "end-1": {
+        "message": "Ok, I could definitely use you. Why don't you join me?",
+        "altNextMessageKey": "occultResearcher-4",
+        "statusUpdate": {
+          "nextMessageKey": "occultResearcher-5",
+          "joinParty": true
+        }
+      },
+      "end-2": {
+        "message": "Sorry, I need to go. I'll talk to you later.",
+        "statusUpdate": {
+          "nextMessageKey": "occultResearcher-1a"
+        }
+      }
+    },
+    "classes": "occultResearcher"
+  },
+  "occultResearcher-4": {
+    "text": "It appears you already have enough members in your team. Come see me again if you have need of my services...and space in which I can work.",
+    "responses": {
+      "end": {
+        "message": "Uhh..right, ok.",
+        "statusUpdate": {
+          "nextMessageKey": "occultResearcher-1a"
+        }
+      }
+    },
+    "classes": "occultResearcher"
+  },
+  "occultResearcher-5": {
+    "text": "Yes, is there something you need? I'm quite busy studying this tome.",
+    "responses": {
+      "occultResearcher-6": "I don't have need of you now.",
+      "occultResearcher-7": "You seem to study that tome a lot...",
+      "end": {
+        "message": "Nevermind",
+        "statusUpdate": {
+          "nextMessageKey": "occultResearcher-5"
+        }
+      }
+    },
+    "classes": "occultResearcher"
+  },
+  "occultResearcher-6": {
+    "text": "Ok, I'll be at the Arkham Museum if you need me again.",
+    "responses": {
+      "end": {
+        "message": "Ok",
+        "statusUpdate": {
+          "leaveParty": true,
+          "nextMessageKey": "occultResearcher-1a"
+        }
+      }
+    },
+    "classes": "occultResearcher"
+  },
+  "occultResearcher-7": {
+    "text": "Yes, there is a lot of interesting and puzzling material in it. For instance, it goes into some length about a strange cult in the remote southern marshes of Louisiana, where some residents have reported seeing eerie lights...",
+    "responses": {
+      "occultResearcher-8": "Strange cults, eerie lights, what's next, little green fish men?",
+      "end-1": {
+        "message": "Fascinating! Let's talk about it more later.",
+        "statusUpdate": {
+          "nextMessageKey": "occultResearcher-5",
+          "ratingChange": 1
+        }
+      },
+      "end-2": {
+        "message": "Uhhh, yeah, forget I asked.",
+        "statusUpdate": {
+          "nextMessageKey": "occultResearcher-5"
+        }
+      }
+    },
+    "classes": "occultResearcher"
+  },
+  "occultResearcher-8": {
+    "text": "Do not make light of what you do not understand!",
+    "responses": {
+      "end": {
+        "message": "Uhhh, sorry, let's just move on.",
+        "statusUpdate": {
+          "nextMessageKey": "occultResearcher-5",
+          "ratingChange": -1
+        }
+      }
+    },
+    "classes": "occultResearcher"
+  }
+}

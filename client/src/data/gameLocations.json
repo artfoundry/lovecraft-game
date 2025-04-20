@@ -2,177 +2,286 @@
 	"catacombs": {
 		"name": "Catacombs",
 		"numOfFloors": 3,
-		"creatures": {
-			"elderThing": {
-				"countPerFloor": {
-					"1": {"number": 0, "variation": 0},
-					"2": {"number": 1, "variation": 1},
-					"3": {"number": 2, "variation": 1}
+		"enteredFrom": "museum",
+		"floors": {
+			"1": {
+				"isRandom": true,
+				"excludeNonLitTiles": false,
+				"mapSize": "large",
+				"mapTileLimit": 500,
+				"npcs": {},
+				"creatures": {
+					"elderThing": {"number": 0, "variation": 0},
+					"flyingPolyp": {"number": 2, "variation": 2},
+					"ghast": {"number": 1, "variation": 3},
+					"ghoul": {"number": 8, "variation": 3},
+					"shoggoth": {"number": 0, "variation": 0}
 				},
-				"variation": 0
-			},
-			"flyingPolyp": {
-				"countPerFloor": {
-					"1": {"number": 2, "variation": 2},
-					"2": {"number": 5, "variation": 2},
-					"3": {"number": 7, "variation": 2}
-				}
-			},
-			"ghast": {
-				"countPerFloor": {
-					"1": {"number": 1, "variation": 3},
-					"2": {"number": 8, "variation": 3},
-					"3": {"number": 5, "variation": 2}
-				}
-			},
-			"ghoul": {
-				"countPerFloor": {
-					"1": {"number": 8, "variation": 3},
-					"2": {"number": 12, "variation": 3},
-					"3": {"number": 5, "variation": 2}
-				}
-			},
-			"shoggoth": {
-				"countPerFloor": {
-					"1": {"number": 0, "variation": 0},
-					"2": {"number": 0, "variation": 0},
-					"3": {"number": 2, "variation": 1}
-				}
-			}
-		},
-		"objects": {
-			"Weapon": {
-				"S And W Revolver": {
-					"countPerFloor": {
-						"1": {"number": 1, "variation": 0},
-						"2": {"number": 0, "variation": 1},
-						"3": {"number": 0, "variation": 1}
-					}
-				},
-				"Acid Concoction": {
-					"countPerFloor": {
-						"1": {"number": 1, "variation": 1},
-						"2": {"number": 0, "variation": 1},
-						"3": {"number": 1, "variation": 1}
-					}
-				}
-			},
-			"Ammo": {
-				"Handgun Ammo": {
-					"countPerFloor": {
-						"1": {"number": 4, "variation": 1},
-						"2": {"number": 4, "variation": 1},
-						"3": {"number": 3, "variation": 1}
-					}
-				}
-			},
-			"Medicine": {
-				"First Aid Kit": {
-					"countPerFloor": {
-						"1": {"number": 3, "variation": 1},
-						"2": {"number": 1, "variation": 1},
-						"3": {"number": 0, "variation": 1}
-					}
-				}
-			},
-			"Light": {
-				"Lantern": {
-					"countPerFloor": {
-						"1": {"number": 1, "variation": 0},
-						"2": {"number": 0, "variation": 0},
-						"3": {"number": 0, "variation": 1}
-					}
-				},
-				"Torch": {
-					"countPerFloor": {
-						"1": {"number": 7, "variation": 2},
-						"2": {"number": 5, "variation": 2},
-						"3": {"number": 0, "variation": 0}
-					}
-				}
-			},
-			"Miscellaneous": {
-				"Oil": {
-					"countPerFloor": {
-						"1": {"number": 2, "variation": 0},
-						"2": {"number": 2, "variation": 1},
-						"3": {"number": 0, "variation": 1}
-					}
-				}
-			},
-			"Component": {
-				"Alcohol": {
-					"countPerFloor": {
-						"1": {"number": 3, "variation": 1},
-						"2": {"number": 2, "variation": 1},
-						"3": {"number": 0, "variation": 1}
-					}
-				},
-				"Chemical": {
-					"countPerFloor": {
-						"1": {"number": 3, "variation": 0},
-						"2": {"number": 2, "variation": 1},
-						"3": {"number": 0, "variation": 1}
-					}
-				},
-				"Cloth": {
-					"countPerFloor": {
-						"1": {"number": 2, "variation": 0},
-						"2": {"number": 2, "variation": 1},
-						"3": {"number": 0, "variation": 1}
-					}
-				},
-				"Water": {
-					"countPerFloor": {
-						"1": {"number": 3, "variation": 0},
-						"2": {"number": 2, "variation": 1},
-						"3": {"number": 0, "variation": 1}
-					}
-				},
-				"Wood": {
-					"countPerFloor": {
-						"1": {"number": 2, "variation": 0},
-						"2": {"number": 2, "variation": 1},
-						"3": {"number": 0, "variation": 1}
-					}
-				}
-			},
-			"Relic": {
-				"Elder Sign": {
-					"countPerFloor": {
-						"1": {"number": 1, "variation": 0},
-						"2": {"number": 1, "variation": 0},
-						"3": {"number": 1, "variation": 0}
+				"objects": {
+					"Weapon": {
+						"S And W Revolver": {"number": 1, "variation": 0},
+						"Acid Concoction": {"number": 1, "variation": 1}
 					},
-					"chancePerFloor": {
-						"1": 0.1,
-						"2": 0.2,
-						"3": 0.3
+					"Ammo": {
+						"Handgun Ammo": {"number": 4, "variation": 1}
+					},
+					"Medicine": {
+						"First Aid Kit": {"number": 3, "variation": 1}
+					},
+					"Light": {
+						"Lantern": {"number": 1, "variation": 0},
+						"Torch": {"number": 7, "variation": 2}
+					},
+					"Miscellaneous": {
+						"Oil": {"number": 2, "variation": 0}
+					},
+					"Component": {
+						"Alcohol": {"number": 3, "variation": 1},
+						"Chemical": {"number": 3, "variation": 0},
+						"Cloth": {"number": 2, "variation": 0},
+						"Water": {"number": 3, "variation": 0},
+						"Wood": {"number": 2, "variation": 0}
+					},
+					"Relic": {
+						"Elder Sign": {"number": 0, "variation": 0, "chance": 0}
 					}
+				},
+				"envObjects": {
+					"Sarcophagus": {"number": 5, "variation": 1},
+					"Spike Trap": {"number": 6, "variation": 2},
+					"Rocky Mound": {"number": 3, "variation": 1}
+				}
+			},
+			"2": {
+				"isRandom": true,
+				"excludeNonLitTiles": false,
+				"mapSize": "large",
+				"mapTileLimit": 500,
+				"npcs": {},
+				"creatures": {
+					"elderThing": {"number": 1, "variation": 1},
+					"flyingPolyp": {"number": 5, "variation": 2},
+					"ghast": {"number": 8, "variation": 3},
+					"ghoul": {"number": 12, "variation": 3},
+					"shoggoth": {"number": 0, "variation": 0}
+				},
+				"objects": {
+					"Weapon": {
+						"S And W Revolver": {"number": 0, "variation": 1},
+						"Acid Concoction": {"number": 0, "variation": 1}
+					},
+					"Ammo": {
+						"Handgun Ammo": {"number": 4, "variation": 1}
+					},
+					"Medicine": {
+						"First Aid Kit": {"number": 1, "variation": 1}
+					},
+					"Light": {
+						"Lantern": {"number": 0, "variation": 0},
+						"Torch": {"number": 5, "variation": 2}
+					},
+					"Miscellaneous": {
+						"Oil": {"number": 2, "variation": 1}
+					},
+					"Component": {
+						"Alcohol": {"number": 2, "variation": 1},
+						"Chemical": {"number": 2, "variation": 1},
+						"Cloth": {"number": 2, "variation": 1},
+						"Water": {"number": 2, "variation": 1},
+						"Wood": {"number": 2, "variation": 1}
+					},
+					"Relic": {
+						"Elder Sign": {"number": 1, "variation": 0, "chance": 0.2}
+					}
+				},
+				"envObjects": {
+					"Sarcophagus": {"number": 4, "variation": 1},
+					"Spike Trap": {"number": 6, "variation": 2},
+					"Rocky Mound": {"number": 2, "variation": 1}
+				}
+			},
+			"3": {
+				"isRandom": true,
+				"excludeNonLitTiles": false,
+				"mapSize": "large",
+				"mapTileLimit": 500,
+				"npcs": {
+					"susanWinthrop": {
+						"id": "susanWinthrop",
+						"name": {"first": "Dr. Susan", "last": "Winthrop"},
+						"type": "npc",
+						"conversationStatus": {
+							"nextMessageKey": "susanWinthrop-1"
+						},
+						"location": "catacombs",
+						"floor": 3,
+						"coords": {
+							"xPos": 15,
+							"yPos": 15
+						},
+						"statuses": {
+							"Confused": {
+								"description": "",
+								"turnsLeft": 3
+							}
+						}
+					}
+				},
+				"creatures": {
+					"elderThing": {"number": 2, "variation": 1},
+					"flyingPolyp": {"number": 7, "variation": 2},
+					"ghast": {"number": 5, "variation": 3},
+					"ghoul": {"number": 5, "variation": 2},
+					"shoggoth": {"number": 2, "variation": 1}
+				},
+				"objects": {
+					"Weapon": {
+						"S And W Revolver": {"number": 0, "variation": 1},
+						"Acid Concoction": {"number": 1, "variation": 1}
+					},
+					"Ammo": {
+						"Handgun Ammo": {"number": 3, "variation": 1}
+					},
+					"Medicine": {
+						"First Aid Kit": {"number": 0, "variation": 1}
+					},
+					"Light": {
+						"Lantern": {"number": 0, "variation": 1},
+						"Torch": {"number": 0, "variation": 0}
+					},
+					"Miscellaneous": {
+						"Oil": {"number": 0, "variation": 1}
+					},
+					"Component": {
+						"Alcohol": {"number": 0, "variation": 1},
+						"Chemical": {"number": 0, "variation": 1},
+						"Cloth": {"number": 0, "variation": 1},
+						"Water": {"number": 0, "variation": 1},
+						"Wood": {"number": 0, "variation": 1}
+					},
+					"Relic": {
+						"Elder Sign": {"number": 1, "variation": 0, "chance": 0.3}
+					}
+				},
+				"envObjects": {
+					"Sarcophagus": {"number": 3, "variation": 1},
+					"Spike Trap": {"number": 6, "variation": 2},
+					"Rocky Mound": {"number": 1, "variation": 1}
 				}
 			}
-		},
-		"envObjects": {
-			"Sarcophagus": {
-				"countPerFloor": {
-					"1": {"number": 5, "variation": 1},
-					"2": {"number": 4, "variation": 1},
-					"3": {"number": 3, "variation": 1}
-				}
-			},
-			"Spike Trap": {
-				"countPerFloor": {
-					"1": {"number": 6, "variation": 2},
-					"2": {"number": 6, "variation": 2},
-					"3": {"number": 6, "variation": 2}
-				}
-			},
-			"Rocky Mound": {
-				"countPerFloor": {
-					"1": {"number": 3, "variation": 1},
-					"2": {"number": 2, "variation": 1},
-					"3": {"number": 1, "variation": 1}
-				}
+		}
+	},
+	"museum": {
+		"name": "Miskatonic Museum",
+		"numOfFloors": 1,
+		"floors": {
+			"1": {
+				"isRandom": false,
+				"excludeNonLitTiles": true,
+				"mapSize": "small",
+				"maxXpos": 20,
+				"maxYpos": 19,
+				"pieces": {
+					"lobby": {
+						"xPos": 10,
+						"yPos": 10
+					}
+				},
+				"npcs": {
+					"professorNymian": {
+						"id": "professorNymian",
+						"name": {"first": "Professor David", "last": "Nymian"},
+						"type": "npc",
+						"conversationStatus": {
+							"nextMessageKey": "professor-1"
+						},
+						"location": "museum",
+						"floor": 1,
+						"coords": {
+							"xPos": 16,
+							"yPos": 18
+						},
+						"statuses": {}
+					},
+					"privateEye": {
+						"coords": {
+							"xPos": 14,
+							"yPos": 17
+						}
+					},
+					"archaeologist": {
+						"coords": {
+							"xPos": 12,
+							"yPos": 15
+						}
+					},
+					"chemist": {
+						"coords": {
+							"xPos": 13,
+							"yPos": 13
+						}
+					},
+					"doctor": {
+						"coords": {
+							"xPos": 15,
+							"yPos": 14
+						}
+					},
+					"priest": {
+						"coords": {
+							"xPos": 17,
+							"yPos": 14
+						}
+					},
+					"veteran": {
+						"coords": {
+							"xPos": 19,
+							"yPos": 14
+						}
+					},
+					"thief": {
+						"coords": {
+							"xPos": 18,
+							"yPos": 13
+						}
+					},
+					"occultResearcher": {
+						"coords": {
+							"xPos": 20,
+							"yPos": 15
+						}
+					}
+				},
+				"objects": {},
+				"envObjects": {
+					"Fancy Wall Light": [
+						"11-14",
+						"11-19",
+						"14-18",
+						"14-12",
+						"18-12",
+						"18-18",
+						"21-14",
+						"21-19"
+					],
+					"Desk With Chair": ["17-19"],
+					"Display Case Vertical": ["12-14", "20-13"],
+					"Dinosaur Skeleton": ["12-19"]
+				},
+				"initialSpawn": {
+					"xPos": 16,
+					"yPos": 20
+				},
+				"exits": {
+					"stairs": {
+						"down": [{
+							"pos": "16-11",
+							"destination": "catacombs"
+						}]
+					},
+					"doors": []
+				},
+				"lockedDoors": ["11-15", "16-21", "21-15"]
 			}
 		}
 	}

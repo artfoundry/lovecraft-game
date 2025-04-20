@@ -1,0 +1,118 @@
+{
+  "privateEye-1": {
+    "text": "Well take a look at you. Quite the VIP with the prof, eh? So, I figure you want to ask me some questions. Ok, shoot.",
+    "responses": {
+      "privateEye-2": "Who are you and what's your background?",
+      "privateEye-3": "What's your reason for being here?",
+      "end": {
+        "message": "Nevermind",
+        "statusUpdate": {
+          "nextMessageKey": "privateEye-1a"
+        }
+      }
+    },
+    "classes": "private-eye"
+  },
+  "privateEye-1a": {
+    "text": "Hey partner, what's new?",
+    "responses": {
+      "privateEye-2": "Who are you again?",
+      "privateEye-3": "Why are you here again?",
+      "end-1": {
+        "message": "I could use your help. Why don't you join me?",
+        "altNextMessageKey": "privateEye-4",
+        "statusUpdate": {
+          "nextMessageKey": "privateEye-5",
+          "joinParty": true
+        }
+      },
+      "end-2": {
+        "message": "Nevermind",
+        "statusUpdate": {
+          "nextMessageKey": "privateEye-1a"
+        }
+      }
+    },
+    "classes": "privateEye"
+  },
+  "privateEye-2": {
+    "text": "The name's Joseph Hide, private investigator. Born and raised in the Big Apple...that's New York in case you're not a Yankee...or into horses...or jazz music. But I digress...",
+    "responses": {
+      "privateEye-3": "That's quite a trip to get here. What's your reason for coming?",
+      "end-1": {
+        "message": "Ok, I think I could use you. Why don't you join me?",
+        "altNextMessageKey": "privateEye-4",
+        "statusUpdate": {
+          "nextMessageKey": "privateEye-5",
+          "joinParty": true
+        }
+      },
+      "end-2": {
+        "message": "Sorry, I need to go. We'll talk later.",
+        "statusUpdate": {
+          "nextMessageKey": "privateEye-1a"
+        }
+      }
+    },
+    "classes": "privateEye"
+  },
+  "privateEye-3": {
+    "text": "Susan...Dr. Winthrop is an old friend of mine. So when the professor contacted me and told me she'd gone missing, I caught the first train out. If she's down there, I'll find her!",
+    "responses": {
+      "privateEye-2": "Yes, hopefully she's ok. And what's your background?",
+      "end-1": {
+        "message": "I think we can help each other. Why don't you join me?",
+        "altNextMessageKey": "privateEye-4",
+        "statusUpdate": {
+          "nextMessageKey": "privateEye-5",
+          "joinParty": true
+        }
+      },
+      "end-2": {
+        "message": "Sorry, I need to go. I'll talk to you later.",
+        "statusUpdate": {
+          "nextMessageKey": "privateEye-1a"
+        }
+      }
+    },
+    "classes": "privateEye"
+  },
+  "privateEye-4": {
+    "text": "Sorry, but that's a full house you've got. Come see me when you have an opening.",
+    "responses": {
+      "end": {
+        "message": "Ok",
+        "statusUpdate": {
+          "nextMessageKey": "privateEye-1a"
+        }
+      }
+    },
+    "classes": "privateEye"
+  },
+  "privateEye-5": {
+    "text": "Hey, what's up?",
+    "responses": {
+      "privateEye-6": "I don't have need of you now.",
+      "end": {
+        "message": "Nevermind",
+        "statusUpdate": {
+          "nextMessageKey": "privateEye-5"
+        }
+      }
+    },
+    "classes": "privateEye"
+  },
+  "privateEye-6": {
+    "text": "Ok, I'll be hanging around the museum if you need me again.",
+    "responses": {
+      "end": {
+        "message": "Ok",
+        "statusUpdate": {
+          "leaveParty": true,
+          "nextMessageKey": "privateEye-1a"
+        }
+      }
+    },
+    "classes": "privateEye"
+  }
+}

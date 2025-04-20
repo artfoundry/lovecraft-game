@@ -31,7 +31,7 @@ import MaleInjured from './assets/sfx/characters/male-injured.mp3';
 import MaleDeath from './assets/sfx/characters/male-death.mp3';
 import FemaleInjured from './assets/sfx/characters/female-injured.mp3';
 import FemaleDeath from './assets/sfx/characters/female-death.mp3';
-import DiceMP3 from './assets/sfx/rolling-dice-1.mp3';
+import DiceMP3 from './assets/sfx/rolling-dice.mp3';
 import CatacombsTheme from './assets/music/catacombs_theme.m4a';
 
 export {

@@ -1,0 +1,118 @@
+{
+  "archaeologist-1": {
+    "text": "Good day! I don't know about you, but I'm very curious to find out what's beneath the museum!",
+    "responses": {
+      "archaeologist-2": "Who are you and what's your background?",
+      "archaeologist-3": "What's your reason for being here?",
+      "end": {
+        "message": "Nevermind",
+        "statusUpdate": {
+          "nextMessageKey": "archaeologist-1a"
+        }
+      }
+    },
+    "classes": "archaeologist"
+  },
+  "archaeologist-1a": {
+    "text": "Hello again! How are you?",
+    "responses": {
+      "archaeologist-2": "Who are you again?",
+      "archaeologist-3": "I forgot, why are you here?",
+      "end-1": {
+        "message": "I could use your services. Why don't you join me?",
+        "altNextMessageKey": "archaeologist-4",
+        "statusUpdate": {
+          "nextMessageKey": "archaeologist-5",
+          "joinParty": true
+        }
+      },
+      "end-2": {
+        "message": "Nevermind",
+        "statusUpdate": {
+          "nextMessageKey": "archaeologist-1a"
+        }
+      }
+    },
+    "classes": "archaeologist"
+  },
+  "archaeologist-2": {
+    "text": "I'm Professor Mary Simpleton. I'm an archaeologist here at Arkham University, and I teach ancient and prehistoric societies.",
+    "responses": {
+      "archaeologist-3": "And what's your reason for being here?",
+      "end-1": {
+        "message": "Ok, I could definitely use you. Why don't you join me?",
+        "altNextMessageKey": "archaeologist-4",
+        "statusUpdate": {
+          "nextMessageKey": "archaeologist-5",
+          "joinParty": true
+        }
+      },
+      "end-2": {
+        "message": "Sorry, I need to go. I'll talk to you later.",
+        "statusUpdate": {
+          "nextMessageKey": "archaeologist-1a"
+        }
+      }
+    },
+    "classes": "archaeologist"
+  },
+  "archaeologist-3": {
+    "text": "I was on the initial team exploring the catacombs below. Dr. Winthrop is a colleague and a good friend of mine. I'm very worried about her!",
+    "responses": {
+      "archaeologist-2": "And what's your background?",
+      "end-1": {
+        "message": "Ok, I could definitely use you. Why don't you join me?",
+        "altNextMessageKey": "archaeologist-4",
+        "statusUpdate": {
+          "nextMessageKey": "archaeologist-5",
+          "joinParty": true
+        }
+      },
+      "end-2": {
+        "message": "Sorry, I need to go. I'll talk to you later.",
+        "statusUpdate": {
+          "nextMessageKey": "archaeologist-1a"
+        }
+      }
+    },
+    "classes": "archaeologist"
+  },
+  "archaeologist-4": {
+    "text": "Sorry, but it looks like you already have enough people with you. Come back again if you have an opening.",
+    "responses": {
+      "end": {
+        "message": "Ok",
+        "statusUpdate": {
+          "nextMessageKey": "archaeologist-1a"
+        }
+      }
+    },
+    "classes": "archaeologist"
+  },
+  "archaeologist-5": {
+    "text": "Hi, what can I do for you?",
+    "responses": {
+      "archaeologist-6": "I don't have need of you now.",
+      "end": {
+        "message": "Nevermind",
+        "statusUpdate": {
+          "nextMessageKey": "archaeologist-5"
+        }
+      }
+    },
+    "classes": "archaeologist"
+  },
+  "archaeologist-6": {
+    "text": "Ok, I'll be looking around the museum if you need me again.",
+    "responses": {
+      "end": {
+        "message": "Ok",
+        "statusUpdate": {
+          "leaveParty": true,
+          "nextMessageKey": "archaeologist-1a"
+        }
+      }
+    },
+    "classes": "archaeologist"
+  }
+}

@@ -1,0 +1,118 @@
+{
+  "thief-1": {
+    "text": "Hey, nice threads. I take it you spoke to the professor? Curious that he invited me here, given my...background.",
+    "responses": {
+      "thief-2": "Who are you and what IS your background?",
+      "thief-3": "How do you know the professor?",
+      "end": {
+        "message": "Nevermind",
+        "statusUpdate": {
+          "nextMessageKey": "thief-1a"
+        }
+      }
+    },
+    "classes": "thief"
+  },
+  "thief-1a": {
+    "text": "Hey, back for more?",
+    "responses": {
+      "thief-2": "Sorry, who are you again?",
+      "thief-3": "Tell me again, why are you here?",
+      "end-1": {
+        "message": "I think I could use your help. Join me?",
+        "altNextMessageKey": "thief-4",
+        "statusUpdate": {
+          "nextMessageKey": "thief-5",
+          "joinParty": true
+        }
+      },
+      "end-2": {
+        "message": "Nevermind",
+        "statusUpdate": {
+          "nextMessageKey": "thief-1a"
+        }
+      }
+    },
+    "classes": "thief"
+  },
+  "thief-2": {
+    "text": "You can call me Elizabeth...Smith. Or just Beth. But you call me Betty, and this knife will find its way close to a part of you you value... I have nimble fingers, and I'm light on my feet. People...especially the wealthy...tend to find things go missing when I'm around...(she winks).",
+    "responses": {
+      "thief-3": "Ahh, I'll try to remember that...Beth. So do you know the professor personally?",
+      "end-1": {
+        "message": "Hmmm, I think you could be of use. How about you join me?",
+        "altNextMessageKey": "thief-4",
+        "statusUpdate": {
+          "nextMessageKey": "thief-5",
+          "joinParty": true
+        }
+      },
+      "end-2": {
+        "message": "Sorry, I uhh, need to go. Maybe we'll talk later.",
+        "statusUpdate": {
+          "nextMessageKey": "thief-1a"
+        }
+      }
+    },
+    "classes": "thief"
+  },
+  "thief-3": {
+    "text": "I took one of his classes when I was at the university here a few years ago. We had a certain rapport...He helped keep me out of trouble, at least trouble with others anyway...(she gives you a sly smile).",
+    "responses": {
+      "thief-2": "Ah, I see. A side of Professor Nymian I haven't seen before. And what's your name?",
+      "end-1": {
+        "message": "I think we can help each other. Why don't you join me?",
+        "altNextMessageKey": "thief-4",
+        "statusUpdate": {
+          "nextMessageKey": "thief-5",
+          "joinParty": true
+        }
+      },
+      "end-2": {
+        "message": "Maybe you can tell me more about that later, but I need to go.",
+        "statusUpdate": {
+          "nextMessageKey": "thief-1a"
+        }
+      }
+    },
+    "classes": "thief"
+  },
+  "thief-4": {
+    "text": "Sorry, hon, but I don't work well with so many people. Come get me when it's just you. Or maybe two of you, and then we could be a ménage à trois...(she grins).",
+    "responses": {
+      "end": {
+        "message": "Ok...",
+        "statusUpdate": {
+          "nextMessageKey": "thief-1a"
+        }
+      }
+    },
+    "classes": "thief"
+  },
+  "thief-5": {
+    "text": "Hey, what is it hon?",
+    "responses": {
+      "thief-6": "I don't have need of you now.",
+      "end": {
+        "message": "Nevermind",
+        "statusUpdate": {
+          "nextMessageKey": "thief-5"
+        }
+      }
+    },
+    "classes": "thief"
+  },
+  "thief-6": {
+    "text": "Ok, I'll be around the museum if you need me again.",
+    "responses": {
+      "end": {
+        "message": "Ok",
+        "statusUpdate": {
+          "leaveParty": true,
+          "nextMessageKey": "thief-1a"
+        }
+      }
+    },
+    "classes": "thief"
+  }
+}

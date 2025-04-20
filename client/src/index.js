@@ -9,27 +9,38 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 const bareBonesAttr = {
     showLogin: false,
     showCharacterCreation: false,
-    startingCharacters: ['privateEye', 'chemist', 'archaeologist'],
-    startingLocation: 'catacombs',
+    startingCharacters: ['privateEye'],
+    startingLocation: 'museum',
     playMusic: false,
-    spawnCreatures: false
+    spawnCreatures: false,
+    skipIntroConversation: true
 };
-const testAttributes = {
+const dungeonTestAttributes = {
     showLogin: false,
     showCharacterCreation: false,
-    startingCharacters: ['privateEye', 'chemist', 'archaeologist'],
+    startingCharacters: ['privateEye', 'doctor', 'priest'],
     startingLocation: 'catacombs',
     playMusic: false,
     spawnCreatures: true
+};
+const worldTestAttributes = {
+    showLogin: false,
+    showCharacterCreation: false,
+    startingCharacters: ['privateEye'],
+    startingLocation: 'museum',
+    playMusic: false,
+    spawnCreatures: true,
+    skipIntroConversation: false
 };
 const prodAttributes = {
     forProduction: true,
     showLogin: true,
     showCharacterCreation: true,
-    startingCharacters: ['privateEye', 'chemist', 'archaeologist'],
-    startingLocation: 'catacombs',
+    startingCharacters: ['privateEye'],
+    startingLocation: 'museum',
     playMusic: true,
-    spawnCreatures: true
+    spawnCreatures: true,
+    skipIntroConversation: false
 };
 
 // prevent zoom on mobile

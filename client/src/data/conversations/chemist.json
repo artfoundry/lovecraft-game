@@ -1,0 +1,122 @@
+{
+  "chemist-1": {
+    "text": "Yes? I'm assuming you want to know about me? I'm not the most gregarious person, but I will try to answer what questions you may have.",
+    "responses": {
+      "chemist-2": "Who are you and what's your background?",
+      "chemist-3": "What's your reason for being here?",
+      "end": {
+        "message": "Nevermind",
+        "statusUpdate": {
+          "nextMessageKey": "chemist-1a"
+        }
+      }
+    },
+    "classes": "chemist"
+  },
+  "chemist-1a": {
+    "text": "Hello again. You need anything?",
+    "responses": {
+      "chemist-2": "Who are you again?",
+      "chemist-3": "I forgot, why are you here?",
+      "end-1": {
+        "message": "I could use your skills. Why don't you join me?",
+        "altNextMessageKey": "chemist-4",
+        "statusUpdate": {
+          "forEndOnly": true,
+          "nextMessageKey": "chemist-5",
+          "joinParty": true
+        }
+      },
+      "end-2": {
+        "message": "Nevermind",
+        "statusUpdate": {
+          "nextMessageKey": "chemist-1a"
+        }
+      }
+    },
+    "classes": "chemist"
+  },
+  "chemist-2": {
+    "text": "I'm Helen Abernathy, a chemist from Boston. I have my own apothecary there, but I also conduct experiments during my off hours. I have an extensive knowledge of chemical compounds.",
+    "responses": {
+      "chemist-3": "And what's your reason for being here?",
+      "end-1": {
+        "message": "Ok, I could definitely use your skill set. Why don't you join me?",
+        "altNextMessageKey": "chemist-4",
+        "statusUpdate": {
+          "forEndOnly": true,
+          "nextMessageKey": "chemist-5",
+          "joinParty": true
+        }
+      },
+      "end-2": {
+        "message": "Sorry, I need to go. I'll talk to you later.",
+        "statusUpdate": {
+          "nextMessageKey": "chemist-1a"
+        }
+      }
+    },
+    "classes": "chemist"
+  },
+  "chemist-3": {
+    "text": "Doctor Wade contacted me and asked if I could come up here and provide my services to complement his medical knowledge.",
+    "responses": {
+      "chemist-2": "And what's your background?",
+      "end": "Ok, I could definitely use your skill set. Why don't you join me?",
+      "end-1": {
+        "message": "Ok, I could definitely use your skill set. Why don't you join me?",
+        "altNextMessageKey": "chemist-4",
+        "statusUpdate": {
+          "forEndOnly": true,
+          "nextMessageKey": "chemist-5",
+          "joinParty": true
+        }
+      },
+      "end-2": {
+        "message": "Sorry, I need to go. I'll talk to you later.",
+        "statusUpdate": {
+          "nextMessageKey": "chemist-1a"
+        }
+      }
+    },
+    "classes": "chemist"
+  },
+  "chemist-4": {
+    "text": "You have enough people with you already. Let me know if you lose anyone or let someone go.",
+    "responses": {
+      "end": {
+        "message": "Ok",
+        "statusUpdate": {
+          "nextMessageKey": "chemist-1a"
+        }
+      }
+    },
+    "classes": "chemist"
+  },
+  "chemist-5": {
+    "text": "Hello, how can I help?",
+    "responses": {
+      "chemist-6": "I don't have need of you now.",
+      "end": {
+        "message": "Nevermind",
+        "statusUpdate": {
+          "nextMessageKey": "chemist-5"
+        }
+      }
+    },
+    "classes": "chemist"
+  },
+  "chemist-6": {
+    "text": "Ok, I'll be in the museum.",
+    "responses": {
+      "end": {
+        "message": "Ok",
+        "statusUpdate": {
+          "leaveParty": true,
+          "nextMessageKey": "chemist-1a"
+        }
+      }
+    },
+    "classes": "chemist"
+  }
+}
