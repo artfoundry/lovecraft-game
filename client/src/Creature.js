@@ -61,7 +61,7 @@ class Creature extends React.PureComponent {
 		const targetStealth = targetData.statuses.stealthy;
 		const targetAgilityBonus = targetStealth ? targetStealth.modifier : 0;
 		let article = this.name[0].match(/[aeiouAEIOU]/) ? 'An' : 'A';
-		let logAttackMessage = `${article} ${this.name} lashes at ${targetData.name} with something disgusting...`;
+		let logAttackMessage = `${article} ${this.name} lashes at ${targetData.name.first} with something disgusting...`;
 		let logDamageMessage = `The ${this.name} misses.`;
 		this.rollForAttackAndDefense();
 
@@ -71,7 +71,7 @@ class Creature extends React.PureComponent {
 			const attackDifference = hitTotal - defenseTotal;
 			const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 2);
 			damageTotal = halfStr + this.damage + damageModBasedOnAttack - targetData.damageReduction;
-			logAttackMessage = `A ${this.name} launches something at ${targetData.name}...`;
+			logAttackMessage = `A ${this.name} launches something at ${targetData.name.first}...`;
 		} else if (this.attackType === 'melee') {
 			hitTotal = this.strength + halfAgility + this.hitRoll;
 			defenseTotal = targetData.defense + targetAgilityBonus + this.defenseRoll;
@@ -85,15 +85,15 @@ class Creature extends React.PureComponent {
 			const attackDifference = hitTotal - defenseTotal;
 			const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 2);
 			damageTotal = this.mentalAcuity + damageModBasedOnAttack - damageAdjustment;
-			logAttackMessage = `A ${this.name} psychically attacks ${targetData.name}...`;
-			logDamageMessage = `The ${this.name} fails to penetrate ${targetData.name}'s mind.`;
+			logAttackMessage = `A ${this.name} psychically attacks ${targetData.name.first}...`;
+			logDamageMessage = `The ${this.name} fails to penetrate ${targetData.name.first}'s mind.`;
 		}
 		damageTotal = damageTotal < 0 ? 0 : damageTotal;
 		isHit = hitTotal >= defenseTotal;
 
 		if (isHit) {
 			const qualifier = damageTotal > 20 ? 'brutally' : '';
-			const attackWord = this.attackType === 'psychic' ? ` invades ${targetData.name}'s sanity` : ` hits ${targetData.name}`;
+			const attackWord = this.attackType === 'psychic' ? ` invades ${targetData.name.first}'s sanity` : ` hits ${targetData.name.first}`;
 			logDamageMessage = `The ${this.name} ${qualifier}${attackWord}!`;
 		}
 		updateLog(logAttackMessage);
@@ -109,7 +109,7 @@ class Creature extends React.PureComponent {
 				if (this.attackType === 'psychic' && feelThePainSkill) {
 					damageTotal += damageTotal;
 					delete targetData.statuses.feelThePain;
-					updateLog(`${targetData.name} endures the psychic attack, feeling the pain physically`);
+					updateLog(`${targetData.name.first} endures the psychic attack, feeling the pain physically`);
 				}
 				const resultingHealth = targetData.currentHealth - damageTotal;
 				targetData.currentHealth = resultingHealth < 0 ? 0 : resultingHealth;
@@ -166,7 +166,7 @@ class Creature extends React.PureComponent {
 				turnsLeft: diceRoll(skill.maxTurns),
 				chanceOfEffect: skill.chanceOfEffect
 			}
-			logMessage = `A ${this.name} ${logMessageAction} to ${pcData.name} and causes ${targetPronoun} to be ${status}!`;
+			logMessage = `A ${this.name} ${logMessageAction} to ${pcData.name.first} and causes ${targetPronoun} to be ${status}!`;
 			//todo: add skill specific audio?
 			toggleAudio('characters', removeIdNumber(this.id) + 'Attack', {useReverb: true, useVolume: true, soundCoords: this.coords});
 			this._updateSpirit(creatureData, skill.spirit, updateCharacters, () => {
@@ -176,7 +176,7 @@ class Creature extends React.PureComponent {
 				});
 			});
 		} else {
-			logMessage = `A ${this.name} ${logMessageAction} to ${pcData.name} but fortunately fails to make contact.`;
+			logMessage = `A ${this.name} ${logMessageAction} to ${pcData.name.first} but fortunately fails to make contact.`;
 			this._updateSpirit(creatureData, skill.spirit, updateCharacters, updateTurnCallback);
 		}
 		updateLog(logMessage);
@@ -233,7 +233,7 @@ class Creature extends React.PureComponent {
 			pcData.currentSpirit = damageResult < 0 ? 0 : damageResult;
 			// todo: add skill specific audio
 			toggleAudio('characters', 'flyingPolypAttack', {useReverb: true, useVolume: true, soundCoords: this.coords});
-			logMessage = `A hallowing cyclone winds its way from a flying polyp to ${pcData.name}, draining ${pcData.gender === 'Male' ? 'him' : 'her'} of Spirit!`;
+			logMessage = `A hallowing cyclone winds its way from a flying polyp to ${pcData.name.first}, draining ${pcData.gender === 'Male' ? 'him' : 'her'} of Spirit!`;
 			this._updateSpirit(creatureData, spiritCost, updateCharacters, () => {
 				updateCharacters('player', pcData, pcData.id, false, false, false, () => {
 					toggleAudio('characters', pcData.gender.toLowerCase() + 'Injured', {useReverb: true, useVolume: true, soundCoords: pcData.coords});
@@ -241,7 +241,7 @@ class Creature extends React.PureComponent {
 				});
 			});
 		} else {
-			logMessage = `A hallowing cyclone winds its way from a Flying Polyp to ${pcData.name}, but ${pcData.gender === 'Male' ? 'he' : 'she'} manages to resist its effects.`;
+			logMessage = `A hallowing cyclone winds its way from a Flying Polyp to ${pcData.name.first}, but ${pcData.gender === 'Male' ? 'he' : 'she'} manages to resist its effects.`;
 			this._updateSpirit(creatureData, cycloneSkill.spirit, updateCharacters, updateTurnCallback);
 		}
 		updateLog(logMessage);
@@ -280,10 +280,10 @@ class Creature extends React.PureComponent {
 				individualPcData.currentSanity = damageResult < 0 ? 0 : damageResult;
 				// todo: add skill specific audio
 				toggleAudio('characters', 'shoggothAttack', {useReverb: true, useVolume: true, soundCoords: this.coords});
-				logMessage = `${individualPcData.name} succumbs to the horrible sound and its accompanying visions of dread.`;
+				logMessage = `${individualPcData.name.first} succumbs to the horrible sound and its accompanying visions of dread.`;
 				affectedPCs.push(individualPcData.id);
 			} else {
-				logMessage = `${individualPcData.name} resists the wail's effects.`;
+				logMessage = `${individualPcData.name.first} resists the wail's effects.`;
 			}
 			updateLog(logMessage);
 		}

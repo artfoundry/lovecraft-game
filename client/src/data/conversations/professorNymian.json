@@ -1,0 +1,149 @@
+{
+  "professor-1": {
+    "text": "{n}, welcome my friend to Miskatonic University.\nI was hoping you would come as soon as you had received my letter. We have much to discuss, and I'm sure you have many questions.",
+    "responses": {
+      "professor-2": "Yes, why have you called me here? What's going on?",
+      "professor-3": "Damn straight! I was in the middle of something very important, so this better be...well even more important!"
+    },
+    "classes": "professor-nymian"
+  },
+  "professor-2": {
+    "text": "I am in dire need of your services.\nWhile digging through caves we discovered beneath the catacombs that lie under Miskatonic Museum, we uncovered some very unusual artifacts.\nWe have reason to believe these artifacts may be connected to ancient civilizations from eons before the history of man, predating even the Mesozoic era!\nUnfortunately, some of them seem to have been producing ill effects amongst our staff.",
+    "responses": {
+      "professor-4": "How is that possible? How could those artifacts even still exist, much less be in working condition?",
+      "professor-5": "Meso what?"
+    },
+    "classes": "professor-nymian"
+  },
+  "professor-3": {
+    "text": "Apologies for interrupting your valuable time, but this couldn't wait. What's more, I think you'll find it all very interesting.",
+    "responses": {
+      "professor-2": "All right, get on with it then."
+    },
+    "classes": "professor-nymian"
+  },
+  "professor-4": {
+    "text": "They are like nothing anyone has ever seen. It's even possible they are of extraterrestrial origin!",
+    "responses": {
+      "professor-6": "Out of this world! So what's happening to the staff?",
+      "professor-5": "You mentioned something about the Mesozoic era?"
+    },
+    "classes": "professor-nymian"
+  },
+  "professor-5": {
+    "text": "The Mesozoic era was the period about 250 million years ago that lasted about 180 million years during which the dinosaurs lived.",
+    "responses": {
+      "professor-6": "Ah. Right. Of course. I knew that. And you mentioned something was happening to your staff?",
+      "professor-4": "Ok. So what about these artifacts then? What's so special about them?"
+    },
+    "classes": "professor-nymian"
+  },
+  "professor-6": {
+    "text": "It's entirely bizarre. Some of the staff are fine.\nOthers have become violently ill, suffering from explosive fluid expulsions, open sores, seizures, even spontaneous bone fractures. Still others have become delusional, experienced visual or auditory hallucinations, started speaking in tongues, or simply become completely catatonic.\nA few have spoken of horrifying monsters in the catacombs and caves, but of course we have just chalked that up to their delusional states.\nThe only common factor amongst them is exposure or just being near one of the artifacts.\nUnfortunately, keeping the exposed staff from their presence has not proved beneficial.",
+    "responses": {
+      "professor-7": "That sounds pretty dire. You don't want me to inspect these artifacts do you?"
+    },
+    "classes": "professor-nymian"
+  },
+  "professor-7": {
+    "text": "Goodness no. I have another task for you.\nA colleague of mine, Dr. Susan Winthrop, was down in the caves with the others, conducting their archaeological research. They were all returning for the night, but while making their way through the catacombs, they lost sight of her. She has not returned. That was two days ago!\nI need you to go look for her. The rest of us are too busy tending to those suffering or trying to determine what these artifacts are and what to do with them.",
+    "responses": {
+      "professor-8": "Ok, point me in the right direction.",
+      "professor-9": "Will I be compensated for this?"
+    },
+    "classes": "professor-nymian"
+  },
+  "professor-8": {
+    "text": "Your assistance is much appreciated! The stairs to the catacombs are near the far wall behind me.\nBut first, speak to the other investigators I've invited who are scattered about the room. I would recommend enlisting one or two of them to help you.\nSome of the areas below are possibly unstable, and who knows what state Susan will be in when you find her.",
+    "responses": {
+      "professor-10": "Thanks, I'll go speak to them now."
+    },
+    "classes": "professor-nymian"
+  },
+  "professor-9": {
+    "text": "Of course, though the university can't offer much.\nOnce you find and bring back Susan...or heaven forbid, her remains...I'll gladly pay you what I can.",
+    "responses": {
+      "professor-8": "All right, so where do I start?"
+    },
+    "classes": "professor-nymian"
+  },
+  "professor-10": {
+    "text": "Come speak with me once you have information about Dr. Winthrop or if you have any questions about anything you find down there.",
+    "responses": {
+      "end": {
+        "message": "Ok",
+        "statusUpdate": {
+          "nextMessageKey": "professor-11",
+          "journalUpdate": {
+            "id": "mission1",
+            "updateType": "new",
+            "title": "Rescue Dr. Winthrop",
+            "description": "Dr. Susan Winthrop has become lost in the catacombs beneath the Miskatonic Museum. Search the catacombs, find her, and bring her back, alive if possible.",
+            "goal": "Bring Dr. Winthrop back to the museum and speak to Professor Nymian."
+          }
+        }
+      }
+    },
+    "classes": "professor-nymian"
+  },
+  "professor-11": {
+    "text": "Have you found Dr. Winthrop?",
+    "responses": {
+      "professor-12": {"condition": "winthropAlive", "message": "Yes, here she is."},
+      "professor-12a": "Yes, but unfortunately we were unable to save her.",
+      "end": {
+        "message": "Not yet",
+        "statusUpdate": {
+          "nextMessageKey": "professor-11"
+        }
+      }
+    },
+    "classes": "professor-nymian"
+  },
+  "professor-12": {
+    "text": "Excellent! Dr. Winthrop, so good to have you back, safe and sound.",
+    "responses": {
+      "end": {
+        "message": "...",
+        "statusUpdate": {
+          "nextMessageKey": "professor-13",
+          "journalUpdate": {
+            "id": "mission1",
+            "updateType": "end",
+            "xp": 100
+          }
+        }
+      }
+    },
+    "classes": "professor-nymian"
+  },
+  "professor-12a": {
+    "text": "No! Oh my dear friend, I have failed you...",
+    "responses": {
+      "end": {
+        "message": "...",
+        "statusUpdate": {
+          "nextMessageKey": "professor-13",
+          "journalUpdate": {
+            "id": "mission1",
+            "updateType": "end",
+            "xp": 70
+          }
+        }
+      }
+    },
+    "classes": "professor-nymian"
+  },
+  "professor-13": {
+    "text": "Ok, I have another task for you...",
+    "responses": {
+      "end": {
+        "message": "...",
+        "statusUpdate": {
+          "nextMessageKey": "professor-13"
+        }
+      }
+    },
+    "classes": "professor-nymian"
+  }
+}

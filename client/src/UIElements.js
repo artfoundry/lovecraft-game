@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
-import {convertCamelToKabobCase, capitalizeWord, deepCopy, convertObjIdToClassId, notEnoughSpaceInInventory, handleItemOverDropZone} from './Utils';
+import {convertCamelToKabobCase, capitalizeWord, convertKabobToCamelCase, deepCopy, convertObjIdToClassId, notEnoughSpaceInInventory, handleItemOverDropZone} from './Utils';
+import AllConversations from './data/conversationsLoader';
 
 function CharacterControls(props) {
 	const currentPCdata = props.playerCharacters[props.characterId];
@@ -470,16 +471,14 @@ function CharacterControls(props) {
 			onDragOver={(evt) => handleItemOverDropZone(evt)}
 			onDrop={(evt) => props.dropItemToPC(evt, props.characterId)}>
 
-			<div className='control-bar-tab'>
+			<div className='control-bar-tab' onClick={() => props.setSelectedControlTab(props.characterId)}>
 				{props.showHelpSystem && props.helpPopupButton('characterTabs')}
 				{props.showHelpSystem && props.helpPopupButton('statusIndicators', {'right': '0', 'zIndex': '2'})}
-				<div onClick={() => props.setSelectedControlTab(props.characterId)}>
-					<span className='character-name font-fancy'>
-						<span className={`control-bar-tab-icon ${convertObjIdToClassId(props.characterId)}`}></span>
-						{displayCharName ? props.characterName : ''}
-					</span>
-					{statusIcons}
-				</div>
+				<span className='character-name font-fancy'>
+					<span className={`control-bar-tab-icon ${convertObjIdToClassId(props.characterId)}`}></span>
+					{displayCharName ? props.characterName : ''}
+				</span>
+				{statusIcons}
 			</div>
 			<div id='control-bar-statuses-container'>
 				<div className='control-bar-status-bars'>
@@ -667,8 +666,8 @@ function CharacterInfoPanel(props) {
 	return (
 		<div className={`character-info-container ui-panel ${props.showDialog ? 'no-click' : ''}`}>
 			<div className='char-info-header'>
-				<h3 className='font-fancy'>{props.characterInfo.name}</h3>
-				<div className='general-button' onClick={() => props.updateUnitSelectionStatus(props.characterInfo.id, 'player')}>X</div>
+				<h3 className='font-fancy'>{`${props.characterInfo.name.first} ${props.characterInfo.name.last}`}</h3>
+				<div className='general-button' onClick={() => props.updateUnitSelectionStatus(props.characterInfo.id, props.characterInfo.type)}>X</div>
 			</div>
 
 			<div className='char-info-all-contents-container'>
@@ -1084,27 +1083,27 @@ function ObjectInfoPanel(props) {
 function CreatureInfoPanel(props) {
 	return (
 		<div className='creature-info-container ui-panel'>
-			<div className='general-button' onClick={() => props.updateUnitSelectionStatus(props.creatureInfo.id, 'creature')}>X</div>
+			<div className='general-button' onClick={() => props.updateUnitSelectionStatus(props.creatureInfo.id, props.creatureInfo.type)}>X</div>
 			<div className='creature-info-columns'>
 				{props.showHelpSystem && props.helpPopupButton('creatureInfo', {'left': '50%'})}
 				<div className='creature-info-icon-column'>
 					<div className={`creature-icon ${convertObjIdToClassId(props.creatureInfo.id)}`}></div>
 				</div>
 				<div className='creature-info-column'>
-					<div>Name: {props.creatureInfo.name}</div>
-					<div>Level: {props.creatureInfo.level}</div>
-					<div>Health: {props.creatureInfo.currentHealth} / {props.creatureInfo.startingHealth}</div>
-					<div>Spirit: {props.creatureInfo.currentSpirit} / {props.creatureInfo.startingSpirit}</div>
-					<div>Strength: {props.creatureInfo.strength}</div>
-					<div>Agility: {props.creatureInfo.agility}</div>
-					<div>Mental Acuity: {props.creatureInfo.mentalAcuity}</div>
-					<div>Initiative: {props.creatureInfo.initiative}</div>
-					<div>Damage: {props.creatureInfo.damage}</div>
-					<div>Defense: {props.creatureInfo.defense}</div>
-					<div>Damage Reduction: {props.creatureInfo.damageReduction}</div>
-					<div>Range: {props.creatureInfo.range}</div>
-					<div>Speed: {props.creatureInfo.moveSpeed}</div>
-					<div>Perception: {props.creatureInfo.perception}</div>
+					{props.creatureInfo.name && <div>Name: {typeof props.creatureInfo.name === 'string' ? props.creatureInfo.name : `${props.creatureInfo.name.first} ${props.creatureInfo.name.last}`}</div>}
+					{props.creatureInfo.level && <div>Level: {props.creatureInfo.level}</div>}
+					{props.creatureInfo.currentHealth && <div>Health: {props.creatureInfo.currentHealth} / {props.creatureInfo.startingHealth}</div>}
+					{props.creatureInfo.currentSpirit && <div>Spirit: {props.creatureInfo.currentSpirit} / {props.creatureInfo.startingSpirit}</div>}
+					{props.creatureInfo.strength && <div>Strength: {props.creatureInfo.strength}</div>}
+					{props.creatureInfo.agility && <div>Agility: {props.creatureInfo.agility}</div>}
+					{props.creatureInfo.mentalAcuity && <div>Mental Acuity: {props.creatureInfo.mentalAcuity}</div>}
+					{props.creatureInfo.initiative && <div>Initiative: {props.creatureInfo.initiative}</div>}
+					{props.creatureInfo.damage && <div>Damage: {props.creatureInfo.damage}</div>}
+					{props.creatureInfo.defense && <div>Defense: {props.creatureInfo.defense}</div>}
+					{props.creatureInfo.damageReduction && <div>Damage Reduction: {props.creatureInfo.damageReduction}</div>}
+					{props.creatureInfo.range && <div>Range: {props.creatureInfo.range}</div>}
+					{props.creatureInfo.moveSpeed && <div>Speed: {props.creatureInfo.moveSpeed}</div>}
+					{props.creatureInfo.perception && <div>Perception: {props.creatureInfo.perception}</div>}
 				</div>
 			</div>
 		</div>
@@ -1117,7 +1116,7 @@ function ModeInfoPanel(props) {
 		let list = [];
 		props.playerFollowOrder.forEach((id, index) => {
 			const player = props.players[id];
-			if (!player.isDeadOrInsane) {
+			if (player) {
 				list.push(
 					<div
 						id={index + '-slot'}
@@ -1154,8 +1153,8 @@ function ModeInfoPanel(props) {
 	let dyingPcName = '';
 	let dyingPcGender = '';
 	for (const player of Object.values(props.players)) {
-		if (player.currentHealth <= 0 && !player.isDeadOrInsane) {
-			dyingPcName = player.name;
+		if (player.currentHealth <= 0) {
+			dyingPcName = `${player.name.first} ${player.name.last}`;
 			dyingPcGender = player.gender === 'Male' ? 'him' : 'her';
 		}
 	}
@@ -1174,7 +1173,7 @@ function ModeInfoPanel(props) {
 		dialogClasses: ''
 	};
 	const activePlayerObject = props.players[props.activeCharacter];
-	const charactersTurn = activePlayerObject && (props.inTacticalMode || !props.isPartyNearby) ? activePlayerObject.name :
+	const charactersTurn = activePlayerObject && (props.inTacticalMode || !props.isPartyNearby) ? `${activePlayerObject.name.first} ${activePlayerObject.name.last}` :
 		props.inTacticalMode && props.threatList.length > 0 ? 'Enemies moving' : 'Wait...';
 
 	return (
@@ -1233,9 +1232,9 @@ function ModeInfoPanel(props) {
 			}
 
 			{(props.inTacticalMode || !props.isPartyNearby) &&
-			<div>
-				<div id='turn-control-container'>Turn: {charactersTurn}</div>
-				<div className='general-button' onClick={() => {
+			<div id='turn-control-container'>
+				<div id='turn-pcName'>Turn: {charactersTurn}</div>
+				<div className={`general-button${!activePlayerObject ? ' button-disabled' : ''}`} onClick={() => {
 					props.updateCurrentTurn();
 				}}>End Turn</div>
 			</div>
@@ -1268,23 +1267,105 @@ function PartyInfoPanel(props) {
 }
 
 function JournalWindow(props) {
-	const activeQuests = [];
-	const completedQuests = [];
-	props.partyJournal.activeQuests.forEach(quest => {
-		activeQuests.push(<div>{quest.name}: {quest.description}</div>);
-	});
-	props.partyJournal.completedQuests.forEach(quest => {
-		completedQuests.push(<div>{quest.name}: {quest.description}</div>);
-	});
+	const [activeTab, updateActiveTab] = useState('active');
+	let activeQuests = [];
+	let completedQuests = [];
+	for (const [questId, questInfo] of Object.entries(props.partyJournal.activeQuests)) {
+		activeQuests.push(
+			<div key={questId}>
+				<h3 className='journal-quest-detail'>{questInfo.title}</h3>
+				<div className='journal-quest-detail'>{questInfo.description}</div>
+				<div className='journal-quest-detail'><b>Goal:</b> {questInfo.goal}</div>
+			</div>
+		);
+	}
+	for (const [questId, questInfo] of Object.entries(props.partyJournal.completedQuests)) {
+		completedQuests.push(
+			<div key={questId}>
+				<h3 className='journal-quest-detail'>{questInfo.title}</h3>
+				<div className='journal-quest-detail'>{questInfo.description}</div>
+				<div className='journal-quest-detail'><b>Goal:</b> {questInfo.goal}</div>
+			</div>
+		);
+	}
+
 	return (
-		<div className='dialog ui-panel'>
+		<div id='journal-container' className='dialog ui-panel'>
 			<div className='general-button dialog-button-x' onClick={() => props.setShowJournal()}>X</div>
-			<div className='dialog-message'>Active missions:</div>
-			{/*placeholder*/}
-			<div>{activeQuests}</div>
-			<div className='dialog-message'>Completed missions:</div>
-			{/*placeholder*/}
-			<div>{completedQuests}</div>
+			<div id='journal-content'>
+				<div className='tabs-container'>
+					<div className={`journal-header${activeTab === 'active' ? ' active-tab' : ''}`} onClick={() => updateActiveTab('active')}>Active Missions</div>
+					<div className={`journal-header${activeTab === 'completed' ? ' active-tab' : ''}`} onClick={() => updateActiveTab('completed')}>Completed Missions</div>
+				</div>
+				<div className={`${activeTab === 'active' ? '' : 'hidden'}`}>{activeQuests}</div>
+				<div className={`${activeTab === 'completed' ? '' : 'hidden'}`}>{completedQuests}</div>
+			</div>
+		</div>
+	);
+}
+
+function ConversationWindow(props) {
+	const convTargetChar = props.conversationTargetData;
+	const conversationStatus = convTargetChar.conversationStatus;
+	const [convElements, updateConversation] = useState(AllConversations[conversationStatus.nextMessageKey]);
+	let responses = [];
+	let statusUpdates = {};
+	const convTargetMessage = convElements.text.replace(/{.+}/g, str => {
+		let newStr = '';
+		// 'g' for gender or 'n' for name
+		if (str[1] === 'g') {
+			const optionsDivider = str.indexOf('/');
+			newStr = props.createdCharData.gender === 'Male' ? str.substring(3, optionsDivider) : str.substring(optionsDivider + 1, str.length - 1);
+		} else if (str[1] === 'n') {
+			newStr = props.createdCharData.name.first;
+		}
+		return newStr;
+	}).split('\n').map((line, index) => <p key={index}>{line}</p>);
+
+	for (const [nextMessageKey, response] of Object.entries(convElements.responses)) {
+		responses.push(
+			<div key={nextMessageKey} className='pc-response' onClick={() => {
+				// possible options are:
+				// - non-end response w/o updates
+				// - end response w/updates
+				// - non-end response w/updates (rare)
+				// - end response with joinParty but party is full, so use altNextMessageKey
+				if (response.statusUpdate) {
+					statusUpdates = {...response.statusUpdate};
+					if (nextMessageKey.includes('end') && statusUpdates.joinParty && props.partySize === 3) {
+						updateConversation(AllConversations[response.altNextMessageKey]);
+					} else {
+						// todo: for certain convs may need to update main char data too
+						const update = () => {
+							props.applyUpdatesFromConv(convTargetChar.id, statusUpdates);
+						}
+						// end resp w/updates
+						if (nextMessageKey.includes('end')) {
+							props.setShowConversation(() => {
+								props.setConversationTarget(null, update);
+							});
+						} else {
+							// non-end response w/updates (rare)
+							update();
+							updateConversation(AllConversations[nextMessageKey]);
+						}
+					}
+				// non-end response w/o updates - there will always be a statusUpdate at end of conv, so no need to check that it's not the end
+				} else {
+					updateConversation(AllConversations[nextMessageKey]);
+				}
+			}}>{typeof response === 'string' ? response : response.message}</div>
+		);
+	}
+	return (
+		<div id='conversation-window' className='dialog ui-panel'>
+			<div id='conv-target-container'>
+				<div id='conv-target-info'><div className={`${convElements.classes}`}></div>{`${convTargetChar.name.first} ${convTargetChar.name.last}`}</div>
+				<div id='conv-target-message'>{convTargetMessage}</div>
+			</div>
+			<div id='responses-container'>
+				{responses}
+			</div>
 		</div>
 	);
 }
@@ -1325,13 +1406,16 @@ function ContextMenu(props) {
 	const listActions = [];
 
 	for (const actionType of Object.keys(props.actionsAvailable)) {
+		const inCombatClass = props.inCombat && actionType === 'talk' ? ' button-disabled' : ''
 		listActions.push(
-			<div
-				key={`context-manu-${actionType}`}
-				className={`general-button ${actionType}-action`}
-				style={props.buttonStyle}
-				onClick={() => props.handleContextMenuSelection(actionType)}
-			></div>
+			<div key={`context-manu-${actionType}`}>
+				{props.showHelpSystem && props.helpPopupButton('contextMenu' + capitalizeWord(convertKabobToCamelCase(actionType)), {'transform': 'translate(4px, 8px)'})}
+				<div
+					className={`general-button ${actionType}-action${inCombatClass}`}
+					style={props.buttonStyle}
+					onClick={() => props.handleContextMenuSelection(actionType)}
+				></div>
+			</div>
 		)
 	}
 
@@ -1469,4 +1553,4 @@ function GameOptions(props) {
 	);
 }
 
-export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, PartyInfoPanel, JournalWindow, DialogWindow, ContextMenu, HelpPopup, GameOptions};
+export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, PartyInfoPanel, JournalWindow, ConversationWindow, DialogWindow, ContextMenu, HelpPopup, GameOptions};

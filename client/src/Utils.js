@@ -16,6 +16,10 @@ export function capitalizeWord(word) {
 	return word[0].toUpperCase() + word.substring(1);
 }
 
+export function convertKabobToCamelCase(str) {
+	return str.replace(/-[a-z]/g, match => match.substring(1).toUpperCase());
+}
+
 export function convertPosToCoords(pos) {
 	const coordArr = pos.split('-').map(val => parseInt(val));
 	return {xPos: coordArr[0], yPos: coordArr[1]};
@@ -25,12 +29,14 @@ export function convertCoordsToPos(coords) {
 	return `${coords.xPos}-${coords.yPos}`;
 }
 
+// Returns the greater distance (x or y) between two sets of coords
 export function getDistanceBetweenTargets(coords1, coords2) {
 	const xDelta = Math.abs(coords1.xPos - coords2.xPos);
 	const yDelta = Math.abs(coords1.yPos - coords2.yPos);
 	return xDelta > yDelta ? xDelta : yDelta;
 }
 
+// Returns 'A', 'a', 'An', or 'an' depending on following word
 export function articleType(word, isCapital = false) {
 	const vowels = ['a', 'e', 'i', 'o', 'u'];
 	const firstLetter = word.substring(0,1);

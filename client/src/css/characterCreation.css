@@ -17,6 +17,14 @@ h2 {
 	box-sizing: border-box;
 }
 
+#name-entry {
+	display: flex;
+	width: 470px;
+	gap: 10px;
+	margin: auto;
+	margin-bottom: 10px;
+}
+
 #char-creation-stat-roll-container {
 	display: grid;
 	grid-template-columns: 150px 64px 64px 64px;

@@ -7,6 +7,7 @@ import {
 	ModeInfoPanel,
 	PartyInfoPanel,
 	JournalWindow,
+	ConversationWindow,
 	DialogWindow,
 	ContextMenu,
 	HelpPopup,
@@ -30,7 +31,8 @@ class UI extends React.PureComponent {
 		};
 		this.audioSelectors = {
 			music: {
-				catacombs: {}
+				catacombs: {},
+				museum: {}
 			}
 		};
 
@@ -39,6 +41,7 @@ class UI extends React.PureComponent {
 			showHelpSystem: false,
 			showHelpPopup: null,
 			showJournal: false,
+			showConversation: false,
 			logText: this.props.logText,
 			controlBarMinimized: false,
 			selectedControlTab: '',
@@ -52,7 +55,7 @@ class UI extends React.PureComponent {
 			draggedObjRecipient: '',
 			needToShowObjectPanel: false,
 			isPickUpAction: false,
-			controlBarColumnCount: ''
+			controlBarColumnCount: `control-bar-${Object.keys(this.props.playerCharacters).length}-columns`
 		};
 	}
 
@@ -81,6 +84,12 @@ class UI extends React.PureComponent {
 		}));
 	}
 
+	setShowConversation = (callback) => {
+		this.setState(prevState => ({
+			showConversation: !prevState.showConversation
+		}), callback);
+	}
+
 	addLogLines = () => {
 		let lines = [];
 		let i = 0;
@@ -102,7 +111,7 @@ class UI extends React.PureComponent {
 
 		this.props.pcObjectOrdering.forEach(id => {
 			const playerInfo = this.props.playerCharacters[id];
-			if (!playerInfo.isDeadOrInsane) {
+			if (playerInfo) {
 				// for setting up Pickup action and Open container/mineable action buttons
 				let mapObjectsOnPcTiles = [];
 				let containersNextToPc = [];
@@ -133,7 +142,7 @@ class UI extends React.PureComponent {
 						key={id}
 						playerCharacters={this.props.playerCharacters}
 						characterId={id}
-						characterName={playerInfo.name}
+						characterName={`${playerInfo.name.first} ${playerInfo.name.last}`}
 						equippedItems={playerInfo.equippedItems}
 						invItems={playerInfo.items}
 						toggleActionButton={this.props.toggleActionButton}
@@ -348,7 +357,7 @@ class UI extends React.PureComponent {
 			}
 			if (updateData.id === 'thief' && updateData.statuses.stealthy) {
 				delete updateData.statuses.stealthy;
-				this.props.updateLog(`After equipping a light source, ${updateData.name} is no longer hiding in the shadows`);
+				this.props.updateLog(`After equipping a light source, ${updateData.name.first} is no longer hiding in the shadows`);
 			}
 			itemBeingReplaced = updateData.equippedLight;
 			updateData.equippedLight = draggedItem.id;
@@ -634,7 +643,7 @@ class UI extends React.PureComponent {
 				activeEnvObj.isDestroyed = true;
 				changeMade = true;
 			}
-			this.props.updateLog(`${this.props.playerCharacters[this.props.activeCharacter].name} spends time digging through the rocks and dirt...`);
+			this.props.updateLog(`${this.props.playerCharacters[this.props.activeCharacter].name.first} spends time digging through the rocks and dirt...`);
 		}
 		if (changeMade) {
 			this.props.updateMapEnvObjects(envObjects, envObjectId);
@@ -876,8 +885,8 @@ class UI extends React.PureComponent {
 			this.setSelectedControlTab(this.props.activeCharacter);
 		}
 
-		const newPlayerCount = Object.keys(prevProps.playerCharacters).length;
-		if (newPlayerCount !== Object.keys(this.props.playerCharacters).length) {
+		const newPlayerCount = Object.keys(this.props.playerCharacters).length;
+		if (newPlayerCount !== Object.keys(prevProps.playerCharacters).length) {
 			this.updateControlBarColumnCount(newPlayerCount);
 		}
 
@@ -900,9 +909,17 @@ class UI extends React.PureComponent {
 		if (prevProps.gameOptions.playMusic !== this.props.gameOptions.playMusic) {
 			this.toggleMusic();
 		}
+
+		if (this.props.conversationTarget && prevProps.conversationTarget !== this.props.conversationTarget) {
+			this.setShowConversation();
+		}
 	}
 
 	render() {
+		const conversationTargetData = this.props.conversationTarget ?
+			(this.props.conversationTarget.targetType === 'player' ?
+			this.props.playerCharacters[this.props.conversationTarget.id] :
+			this.props.npcs[this.props.conversationTarget.id]) : null;
 		return (
 			<div id='ui-container'>
 				{this.state.showHelpSystem && this.helpPopupButton('map', {'left': '50%', 'top': '50%'})}
@@ -914,6 +931,7 @@ class UI extends React.PureComponent {
 				{this.props.contextMenu &&
 				<ContextMenu
 					actionsAvailable={this.props.contextMenu.actionsAvailable}
+					inCombat={this.props.inTacticalMode && this.props.threatList.length > 0}
 					creatureId={this.props.contextMenu.creatureId}
 					processTileClick={this.processTileClick}
 					handleUnitClick={this.props.handleUnitClick}
@@ -922,6 +940,8 @@ class UI extends React.PureComponent {
 					handleContextMenuSelection={this.props.handleContextMenuSelection}
 					menuPosStyle={this.calculatePanelCoords(this.props.contextMenu.evt.clientX, this.props.contextMenu.evt.clientY, 'menu')}
 					buttonStyle={{width: '32px', height: '32px', backgroundPosition: 'center'}}
+					showHelpSystem={this.state.showHelpSystem}
+					helpPopupButton={this.helpPopupButton}
 				/>}
 
 				<div ref={this.uiRefs.turnInfo} id='turn-info-container' className='ui-panel'>
@@ -977,6 +997,18 @@ class UI extends React.PureComponent {
 				/>
 				}
 
+				{this.state.showConversation &&
+				<ConversationWindow
+					storyProgress={this.props.storyProgress}
+					conversationTargetData={conversationTargetData}
+					setConversationTarget={this.props.setConversationTarget}
+					setShowConversation={this.setShowConversation}
+					applyUpdatesFromConv={this.props.applyUpdatesFromConv}
+					createdCharData={{gender: this.props.createdCharData.gender, name: this.props.createdCharData.name}}
+					partySize={Object.keys(this.props.playerCharacters).length}
+				/>
+				}
+
 				{this.props.selectedCharacterInfo &&
 				<CharacterInfoPanel
 					characterIsSelected={this.props.characterIsSelected}
@@ -997,7 +1029,8 @@ class UI extends React.PureComponent {
 					objectIsSelected={this.state.objectIsSelected}
 					showHelpSystem={this.state.showHelpSystem}
 					helpPopupButton={this.helpPopupButton}
-				/>}
+				/>
+				}
 
 				{this.props.selectedCreatureInfo &&
 				<CreatureInfoPanel
@@ -1006,7 +1039,8 @@ class UI extends React.PureComponent {
 					creatureInfo={this.props.selectedCreatureInfo}
 					showHelpSystem={this.state.showHelpSystem}
 					helpPopupButton={this.helpPopupButton}
-				/>}
+				/>
+				}
 
 				<div id='system-buttons-container'>
 					<div className='system-button help-button font-fancy' onClick={() => this.toggleHelpSystem()}>?</div>

@@ -40,8 +40,8 @@ function loadComms() {
 }
 
 function initListeners() {
-	iosocket.on('load-pieces', () => {
-		fs.readFile('mapData.json', 'utf8', (err, data) => {
+	iosocket.on('load-pieces', (mapFileName) => {
+		fs.readFile(`./data/${mapFileName}.json`, 'utf8', (err, data) => {
 			if (err) {
 				console.log(err)
 			} else {
@@ -49,8 +49,8 @@ function initListeners() {
 			}
 		});
 	});
-	iosocket.on('save-map-data', (data) => {
-		fs.writeFile('mapData.json', data, err => {
+	iosocket.on('save-map-data', (data, mapFileName) => {
+		fs.writeFile(`./data/${mapFileName}.json`, data, err => {
 			if (err) {
 				console.log(err)
 			} else {

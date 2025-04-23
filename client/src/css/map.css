@@ -43,6 +43,15 @@
 	cursor: pointer;
 }
 
+.stairs {
+	position: absolute;
+	object-fit: none;
+	z-index: 0;
+	user-select: none;
+	pointer-events: none;
+	cursor: pointer;
+}
+
 .map {
 	position: relative;
 	margin: auto;

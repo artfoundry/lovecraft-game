@@ -1,0 +1,112 @@
+{
+  "priest-1": {
+    "text": "Blessings upon you my child and praise be the Lord. I am Father Mulcahy. What can I do for you?",
+    "responses": {
+      "priest-2": "What's your background?",
+      "priest-3": "What's your reason for being here?"
+    },
+    "classes": "priest"
+  },
+  "priest-1a": {
+    "text": "Hello again. Peace be with you.",
+    "responses": {
+      "priest-2": "Who are you again?",
+      "priest-3": "I forgot, why are you here?",
+      "end-1": {
+        "message": "I could use your services. Why don't you join me?",
+        "altNextMessageKey": "priest-4",
+        "statusUpdate": {
+          "nextMessageKey": "priest-5",
+          "joinParty": true
+        }
+      },
+      "end-2": {
+        "message": "Nevermind",
+        "statusUpdate": {
+          "nextMessageKey": "priest-1a"
+        }
+      }
+    },
+    "classes": "priest"
+  },
+  "priest-2": {
+    "text": "I am Father Peter Mulcahy, a priest of the Irish Catholic church, specifically the church of St. Michael, about 20 miles West of here in Lowell.",
+    "responses": {
+      "priest-3": "And what's your reason for being here?",
+      "end-1": {
+        "message": "Ok, I could definitely use you. Why don't you join me?",
+        "altNextMessageKey": "priest-4",
+        "statusUpdate": {
+          "nextMessageKey": "priest-5",
+          "joinParty": true
+        }
+      },
+      "end-2": {
+        "message": "Sorry Father, I need to go. I'll speak to you later.",
+        "statusUpdate": {
+          "nextMessageKey": "priest-1a"
+        }
+      }
+    },
+    "classes": "priest"
+  },
+  "priest-3": {
+    "text": "Professor Nymian was a parishioner of mine many years ago, so he asked me to come. I'm unsure how I may be of use, but I think he wants to cover all his bases, so to speak.\nWhen dealing with the unknown, one's faith can play a part in keeping you sane and safe from evil!",
+    "responses": {
+      "priest-2": "And what's your background?",
+      "end-1": {
+        "message": "Hmm, I suppose you could be right. Why don't you join me?",
+        "altNextMessageKey": "priest-4",
+        "statusUpdate": {
+          "nextMessageKey": "priest-5",
+          "joinParty": true
+        }
+      },
+      "end-2": {
+        "message": "Uhhh, yeah, I need to go. Perhaps I'll talk to you later...",
+        "statusUpdate": {
+          "nextMessageKey": "priest-1a"
+        }
+      }
+    },
+    "classes": "priest"
+  },
+  "priest-4": {
+    "text": "I'm sorry my child, but I don't think you have need of me with the companions you already have with you. Come talk to me again if one of them should leave.",
+    "responses": {
+      "end": {
+        "message": "Ok",
+        "statusUpdate": {
+          "nextMessageKey": "priest-1a"
+        }
+      }
+    },
+    "classes": "priest"
+  },
+  "priest-5": {
+    "text": "Yes my child? How may I help?",
+    "responses": {
+      "priest-6": "I don't have need of you now.",
+      "end": {
+        "message": "Nevermind",
+        "statusUpdate": {
+          "nextMessageKey": "priest-5"
+        }
+      }
+    },
+    "classes": "priest"
+  },
+  "priest-6": {
+    "text": "Ok, I'll be at the Arkham Museum should you need me again.",
+    "responses": {
+      "end": {
+        "message": "Ok",
+        "statusUpdate": {
+          "leaveParty": true,
+          "nextMessageKey": "priest-1a"
+        }
+      }
+    },
+    "classes": "priest"
+  }
+}

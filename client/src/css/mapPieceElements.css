@@ -87,13 +87,39 @@ as box-shadow greatly dims the lighting */
 }
 
 .torch-left-wall {
-	left: calc(var(--tile-size) / -2.56); /* 25px at tile size of 64px */
 	content: url('../assets/objects/torch_sml.png');
 }
 
 .torch-right-wall {
-	left: calc(var(--tile-size) / 2.56); /* -25px at tile size of 64px */
 	content: url('../assets/objects/torch_sml.png');
+}
+
+.light-left-wall {
+	left: calc(var(--tile-size) / -4); /* -16px at tile size of 64px */
+}
+
+.light-right-wall {
+	left: calc(var(--tile-size) / 4); /* 16px at tile size of 64px */
+}
+
+.light-top-left-inverse-wall {
+	top: calc(var(--tile-size) * -0.05); /* -9.6px at tile size of 64px */
+	left: calc(var(--tile-size) / 2); /* 32px at tile size of 64px */
+}
+
+.light-top-right-inverse-wall {
+	top: calc(var(--tile-size) * -0.05); /* -9.6px at tile size of 64px */
+	left: calc(var(--tile-size) / -2); /* -32px at tile size of 64px */
+}
+
+.light-bottom-left-inverse-wall {
+	top: calc(var(--tile-size) * -0.5); /* -32px at tile size of 64px */
+	left: calc(var(--tile-size) / -4); /* -16px at tile size of 64px */
+}
+
+.light-bottom-right-inverse-wall {
+	top: calc(var(--tile-size) * -0.5); /* -32px at tile size of 64px */
+	left: calc(var(--tile-size) / 4); /* 16px at tile size of 64px */
 }
 
 .electric-torch {
@@ -255,6 +281,31 @@ as box-shadow greatly dims the lighting */
 
 .rocky-mound-destroyed {
 	content: url('../assets/objects/rocky-mound-destroyed.png');
+}
+
+.fancy-wall-light, .fancy-wall-light-top-wall {
+	content: url('../assets/objects/wall-light-fancy.png');
+}
+
+.fancy-wall-light-top-wall {
+	top: 5px;
+}
+
+.desk-with-chair {
+	content: url('../assets/objects/desk-with-chair.png');
+}
+
+.display-case-vertical {
+	content: url('../assets/objects/display-case-vertical.png');
+}
+
+.dinosaur-skeleton {
+	content: url('../assets/objects/dinosaurSkeleton.png');
+}
+
+.unselectable {
+	cursor: initial;
+	pointer-events: none;
 }
 
 /* EFFECTS */

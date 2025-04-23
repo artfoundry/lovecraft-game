@@ -14,7 +14,7 @@
   "attributes": {
     "iconClass": "",
     "name": "Attributes",
-    "description": "All attributes and statuses are displayed here. When party levels up, points can be added here to increase certain attributes.",
+    "description": "All attributes and statuses are displayed here. The higher the attribute the better. When party levels up, points can be added here to increase certain attributes.",
     "source": null
   },
   "equipment": {
@@ -27,6 +27,60 @@
     "iconClass": "",
     "name": "Character Tabs",
     "description": "Shows investigator name and icon. On smaller screens/mobile, tap on a character's icon to display that character's Control Bar.",
+    "source": null
+  },
+  "contextMenuCloseDoor": {
+    "iconClass": "action-button close-door-action",
+    "name": "Close Door",
+    "description": "Close the selected door.",
+    "source": null
+  },
+  "contextMenuCreature": {
+    "iconClass": "action-button creature-action",
+    "name": "Examine Creature",
+    "description": "Get details about the creature.",
+    "source": null
+  },
+  "contextMenuExamine": {
+    "iconClass": "action-button examine-action",
+    "name": "Examine",
+    "description": "Get details about the selected object.",
+    "source": null
+  },
+  "contextMenuMove": {
+    "iconClass": "action-button move-action",
+    "name": "Move",
+    "description": "Move the active investigator toward this spot.",
+    "source": null
+  },
+  "contextMenuNpc": {
+    "iconClass": "action-button npc-action",
+    "name": "Examine NPC",
+    "description": "Get details about the non-player character.",
+    "source": null
+  },
+  "contextMenuOpen": {
+    "iconClass": "action-button open-container-action",
+    "name": "Open container",
+    "description": "Open the selected container to see if it contains any contents. Careful - you may find something unexpected!",
+    "source": null
+  },
+  "contextMenuPlayer": {
+    "iconClass": "action-button player-action",
+    "name": "Examine Investigator",
+    "description": "Open the investigator's character information.",
+    "source": null
+  },
+  "contextMenuPickUp": {
+    "iconClass": "action-button pickup-action",
+    "name": "Pick Up",
+    "description": "Open a window that lists all objects on the selected spot with options to pick up any of them.",
+    "source": null
+  },
+  "contextMenuTalk": {
+    "iconClass": "action-button talk-action",
+    "name": "Talk",
+    "description": "Start a conversation between your main investigator and the selected character. Not available during combat.",
     "source": null
   },
   "creatureInfo": {
@@ -56,7 +110,7 @@
   "map": {
     "iconClass": "",
     "name": "Map",
-    "description": "Select investigators, creatures, and objects to get info, target them for actions, or interact with them. Click/tap anywhere to move the active investigator. Context menu appears if multiple options.",
+    "description": "Select investigators, creatures, and objects to get info, target them for actions, or interact with them. Click/tap or use keyboard arrow keys to move the active investigator. Context menu appears if multiple options.",
     "source": null
   },
   "modeInfo": {

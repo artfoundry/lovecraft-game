@@ -100,8 +100,8 @@ export default class Firebase extends React.PureComponent {
 							}}>
 							<div className='login-account-entry-row'><label>Email:</label><input type='email' name='email'></input></div>
 							<div className='login-account-entry-row'><label>Password:</label><input type='password' name='password'></input></div>
-							<button id='login-button' className='login-button' type='submit'>Login</button>
-							<button id='reset-pw-button' className='login-button' type='submit'>Reset your password</button>
+							<div><button id='login-button' className='login-button' type='submit'>Login</button></div>
+							<div><button id='reset-pw-button' className='login-button' type='submit'>Reset your password</button></div>
 							<div className={this.state.resetEmailSent ? '' : 'message-hidden'}>Email sent!</div>
 						</form>
 					</div>

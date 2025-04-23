@@ -4,11 +4,12 @@ import CharacterCreation from './CharacterCreation';
 import Map from './Map';
 import Character from './Character';
 import Creature from './Creature';
+import UI from './UI';
 import PlayerCharacterTypes from './data/playerCharacterTypes.json';
 import CreatureTypes from './data/creatureTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
 import ItemTypes from './data/itemTypes.json';
-import UI from './UI';
+import GameLocations from './data/gameLocations.json';
 import './css/app.css';
 import {removeIdNumber, diceRoll, deepCopy, convertCoordsToPos, convertPosToCoords, articleType} from './Utils';
 import {ProcessAudio, SoundEffect} from './Audio';
@@ -26,6 +27,7 @@ class Game extends React.PureComponent {
 		this.startingPlayerCharacters = !this.showCharacterCreation ? this.gameAttr.startingCharacters : null;
 		this.startingLocation = this.gameAttr.startingLocation;
 		this.spawnCreatures = this.gameAttr.spawnCreatures;
+		this.skipIntroConversation = this.gameAttr.skipIntroConversation;
 
 		this.maxPartyLevel = 10;
 		this.pointsPerLevelUp = 2;
@@ -64,7 +66,9 @@ class Game extends React.PureComponent {
 		this.sfxSelectors = {
 			environments: {
 				catacombsDoor: null,
-				catacombsBackground: null
+				catacombsBackground: null,
+				museumDoor: null,
+				museumBackground: null
 			},
 			characters: {
 				elderThing: null,
@@ -132,6 +136,7 @@ class Game extends React.PureComponent {
 
 		this.firebase = new Firebase();
 
+		// todo: put all attrs but the text into one object and text into another
 		this.notEnoughSpaceDialogProps = {
 			dialogContent: "That character's inventory space is full. Drop or trade out something first.",
 			closeButtonText: 'Ok',
@@ -182,15 +187,16 @@ class Game extends React.PureComponent {
 			actionButtonCallback: null,
 			dialogClasses: ''
 		};
-
-		/**
-		 * Creature data structure : {
-		 *      CreatureData[name],
-		 *      GameLocations[location].creatures[name],
-		 * 		currentHealth: CreatureData[name].startingHealth,
-		 * 		tileCoords: {xPos, yPos}
-		 * }
-		 **/
+		this.lockedDoorDialogProps = {
+			dialogContent: "The door is locked and can't be opened.",
+			closeButtonText: 'Ok',
+			closeButtonCallback: null,
+			disableCloseButton: false,
+			actionButtonVisible: false,
+			actionButtonText: '',
+			actionButtonCallback: null,
+			dialogClasses: ''
+		};
 
 		this.state = {
 			gameOptions: {
@@ -198,9 +204,9 @@ class Game extends React.PureComponent {
 				playFx: true,
 				musicVolume: 1,
 				playMusic: this.gameAttr.playMusic,
-				songName: '',
+				songName: this.gameAttr.startingLocation,
 				screenZoom: 1.0,
-				brightness: 1.0,
+				brightness: 1.3,
 				spawnCreatures: this.gameAttr.spawnCreatures
 			},
 			screenData: {
@@ -217,20 +223,23 @@ class Game extends React.PureComponent {
 			firebaseGameData: null,
 			loadedFromFB: false,
 			characterCreated: false,
-			createdCharData: null,
+			createdCharData: !this.showCharacterCreation ? PlayerCharacterTypes[this.startingPlayerCharacters[0]] : null,
 			gameSetupComplete: false,
+			storyProgress: 'Ch1',
 			playerCharacters: {},
 			pcObjectOrdering: [], // order of pcs for determining control bar order
 			pcTypes: PlayerCharacterTypes,
 			partyLevel: 1,
 			partyExpertise: 0,
 			partyJournal: {
-				activeQuests: [],
-				completedQuests: []
+				activeQuests: {},
+				completedQuests: {}
 			},
+			conversationTarget: null,
 			savedMaps: {},
 			needToSaveData: false,
-			currentLocation: '',
+			currentLocation: this.gameAttr.startingLocation,
+			previousLocation: '',
 			currentFloor: 1,
 			previousFloor: null,
 			playerFollowOrder: [], // order of pcs for follow mode
@@ -247,6 +256,7 @@ class Game extends React.PureComponent {
 			},
 			sfxReverbProcessed: {},
 			// these need resetting on floor change
+			npcs: {},
 			mapCreatures: {},
 			mapObjects: {},
 			envObjects: {},
@@ -261,12 +271,14 @@ class Game extends React.PureComponent {
 			creatureIsSelected: false,
 			selectedCharacter: '',
 			selectedCreature: '',
+			selectedPlayerNpc: '',
+			selectedNpc: '',
 			actionButtonSelected: null,
 			skillModeActive: null,
 			objectSelected: null,
 			objHasBeenDropped: false,
 			lightingHasChanged: false,
-			inTacticalMode: true, // start in tactical mode any time entering a new area
+			inTacticalMode: false, // start in follow mode any time entering a new area
 			threatList: [],
 			partyIsNearby: true,
 			inSearchMode: false,
@@ -284,6 +296,7 @@ class Game extends React.PureComponent {
 	resetDataForNewFloor = (callback) => {
 		this.toggleAudio('environments', this.state.currentLocation + 'Background');
 		this.setState({
+			npcs: {},
 			mapCreatures: {},
 			mapObjects: {},
 			envObjects: {},
@@ -298,12 +311,14 @@ class Game extends React.PureComponent {
 			creatureIsSelected: false,
 			selectedCharacter: '',
 			selectedCreature: '',
+			selectedPlayerNpc: '',
+			selectedNpc: '',
 			actionButtonSelected: null,
 			skillModeActive: null,
 			objectSelected: null,
 			objHasBeenDropped: false,
 			lightingHasChanged: false,
-			inTacticalMode: true, // start in tactical mode any time entering a new area
+			inTacticalMode: false, // start in follow mode any time entering a new area
 			threatList: [],
 			partyIsNearby: true,
 			inSearchMode: false,
@@ -322,23 +337,29 @@ class Game extends React.PureComponent {
 	 */
 	resetAllData = (overwriteSavedData) => {
 		this.toggleAudio('environments', this.state.currentLocation + 'Background');
+		const gameOptions = {...this.state.gameOptions, songName: this.gameAttr.startingLocation};
 		this.setState({
+			gameOptions,
 			firebaseGameData: overwriteSavedData ? null : this.state.firebaseGameData,
 			loadedFromFB: false,
 			characterCreated: false,
-			createdCharData: null,
+			createdCharData: !this.showCharacterCreation ? PlayerCharacterTypes[this.startingPlayerCharacters[0]] : null,
 			gameSetupComplete: false,
+			storyProgress: 'Ch1',
 			playerCharacters: {},
 			pcObjectOrdering: [],
 			pcTypes: PlayerCharacterTypes,
 			partyLevel: 1,
 			partyExpertise: 0,
 			partyJournal: {
-				quests: {}
+				activeQuests: {},
+				completedQuests: {}
 			},
+			npcs: {},
+			conversationTarget: null,
 			savedMaps: {},
 			needToSaveData: false,
-			currentLocation: '',
+			currentLocation: this.gameAttr.startingLocation,
 			currentFloor: 1,
 			previousFloor: null,
 			playerFollowOrder: [],
@@ -369,12 +390,14 @@ class Game extends React.PureComponent {
 			creatureIsSelected: false,
 			selectedCharacter: '',
 			selectedCreature: '',
+			selectedPlayerNpc: '',
+			selectedNpc: '',
 			actionButtonSelected: null,
 			skillModeActive: null,
 			objectSelected: null,
 			objHasBeenDropped: false,
 			lightingHasChanged: false,
-			inTacticalMode: true,
+			inTacticalMode: false,
 			threatList: [],
 			partyIsNearby: true,
 			inSearchMode: false,
@@ -420,8 +443,7 @@ class Game extends React.PureComponent {
 		});
 	}
 
-	saveCreatedCharacter = (createdCharData, partyList) => {
-		this.startingPlayerCharacters = partyList;
+	saveCreatedCharacter = (createdCharData) => {
 		this.setState({createdCharData, characterCreated: true}, () => {
 			this._setupGameState();
 		});
@@ -462,7 +484,7 @@ class Game extends React.PureComponent {
 					this.toggleTacticalMode(true);
 				}
 				currentChar.gender === 'Male' ? delayedAudio('maleDeath') : delayedAudio('femaleDeath');
-				this.updateLog(`${currentChar.name}'s health has been reduced to 0, and ${currentChar.gender === 'Male' ? 'he' : 'she'} is now dying!`);
+				this.updateLog(`${currentChar.name.first}'s health has been reduced to 0, and ${currentChar.gender === 'Male' ? 'he' : 'she'} is now dying!`);
 			} else if (type === 'creature' && updateData.currentHealth <= 0 && currentChar.currentHealth > 0) {
 				delayedAudio(removeIdNumber(id) + 'Death');
 			}
@@ -484,6 +506,7 @@ class Game extends React.PureComponent {
 				const leftWeapon = equippedLeft && WeaponTypes[equippedLeft];
 				const goBallisticIsActive = this.state.actionButtonSelected && this.state.actionButtonSelected.stats.goBallistic;
 				const sacrificialStrikeIsActive = this.state.actionButtonSelected && this.state.actionButtonSelected.stats.sacrificialStrike;
+
 				if (lightingHasChanged) {
 					this.toggleLightingHasChanged(callback);
 				// check if either veteran, goBallistic button is active, and just unequipped gun or occultResearcher, sacrificialStrike button is active, and just unequipped kris knife
@@ -513,33 +536,35 @@ class Game extends React.PureComponent {
 	/**
 	 * saves map data for moving to different floor or saving game, then calls saveGameData
 	 * @param mapData: object (deepcopies of playerVisited, mapLayout,
-	 *      and copies of previousAreaExitCoords, nextAreaExitCoords, worldWidth, worldHeight from Map)
+	 *   and copies of previousAreaExitCoords, nextAreaExitCoords, worldWidth, worldHeight, newFloorNum, exitToLocation, partyExitCoords from Map)
 	 * @param callback: function
 	 */
 	saveMapData = (mapData, callback) => {
-		const {playerVisited, mapLayout, previousAreaExitCoords, nextAreaExitCoords, worldWidth, worldHeight, newFloorNum} = {...mapData};
+		const {playerVisited, mapLayout, exits, worldWidth, worldHeight, newFloorNum, exitToLocation, partyExitCoords} = {...mapData};
 		const savedMaps = deepCopy(this.state.savedMaps);
 		const previousFloor = this.state.currentFloor;
 		const currentFloor = newFloorNum || this.state.currentFloor;
-		const floorKey = `floor-${this.state.currentFloor}`;
+		const currentLocation = exitToLocation || this.state.currentLocation;
+		const previousLocation = this.state.currentLocation;
 		const dataToSave = {
 			playerVisited,
 			mapLayout,
-			previousAreaExitCoords,
-			nextAreaExitCoords,
+			exits,
 			worldWidth,
 			worldHeight,
+			partyExitCoords,
 			mapObjects: deepCopy(this.state.mapObjects),
 			mapCreatures: deepCopy(this.state.mapCreatures),
-			envObjects: deepCopy(this.state.envObjects)
+			envObjects: deepCopy(this.state.envObjects),
+			npcs: deepCopy(this.state.npcs)
 		};
 		if (savedMaps[this.state.currentLocation]) {
-			savedMaps[this.state.currentLocation][floorKey] = dataToSave;
+			savedMaps[this.state.currentLocation].floors[this.state.currentFloor] = dataToSave;
 		} else {
-			savedMaps[this.state.currentLocation] = {[floorKey]: dataToSave};
+			savedMaps[this.state.currentLocation] = {floors: {[this.state.currentFloor]: dataToSave}};
 		}
 
-		this.setState({savedMaps, previousFloor, currentFloor}, () => {
+		this.setState({savedMaps, previousFloor, currentFloor, currentLocation, previousLocation}, () => {
 			if (this.state.needToSaveData) {
 				this.toggleNeedToSaveData(false);
 			}
@@ -547,6 +572,19 @@ class Game extends React.PureComponent {
 				this._saveGameData(callback);
 			} else if (callback) callback();
 		});
+	}
+
+	updateNpcs = (updateData, id, callback) => {
+		if (id) {
+			this.setState(prevState => ({
+				npcs: {
+					...prevState.npcs,
+					[id]: {...prevState.npcs[id], ...updateData}
+				}
+			}), callback);
+		} else {
+			this.setState({npcs: updateData}, callback);
+		}
 	}
 
 	/**
@@ -592,8 +630,8 @@ class Game extends React.PureComponent {
 	}
 
 	/**
-	 * Gets the positions for each LIVING character of a type: player, creature, or all
-	 * @param type: String ('player', 'creature' or 'all')
+	 * Gets the positions for each LIVING character of a type: player, creature, npc, or all
+	 * @param type: String ('player', 'creature', 'npc', or 'all')
 	 * @param format: String ('pos' (string) or 'coords' (object))
 	 * @returns Array (of Objects {id: coords})
 	 */
@@ -602,12 +640,13 @@ class Game extends React.PureComponent {
 		const collection =
 			type === 'player' ? this.state.playerCharacters :
 			type === 'creature' ? this.state.mapCreatures :
-			{...this.state.playerCharacters, ...this.state.mapCreatures};
+			type === 'npc' ? this.state.npcs :
+			{...this.state.playerCharacters, ...this.state.mapCreatures, ...this.state.npcs};
 
 		for (const [id, characterData] of Object.entries(collection)) {
 			const isLivingCreature = characterData.type === 'creature' && characterData.currentHealth > 0;
-			const isLivingPc = characterData.type === 'player' && !characterData.isDeadOrInsane;
-			if (isLivingCreature || isLivingPc) {
+			const isLivingPc = characterData.type === 'player';
+			if (isLivingCreature || isLivingPc || characterData.type === 'npc' || characterData.type === 'playerNpc') {
 				let coords = format === 'pos' ? `${characterData.coords.xPos}-${characterData.coords.yPos}` : {...characterData.coords};
 				allCharactersPos.push({id, [format]: coords});
 			}
@@ -1011,11 +1050,11 @@ class Game extends React.PureComponent {
 			equippedLightItem.range = lightRange;
 			lightingHasChanged = true;
 			if (newLightRangeLevel === 'med') {
-				this.updateLog(`${charData.name}'s light source is starting to get low.`);
+				this.updateLog(`${charData.name.first}'s light source is starting to get low.`);
 			} else if (newLightRangeLevel === 'low') {
-				this.updateLog(`${charData.name}'s light source is very low!`);
+				this.updateLog(`${charData.name.first}'s light source is very low!`);
 			} else if (newLightRangeLevel === 'none') {
-				this.updateLog(`${charData.name}'s light source has gone out!`);
+				this.updateLog(`${charData.name.first}'s light source has gone out!`);
 			}
 		}
 		return {equippedLightItem, lightTime, lightRange, lightingHasChanged};
@@ -1085,8 +1124,8 @@ class Game extends React.PureComponent {
 	 * @param checkLineOfSightToParty: function (from Map)
 	 */
 	handleUnitClick = (id, target, isInRange, checkLineOfSightToParty) => {
-		const targetData = target === 'creature' ? this.state.mapCreatures[id] : this.state.playerCharacters[id]
-		if (targetData.statuses.invisible) {
+		const targetData = target === 'creature' ? this.state.mapCreatures[id] : target === 'player' ? this.state.playerCharacters[id] : this.state.npcs[id];
+		if (targetData.statuses && targetData.statuses.invisible) {
 			this.setShowDialogProps(true, this.invisibleTargetDialogProps);
 		} else if (this.state.actionButtonSelected && isInRange) {
 			// clicked unit is getting acted upon
@@ -1149,7 +1188,7 @@ class Game extends React.PureComponent {
 	/**
 	 * Updates to state the status of what PC or NPC (or both) is selected in the UI
 	 * @param id: String
-	 * @param type: String ('player' or 'creature')
+	 * @param type: String ('player', 'creature', 'npc', or 'playerNpc')
 	 */
 	updateUnitSelectionStatus = (id, type) => {
 		let unitTypeObjectName = '';
@@ -1163,10 +1202,16 @@ class Game extends React.PureComponent {
 		} else if (type === 'creature') {
 			unitTypeObjectName = 'mapCreatures';
 			unitTypeSelected = 'selectedCreature';
+		} else if (type === 'playerNpc') {
+			unitTypeObjectName = 'npcs';
+			unitTypeSelected = 'selectedPlayerNpc';
+		} else if (type === 'npc') {
+			unitTypeObjectName = 'npcs';
+			unitTypeSelected = 'selectedNpc';
 		}
 
 		// clicked unit is being selected/deselected
-		if (this.state.selectedCharacter === id || this.state.selectedCreature === id) {
+		if (this.state.selectedCharacter === id || this.state.selectedCreature === id || this.state.selectedNpc === id || this.state.selectedPlayerNpc === id) {
 			// selected character was just clicked to deselect
 			unitNameForSelectionStateChg = '';
 		} else {
@@ -1264,7 +1309,7 @@ class Game extends React.PureComponent {
 				if (updateOrRemoveChar === 'isDying') {
 					const numTurns = this.maxTurnsToReviveDeadPlayer - nextActiveChar.turnsSinceDeath;
 					const turnsText = `${numTurns} ${numTurns > 1 ? 'turns' : 'turn'}`;
-					this.updateLog(`${nextActiveChar.name} is dying and has ${turnsText} to be resuscitated!`);
+					this.updateLog(`${nextActiveChar.name.first} is dying and has ${turnsText} to be resuscitated!`);
 				}
 				this.updateCharacters(nextActiveCharIsPc ? 'player' : 'creature', nextActiveChar, nextActiveCharId, false, false, false, updateActiveChar);
 			} else {
@@ -1360,31 +1405,33 @@ class Game extends React.PureComponent {
 		const clickedTargetId = evt.currentTarget.id;
 		const skillId = this.state.actionButtonSelected ? this.state.actionButtonSelected.buttonId : null;
 		let otherCharacterOnTile = '';
-		let dyingChar = '';
+		let dyingCharName = '';
+		let dyingCharId = '';
 		for (const charData of Object.values(this.state.playerCharacters)) {
 			if (charData.currentHealth <= 0 && convertCoordsToPos(charData.coords) === tilePos) {
-				dyingChar = charData.name;
+				dyingCharName = charData.name.first;
+				dyingCharId = charData.id;
 			}
 		}
 		if (skillId === 'resuscitate') {
 			// check if other creature/player is on clicked tile to know whether it blocks the Resuscitate skill
 			const allChars = {...this.state.playerCharacters, ...this.state.mapCreatures};
-			if (allChars[clickedTargetId] && convertCoordsToPos(allChars[clickedTargetId].coords) === tilePos && allChars[clickedTargetId].name !== dyingChar) {
-				otherCharacterOnTile = (allChars[clickedTargetId].type === 'player' ? '' : 'The ') + allChars[clickedTargetId].name;
+			if (allChars[clickedTargetId] && convertCoordsToPos(allChars[clickedTargetId].coords) === tilePos && clickedTargetId !== dyingCharId) {
+				otherCharacterOnTile = (allChars[clickedTargetId].type === 'player' ? allChars[clickedTargetId].name.first : 'The ' + allChars[clickedTargetId].name);
 			}
 		}
 
-		// bypass setting up context menu if clicked target is a pc or creature with nothing else on the tile and no action cued up...
-		if (!objectOnTile && !this.state.actionButtonSelected && (actionType === 'player' || actionType === 'creature')) {
+		// bypass setting up context menu if clicked target is the main pc or creature with nothing else on the tile and no action cued up...
+		if (!objectOnTile && !this.state.actionButtonSelected && ((actionType === 'player' && clickedTargetId === this.state.createdCharData.id) || actionType === 'creature')) {
 			contextMenuNeeded = {
 				menuNeeded: false,
 				actionToProcess: () => this.handleUnitClick(actionInfo.id, actionType)
 			};
 		// ...or if action is being used (regardless of whether object is also there)
 		} else if (this.state.actionButtonSelected && (actionType === 'creature' || actionType === 'player' || actionType === 'disarmTrap')) {
-			if (skillId === 'resuscitate' && dyingChar && otherCharacterOnTile) {
+			if (skillId === 'resuscitate' && dyingCharName && otherCharacterOnTile) {
 				const resusBlockedDialogProps = {
-					dialogContent: `${otherCharacterOnTile} is on top of ${dyingChar}, preventing resuscitation!`,
+					dialogContent: `${otherCharacterOnTile} is on top of ${dyingCharName}, preventing resuscitation!`,
 					closeButtonText: 'Ok',
 					closeButtonCallback: null,
 					disableCloseButton: false,
@@ -1426,7 +1473,7 @@ class Game extends React.PureComponent {
 	 * dying player (get info) and move
 	 * dying player (get info), item, and move
 	 * action (shoot) and reload
-	 * @param actionType: string (possibilities: 'examine', 'creature', 'player', null)
+	 * @param actionType: string (possibilities: 'examine', 'creature', 'player', 'npc', null)
 	 * @param tilePos: string
 	 * @param evt: event object
 	 * @param actionInfo: object (props for appropriate function called upon clicking menu button)
@@ -1450,6 +1497,7 @@ class Game extends React.PureComponent {
 				isContextMenuNeeded.actionToProcess();
 			// otherwise, set up context menu
 			} else {
+				const clickedTargetId = evt.currentTarget.id;
 				const contextMenu = {
 					actionsAvailable: {[actionType]: actionInfo},
 					creatureId: null,
@@ -1459,7 +1507,11 @@ class Game extends React.PureComponent {
 				if (actionInfo && actionInfo.id) {
 					contextMenu.creatureId = actionInfo.id;
 				}
-				if (actionType !== 'player' && actionType !== 'creature') {
+				// todo: add distance to target check?
+				if ((actionType === 'player' && clickedTargetId !== this.state.createdCharData.id) || actionType === 'npc' || actionType === 'playerNpc') {
+					contextMenu.actionsAvailable.talk = clickedTargetId;
+				}
+				if (actionType !== 'player' && actionType !== 'creature' && actionType !== 'npc' && actionType !== 'playerNpc') {
 					contextMenu.actionsAvailable.move = true;
 				} else {
 					const objectOnTile = this._isObjectOnTile(tilePos, evt);
@@ -1477,14 +1529,14 @@ class Game extends React.PureComponent {
 	 * For 'examine' (item): setMapObjectSelected
 	 * For 'player'/'creature': handleUnitClick
 	 * For 'move': handled by checkIfTileOrObject in Map
-	 * @param actionType: string
+	 * @param actionType: string ('move', 'talk', 'examine', 'creature', 'player', 'npc', 'playerNpc', 'close-door')
 	 */
 	handleContextMenuSelection = (actionType) => {
 		const storedActionInfo = this.state.contextMenu.actionsAvailable[actionType];
 		if (actionType === 'examine') {
 			this.setMapObjectSelected(storedActionInfo.objectInfo, storedActionInfo.selectionEvt, storedActionInfo.isPickUpAction);
 			this.setState({contextMenu: null});
-		} else if (actionType === 'creature' || actionType === 'player') {
+		} else if (actionType === 'creature' || actionType === 'player' || actionType === 'npc' || actionType === 'playerNpc') {
 			this.handleUnitClick(storedActionInfo.id, storedActionInfo.target, storedActionInfo.isInRange, storedActionInfo.checkLineOfSightToParty);
 			this.setState({contextMenu: null});
 		} else if (actionType === 'move') {
@@ -1495,6 +1547,11 @@ class Game extends React.PureComponent {
 			this.setState({contextMenuChoice: {actionType, tilePos: this.state.contextMenu.tilePos}}, () => {
 				this.setState({contextMenu: null});
 			});
+		} else if (actionType === 'talk') {
+			const targetType = this.state.playerCharacters[storedActionInfo] ? 'player' : 'npc';
+			this.setConversationTarget({id: storedActionInfo, targetType}, () => {
+				this.setState({contextMenu: null});
+			})
 		}
 	}
 
@@ -1507,9 +1564,10 @@ class Game extends React.PureComponent {
 	 */
 	updateActiveCharacter = (callback = null, id = null, newFollowOrder = null, restoreFromFB = false) => {
 		const currentTurnUnitInfo = Object.values(this.state.unitsTurnOrder[this.state.currentTurn])[0];
-		const activeCharacter = restoreFromFB ? this.state.firebaseGameData.activeCharacter : (id || currentTurnUnitInfo.id);
 		let playerFollowOrder = newFollowOrder ? [...newFollowOrder] : [...this.state.playerFollowOrder];
-		if (!this.state.inTacticalMode && !newFollowOrder) {
+		const activeCharacter = restoreFromFB ? this.state.firebaseGameData.activeCharacter :
+			this.state.inTacticalMode ? id || currentTurnUnitInfo.id : playerFollowOrder[0];
+		if (!this.state.inTacticalMode && !newFollowOrder && id) {
 			let newLeader = playerFollowOrder.splice(playerFollowOrder.indexOf(id), 1)[0];
 			playerFollowOrder.unshift(newLeader);
 		}
@@ -1701,7 +1759,7 @@ class Game extends React.PureComponent {
 				};
 				if (target && target.currentHealth <= 0) {
 					if (target.type === 'player') {
-						this.updateLog(`${pcData.name} has killed ${target.name}!`);
+						this.updateLog(`${pcData.name.first} has killed ${target.name.first}!`);
 					} else {
 						this.updateLog(`The ${target.name} is dead!`);
 						this.updateExpertise(this.state.mapCreatures[targetId].expertisePoints);
@@ -1712,9 +1770,9 @@ class Game extends React.PureComponent {
 				}
 			}
 		};
-		const targetName = target ? (target.type === 'player' ? target.name : `a nearby ${target.name}`) : null;
+		const targetName = target ? (target.type === 'player' ? target.name.first : `a nearby ${target.name}`) : null;
 		const logAction = actionName === 'attack' ? `attacks ${targetName}!` : `uses a ${pcData.items[actionItem].name}.`;
-		this.updateLog(`${pcData.name} is confused and ${logAction}`);
+		this.updateLog(`${pcData.name.first} is confused and ${logAction}`);
 		pcData[actionName](props);
 	}
 
@@ -1724,6 +1782,131 @@ class Game extends React.PureComponent {
 			centeredPlayer: this.state.activeCharacter
 		}));
 	}
+
+	/**
+	 *
+	 * @param conversationTarget object ({id, targetType ('player' or 'npc)})
+	 * @param callback
+	 */
+	setConversationTarget = (conversationTarget, callback) => {
+		this.setState({conversationTarget}, callback);
+	}
+
+	/**
+	 *
+	 * @param charId string (id of char player was talking to)
+	 * @param updates object (may include nextMessageKey, joinParty, leaveParty)
+	 */
+	applyUpdatesFromConv = (charId, updates) => {
+		const charType = this.state.playerCharacters[charId] ? 'player' : 'npc';
+		let playerFollowOrder = [...this.state.playerFollowOrder];
+		let pcObjectOrdering = [...this.state.pcObjectOrdering];
+
+		if (updates.journalUpdate) {
+			const updateType = updates.journalUpdate.updateType;
+			const journalId = updates.journalUpdate.id;
+			let partyJournal = deepCopy(this.state.partyJournal);
+			let partyExpertise = this.state.partyExpertise;
+
+			if (updateType === 'new') {
+				partyJournal.activeQuests[journalId] = {
+					title: updates.journalUpdate.title,
+					description: updates.journalUpdate.description,
+					goal: updates.journalUpdate.goal
+				}
+			} else if (updateType === 'update') {
+
+			} else {
+				partyJournal.completedQuests[journalId] = {...partyJournal.activeQuests[journalId]};
+				delete partyJournal.activeQuests[journalId];
+				partyExpertise += updates.journalUpdate.xp;
+			}
+			delete updates.journalUpdate;
+			this.setState({partyJournal, partyExpertise});
+		}
+		if (updates.joinParty) {
+			delete updates.joinParty;
+			const npcs = deepCopy(this.state.npcs);
+			const playerCharacters = deepCopy(this.state.playerCharacters);
+			let unitsTurnOrder = deepCopy(this.state.unitsTurnOrder);
+			const orderedInitiatves = Object.keys(unitsTurnOrder);
+			const newUnitInitiative = npcs[charId].initiative;
+			const newOrderedPc = {[newUnitInitiative]: {id: charId, unitType: 'playerCharacters'}};
+			if (orderedInitiatves[0] >= newUnitInitiative) {
+				if (orderedInitiatves[1] && orderedInitiatves[1] >= newUnitInitiative) {
+					unitsTurnOrder.push(newOrderedPc);
+				} else {
+					unitsTurnOrder.splice(1, 0, newOrderedPc);
+				}
+			} else {
+				unitsTurnOrder.unshift(newOrderedPc);
+			}
+			playerCharacters[charId] = npcs[charId];
+			delete npcs[charId];
+			playerFollowOrder.push(charId);
+			pcObjectOrdering.push(charId);
+			playerCharacters[charId].type = 'player';
+			playerCharacters[charId].conversationStatus = {...updates};
+			this.updateNpcs(npcs, null, () => {
+				this.updateCharacters('player', playerCharacters, null, true, false, false, () => {
+					this.setState({playerFollowOrder, pcObjectOrdering, unitsTurnOrder});
+				});
+			});
+		} else if (updates.leaveParty) {
+			delete updates.leaveParty;
+			const playerCharacters = deepCopy(this.state.playerCharacters);
+			let charIndex = playerFollowOrder.indexOf(charId);
+			let unitsTurnOrder = deepCopy(this.state.unitsTurnOrder);
+			let orderIndex = 0;
+			while (orderIndex < unitsTurnOrder.length) {
+				const charInfo = Object.values(unitsTurnOrder[orderIndex])[0];
+				if (charInfo.id === charId) {
+					unitsTurnOrder.splice(orderIndex, 1);
+					orderIndex = unitsTurnOrder.length;
+				} else {
+					orderIndex++;
+				}
+			}
+			playerFollowOrder.splice(charIndex, 1);
+			charIndex = pcObjectOrdering.indexOf(charId);
+			pcObjectOrdering.splice(charIndex, 1);
+			const updateCharacters = () => {
+				delete playerCharacters[charId];
+				this.updateCharacters('player', playerCharacters, null, true, false, false, () => {
+					if (this.state.activeCharacter === charId) {
+						this.updateCurrentTurn();
+					}
+				});
+			};
+			if (this.state.currentLocation === 'museum' && this.state.currentFloor === 1) {
+				const npcs = deepCopy(this.state.npcs);
+				npcs[charId] = playerCharacters[charId];
+				npcs[charId].type = 'playerNpc';
+				npcs[charId].conversationStatus = {...updates};
+				npcs[charId].coords = {...GameLocations.museum.floors[1].npcs[charId].coords};
+				this.updateNpcs(npcs, null, () => {
+					this.setState({playerFollowOrder, pcObjectOrdering, unitsTurnOrder}, updateCharacters);
+				});
+			} else {
+				const savedMaps = deepCopy(this.state.savedMaps);
+				const savedMapsNpcs = savedMaps.museum.floors[1].npcs;
+				savedMapsNpcs[charId] = playerCharacters[charId];
+				savedMapsNpcs[charId].type = 'playerNpc';
+				savedMapsNpcs[charId].conversationStatus = {...updates};
+				savedMapsNpcs[charId].coords = {...GameLocations.museum.floors[1].npcs[charId].coords};
+				this.setState({playerFollowOrder, pcObjectOrdering, unitsTurnOrder, savedMaps}, updateCharacters);
+			}
+		} else if (charType === 'player') {
+			const charData = deepCopy(this.state.playerCharacters[charId]);
+			charData.conversationStatus = {...updates};
+			this.updateCharacters('player', charData, charId, false, false, false);
+		} else {
+			const charData = deepCopy(this.state.npcs[charId]);
+			charData.conversationStatus = {...updates};
+			this.updateNpcs(charData, charId);
+		}
+	}
+
 
 	/**
 	 * Plays sound effects, processing them for reverb, panning, valume, etc. if needed beforehand
@@ -1832,6 +2015,7 @@ class Game extends React.PureComponent {
 		const userId = this.state.userData.uid;
 		const dataToSave = {
 			gameOptions: this.state.gameOptions, // object
+			storyProgress: 'Ch1', // string
 			playerCharacters: this.state.playerCharacters, // object
 			pcObjectOrdering: this.state.pcObjectOrdering, // array
 			characterCreated: this.state.characterCreated, // boolean
@@ -1841,7 +2025,9 @@ class Game extends React.PureComponent {
 			partyJournal: this.state.partyJournal, // object
 			savedMaps: this.state.savedMaps, // object
 			currentLocation: this.state.currentLocation, // string
+			previousLocation: this.state.previousLocation, // string
 			currentFloor: this.state.currentFloor, // number
+			previousFloor: this.state.previousFloor, // string
 			playerFollowOrder: this.state.playerFollowOrder, // array
 			unitsTurnOrder: this.state.unitsTurnOrder, // array
 			currentTurn: this.state.currentTurn, // number
@@ -1886,30 +2072,30 @@ class Game extends React.PureComponent {
 	 * @private
 	 */
 	_setupGameState() {
-		this._setLocation(() => {
-			this._setupPlayerCharacters(() => {
-				const finishSetup = () => {
-					this.setState({gameSetupComplete: true, centeredPlayer: this.state.playerFollowOrder[0]});
-				};
-				if (this.state.firebaseGameData) {
-					const gameOptions = {...this.state.firebaseGameData.gameOptions};
-					const createdCharData = this.state.createdCharData || {...this.state.firebaseGameData.createdCharData};
-					const partyJournal = deepCopy(this.state.firebaseGameData.partyJournal);
-					const savedMaps = deepCopy(this.state.firebaseGameData.savedMaps);
-					const followModePositions = this.state.firebaseGameData.followModePositions ? [...this.state.firebaseGameData.followModePositions] : [];
-					const threatList = this.state.firebaseGameData.threatList ? [...this.state.firebaseGameData.threatList] : [];
-					this.setState({
-						gameOptions,
-						createdCharData,
-						partyJournal,
-						savedMaps,
-						followModePositions,
-						threatList
-					}, finishSetup);
-				} else {
-					finishSetup();
-				}
-			});
+		this._setupPlayerCharacters(() => {
+			const finishSetup = () => {
+				this.setState({gameSetupComplete: true, centeredPlayer: this.state.playerFollowOrder[0]});
+			};
+			if (this.state.firebaseGameData) {
+				const gameOptions = {...this.state.firebaseGameData.gameOptions};
+				const createdCharData = this.state.createdCharData || {...this.state.firebaseGameData.createdCharData};
+				const partyJournal = deepCopy(this.state.firebaseGameData.partyJournal);
+				const savedMaps = deepCopy(this.state.firebaseGameData.savedMaps);
+				const followModePositions = this.state.firebaseGameData.followModePositions ? [...this.state.firebaseGameData.followModePositions] : [];
+				const threatList = this.state.firebaseGameData.threatList ? [...this.state.firebaseGameData.threatList] : [];
+				const npcs = deepCopy(this.state.firebaseGameData.savedMaps[this.state.currentLocation].floors[this.state.currentFloor]);
+				this.setState({
+					gameOptions,
+					createdCharData,
+					partyJournal,
+					savedMaps,
+					followModePositions,
+					threatList,
+					npcs
+				}, finishSetup);
+			} else {
+				finishSetup();
+			}
 		});
 	}
 
@@ -1921,28 +2107,55 @@ class Game extends React.PureComponent {
 	_setupPlayerCharacters(gameSetupCallback) {
 		const firebaseDataLoaded = this.state.firebaseGameData;
 		let playerCharacters = firebaseDataLoaded ? firebaseDataLoaded.playerCharacters : {};
+		let npcs = {};
 		let playerFollowOrder = [];
 		let pcObjectOrdering = [];
 		let activeCharacter = this.state.activeCharacter;
+		const createdCharData = this.state.createdCharData;
 
+		// char initialization for starting new game
 		if (!firebaseDataLoaded || Object.keys(firebaseDataLoaded.playerCharacters).length === 0) {
-			this.startingPlayerCharacters.forEach(characterId => {
-				const props = {...PlayerCharacterTypes[characterId], playerInventoryLimit: this.playerInventoryLimit, lightTimeCosts: this.lightTimeCosts};
-				playerCharacters[characterId] = new Character(props);
-				playerFollowOrder.push(characterId);
-				pcObjectOrdering.push(characterId);
-			});
 			if (this.showCharacterCreation) {
-				const createdCharData = this.state.createdCharData;
-				const createdPC = playerCharacters[createdCharData.id];
-				createdPC.name = createdCharData.name;
-				createdPC.gender = createdCharData.gender;
-				createdPC.strength = createdCharData.strength;
-				createdPC.agility = createdCharData.agility;
-				createdPC.mentalAcuity = createdCharData.mentalAcuity;
+				const props = {
+					...PlayerCharacterTypes[createdCharData.id],
+					name: {...createdCharData.name},
+					gender: createdCharData.gender,
+					strength: createdCharData.strength,
+					agility: createdCharData.agility,
+					mentalAcuity: createdCharData.mentalAcuity,
+					playerInventoryLimit: this.playerInventoryLimit,
+					lightTimeCosts: this.lightTimeCosts
+				};
+				playerCharacters[createdCharData.id] = new Character(props);
+				playerFollowOrder.push(createdCharData.id);
+				pcObjectOrdering.push(createdCharData.id);
 				activeCharacter = createdCharData.id;
+			} else {
+				// if no char creation (testing), setup preselected party defined in index.js
+				this.startingPlayerCharacters.forEach(characterId => {
+					const props = {
+						...deepCopy(PlayerCharacterTypes[characterId]),
+						playerInventoryLimit: this.playerInventoryLimit,
+						lightTimeCosts: this.lightTimeCosts
+					};
+					playerCharacters[characterId] = new Character(props);
+					playerFollowOrder.push(characterId);
+					pcObjectOrdering.push(characterId);
+				});
 			}
-			this.setState({playerCharacters, playerFollowOrder, pcObjectOrdering, activeCharacter}, gameSetupCallback);
+			// set up npcs
+			for (const [characterId, charData] of Object.entries(PlayerCharacterTypes)) {
+				if (characterId !== createdCharData.id) {
+					const props = {
+						...deepCopy(charData),
+						playerInventoryLimit: this.playerInventoryLimit,
+						lightTimeCosts: this.lightTimeCosts
+					};
+					props.type = 'playerNpc';
+					npcs[characterId] = new Character(props);
+				}
+			}
+			this.setState({playerCharacters, npcs, playerFollowOrder, pcObjectOrdering, activeCharacter}, gameSetupCallback);
 		} else {
 			const pcsCopy = deepCopy(playerCharacters);
 			firebaseDataLoaded.pcObjectOrdering.forEach(characterId => {
@@ -1959,20 +2172,14 @@ class Game extends React.PureComponent {
 	}
 
 	/**
-	 * Saves new game location to state. For game init, fires callback to set up playerCharacters.
-	 * @param setupPlayersCallback: function
+	 * Saves new game location to state.
+	 * @param newLocation string
 	 * @private
 	 */
-	_setLocation(setupPlayersCallback) {
+	_setLocation(newLocation) {
 		const gameOptions = {...this.state.gameOptions};
-		gameOptions.songName = this.startingLocation;
-		if (this.startingLocation) {
-			this.setState({currentLocation: this.startingLocation, gameOptions}, () => {
-				if (setupPlayersCallback) setupPlayersCallback();
-			});
-		} else {
-			//todo: handle location change
-		}
+		gameOptions.songName = newLocation;
+		this.setState({currentLocation: newLocation, gameOptions});
 	}
 
 	/**
@@ -2059,7 +2266,7 @@ class Game extends React.PureComponent {
 		}
 
 		this.setState({unitsTurnOrder}, () => {
-			if (!fbGameData && unitType === 'mapCreatures') {
+			if (!fbGameData) {
 				this.updateActiveCharacter(callback);
 			} else {
 				callback();
@@ -2111,9 +2318,9 @@ class Game extends React.PureComponent {
 		const deadPc = this.state.playerCharacters[id];
 		if (deadPc) {
 			if (deadPc.currentHealth <= 0) {
-				this.updateLog(`${deadPc.name} has gone from mostly dead to all dead!`);
+				this.updateLog(`${deadPc.name.first} has gone from mostly dead to all dead!`);
 			} else if (deadPc.currentSanity <= 0) {
-				this.updateLog(`The horrors are too much for ${deadPc.name}, and ${deadPc.gender === 'Male' ? 'he' : 'she'} has gone insane and become catatonic!`);
+				this.updateLog(`The horrors are too much for ${deadPc.name.first}, and ${deadPc.gender === 'Male' ? 'he' : 'she'} has gone insane and become catatonic!`);
 			}
 			//check for this.state.createdCharData is active so game doesn't crash when char creation is turned off
 			if (this.state.createdCharData && id === this.state.createdCharData.id) {
@@ -2134,7 +2341,8 @@ class Game extends React.PureComponent {
 	 * @private
 	 */
 	_removeDeadFromTurnOrder(id, callback, checkLineOfSightToParty) {
-		let unitsTurnOrder = this.state.unitsTurnOrder;
+		let playerCharacters = deepCopy(this.state.playerCharacters);
+		let unitsTurnOrder = [...this.state.unitsTurnOrder];
 		let unitNotFound = true;
 		let index = 0;
 		while (unitNotFound && index < this.state.unitsTurnOrder.length) {
@@ -2145,7 +2353,8 @@ class Game extends React.PureComponent {
 			}
 			index++;
 		}
-		this.setState({unitsTurnOrder}, () => {
+		delete playerCharacters[id];
+		this.setState({unitsTurnOrder, playerCharacters}, () => {
 			// if creature died
 			if (checkLineOfSightToParty) {
 				this.updateThreatList([], [id], callback, checkLineOfSightToParty);
@@ -2289,8 +2498,8 @@ class Game extends React.PureComponent {
 						logText={this.state.logText}
 						updateLog={this.updateLog}
 						// character info
-						selectedCharacterInfo={this.state.playerCharacters[this.state.selectedCharacter]}
-						selectedCreatureInfo={this.state.mapCreatures[this.state.selectedCreature]}
+						selectedCharacterInfo={this.state.playerCharacters[this.state.selectedCharacter] || this.state.npcs[this.state.selectedPlayerNpc]}
+						selectedCreatureInfo={this.state.mapCreatures[this.state.selectedCreature] || this.state.npcs[this.state.selectedNpc]}
 						characterIsSelected={this.state.characterIsSelected}
 						creatureIsSelected={this.state.creatureIsSelected}
 						updateUnitSelectionStatus={this.updateUnitSelectionStatus}
@@ -2349,6 +2558,13 @@ class Game extends React.PureComponent {
 						partyLevel={this.state.partyLevel}
 						partyExpertise={this.state.partyExpertise}
 						assignLevelUpPoints={this.assignLevelUpPoints}
+						// conversations
+						storyProgress={this.state.storyProgress}
+						setConversationTarget={this.setConversationTarget}
+						conversationTarget={this.state.conversationTarget}
+						npcs={this.state.npcs}
+						applyUpdatesFromConv={this.applyUpdatesFromConv}
+						createdCharData={this.state.createdCharData}
 					/>
 				}
 
@@ -2365,7 +2581,9 @@ class Game extends React.PureComponent {
 						notEnoughSpaceDialogProps={this.notEnoughSpaceDialogProps}
 						noMoreActionsDialogProps={this.noMoreActionsDialogProps}
 						noMoreMovesDialogProps={this.noMoreMovesDialogProps}
+						lockedDoorDialogProps={this.lockedDoorDialogProps}
 						// character info
+						createdCharData={this.state.createdCharData}
 						pcTypes={this.state.pcTypes}
 						playerCharacters={this.state.playerCharacters}
 						activeCharacter={this.state.activeCharacter}
@@ -2378,6 +2596,11 @@ class Game extends React.PureComponent {
 						calcPcLightChanges={this.calcPcLightChanges}
 						lightTimeCosts={this.lightTimeCosts}
 						takeAutomaticAction={this.takeAutomaticAction}
+						// npcs
+						npcs={this.state.npcs}
+						updateNpcs={this.updateNpcs}
+						setConversationTarget={this.setConversationTarget}
+						skipIntroConversation={this.skipIntroConversation}
 						// map object data
 						saveMapData={this.saveMapData}
 						savedMaps={this.state.savedMaps}
@@ -2395,6 +2618,7 @@ class Game extends React.PureComponent {
 						updateCurrentTurn={this.updateCurrentTurn}
 						// environment info
 						currentLocation={this.state.currentLocation}
+						previousLocation={this.state.previousLocation}
 						currentFloor={this.state.currentFloor}
 						previousFloor={this.state.previousFloor}
 						resetDataForNewFloor={this.resetDataForNewFloor}

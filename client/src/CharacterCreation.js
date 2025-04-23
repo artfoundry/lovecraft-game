@@ -63,7 +63,8 @@ export default class CharacterCreation extends React.PureComponent {
 		};
 
 		this.state = {
-			name: '',
+			firstName: '',
+			lastName: '',
 			gender: '',
 			profession: null,
 			statsRolled: {
@@ -72,9 +73,9 @@ export default class CharacterCreation extends React.PureComponent {
 				roll3: {strength: 0, agility: 0, mentalAcuity: 0}
 			},
 			statsSaved: {strength: 0, agility: 0, mentalAcuity: 0},
+			rollStarted: false,
 			rollCount: 1,
 			rollNumSaved: 0,
-			companions: [],
 			objectSelected: null,
 			needToShowObjectPanel: false,
 			skillSelected: null,
@@ -84,17 +85,6 @@ export default class CharacterCreation extends React.PureComponent {
 
 	updateValue = (value) => {
 		this.setState(value);
-	}
-
-	addCompanion = (id) => {
-		let list = [...this.state.companions];
-		if (list.includes(id)) {
-			return;
-		} else if (list.length === 2) {
-			list.shift();
-		}
-		list.push(id);
-		this.updateValue({companions: list});
 	}
 
 	showObjectPanel = () => {
@@ -179,21 +169,25 @@ export default class CharacterCreation extends React.PureComponent {
 			const roll = {strength: diceRoll(4), agility: diceRoll(4), mentalAcuity: diceRoll(4)};
 			const key = 'roll' + this.state.rollCount;
 			this.setState(prevState => ({
+				rollStarted: true,
 				statsRolled: {
 					...prevState.statsRolled,
 					[key]: roll
 				}
 			}), () => {
-				if (this.showRoll < 10) {
+				if (this.showRoll < 5) {
 					this.rollStats();
 					this.showRoll++;
-				} else {
+				} else if (this.state.rollCount < 3) {
 					this.showRoll = 1;
 					const rollCount = this.state.rollCount + 1;
-					this.setState({rollCount});
+					this.setState({rollCount}, () => {
+						this.toggleDiceSound();
+						this.rollStats();
+					});
 				}
 			});
-		}, 150);
+		}, 200);
 	}
 
 	listSkills = (props) => {
@@ -275,41 +269,20 @@ export default class CharacterCreation extends React.PureComponent {
 		return professionsList;
 	}
 
-	listCompanions = () => {
-		let companionList = [];
-
-		for (const [id, profInfo] of Object.entries(PlayerCharacterTypes)) {
-			companionList.push(
-				<div key={profInfo.name}
-				     className={`char-creation-companion ${(id === this.state.profession || !this.state.profession) ? 'button-disabled' : ''} ${this.state.companions.includes(id) ? 'button-selected' : ''}`}
-				     onClick={() => this.addCompanion(id)}
-				>
-					<h4 className='font-fancy'>{profInfo.name}</h4>
-					<p>{profInfo.profession}</p>
-				</div>
-			);
-		}
-		return companionList;
-	}
-
 	render() {
 		return (
 			<div id='char-creation-container'>
 				<h2 className='font-fancy'>War of the Old Ones</h2>
-				<p>
-					Welcome friend to Miskatonic University. I was hoping you would come as soon as you had received my letter.
-					We have much to discuss, and I'm sure you have many questions.
-					But first, get situated and then let me introduce you to the others who have joined us.
-					You'll likely want to make friends with a couple of them, as you'll no doubt need their assistance in your investigations.
-					Then once you've chosen your companions, my first task for you will be to explore the crypt we recently discovered beneath the Miskatonic Museum!
-				</p>
-				<hr />
 
 				<form>
-					<h3><u>First, create your lead investigator</u></h3>
+					<h3><u>Create your lead investigator</u></h3>
 
 					<h3 className='font-fancy'>~ Name ~</h3>
-					<input type='text' value={this.state.name} maxLength='15' onChange={evt => this.updateValue({name: evt.target.value})} />
+					<div id='name-entry'>
+						<div>First: <input type='text' value={this.state.firstName} maxLength='14' onChange={evt => this.updateValue({firstName: evt.target.value})} /></div>
+						<div>Last (optional): <input type='text' value={this.state.lastName} maxLength={14 - this.state.firstName.length} onChange={evt => this.updateValue({lastName: evt.target.value})} /></div>
+					</div>
+					<div>Max 14 characters for the entire name.</div>
 
 					<h3 className='font-fancy'>~ Gender ~</h3>
 					<label>
@@ -338,7 +311,12 @@ export default class CharacterCreation extends React.PureComponent {
 
 					<div id='char-creation-stat-roll-container'>
 						<SoundEffect key='sfx-Dice' idProp='sfx-dice' sourceName='dice' />
-						<div className={`char-creation-button roll-button ${this.state.rollCount > 3 ? 'button-disabled' : ''}`} onClick={() => {this.toggleDiceSound(); this.rollStats();}}>Roll</div>
+						<div className={`char-creation-button roll-button${this.state.rollStarted ? ' button-disabled' : ''}`}
+						     onClick={() => {
+								 this.toggleDiceSound();
+								 this.rollStats();
+							 }}
+						>Roll</div>
 						<div>Strength:</div>
 						<div className={`stat-roll-box dice die-${this.state.statsRolled.roll1.strength}`}></div>
 						<div className={`stat-roll-box dice die-${this.state.statsRolled.roll2.strength}`}></div>
@@ -369,30 +347,20 @@ export default class CharacterCreation extends React.PureComponent {
 						{<this.listProfessions />}
 					</div>
 
-					<h3><u>Now choose two companions.</u></h3>
-					<p>Each companion starts with average attributes and the same starting equipment.</p>
-					<p>You may not have a companion with the same profession as your created character.</p>
-
-					<h3 className='font-fancy'>~ Companions ~</h3>
-					<div id='char-creation-companions-container'>
-						{<this.listCompanions />}
-					</div>
-
 					<hr />
 					<div id='char-creation-finish'>
-						<p>Once you've created your investigator and chosen your companions, you can...</p>
-						<div className={`char-creation-button ${(this.state.name.length === 0 || this.state.gender.length === 0 || this.state.rollNumSaved === 0 || !this.state.profession) ? 'button-disabled' : ''}`}
+						<p>Once you've created your investigator, you can...</p>
+						<div className={`char-creation-button ${(this.state.firstName.length === 0 || this.state.gender.length === 0 || this.state.rollNumSaved === 0 || !this.state.profession) ? 'button-disabled' : ''}`}
 							onClick={() => {
 								const pcData = {
 									id: this.state.profession,
-									name: this.state.name,
+									name: {first: this.state.firstName, last: this.state.lastName},
 									gender: this.state.gender,
 									strength: this.state.statsSaved.strength + this.bonuses[this.state.profession].strength,
 									agility: this.state.statsSaved.agility + this.bonuses[this.state.profession].agility,
 									mentalAcuity: this.state.statsSaved.mentalAcuity + this.bonuses[this.state.profession].mentalAcuity
 								};
-								const partyList = [pcData.id, ...this.state.companions];
-								this.props.saveCreatedCharacter(pcData, partyList);
+								this.props.saveCreatedCharacter(pcData);
 							}}
 						>Venture Forth!</div>
 					</div>

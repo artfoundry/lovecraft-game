@@ -1,10 +1,14 @@
 {
   "privateEye": {
     "id": "privateEye",
-    "name": "Joseph Hide",
+    "name": {"first": "Joseph", "last": "Hide"},
     "gender": "Male",
     "type": "player",
     "profession": "Private Investigator",
+    "conversationStatus": {
+      "nextMessageKey": "privateEye-1",
+      "isCompanion": false
+    },
     "strength": 5,
     "agility": 5,
     "mentalAcuity": 4,
@@ -38,10 +42,14 @@
   },
   "archaeologist": {
     "id": "archaeologist",
-    "name": "Mary Simpleton",
+    "name": {"first": "Mary", "last": "Simpleton"},
     "gender": "Female",
     "type": "player",
     "profession": "Archaeologist",
+    "conversationStatus": {
+      "nextMessageKey": "archaeologist-1",
+      "isCompanion": false
+    },
     "strength": 3,
     "agility": 5,
     "mentalAcuity": 6,
@@ -68,10 +76,14 @@
   },
   "chemist": {
     "id": "chemist",
-    "name": "Helen Abernathy",
+    "name": {"first": "Helen", "last": "Abernathy"},
     "gender": "Female",
     "type": "player",
     "profession": "Chemist",
+    "conversationStatus": {
+      "nextMessageKey": "chemist-1",
+      "isCompanion": false
+    },
     "strength": 2,
     "agility": 4,
     "mentalAcuity": 7,
@@ -105,10 +117,14 @@
   },
   "doctor": {
     "id": "doctor",
-    "name": "Thomas Wade",
+    "name": {"first": "Thomas", "last": "Wade"},
     "gender": "Male",
     "type": "player",
     "profession": "Doctor",
+    "conversationStatus": {
+      "nextMessageKey": "doctor-1",
+      "isCompanion": false
+    },
     "strength": 3,
     "agility": 3,
     "mentalAcuity": 8,
@@ -142,10 +158,14 @@
   },
   "priest": {
     "id": "priest",
-    "name": "Peter Mulcahy",
+    "name": {"first": "Peter", "last": "Mulcahy"},
     "gender": "Male",
     "type": "player",
     "profession": "Priest",
+    "conversationStatus": {
+      "nextMessageKey": "priest-1",
+      "isCompanion": false
+    },
     "strength": 4,
     "agility": 3,
     "mentalAcuity": 6,
@@ -183,10 +203,14 @@
   },
   "veteran": {
     "id": "veteran",
-    "name": "Frank Wilcox",
+    "name": {"first": "Frank", "last": "Wilcox"},
     "gender": "Male",
     "type": "player",
     "profession": "WWI Veteran",
+    "conversationStatus": {
+      "nextMessageKey": "veteran-1",
+      "isCompanion": false
+    },
     "strength": 6,
     "agility": 5,
     "mentalAcuity": 2,
@@ -223,10 +247,14 @@
   },
   "thief": {
     "id": "thief",
-    "name": "Elizabeth Smith",
+    "name": {"first": "Elizabeth", "last": "Smith"},
     "gender": "Female",
     "type": "player",
     "profession": "Thief",
+    "conversationStatus": {
+      "nextMessageKey": "thief-1",
+      "isCompanion": false
+    },
     "strength": 4,
     "agility": 6,
     "mentalAcuity": 4,
@@ -251,10 +279,14 @@
   },
   "occultResearcher": {
     "id": "occultResearcher",
-    "name": "Philip Howard",
+    "name": {"first": "Philip", "last": "Howard"},
     "gender": "Male",
     "type": "player",
     "profession": "Occult Researcher",
+    "conversationStatus": {
+      "nextMessageKey": "occultResearcher-1",
+      "isCompanion": false
+    },
     "strength": 2,
     "agility": 3,
     "mentalAcuity": 6,
