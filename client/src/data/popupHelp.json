@@ -71,7 +71,7 @@
     "description": "Open the investigator's character information.",
     "source": null
   },
-  "contextMenuPickUp": {
+  "contextMenuPickup": {
     "iconClass": "action-button pickup-action",
     "name": "Pick Up",
     "description": "Open a window that lists all objects on the selected spot with options to pick up any of them.",
@@ -116,7 +116,7 @@
   "modeInfo": {
     "iconClass": "",
     "name": "Mode Info and Controls",
-    "description": "In Follow Mode one investigator leads, the others follow. In Tactical Mode each investigator takes a turn. In Search Mode (magnifying glass) all investigators search surroundings every move.",
+    "description": "In Follow Mode one investigator leads, the others follow. In Tactical Mode each investigator takes a turn. In Search Mode (magnifying glass) any investigator that moves makes a search.",
     "source": null
   },
   "partyInfo": {

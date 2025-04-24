@@ -9,8 +9,8 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 const bareBonesAttr = {
     showLogin: false,
     showCharacterCreation: false,
-    startingCharacters: ['privateEye'],
-    startingLocation: 'museum',
+    startingCharacters: ['privateEye', 'doctor', 'priest'],
+    startingLocation: 'catacombs',
     playMusic: false,
     spawnCreatures: false,
     skipIntroConversation: true

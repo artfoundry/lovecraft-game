@@ -121,12 +121,6 @@ function CharacterControls(props) {
 	// to ensure expertMining skill and mine skill are displayed next to each other in control bar
 
 	// add misc actions to actionableItems.misc
-	if (props.mapObjectsOnPcTiles.length > 0) {
-		actionableItems.misc.push('pickup');
-	}
-	if (props.containersNextToPc.length > 0) {
-		actionableItems.misc.push('open-container');
-	}
 	if ((currentPCdata.equippedLight && (currentPCdata.equippedLight.includes('lantern') || currentPCdata.equippedLight.includes('torch'))) &&
 		currentPCdata.lightTime < currentPCdata.items[currentPCdata.equippedLight].maxTime && currentPCdata.items.oil0)
 	{
@@ -381,40 +375,7 @@ function CharacterControls(props) {
 				actionButtonCount++;
 				// help button needs to be at same level in tree as clickable element.
 				// If clickable element may not have any content, it's height would be 0, so it needs to have button classes
-				if (item === 'pickup') {
-					button = (
-						<div
-							key={item + index}
-							className={shouldActionButtonShow() ? '' : 'hide'}
-						>
-							{props.showHelpSystem && props.helpPopupButton({
-								iconClass: `action-button ${item}-action`,
-								name: 'Pick up item',
-								description: 'Pick up items on the ground from the tile on which the investigator is standing.',
-								source: null
-							}, {'transform': 'translate(6px, 6px)'})}
-							<div className={`action-button ${item}-action${actionButtonState}`}
-								onClick={(evt) => props.setMapObjectSelected(props.mapObjectsOnPcTiles, evt, true)}></div>
-						</div>
-					);
-				} else if (item === 'open-container') {
-					button = (
-						<div
-							key={item + index}
-							className={shouldActionButtonShow() ? '' : 'hide'}
-						>
-							{props.showHelpSystem && props.helpPopupButton({
-								iconClass: `action-button ${item}-action`,
-								name: 'Open',
-								description: 'Open the nearby container.',
-								source: null
-							}, {'transform': 'translate(6px, 6px)'})}
-							<div
-								className={`action-button ${item}-action${actionButtonState}`}
-								onClick={(evt) => props.setMapObjectSelected(props.containersNextToPc, evt, true)}></div>
-						</div>
-					);
-				} else if (item === 'refill') {
+				if (item === 'refill') {
 					button = (
 						<div
 							key={item + index}
@@ -949,50 +910,57 @@ function ObjectInfoPanel(props) {
 				if (obj) {
 					const isEnvObject = obj.isEnvObject;
 					list.push(
-						<div key={obj.id}>
-							<div className='object-row-with-buttons'>
-								<div className={`inv-object ${convertObjIdToClassId(obj.id)}`}></div>
-								<div>
-									<div className='font-fancy object-list-objname'>{obj.isIdentified ? obj.name : '???'}</div>
-									<div>{obj.description}</div>
-								</div>
-								{isPickUpAction && !isEnvObject &&
-									<div className='general-button' onClick={() => updateObjToShow(obj)}>Show</div>
-								}
-								{isPickUpAction && !isEnvObject &&
-								<div className='general-button' onClick={() => {
-									if (creatureCoords.find(creature => creature.coords.xPos === obj.coords.xPos && creature.coords.yPos === obj.coords.yPos)) {
-										const guardedDialogProps = {
-											dialogContent: "That item can't be picked up, as it's being guarded by something horrid!",
-											closeButtonText: 'Ok',
-											closeButtonCallback: null,
-											disableCloseButton: false,
-											actionButtonVisible: false,
-											actionButtonText: '',
-											actionButtonCallback: null,
-											dialogClasses: ''
-										}
-										setShowDialogProps(true, guardedDialogProps);
-									} else if (notEnoughSpaceInInventory(1, 0, activePcInfo)) {
-										setShowDialogProps(true, notEnoughSpaceDialogProps);
-									} else {
-										addItemToPlayerInventory(obj, obj.id, activePc, isPickUpAction, false, containerId);
-										const updatedList = origObjectList;
-										updatedList[index] = undefined;
-										updateOrigObjectList(updatedList);
-										if (updatedList.every(obj => obj === undefined)) {
-											cancelObjPanel();
-										}
-									}
-								}}>Pick up</div>
-								}
-								{isPickUpAction && isEnvObject && (obj.type === 'container' || obj.type === 'mineable') &&
-									<div className='general-button' onClick={() => {
-										openContainer(obj);
-									}}>{(obj.isOpen || obj.isDestroyed) ? 'Collect Contents' : obj.type === 'mineable' ? 'Mine' : 'Open'}</div>
-								}
-
+						<div key={obj.id} className='object-row-with-buttons'>
+							<div className={`inv-object ${convertObjIdToClassId(obj.id)}-inv`}></div>
+							<div>
+								<div className='font-fancy object-list-objname'>{obj.isIdentified ? obj.name : '???'}</div>
+								<div>Type: {obj.itemType ? obj.itemType : (obj.ranged ? 'Ranged' : 'Melee') + ' weapon'}</div>
+								<div>{obj.description}</div>
+								{obj.rounds && <div>Capacity: {obj.rounds} rounds</div>}
+								{obj.amount && <div>Amount: {obj.amount}</div>}
+								{obj.currentRounds !== null && obj.currentRounds >= 0 && <div>Rounds remaining: {obj.currentRounds}</div>}
+								{obj.twoHanded && <div>Two-handed</div>}
+								{obj.damage && <div>Base damage: {obj.damage}</div>}
+								{obj.time !== null && obj.time !== undefined && obj.time >= 0 && <div>Light remaining: {obj.time} steps</div>}
+								{obj.isIdentified && <div>{obj.furtherInfo}</div>}
+								{obj.isIdentified && obj.effect && <div>Effect: {obj.effect}</div>}
+								{obj.isIdentified && obj.sanityCost && <div>Cost to Sanity: -{obj.sanityCost}</div>}
+								{obj.isIdentified && obj.spirit && <div>Required Spirit: -{obj.spirit}</div>}
 							</div>
+
+							{isPickUpAction && !isEnvObject &&
+							<div className='general-button' onClick={() => {
+								if (creatureCoords.find(creature => creature.coords.xPos === obj.coords.xPos && creature.coords.yPos === obj.coords.yPos)) {
+									const guardedDialogProps = {
+										dialogContent: "That item can't be picked up, as it's being guarded by something horrid!",
+										closeButtonText: 'Ok',
+										closeButtonCallback: null,
+										disableCloseButton: false,
+										actionButtonVisible: false,
+										actionButtonText: '',
+										actionButtonCallback: null,
+										dialogClasses: ''
+									}
+									setShowDialogProps(true, guardedDialogProps);
+								} else if (notEnoughSpaceInInventory(1, 0, activePcInfo)) {
+									setShowDialogProps(true, notEnoughSpaceDialogProps);
+								} else {
+									addItemToPlayerInventory(obj, obj.id, activePc, isPickUpAction, false, containerId);
+									const updatedList = origObjectList;
+									updatedList[index] = undefined;
+									updateOrigObjectList(updatedList);
+									if (updatedList.every(obj => obj === undefined)) {
+										cancelObjPanel();
+									}
+								}
+							}}>Pick up</div>
+							}
+							{isPickUpAction && isEnvObject && (obj.type === 'container' || obj.type === 'mineable') &&
+								<div className='general-button' onClick={() => {
+									openContainer(obj);
+								}}>{(obj.isOpen || obj.isDestroyed) ? 'Collect Contents' : obj.type === 'mineable' ? 'Mine' : 'Open'}</div>
+							}
+
 						</div>
 					)
 				}
@@ -1024,7 +992,7 @@ function ObjectInfoPanel(props) {
 					<div className={`inv-object ${convertObjIdToClassId(objectToShow.id)}-inv`}></div>
 					<div className='object-text-container'>
 						<div className='font-fancy'>{objectToShow.isIdentified ? objectToShow.name : '???'}</div>
-						<div>{objectToShow.itemType ? objectToShow.itemType : (objectToShow.ranged ? 'Ranged' : 'Melee') + ' weapon'}</div>
+						<div>Type: {objectToShow.itemType ? objectToShow.itemType : (objectToShow.ranged ? 'Ranged' : 'Melee') + ' weapon'}</div>
 						{objectToShow.rounds && <div>Capacity: {objectToShow.rounds} rounds</div>}
 						{objectToShow.amount && <div>Amount: {objectToShow.amount}</div>}
 						{objectToShow.currentRounds !== null && objectToShow.currentRounds >= 0 && <div>Rounds remaining: {objectToShow.currentRounds}</div>}
@@ -1036,7 +1004,7 @@ function ObjectInfoPanel(props) {
 						{objectToShow.isIdentified && objectToShow.effect && <div>Effect: {objectToShow.effect}</div>}
 						{objectToShow.isIdentified && objectToShow.sanityCost && <div>Cost to Sanity: -{objectToShow.sanityCost}</div>}
 						{objectToShow.isIdentified && objectToShow.spirit && <div>Required Spirit: -{objectToShow.spirit}</div>}
-						</div>
+					</div>
 				</div>
 				<div className='object-panel-buttons-container'>
 					{isDraggedObject && objectToShow.stackable &&
@@ -1046,9 +1014,6 @@ function ObjectInfoPanel(props) {
 							<div className='all-button general-button' onClick={evt => evt.target.previousSibling.value = objectToShow.amount || objectToShow.currentRounds}>All</div>
 							<button className='general-button' type='submit'>{objHasBeenDropped ? 'Drop' : 'Trade'}</button>
 						</form>
-					}
-					{isMapObj &&
-						<span className='general-button' onClick={() => updateObjToShow(null)}>Back</span>
 					}
 					{/* MAY ADD THESE BUTTONS FOR MOVING ITEMS (INSTEAD OF DRAG AND DROP) IN LATER IF NEEDED */}
 

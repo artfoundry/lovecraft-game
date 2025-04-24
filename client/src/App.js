@@ -11,7 +11,7 @@ import WeaponTypes from './data/weaponTypes.json';
 import ItemTypes from './data/itemTypes.json';
 import GameLocations from './data/gameLocations.json';
 import './css/app.css';
-import {removeIdNumber, diceRoll, deepCopy, convertCoordsToPos, convertPosToCoords, articleType} from './Utils';
+import {removeIdNumber, diceRoll, deepCopy, convertCoordsToPos, convertPosToCoords, getDistanceBetweenTargets, articleType} from './Utils';
 import {ProcessAudio, SoundEffect} from './Audio';
 
 
@@ -128,7 +128,7 @@ class Game extends React.PureComponent {
 		this.minScreenWidthForSmall = 1000;
 		this.minScreenWidthForNarrow = 768;
 		this.minScreenHeight = 768;
-		this.objectPanelWidth = 400;
+		this.objectPanelWidth = 500;
 		this.objectPanelHeight = 250;
 		this.contextMenuWidth = 128;
 		this.contextMenuHeight = 32;
@@ -1379,6 +1379,15 @@ class Game extends React.PureComponent {
 	}
 
 	/**
+	 * checks if clicked target is within 1 tile from active pc
+	 * @return {*|boolean}
+	 */
+	targetWithinReach = (tilePos) => {
+		const activePc = this.state.playerCharacters[this.state.activeCharacter];
+		return activePc && getDistanceBetweenTargets(activePc.coords, convertPosToCoords(tilePos)) <= 1;
+	}
+
+	/**
 	 * Checks if context menu should be shown or other action processed
 	 * Other action possibilities:
 	 * -close menu
@@ -1421,6 +1430,7 @@ class Game extends React.PureComponent {
 			}
 		}
 
+		const targetWithinReach = tilePos && this.targetWithinReach(tilePos);
 		// bypass setting up context menu if clicked target is the main pc or creature with nothing else on the tile and no action cued up...
 		if (!objectOnTile && !this.state.actionButtonSelected && ((actionType === 'player' && clickedTargetId === this.state.createdCharData.id) || actionType === 'creature')) {
 			contextMenuNeeded = {
@@ -1453,11 +1463,17 @@ class Game extends React.PureComponent {
 					actionToProcess: () => this.handleUnitClick(actionInfo.id, actionInfo.target, actionInfo.isInRange, actionInfo.checkLineOfSightToParty)
 				};
 			}
-		// ...or if clicked target is a torch or non-trap env object
-		} else if (actionType === 'examine' && (actionObjInfo.name === 'Torch' || (actionObjInfo.isEnvObject && actionObjInfo.type !== 'trap'))) {
+		// ...or if examine action and target is a torch or an env obj that's not within reach, or target is within reach and an env obj that's not a trap
+		// (nearby traps need menu for move and examine)
+		} else if (actionType === 'examine' &&
+			(actionObjInfo.name === 'Torch' ||
+			(!targetWithinReach && actionObjInfo.isEnvObject) ||
+			(targetWithinReach && actionObjInfo.isEnvObject && actionObjInfo.type !== 'trap'))
+		) {
+			const isPickUpAction = actionInfo.isPickUpAction || (targetWithinReach && (actionObjInfo.name === 'Torch' || actionObjInfo.type === 'container'));
 			contextMenuNeeded = {
 				menuNeeded: false,
-				actionToProcess: () => this.setMapObjectSelected(actionInfo.objectInfo, actionInfo.selectionEvt, actionInfo.isPickUpAction)
+				actionToProcess: () => this.setMapObjectSelected(actionInfo.objectInfo, actionInfo.selectionEvt, isPickUpAction)
 			};
 		}
 
@@ -1473,7 +1489,7 @@ class Game extends React.PureComponent {
 	 * dying player (get info) and move
 	 * dying player (get info), item, and move
 	 * action (shoot) and reload
-	 * @param actionType: string (possibilities: 'examine', 'creature', 'player', 'npc', null)
+	 * @param actionType: string (possibilities: 'examine', 'creature', 'player', 'npc', 'playerNpc', null)
 	 * @param tilePos: string
 	 * @param evt: event object
 	 * @param actionInfo: object (props for appropriate function called upon clicking menu button)
@@ -1504,19 +1520,47 @@ class Game extends React.PureComponent {
 					tilePos,
 					evt
 				};
+				const targetWithinReach = this.targetWithinReach(tilePos);
+				const targetIsEnvObj = actionInfo && actionInfo.objectInfo.length > 0 && this.state.envObjects[actionInfo.objectInfo[0].id];
+				const objectsOnTile = this._isObjectOnTile(tilePos, evt);
+
 				if (actionInfo && actionInfo.id) {
 					contextMenu.creatureId = actionInfo.id;
 				}
-				// todo: add distance to target check?
+				// todo: add distance to target check to force pc to be near target?
 				if ((actionType === 'player' && clickedTargetId !== this.state.createdCharData.id) || actionType === 'npc' || actionType === 'playerNpc') {
 					contextMenu.actionsAvailable.talk = clickedTargetId;
 				}
-				if (actionType !== 'player' && actionType !== 'creature' && actionType !== 'npc' && actionType !== 'playerNpc') {
+				// if target isn't in reach and not an env obj
+				// or target IS in reach and target either isn't an env obj or else is a trap and target isn't a character
+				if ((!targetWithinReach && !targetIsEnvObj) ||
+					(targetWithinReach && (!targetIsEnvObj || targetIsEnvObj.type === 'trap') &&
+					(actionType !== 'npc' && actionType !== 'player' && actionType !== 'playerNpc' && actionType !== 'creature')))
+				{
 					contextMenu.actionsAvailable.move = true;
+				}
+				if (actionType === 'examine') {
+					if (objectsOnTile) {
+						if (targetWithinReach) {
+							// use objectsOnTile in case multiple items on tile
+							objectsOnTile.isPickUpAction = true;
+							contextMenu.actionsAvailable.pickup = objectsOnTile;
+							delete contextMenu.actionsAvailable.examine;
+						} else {
+							contextMenu.actionsAvailable.examine = objectsOnTile;
+						}
+					} else {
+						// for anything that's not an object?
+					}
 				} else {
-					const objectOnTile = this._isObjectOnTile(tilePos, evt);
-					if (objectOnTile) {
-						contextMenu.actionsAvailable.examine = objectOnTile;
+					// target is a character, so check if object under it
+					if (objectsOnTile) {
+						if (targetWithinReach) {
+							objectsOnTile.isPickUpAction = true;
+							contextMenu.actionsAvailable.pickup = objectsOnTile;
+						} else {
+							contextMenu.actionsAvailable.examine = objectsOnTile;
+						}
 					}
 				}
 				this.setState({contextMenu, contextMenuChoice: null});
@@ -1533,7 +1577,7 @@ class Game extends React.PureComponent {
 	 */
 	handleContextMenuSelection = (actionType) => {
 		const storedActionInfo = this.state.contextMenu.actionsAvailable[actionType];
-		if (actionType === 'examine') {
+		if (actionType === 'examine' || actionType === 'pickup') {
 			this.setMapObjectSelected(storedActionInfo.objectInfo, storedActionInfo.selectionEvt, storedActionInfo.isPickUpAction);
 			this.setState({contextMenu: null});
 		} else if (actionType === 'creature' || actionType === 'player' || actionType === 'npc' || actionType === 'playerNpc') {
@@ -2289,22 +2333,18 @@ class Game extends React.PureComponent {
 	 * Determines if object is on a clicked tile (checking for context menu)
 	 * @param tilePos
 	 * @param evt
-	 * @returns null or object ({objectInfo, selectionEvt, isPickUpAction})
+	 * @returns null or object ({[objectsInfo], selectionEvt, isPickUpAction})
 	 * @private
 	 */
 	_isObjectOnTile(tilePos, evt) {
-		let objectOnTile = null;
-		const objects = Object.values(this.state.mapObjects);
-		let i = 0;
-		while (!objectOnTile && i < objects.length) {
-			if (convertCoordsToPos(objects[i].coords) === tilePos) {
-				// objectInfo needs to be in array for setMapObjectSelected
-				objectOnTile = {objectInfo: [objects[i]], selectionEvt: evt, isPickUpAction: false};
-			} else {
-				i++;
+		let objectsArray = [];
+		for (const objectInfo of Object.values(this.state.mapObjects)) {
+			if (convertCoordsToPos(objectInfo.coords) === tilePos) {
+				objectsArray.push(objectInfo);
 			}
 		}
-		return objectOnTile;
+		// objectInfo needs to be in array for setMapObjectSelected
+		return objectsArray.length > 0 ? {objectInfo: objectsArray, selectionEvt: evt, isPickUpAction: false} : null;
 	}
 
 	/**

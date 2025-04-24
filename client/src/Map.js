@@ -898,6 +898,7 @@ class Map extends React.PureComponent {
 								const coords = convertPosToCoords(this._generateRandomLocation(itemCoords, tileType)); // use this.props.playerCharacters['privateEye'].coords instead to easily test objects
 								mapItems[itemID] = {
 									...itemInfo,
+									id: itemID,
 									name: itemName,
 									isIdentified: objectType !== 'Relic',
 									currentRounds: weaponCurrentRounds,
@@ -1308,8 +1309,6 @@ class Map extends React.PureComponent {
 			height: size
 		};
 		const tileLightStr = tileData.lightStrength;
-		const lockedDoors = this.state.currentLocationData.floors[this.props.currentFloor].lockedDoors;
-		const doorIsLocked = lockedDoors && lockedDoors.includes(tilePos);
 
 		if (tileData.classes && tileData.classes !== '') {
 			allClasses += ` ${tileData.classes}`;
@@ -1333,24 +1332,11 @@ class Map extends React.PureComponent {
 					this.props.updateContextMenu(null);
 				} else if (!this.isDraggingWorld) {
 					const activePcCoords = this.props.playerCharacters[this.props.activeCharacter].coords;
-					const doorIsAdjacent = Math.abs(tileData.xPos - activePcCoords.xPos) <= 1 && Math.abs(tileData.yPos - activePcCoords.yPos) <= 1;
-					// move to tile or non-adjacent door, or if an adjancet door, open it if it's closed and unlocked
-					if (tileData.type !== 'door' || (!doorIsAdjacent || (!tileData.doorIsOpen && !doorIsLocked))) {
-						if (this.props.currentLocation === 'museum' && this.props.currentFloor === 1 &&
-							this.props.npcs.professorNymian.conversationStatus.nextMessageKey === 'professor-1' && !this.props.skipIntroConversation) {
-							// allow time to show pc moving before conv starts
-							setTimeout(() => {
-								this.props.setConversationTarget({id: 'professorNymian', targetType: 'npc'});
-							}, 500);
-						}
-						// todo: need to add info when clicked door is an exit?
+					const movementDistance = getDistanceBetweenTargets(convertPosToCoords(tilePos), activePcCoords);
+					if (tileData.type === 'door' && tileData.doorIsOpen && movementDistance === 1) {
+						this.props.updateContextMenu('close-door', tilePos, e);
+					} else {
 						this.checkIfTileOrObject(tilePos, null);
-					} else if (doorIsAdjacent) {
-						if (tileData.doorIsOpen) {
-							this.props.updateContextMenu('close-door', tilePos, e);
-						} else if (doorIsLocked) {
-							this.props.setShowDialogProps(true, this.props.lockedDoorDialogProps);
-						}
 					}
 				}
 			}} />);
@@ -1788,23 +1774,24 @@ class Map extends React.PureComponent {
 			tileData = this.state.mapLayout[newPos];
 		}
 
-		const newCoords = convertPosToCoords(newPos);
-		// check if player is trying to move where a character exists
-		const validAction = this._tileIsFreeToMove(newCoords, 'player');
+		if (this.props.currentLocation === 'museum' && this.props.currentFloor === 1 &&
+			this.props.npcs.professorNymian.conversationStatus.nextMessageKey === 'professor-1' && !this.props.skipIntroConversation) {
+			// allow time to show pc moving before conv starts
+			setTimeout(() => {
+				this.props.setConversationTarget({id: 'professorNymian', targetType: 'npc'});
+			}, 500);
+		} else if (tileData) {
+			const newCoords = convertPosToCoords(newPos);
+			const movementDistance = getDistanceBetweenTargets(newCoords, activePCCoords);
+			const lockedDoors = this.state.currentLocationData.floors[this.props.currentFloor].lockedDoors;
+			const doorIsLocked = lockedDoors && lockedDoors.includes(newPos);
 
-		// check if tile is door or floor
-		if (validAction) {
-			const playerXMovementAmount = Math.abs(newCoords.xPos - activePCCoords.xPos);
-			const playerYMovementAmount = Math.abs(newCoords.yPos - activePCCoords.yPos);
-			if (playerXMovementAmount <= 1 && playerYMovementAmount <= 1) {
-				if (tileData.type === 'floor') {
-					this.moveCharacter({tilePath: [newPos]});
-				} else if (tileData.type === 'door') {
-					if (actionType === 'close-door' || !tileData.doorIsOpen) {
-						this.toggleDoor(newPos);
-					} else {
-						this.moveCharacter({tilePath: [newPos]});
-					}
+			// todo: need to add info when clicked door is an exit?
+			if (tileData.type === 'door' && movementDistance === 1 && (!tileData.doorIsOpen || actionType === 'close-door')) {
+				if (actionType === 'close-door' || !doorIsLocked) {
+					this.toggleDoor(newPos);
+				} else if (doorIsLocked) {
+					this.props.setShowDialogProps(true, this.props.lockedDoorDialogProps);
 				}
 			} else if (tileData.type !== 'wall') {
 				const pathData = this._pathFromAtoB(this.props.playerCharacters[this.props.activeCharacter].coords, newCoords);
@@ -1934,6 +1921,7 @@ class Map extends React.PureComponent {
 		const allCreaturePos = this.props.getAllCharactersPos('creature', 'pos');
 		const allNpcPos = this.props.getAllCharactersPos('npc', 'pos');
 		const allEnvObjectPos = [];
+		const endTilePos = convertCoordsToPos(endTileCoords);
 
 		for (const envObjData of Object.values(this.props.envObjects)) {
 			allEnvObjectPos.push({pos: convertCoordsToPos(envObjData.coords), isPassable: envObjData.isPassable});
@@ -1941,14 +1929,14 @@ class Map extends React.PureComponent {
 
 		let pathData = {
 			tilePath: [],
-			blockerType: ''
+			blocker: ''
 		}
 		let tilePath = [];
-		let pathBlocker = '';
-		let startingPos = '';
+		let isBlocked = '';
+		let startingPos = convertCoordsToPos(startTileCoords);
 		let currentX = startTileCoords.xPos;
 		let currentY = startTileCoords.yPos;
-		let closestDistanceToEnd = Math.abs(endTileCoords.xPos - currentX) + Math.abs(endTileCoords.yPos - currentY);
+		let closestDistanceToEnd = getDistanceBetweenTargets(startTileCoords, endTileCoords); // Math.abs(endTileCoords.xPos - currentX) + Math.abs(endTileCoords.yPos - currentY);
 		let currentDistanceToEnd = closestDistanceToEnd;
 		const startXDelta = Math.abs(endTileCoords.xPos - startTileCoords.xPos);
 		const startYDelta = Math.abs(endTileCoords.yPos - startTileCoords.yPos);
@@ -1956,25 +1944,27 @@ class Map extends React.PureComponent {
 		let checkedTiles = {[startingPos]: {rating: startRating}};
 		let noPathAvail = false;
 
+		const isTileBlocked = (testPos) => {
+			return this.state.mapLayout[testPos].type === 'wall' ||
+				(this.state.mapLayout[testPos].type === 'door' && !this.state.mapLayout[testPos].doorIsOpen) ||
+				(allPcPos.find(pc => pc.pos === testPos) && this.props.inTacticalMode) ||
+				allCreaturePos.find(creature => creature.pos === testPos) ||
+				allNpcPos.find(npc => npc.pos === testPos) ||
+				allEnvObjectPos.find(obj => (obj.pos === testPos && !obj.isPassable));
+		}
+
 		const checkForCleanPath = (currentPos, coords, rating) => {
 			let testPos = convertCoordsToPos(coords);
 			let isTestPosOk = true;
-			currentDistanceToEnd = Math.abs(endTileCoords.xPos - coords.xPos) + Math.abs(endTileCoords.yPos - coords.yPos);
+			currentDistanceToEnd = getDistanceBetweenTargets(coords, endTileCoords); // Math.abs(endTileCoords.xPos - coords.xPos) + Math.abs(endTileCoords.yPos - coords.yPos);
 			if (currentDistanceToEnd < closestDistanceToEnd) {
 				closestDistanceToEnd = currentDistanceToEnd;
 			}
-			pathBlocker =
-				this.state.mapLayout[testPos].type === 'wall' ? 'wall' :
-				(this.state.mapLayout[testPos].type === 'door' && !this.state.mapLayout[testPos].doorIsOpen) ? 'door' :
-				allPcPos.find(pc => pc.pos === testPos) ? 'player' :
-				allCreaturePos.find(creature => creature.pos === testPos) ? 'creature' :
-				allNpcPos.find(npc => npc.pos === testPos) ? 'npc' :
-				allEnvObjectPos.find(obj => (obj.pos === testPos && !obj.isPassable)) ? 'object' : null;
-
-			if (pathBlocker) {
+			isBlocked = isTileBlocked(testPos);
+			if (isBlocked) {
 				// if this is the closest we've gotten to the end (it's the bestPath), remember this blocker
 				if (currentDistanceToEnd === closestDistanceToEnd) {
-					pathData.blockerType = pathBlocker;
+					pathData.blocker = testPos === endTilePos ? 'justBeforeEnd' : true;
 				}
 				// rated 0 for blocked tile
 				checkedTiles[testPos] = {rating: 0};
@@ -2046,7 +2036,16 @@ class Map extends React.PureComponent {
 				// should never revisit checked tile (except through backtracking 12 lines below)
 				if (checkedTiles[newPos] || !checkForCleanPath(startingPos, newCoords, rating)) {
 					newPos = null;
-					tileIndex++;
+					// on first blockage, figure out which of the next two options is better (shorter path and not blocked)
+					if (tileIndex === 0) {
+						const distance1 = getDistanceBetweenTargets(endTileCoords, coordsToCheck[tileIndex + 1]);
+						const distance2 = getDistanceBetweenTargets(endTileCoords, coordsToCheck[tileIndex + 2]);
+						const option1isClear = !isTileBlocked(convertCoordsToPos(coordsToCheck[tileIndex + 1]));
+						const option2isClear = !isTileBlocked(convertCoordsToPos(coordsToCheck[tileIndex + 2]));
+						tileIndex = (distance1 <= distance2 && option1isClear) || (distance1 > distance2 && !option2isClear) ? 1 : 2;
+					} else {
+						tileIndex++;
+					}
 				} else {
 					currentX = newCoords.xPos;
 					currentY = newCoords.yPos;
@@ -2113,8 +2112,8 @@ class Map extends React.PureComponent {
 			}
 		}
 
-		if (pathData.tilePath[tilePath.length - 1] === convertCoordsToPos(endTileCoords)) {
-			pathData.blockerType = null;
+		if (pathData.tilePath[tilePath.length - 1] === endTilePos) {
+			pathData.blocker = false;
 		}
 
 		return pathData;
@@ -2461,7 +2460,7 @@ class Map extends React.PureComponent {
 	 * then if in combat, updates the threatList, and if not, calls moveCharacter again to move followers
 	 * @param pathData: object ({
 	 * 		tilePath: [] (of pos (String) - only used for leader/active pc),
-	 * 		blockerType: '' ('wall', 'door', 'creature', 'player', 'object', or null if no blockers)
+	 * 		blocker: boolean or string (true/false or 'justBeforeEnd' if on 2nd to last tile in path and last tile is blocked)
 	 * 	})
 	 * @param newPos: String (optional - for moving followers)
 	 * @param followerId: String (optional - ID of follower to move)
@@ -2474,8 +2473,8 @@ class Map extends React.PureComponent {
 			this.props.setShowDialogProps(true, this.props.noMoreMovesDialogProps);
 			return;
 		}
-		if (pathData.blockerType && pathData.tilePath.length === 0 && !followerId) {
-			if (pathData.blockerType !== 'door') {
+		if (pathData.blocker && pathData.tilePath.length === 0 && !followerId) {
+			if (pathData.blocker !== 'justBeforeEnd') {
 				const showDialog = true;
 				const dialogProps = {
 					dialogContent: 'The path is blocked.',
@@ -2616,7 +2615,7 @@ class Map extends React.PureComponent {
 										this.moveCharacter(pathData, newFollowerPos, this.props.playerFollowOrder[2]);
 									}, this.state.shortMovementDelay);
 								// otherwise, moving to next tile in path or alert user to blocker
-								} else if (pathData.tilePath.length > 0 || pathData.blockerType) {
+								} else if (pathData.tilePath.length > 0 || pathData.blocker) {
 									// to force characters to move one space at a time
 									setTimeout(() => {
 										this.moveCharacter(pathData);
