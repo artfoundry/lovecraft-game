@@ -101,7 +101,7 @@ class Map extends React.PureComponent {
 	}
 
 	/**
-	 * Resets state and other vars related to map - used for moving from one floor to another
+	 * Resets state and other vars related to map - used for moving from one floor to another or to another location
 	 */
 	resetMap = () => {
 		this.mapLayoutTemp = {};
@@ -131,7 +131,7 @@ class Map extends React.PureComponent {
 			leaderMovementDelay: GameLocations[this.props.currentLocation].floors[this.props.currentFloor].mapSize === 'large' ? 50 : 200,
 			shortMovementDelay: 50
 		}, () => {
-			this.props.resetDataForNewFloor(this.layoutPieces);
+			this.props.resetDataForNewArea(this.layoutPieces);
 		});
 	}
 
@@ -156,6 +156,7 @@ class Map extends React.PureComponent {
 		}
 		if (areaChangeValue || exitToLocation) {
 			mapData.partyExitCoords = {};
+			// save coords of each pc's last tile before leaving location/floor so know where to place them upon returning
 			this.props.playerFollowOrder.forEach(id => {
 				mapData.partyExitCoords[id] = {...this.props.playerCharacters[id].coords};
 			});
@@ -728,71 +729,69 @@ class Map extends React.PureComponent {
 				playerVisited,
 				playerPlaced: true
 			}, () => {
-				this._moveMap(initialSetupCallback);
+				if (initialSetupCallback) {
+					this._moveMap(initialSetupCallback);
+				}
 			});
 		}
 
-		if (!this.props.loadedFromFB) {
-			for (const playerID of Object.keys(this.props.playerCharacters)) {
-				let tilePos = '';
-				let newCoords = {};
-				const currentFloorMapData = this.state.currentLocationData.floors[this.props.currentFloor];
-				if (!previousPlayerCoords) {
-					let startingCoords = {};
-					// starting new static area (likely only applies to beginning of the game)
-					if (!this.props.previousFloor && !currentFloorMapData.isRandom) {
-						startingCoords = {...currentFloorMapData.initialSpawn};
-					} else if (currentFloorMapData.isRandom) {
-						// starting new dungeon or going to next dungeon level
-						if (this.props.previousFloor <= this.props.currentFloor) {
-							startingCoords = {...this.state.exits.previousAreaExitCoords};
-						} else {
-						// if player went back up a floor, then spawn at exit going down to next floor
-							startingCoords = {...savedMapData.exits.nextAreaExitCoords};
-						}
-					// changing location (new location is static)
+		for (const playerID of Object.keys(this.props.playerCharacters)) {
+			let tilePos = '';
+			let newCoords = {};
+			const currentFloorMapData = this.state.currentLocationData.floors[this.props.currentFloor];
+			if (!previousPlayerCoords) {
+				let startingCoords = {};
+				// starting new static area (likely only applies to beginning of the game)
+				if (!this.props.previousFloor && !currentFloorMapData.isRandom) {
+					startingCoords = {...currentFloorMapData.initialSpawn};
+				} else if (currentFloorMapData.isRandom) {
+					// starting new dungeon or going to next dungeon level
+					if (this.props.previousFloor <= this.props.currentFloor) {
+						startingCoords = {...this.state.exits.previousAreaExitCoords};
 					} else {
-						if (savedMapData) {
-							startingCoords = {...savedMapData.partyExitCoords[playerID]};
-						} else {
-							// find exit in new location whose destination matches previous location
-							const allExits = [
-								...currentFloorMapData.stairs.up,
-								...currentFloorMapData.stairs.down,
-								...currentFloorMapData.doors];
-							let exitCounter = 0;
-							while (exitCounter < allExits.length) {
-								if (allExits[exitCounter].destination === this.props.previousLocation) {
-									startingCoords = convertPosToCoords(allExits[exitCounter].pos);
-									exitCounter = allExits.length;
-								} else {
-									exitCounter++;
-								}
+					// if player went back up a floor, then spawn at exit going down to next floor
+						startingCoords = {...savedMapData.exits.nextAreaExitCoords};
+					}
+				// changing location (new location is static)
+				} else {
+					if (savedMapData) {
+						startingCoords = {...savedMapData.partyExitCoords[playerID]};
+					} else {
+						// find exit in new location whose destination matches previous location
+						const allExits = [
+							...currentFloorMapData.stairs.up,
+							...currentFloorMapData.stairs.down,
+							...currentFloorMapData.doors];
+						let exitCounter = 0;
+						while (exitCounter < allExits.length) {
+							if (allExits[exitCounter].destination === this.props.previousLocation) {
+								startingCoords = convertPosToCoords(allExits[exitCounter].pos);
+								exitCounter = allExits.length;
+							} else {
+								exitCounter++;
 							}
 						}
 					}
-					tilePos = convertCoordsToPos(startingCoords);
-					newCoords = {...startingCoords};
+				}
+				tilePos = convertCoordsToPos(startingCoords);
+				newCoords = {...startingCoords};
+			} else {
+				if (savedMapData) {
+					newCoords = {...savedMapData.partyExitCoords[playerID]};
 				} else {
-					if (savedMapData) {
-						newCoords = {...savedMapData.partyExitCoords[playerID]};
-					} else {
-						// look for empty nearby tile to place 2nd/3rd PC
-						tilePos = this._findNearbyAvailableTile(previousPlayerCoords, playerPositions);
-						newCoords = convertPosToCoords(tilePos);
-					}
+					// look for empty nearby tile to place 2nd/3rd PC
+					tilePos = this._findNearbyAvailableTile(previousPlayerCoords, playerPositions);
+					newCoords = convertPosToCoords(tilePos);
 				}
-				playerPositions.push(tilePos);
-				previousPlayerCoords = newCoords;
-				if (!savedMapData) {
-					playerVisited = Object.assign(playerVisited, this._findNewVisitedTiles(newCoords, playerID));
-				}
-				updatedPlayerData[playerID].coords = newCoords;
 			}
-			this.props.updateCharacters('player', updatedPlayerData, null, false, false, true, updatePlayerStatesInMap);
-		} else {
-			updatePlayerStatesInMap();
+			playerPositions.push(tilePos);
+			previousPlayerCoords = newCoords;
+			if (!savedMapData) {
+				playerVisited = Object.assign(playerVisited, this._findNewVisitedTiles(newCoords, playerID));
+			}
+			updatedPlayerData[playerID].coords = newCoords;
 		}
+		this.props.updateCharacters('player', updatedPlayerData, null, false, false, true, updatePlayerStatesInMap);
 	}
 
 	/**
@@ -3388,14 +3387,16 @@ class Map extends React.PureComponent {
 	 ***************************/
 
 	componentDidMount() {
-		// need this check to prevent running twice, as StrictMode causes components to mount twice
+		// Map doesn't remount when changing location/floor
+		// Need this check to prevent running twice, as StrictMode causes components to mount twice
 		if (!this.componentMounted) {
 			const setupMap = () => {
 				this.layoutPieces();
 
 				// note: this won't play until user interacts with page
 				// (which will happen with prod version but not testing if login and char creation are skipped)
-				this.props.toggleAudio('environments', this.props.currentLocation + 'Background');
+				this.props.toggleAudio('environments', this.props.currentLocation + 'Background', null, 'start');
+				this.props.toggleMusic('environments', this.props.currentLocation, 'start');
 			}
 
 			if (this.props.savedMaps[this.props.currentLocation] && this.props.savedMaps[this.props.currentLocation].floors[this.props.currentFloor]) {
@@ -3455,9 +3456,6 @@ class Map extends React.PureComponent {
 		}
 		if (this.props.needToSaveData && prevProps.needToSaveData !== this.props.needToSaveData) {
 			this.saveAllData();
-		}
-		if (prevProps.currentLocation !== this.props.currentLocation || prevProps.currentFloor !== this.props.currentFloor) {
-			this.props.toggleAudio('environments', this.props.currentLocation + 'Background');
 		}
 	}
 

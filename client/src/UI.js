@@ -14,7 +14,6 @@ import {
 	GameOptions
 } from './UIElements';
 import PopupHelp from './data/popupHelp.json';
-import {Music} from './Audio';
 import {convertCoordsToPos, notEnoughSpaceInInventory, deepCopy} from './Utils';
 import './css/ui.css';
 
@@ -28,12 +27,6 @@ class UI extends React.PureComponent {
 			controlBar: React.createRef(),
 			turnInfo: React.createRef(),
 			log: React.createRef()
-		};
-		this.audioSelectors = {
-			music: {
-				catacombs: {},
-				museum: {}
-			}
 		};
 
 		this.state = {
@@ -777,28 +770,6 @@ class UI extends React.PureComponent {
 		return hasExtraAmmo;
 	}
 
-	toggleMusic = () => {
-		const music = this.audioSelectors.music[this.props.gameOptions.songName];
-		if (this.props.gameOptions.playMusic) {
-			music.volume = this.props.gameOptions.musicVolume;
-			music.play().catch(e => console.log(e));
-		} else if (music) {
-			music.pause();
-		}
-	}
-
-	adjustMusicComponentVolume = (value) => {
-		this.audioSelectors.music[this.props.gameOptions.songName].volume = value;
-	}
-
-	/**
-	 * Sets up selectors for music elements
-	 * @private
-	 */
-	_populateSfxSelectors() {
-		this.audioSelectors.music[this.props.gameOptions.songName] = document.getElementById(`music-${this.props.gameOptions.songName}-theme`);
-	}
-
 	toggleOptionsPanel = () => {
 		this.setState(prevState => ({showGameOptions: !prevState.showGameOptions}));
 	}
@@ -864,8 +835,6 @@ class UI extends React.PureComponent {
 
 	componentDidMount() {
 		if (this.initialUiLoad) {
-			this._populateSfxSelectors();
-			this.toggleMusic();
 			this.initialUiLoad = false;
 			this.setSelectedControlTab(this.props.activeCharacter);
 		}
@@ -899,10 +868,6 @@ class UI extends React.PureComponent {
 				// don't need to pass in dropped and source counts, as it's not a stackable object
 				this.addObjectToMap();
 			}
-		}
-
-		if (prevProps.gameOptions.playMusic !== this.props.gameOptions.playMusic) {
-			this.toggleMusic();
 		}
 
 		if (this.props.conversationTarget && prevProps.conversationTarget !== this.props.conversationTarget) {
@@ -1072,18 +1037,13 @@ class UI extends React.PureComponent {
 					gameOptions={this.props.gameOptions}
 					toggleOptionsPanel={this.toggleOptionsPanel}
 					updateGameOptions={this.props.updateGameOptions}
-					adjustMusicComponentVolume={this.adjustMusicComponentVolume}
+					adjustMusicComponentVolume={this.props.adjustMusicComponentVolume}
 					screenData={this.props.screenData}
 					toggleNeedToSaveData={this.props.toggleNeedToSaveData}
 					setShowDialogProps={this.props.setShowDialogProps}
 					resetAllData={this.props.resetAllData}
 				/>
 				}
-
-				<Music
-					idProp={`music-${this.props.gameOptions.songName}-theme`}
-					sourceName={this.props.gameOptions.songName}
-				/>
 			</div>
 		);
 	}

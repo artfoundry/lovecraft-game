@@ -1464,7 +1464,7 @@ function GameOptions(props) {
 						onClick={() => props.toggleNeedToSaveData(true)}>
 						Save Game
 					</button>
-					<div className='small-text'>(Game autosaves when changing levels/areas but does NOT save when closing the app!)</div>
+					<div className='small-text'>(Game autosaves when changing levels/areas but does NOT save when closing the app! Also saves all game options.)</div>
 				</div>
 				<div className='game-options-row game-options-row-button-first'>
 					<button

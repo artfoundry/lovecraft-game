@@ -1,5 +1,6 @@
 import StoneDoor from './assets/sfx/environments/stone_door_short.mp3';
 import WindIndoors from './assets/sfx/environments/wind-indoors.mp3';
+import Whispering from './assets/sfx/environments/whispering.mp3';
 import HandgunShot from './assets/sfx/weapons/handgun-shot.mp3';
 import GlassVialBreak from './assets/sfx/weapons/glass-vial-break.mp3';
 import MeleeAttackBlade from './assets/sfx/weapons/melee-attack-blade.mp3';
@@ -32,10 +33,11 @@ import MaleDeath from './assets/sfx/characters/male-death.mp3';
 import FemaleInjured from './assets/sfx/characters/female-injured.mp3';
 import FemaleDeath from './assets/sfx/characters/female-death.mp3';
 import DiceMP3 from './assets/sfx/rolling-dice.mp3';
-import CatacombsTheme from './assets/music/catacombs_theme.m4a';
+import CatacombsTheme from './assets/music/catacombs_theme.mp3';
+import MuseumTheme from './assets/music/museum_theme.m4a';
 
 export {
-	StoneDoor, WindIndoors,
+	StoneDoor, WindIndoors, Whispering,
 	HandgunShot, GlassVialBreak, MeleeAttackBlade, MeleeAttackBlunt, AttackMiss,
 	Gulp, Mine,
 	ElderThing, ElderThingAttack, ElderThingInjured, ElderThingDeath,
@@ -45,5 +47,5 @@ export {
 	Ghoul, GhoulAttack, GhoulInjured, GhoulDeath,
 	MaleInjured, MaleDeath, FemaleInjured, FemaleDeath,
 	DiceMP3,
-	CatacombsTheme
+	CatacombsTheme, MuseumTheme
 };

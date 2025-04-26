@@ -1,7 +1,7 @@
 import React from 'react';
 import {Filter, AdvancedReverb} from './WebAudioReverb';
 import {
-	StoneDoor, WindIndoors,
+	StoneDoor, WindIndoors, Whispering,
 	HandgunShot, GlassVialBreak, MeleeAttackBlade, MeleeAttackBlunt, AttackMiss,
 	Gulp, Mine,
 	ElderThing, ElderThingAttack, ElderThingInjured, ElderThingDeath,
@@ -11,7 +11,7 @@ import {
 	Shoggoth, ShoggothAttack, ShoggothInjured, ShoggothDeath,
 	MaleInjured, MaleDeath, FemaleInjured, FemaleDeath,
 	DiceMP3,
-	CatacombsTheme
+	CatacombsTheme, MuseumTheme
 } from './audioImports';
 
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -33,6 +33,7 @@ const audioPipelines = {};
 const sfxMap = {
 	catacombsDoor: StoneDoor,
 	catacombsBackground: WindIndoors,
+	museumBackground: Whispering,
 	handgunShot: HandgunShot,
 	glassVialBreak: GlassVialBreak,
 	meleeAttackBlade: MeleeAttackBlade,
@@ -70,7 +71,8 @@ const reverbIRMap = {
 	catacombs: 0.8
 };
 const musicMap = {
-	catacombs: CatacombsTheme
+	catacombs: CatacombsTheme,
+	museum: MuseumTheme
 };
 
 // https://blog.gskinner.com/archives/2019/02/reverb-web-audio-api.html
@@ -133,7 +135,7 @@ function SoundEffect(props) {
 
 function Music(props) {
 	return (
-		<audio id={props.idProp} preload='auto' className='audio-music' loop>
+		<audio ref={props.musicRef} id={props.id} preload='auto' className='audio-music' loop>
 			<source src={musicMap[props.sourceName]} type='audio/mpeg' />
 		</audio>
 	);

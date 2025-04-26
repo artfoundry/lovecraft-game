@@ -12,7 +12,7 @@ import ItemTypes from './data/itemTypes.json';
 import GameLocations from './data/gameLocations.json';
 import './css/app.css';
 import {removeIdNumber, diceRoll, deepCopy, convertCoordsToPos, convertPosToCoords, getDistanceBetweenTargets, articleType} from './Utils';
-import {ProcessAudio, SoundEffect} from './Audio';
+import {ProcessAudio, SoundEffect, Music} from './Audio';
 
 
 class Game extends React.PureComponent {
@@ -114,6 +114,14 @@ class Game extends React.PureComponent {
 			}
 		};
 
+		this.musicSelectors = {
+			environments: {
+				catacombs: null,
+				museum: null
+			},
+			scenarios: {}
+		};
+
 		// certain action types matched with their appropriate sfxSelector IDs
 		// used because some categories of items (like all handguns) will use the same sound
 		this.sfxActionSelectorAliases = {
@@ -204,7 +212,6 @@ class Game extends React.PureComponent {
 				playFx: true,
 				musicVolume: 1,
 				playMusic: this.gameAttr.playMusic,
-				songName: this.gameAttr.startingLocation,
 				screenZoom: 1.0,
 				brightness: 1.3,
 				spawnCreatures: this.gameAttr.spawnCreatures
@@ -228,6 +235,7 @@ class Game extends React.PureComponent {
 			storyProgress: 'Ch1',
 			playerCharacters: {},
 			pcObjectOrdering: [], // order of pcs for determining control bar order
+			activeCharacter: !this.showCharacterCreation ? this.startingPlayerCharacters[0] : null,
 			pcTypes: PlayerCharacterTypes,
 			partyLevel: 1,
 			partyExpertise: 0,
@@ -255,6 +263,8 @@ class Game extends React.PureComponent {
 				dialogClasses: ''
 			},
 			sfxReverbProcessed: {},
+			music: {category: 'environments', songName: this.gameAttr.startingLocation},
+			logText: [],
 			// these need resetting on floor change
 			npcs: {},
 			mapCreatures: {},
@@ -263,7 +273,6 @@ class Game extends React.PureComponent {
 			creatureSpawnInfo: null,
 			unitsTurnOrder: [],
 			currentTurn: 0,
-			activeCharacter: !this.showCharacterCreation ? this.startingPlayerCharacters[0] : null,
 			activePlayerMovesCompleted: 0,
 			activePlayerActionsCompleted: 0,
 			followModePositions: [], // list of tile positions used for moving pcs in order
@@ -284,8 +293,7 @@ class Game extends React.PureComponent {
 			inSearchMode: false,
 			contextMenuChoice: null,
 			centerOnPlayer: false,
-			centeredPlayer: '',
-			logText: []
+			centeredPlayer: ''
 		}
 	}
 
@@ -293,8 +301,7 @@ class Game extends React.PureComponent {
 	 * Resets floor related data in state back to defaults when changing floors
 	 * @param callback: function
 	 */
-	resetDataForNewFloor = (callback) => {
-		this.toggleAudio('environments', this.state.currentLocation + 'Background');
+	resetDataForNewArea = (callback) => {
 		this.setState({
 			npcs: {},
 			mapCreatures: {},
@@ -303,10 +310,9 @@ class Game extends React.PureComponent {
 			creatureSpawnInfo: null,
 			unitsTurnOrder: [],
 			currentTurn: 0,
-			activeCharacter: !this.showCharacterCreation ? this.startingPlayerCharacters[0] : null,
 			activePlayerMovesCompleted: 0,
 			activePlayerActionsCompleted: 0,
-			followModePositions: [],
+			followModePositions: [], // list of tile positions used for moving pcs in order
 			characterIsSelected: false,
 			creatureIsSelected: false,
 			selectedCharacter: '',
@@ -324,8 +330,7 @@ class Game extends React.PureComponent {
 			inSearchMode: false,
 			contextMenuChoice: null,
 			centerOnPlayer: false,
-			centeredPlayer: this.state.playerFollowOrder[0],
-			logText: []
+			centeredPlayer: this.state.playerFollowOrder[0]
 		}, () => {
 			if (callback) callback();
 		})
@@ -336,8 +341,9 @@ class Game extends React.PureComponent {
 	 * @param overwriteSavedData boolean (yes for restarting to create new char, no for reloading from saved game)
 	 */
 	resetAllData = (overwriteSavedData) => {
-		this.toggleAudio('environments', this.state.currentLocation + 'Background');
-		const gameOptions = {...this.state.gameOptions, songName: this.gameAttr.startingLocation};
+		this.toggleAudio('environments', this.gameAttr.startingLocation + 'Background', null, 'start');
+		this.toggleMusic('environments', this.gameAttr.startingLocation, 'start');
+		const gameOptions = {...this.state.gameOptions};
 		this.setState({
 			gameOptions,
 			firebaseGameData: overwriteSavedData ? null : this.state.firebaseGameData,
@@ -348,6 +354,7 @@ class Game extends React.PureComponent {
 			storyProgress: 'Ch1',
 			playerCharacters: {},
 			pcObjectOrdering: [],
+			activeCharacter: !this.showCharacterCreation ? this.startingPlayerCharacters[0] : null,
 			pcTypes: PlayerCharacterTypes,
 			partyLevel: 1,
 			partyExpertise: 0,
@@ -355,7 +362,6 @@ class Game extends React.PureComponent {
 				activeQuests: {},
 				completedQuests: {}
 			},
-			npcs: {},
 			conversationTarget: null,
 			savedMaps: {},
 			needToSaveData: false,
@@ -375,17 +381,19 @@ class Game extends React.PureComponent {
 				dialogClasses: ''
 			},
 			sfxReverbProcessed: {},
+			music: {category: 'environments', songName: this.gameAttr.startingLocation},
+			logText: [],
 			// these need resetting on floor change
+			npcs: {},
 			mapCreatures: {},
 			mapObjects: {},
 			envObjects: {},
 			creatureSpawnInfo: null,
 			unitsTurnOrder: [],
 			currentTurn: 0,
-			activeCharacter: !this.showCharacterCreation ? this.startingPlayerCharacters[0] : null,
 			activePlayerMovesCompleted: 0,
 			activePlayerActionsCompleted: 0,
-			followModePositions: [],
+			followModePositions: [], // list of tile positions used for moving pcs in order
 			characterIsSelected: false,
 			creatureIsSelected: false,
 			selectedCharacter: '',
@@ -403,8 +411,7 @@ class Game extends React.PureComponent {
 			inSearchMode: false,
 			contextMenuChoice: null,
 			centerOnPlayer: false,
-			centeredPlayer: '',
-			logText: []
+			centeredPlayer: ''
 		}, () => {
 			if (overwriteSavedData) {
 				this._saveGameData(null, true);
@@ -563,8 +570,16 @@ class Game extends React.PureComponent {
 		} else {
 			savedMaps[this.state.currentLocation] = {floors: {[this.state.currentFloor]: dataToSave}};
 		}
-
 		this.setState({savedMaps, previousFloor, currentFloor, currentLocation, previousLocation}, () => {
+			// stop playing sfx and music for previous area then start for new area
+			if (newFloorNum || exitToLocation) {
+				this.toggleAudio('environments', previousLocation + 'Background', null, 'stop');
+				this.toggleAudio('environments', this.state.currentLocation + 'Background', null, 'start');
+			}
+			if (exitToLocation) {
+				this.toggleMusic('environments', previousLocation, 'stop');
+				this.toggleMusic('environments', this.state.currentLocation, 'start');
+			}
 			if (this.state.needToSaveData) {
 				this.toggleNeedToSaveData(false);
 			}
@@ -1965,13 +1980,14 @@ class Game extends React.PureComponent {
 	 *      soundCoords: {xPos: x, yPos: y}
 	 *  }
 	 * )
+	 * @param command string ('start' or 'stop', for background fx)
 	 */
-	toggleAudio = (category, selectorName, processors) => {
+	toggleAudio = (category, selectorName, processors, command) => {
 		const sfxReverbProcessed = {...this.state.sfxReverbProcessed};
-		const audioEl = this.sfxSelectors[category][selectorName].current;
+		const audioRef = this.sfxSelectors[category][selectorName].current;
 		const isBackgroundSfx = category === 'environments' && selectorName.includes('Background');
 
-		if (audioEl.paused && this.state.gameOptions.playFx) {
+		if ((audioRef.paused || command === 'start') && this.state.gameOptions.playFx) {
 			let processValues = null;
 			if (processors) {
 				processValues = {};
@@ -1994,20 +2010,46 @@ class Game extends React.PureComponent {
 					processValues.panSetting = {x: sndCoords.xPos - activePcCoors.xPos, y: sndCoords.yPos - activePcCoors.yPos};
 				}
 			}
-			ProcessAudio(selectorName, audioEl, processValues);
-			audioEl.volume = this.state.gameOptions.fxVolume;
+			ProcessAudio(selectorName, audioRef, processValues);
+			audioRef.volume = this.state.gameOptions.fxVolume;
 
 			if (isBackgroundSfx) {
-				audioEl.loop = true;
+				audioRef.loop = true;
 			}
-			audioEl.play().catch(e => console.log(e));
+			audioRef.play().catch(e => console.log(e));
 
 			if (sfxReverbProcessed[selectorName] !== this.state.sfxReverbProcessed[selectorName]) {
 				this.setState({sfxReverbProcessed});
 			}
-		} else if (isBackgroundSfx && (!audioEl.paused || !this.state.gameOptions.playFx)) {
-			audioEl.pause();
+		} else if (isBackgroundSfx && (command === 'stop' || !this.state.gameOptions.playFx)) {
+			audioRef.pause();
+			audioRef.currentTime = 0;
 		}
+	}
+
+	/**
+	 *
+	 * @param category string (music category - 'environments', 'scenarios')
+	 * @param songName string (music name - ex 'catacombs', 'museum', etc.)
+	 * @param command string ('start' or 'stop')
+	 */
+	toggleMusic = (category, songName, command) => {
+		const musicRef = this.musicSelectors[category][songName].current;
+		const shouldStartPlaying = command !== 'stop' && this.state.gameOptions.playMusic;
+		const shouldStopPlaying = command === 'stop' || !this.state.gameOptions.playMusic;
+
+		if (musicRef && shouldStartPlaying) {
+			musicRef.volume = this.state.gameOptions.musicVolume;
+			musicRef.play().catch(e => console.log(e));
+			this.setState({musicSelector: {category, songName}});
+		} else if (musicRef && shouldStopPlaying) {
+			musicRef.pause();
+			musicRef.currentTime = 0;
+		}
+	}
+
+	adjustMusicComponentVolume = (value) => {
+		this.musicSelectors[this.state.music.category][this.state.music.songName].current.volume = value;
 	}
 
 	updateGameOptions = (gameOptions) => {
@@ -2079,7 +2121,8 @@ class Game extends React.PureComponent {
 			activePlayerMovesCompleted: this.state.activePlayerMovesCompleted, // number
 			activePlayerActionsCompleted: this.state.activePlayerActionsCompleted, // number
 			followModePositions: this.state.followModePositions, // array
-			threatList: this.state.threatList // array
+			threatList: this.state.threatList, // array
+			inTacticalMode: this.state.inTacticalMode // boolean
 		};
 		this.firebase.setData(userId, isReset ? null : deepCopy(dataToSave, true), (logMessage) => {
 			if (!isReset) {
@@ -2213,17 +2256,6 @@ class Game extends React.PureComponent {
 				pcObjectOrdering: [...firebaseDataLoaded.pcObjectOrdering]
 			}, gameSetupCallback);
 		}
-	}
-
-	/**
-	 * Saves new game location to state.
-	 * @param newLocation string
-	 * @private
-	 */
-	_setLocation(newLocation) {
-		const gameOptions = {...this.state.gameOptions};
-		gameOptions.songName = newLocation;
-		this.setState({currentLocation: newLocation, gameOptions});
 	}
 
 	/**
@@ -2441,6 +2473,22 @@ class Game extends React.PureComponent {
 		return effects;
 	}
 
+	/**
+	 * Called by render() to set up array of music elements
+	 * @returns {*[]}
+	 */
+	setupMusic = () => {
+		let music = [];
+
+		for (const [category, names] of Object.entries(this.musicSelectors)) {
+			for (const name of Object.keys(names)) {
+				this.musicSelectors[category][name] = createRef();
+				music.push(<Music musicRef={this.musicSelectors[category][name]} key={'music' + name} id={`music-${name}-theme`} sourceName={name} />);
+			}
+		}
+
+		return music;
+	}
 
 
 	/***************************
@@ -2476,6 +2524,10 @@ class Game extends React.PureComponent {
 		if (prevState.gameOptions.playFx !== this.state.gameOptions.playFx) {
 			this.toggleAudio('environments', this.state.currentLocation + 'Background');
 		}
+
+		if (prevState.gameOptions.playMusic !== this.state.gameOptions.playMusic) {
+			this.toggleMusic('environments', this.state.currentLocation);
+		}
 	}
 
 	render() {
@@ -2498,6 +2550,7 @@ class Game extends React.PureComponent {
 				}
 
 				{this.state.isLoggedIn && <this.setupSoundEffects /> }
+				{this.state.isLoggedIn && <this.setupMusic /> }
 
 				{this.showLogin && this.state.isLoginWindowRequested &&
 					<Firebase
@@ -2521,6 +2574,7 @@ class Game extends React.PureComponent {
 						screenData={this.state.screenData}
 						updateGameOptions={this.updateGameOptions}
 						gameOptions={this.state.gameOptions}
+						adjustMusicComponentVolume={this.adjustMusicComponentVolume}
 						toggleNeedToSaveData={this.toggleNeedToSaveData}
 						resetAllData={this.resetAllData}
 						objectPanelWidth={this.objectPanelWidth}
@@ -2661,7 +2715,7 @@ class Game extends React.PureComponent {
 						previousLocation={this.state.previousLocation}
 						currentFloor={this.state.currentFloor}
 						previousFloor={this.state.previousFloor}
-						resetDataForNewFloor={this.resetDataForNewFloor}
+						resetDataForNewArea={this.resetDataForNewArea}
 						// ui data/control
 						updateLog={this.updateLog}
 						logText={this.state.logText}
@@ -2673,6 +2727,7 @@ class Game extends React.PureComponent {
 						centerOnPlayer={this.state.centerOnPlayer}
 						toggleCenterOnPlayer={this.toggleCenterOnPlayer}
 						toggleAudio={this.toggleAudio}
+						toggleMusic={this.toggleMusic}
 						// modes info
 						updateThreatList={this.updateThreatList}
 						threatList={this.state.threatList}
