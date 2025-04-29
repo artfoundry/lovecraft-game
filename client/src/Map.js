@@ -96,7 +96,7 @@ class Map extends React.PureComponent {
 			worldWidth: 0,
 			worldHeight: 0,
 			leaderMovementDelay: GameLocations[this.props.currentLocation].floors[this.props.currentFloor].mapSize === 'large' ? 50 : 200,
-			followerMovementDelay: 50
+			shortMovementDelay: 50
 		};
 	}
 
