@@ -1299,13 +1299,13 @@ class Game extends React.PureComponent {
 			const playerMoveLimit = this.playerMovesLimit + (moveItSkill ? moveItSkill.modifier[moveItSkill.level] : 0);
 			updateOrRemoveChar = true;
 			for (const [statusName, statusData] of Object.entries(nextActiveChar.statuses)) {
-				if (statusName === 'slowed') {
-					activePlayerActionsCompleted = this.playerActionsLimit - 1;
-					activePlayerMovesCompleted = playerMoveLimit - 1;
-				}
 				if (statusData.turnsLeft === 0) {
 					delete nextActiveChar.statuses[statusName];
 				} else {
+					if (statusName === 'slowed') {
+						activePlayerActionsCompleted = this.playerActionsLimit - 1;
+						activePlayerMovesCompleted = playerMoveLimit - 1;
+					}
 					statusData.turnsLeft--;
 				}
 			}
