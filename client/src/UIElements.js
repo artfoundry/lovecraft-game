@@ -653,88 +653,88 @@ function CharacterInfoPanel(props) {
 					<div className='char-info-equipped-light'>Equipped Light: {props.characterInfo.equippedLight ? `${equippedLight.name} (Time left: ${equippedLight.time})`: 'none'}</div>
 
 					{props.showHelpSystem && props.helpPopupButton('equipment', {'transform': 'translate(-5px, 70px)'})}
-					<div className='char-info-doll-container'>
-						<div className='char-info-paper-doll'></div>
-						<div className='char-info-doll-boxes-container'>
-							<div
-								className='char-info-paper-doll-body char-info-paper-doll-box'
-								onDragOver={evt => handleItemOverDropZone(evt)}
-								onDrop={evt => props.dropItemToEquipped(evt)}
-							>
-								{(equippedItems.armor &&
-									<div
-										id={equippedItems.armor ? equippedItems.armor : 'body'}
-										className={`inv-object ${convertObjIdToClassId(equippedItems.armor)}-inv`}
-										draggable={true}
-										onDragStart={evt => dragItem(evt, equippedItems.armor)}
-										onClick={evt => {
-											props.setObjectSelected({...itemsPossessed[equippedItems.armor], id: equippedItems.armor}, null);
-											props.setObjectPanelDisplayOption(true, evt);
-										}}
-									></div>) || 'Body'}
-							</div>
+					<div className='char-info-equipment-container'>
+						<div className='char-info-item-drop-container'>
+							<div className='char-info-item-drop-zone'
+							     onDragOver={evt => handleItemOverDropZone(evt)}
+							     onDrop={evt => {
+								     if (props.objectIsSelected) {
+									     props.setHasObjBeenDropped({objHasBeenDropped: true, evt})
+								     }
+							     }}
+							>{props.showHelpSystem && props.helpPopupButton('dropEquipment', {'transform': 'translate(15px, 15px)', 'position': 'relative'})}</div>
+						</div>
 
-							<div
-								className='char-info-paper-doll-right-arm char-info-paper-doll-box'
-								onDragOver={evt => handleItemOverDropZone(evt)}
-								onDrop={evt => props.dropItemToEquipped(evt)}
-							>
-								{(equippedItems.loadout1.right &&
-									<div
-										id={equippedItems.loadout1.right ? equippedItems.loadout1.right : 'right-hand'}
-										className={`inv-object ${convertObjIdToClassId(equippedItems.loadout1.right)}-inv`}
-										draggable={true}
-										onDragStart={evt => dragItem(evt, equippedItems.loadout1.right)}
-										onClick={evt => {
-											props.setObjectSelected({...rightEquippedItemInfo, id: equippedItems.loadout1.right}, null);
-											props.setObjectPanelDisplayOption(true, evt);
-										}}
-									>{equippedItems.loadout1.right ? rightItemAmount : ''}</div>) || 'Right Hand'}
-							</div>
+						<div className='char-info-doll-container'>
+							<div className='char-info-paper-doll'></div>
+							<div className='char-info-doll-boxes-container'>
+								<div
+									className='char-info-paper-doll-body char-info-paper-doll-box'
+									onDragOver={evt => handleItemOverDropZone(evt)}
+									onDrop={evt => props.dropItemToEquipped(evt)}
+								>
+									{(equippedItems.armor &&
+										<div
+											id={equippedItems.armor ? equippedItems.armor : 'body'}
+											className={`inv-object ${convertObjIdToClassId(equippedItems.armor)}-inv`}
+											draggable={true}
+											onDragStart={evt => dragItem(evt, equippedItems.armor)}
+											onClick={evt => {
+												props.setObjectSelected({...itemsPossessed[equippedItems.armor], id: equippedItems.armor}, null);
+												props.setObjectPanelDisplayOption(true, evt);
+											}}
+										></div>) || 'Body'}
+								</div>
 
-							<div
-								className='char-info-paper-doll-left-arm char-info-paper-doll-box'
-								onDragOver={evt => handleItemOverDropZone(evt)}
-								onDrop={evt => props.dropItemToEquipped(evt)}
-							>
-								{(equippedItems.loadout1.left &&
-									<div
-										id={equippedIsTwoHanded ? equippedItems.loadout1.left + '-leftHand' :
-											equippedItems.loadout1.left ? equippedItems.loadout1.left : 'left-hand'}
-										className={`inv-object ${convertObjIdToClassId(equippedItems.loadout1.left)}-inv`}
-										draggable={true}
-										onDragStart={evt => dragItem(evt, equippedItems.loadout1.left)}
-										onClick={evt => {
-											props.setObjectSelected({...leftEquippedItemInfo, id: equippedItems.loadout1.left}, null);
-											props.setObjectPanelDisplayOption(true, evt);
-										}}
-									>{equippedItems.loadout1.left ? leftItemAmount : ''}</div>) || 'Left Hand'}
+								<div
+									className='char-info-paper-doll-right-arm char-info-paper-doll-box'
+									onDragOver={evt => handleItemOverDropZone(evt)}
+									onDrop={evt => props.dropItemToEquipped(evt)}
+								>
+									{(equippedItems.loadout1.right &&
+										<div
+											id={equippedItems.loadout1.right ? equippedItems.loadout1.right : 'right-hand'}
+											className={`inv-object ${convertObjIdToClassId(equippedItems.loadout1.right)}-inv`}
+											draggable={true}
+											onDragStart={evt => dragItem(evt, equippedItems.loadout1.right)}
+											onClick={evt => {
+												props.setObjectSelected({...rightEquippedItemInfo, id: equippedItems.loadout1.right}, null);
+												props.setObjectPanelDisplayOption(true, evt);
+											}}
+										>{equippedItems.loadout1.right ? rightItemAmount : ''}</div>) || 'Right Hand'}
+								</div>
+
+								<div
+									className='char-info-paper-doll-left-arm char-info-paper-doll-box'
+									onDragOver={evt => handleItemOverDropZone(evt)}
+									onDrop={evt => props.dropItemToEquipped(evt)}
+								>
+									{(equippedItems.loadout1.left &&
+										<div
+											id={equippedIsTwoHanded ? equippedItems.loadout1.left + '-leftHand' :
+												equippedItems.loadout1.left ? equippedItems.loadout1.left : 'left-hand'}
+											className={`inv-object ${convertObjIdToClassId(equippedItems.loadout1.left)}-inv`}
+											draggable={true}
+											onDragStart={evt => dragItem(evt, equippedItems.loadout1.left)}
+											onClick={evt => {
+												props.setObjectSelected({...leftEquippedItemInfo, id: equippedItems.loadout1.left}, null);
+												props.setObjectPanelDisplayOption(true, evt);
+											}}
+										>{equippedItems.loadout1.left ? leftItemAmount : ''}</div>) || 'Left Hand'}
+								</div>
 							</div>
 						</div>
-					</div>
 
-					<div className='char-info-equip-toggle-button general-button'>
-						{props.showHelpSystem && props.helpPopupButton('switchEquipment', {'transform': 'translate(-50px, -7px)'})}
-						<div onClick={() => {
-							if (!notEnoughSpaceInInventory(numItemsInLoadout1, numItemsInLoadout2, props.characterInfo)) {
-								props.switchEquipment(props.characterInfo.id)
-							} else {
-								props.setShowDialogProps(true, props.notEnoughSpaceDialogProps);
-							}
-						}}>Switch equipment</div>
-					</div>
-
-
-					<div>
-						<div className='char-info-item-drop-zone'
-						     onDragOver={evt => handleItemOverDropZone(evt)}
-						     onDrop={evt => {
-							     if (props.objectIsSelected) {
-								     props.setHasObjBeenDropped({objHasBeenDropped: true, evt})
-							     }
-						     }}
-						>{props.showHelpSystem && props.helpPopupButton('dropEquipment', {'transform': 'translate(15px, 15px)', 'position': 'relative'})}</div>
-						<span>Drag item here to drop</span>
+						<div className='char-info-equip-toggle-container'>
+							{props.showHelpSystem && props.helpPopupButton('switchEquipment', {'transform': 'translate(15px, 15px)'})}
+							<div className='char-info-equip-toggle-button general-button' onClick={() => {
+								if (!notEnoughSpaceInInventory(numItemsInLoadout1, numItemsInLoadout2, props.characterInfo)) {
+									props.switchEquipment(props.characterInfo.id)
+								} else {
+									props.setShowDialogProps(true, props.notEnoughSpaceDialogProps);
+								}
+							}}></div>
+						</div>
 					</div>
 
 					{itemsIntoElements}
@@ -871,7 +871,7 @@ function ObjectInfoPanel(props) {
 		setContainerOpenState} = {...props};
 	const [origObjectList, updateOrigObjectList] = useState(objectInfo);
 	const [containerId, updateContainerId] = useState(null);
-	const [objectToShow, updateObjToShow] = useState(isMapObj ? null : objectInfo);
+	const [objectToShow] = useState(isMapObj ? null : objectInfo);
 	const splitStack = (evt) => {
 		evt.preventDefault();
 		const splitValue = +evt.target[0].value;

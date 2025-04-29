@@ -524,6 +524,38 @@ h3 {
 	overflow: auto;
 }
 
+.char-info-equipment-container {
+	display: flex;
+	align-items: end;
+}
+
+.char-info-item-drop-container {
+	margin: 10px;
+}
+
+.char-info-item-drop-zone {
+	width: 64px;
+	height: 64px;
+	border: 1px solid seagreen;
+	border-radius: 5px;
+	background-image: url('../assets/ui/drop_item.png');
+}
+
+.char-info-equip-toggle-container {
+	margin: 10px;
+}
+
+.char-info-equip-toggle-button {
+	width: 64px;
+	height: 64px;
+	margin: 0;
+	padding: 0;
+	background-image: url('../assets/ui/swap-equipment.png');
+	background-size: 64px 64px;
+	background-position: center;
+	background-repeat: no-repeat;
+}
+
 .char-info-doll-container {
 	position: relative;
 	display: flex;
@@ -632,17 +664,6 @@ h3 {
 	display: inline-block;
 	width: 20px;
 	margin: 0 7px;
-}
-
-.char-info-item-drop-zone {
-	display: inline-block;
-	width: 64px;
-	height: 64px;
-	margin: 10px;
-	border: 1px solid seagreen;
-	border-radius: 5px;
-	background-image: url('../assets/ui/drop_item.png');
-	vertical-align: middle;
 }
 
 .char-info-inv-items {
@@ -1194,6 +1215,7 @@ h3 {
 	margin: 0 10px;
 	right: 0;
 	bottom: 10px;
+	z-index: 5;
 }
 
 #screen-zoom-container {
@@ -1734,19 +1756,16 @@ select {
 		padding-bottom: 10px;
 	}
 
-	.char-info-doll-container {
-		margin-right: 10px;
-	}
-
-	.character-info-container, .creature-info-container {
-		justify-content: start;
+	.character-info-container {
+		grid-area: turnInfo / characterInfo / characterInfo / creatureInfo;
 		border-radius: 0;
 		border: 0;
-		min-height: unset;
 	}
 
 	.creature-info-container {
 		grid-area: characterInfo;
+		border-radius: 0;
+		border: 0;
 	}
 
 	#control-bar-container {
@@ -1829,13 +1848,10 @@ select {
 	}
 
 	.creature-info-container {
+		grid-area: creatureInfo;
 		border: 2px solid seagreen;
 		border-right: 0;
 		border-radius: 5px 0 0 5px;
-	}
-
-	.creature-info-container {
-		grid-area: creatureInfo;
 	}
 
 	#control-bar-container {
@@ -2084,7 +2100,13 @@ select {
 	}
 
 	.character-info-container, .creature-info-container {
+		min-height: unset;
 		border-left: 2px solid seagreen;
+		border-top: none;
+	}
+
+	.creature-info-container {
+		grid-area: characterInfo;
 	}
 
 	.object-info-panel, .skill-info-panel {
