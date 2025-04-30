@@ -1,7 +1,7 @@
 import React from 'react';
 import {Filter, AdvancedReverb} from './WebAudioReverb';
 import {
-	StoneDoor, WindIndoors, Whispering,
+	StoneDoor, MetalDoor, WindIndoors, Whispering,
 	HandgunShot, GlassVialBreak, MeleeAttackBlade, MeleeAttackBlunt, AttackMiss,
 	Gulp, Mine,
 	ElderThing, ElderThingAttack, ElderThingInjured, ElderThingDeath,
@@ -33,6 +33,7 @@ const audioPipelines = {};
 const sfxMap = {
 	catacombsDoor: StoneDoor,
 	catacombsBackground: WindIndoors,
+	museumDoor: MetalDoor,
 	museumBackground: Whispering,
 	handgunShot: HandgunShot,
 	glassVialBreak: GlassVialBreak,
@@ -68,7 +69,8 @@ const sfxMap = {
 	dice: DiceMP3
 };
 const reverbIRMap = {
-	catacombs: 0.8
+	catacombs: 0.8,
+	museum: 0.5
 };
 const musicMap = {
 	catacombs: CatacombsTheme,

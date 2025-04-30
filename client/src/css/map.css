@@ -71,6 +71,11 @@
 	box-sizing: border-box;
 }
 
+.unselectable {
+	cursor: initial;
+	pointer-events: none;
+}
+
 .in-range {
 	border: 2px solid yellow;
 	border-radius: 15px;

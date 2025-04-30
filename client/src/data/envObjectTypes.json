@@ -3,11 +3,31 @@
     "unselectable": true,
     "isPassable": false
   },
+  "Museum Welcome Sign": {
+    "unselectable": true,
+    "isPassable": false
+  },
   "Display Case Vertical": {
     "unselectable": true,
     "isPassable": false
   },
+  "Display Case Square One": {
+    "unselectable": true,
+    "isPassable": false
+  },
+  "Display Case Square Two": {
+    "unselectable": true,
+    "isPassable": false
+  },
+  "Display Case Square Three": {
+    "unselectable": true,
+    "isPassable": false
+  },
   "Dinosaur Skeleton": {
+    "unselectable": true,
+    "isPassable": false
+  },
+  "Dinosaur Skeleton On Table": {
     "unselectable": true,
     "isPassable": false
   },

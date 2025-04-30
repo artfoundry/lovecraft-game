@@ -264,9 +264,14 @@
 						"21-14",
 						"21-19"
 					],
+					"Museum Welcome Sign": ["14-19"],
 					"Desk With Chair": ["17-19"],
-					"Display Case Vertical": ["12-14", "20-13"],
-					"Dinosaur Skeleton": ["12-19"]
+					"Display Case Vertical": ["12-14", "20-14"],
+					"Display Case Square One": ["12-13"],
+					"Display Case Square Two": ["20-13", "14-13"],
+					"Display Case Square Three": ["19-13"],
+					"Dinosaur Skeleton": ["13-19"],
+					"Dinosaur Skeleton On Table": ["19-19"]
 				},
 				"initialSpawn": {
 					"xPos": 16,

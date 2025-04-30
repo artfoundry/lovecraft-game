@@ -1,4 +1,5 @@
-import StoneDoor from './assets/sfx/environments/stone_door_short.mp3';
+import StoneDoor from './assets/sfx/environments/stone-door.mp3';
+import MetalDoor from './assets/sfx/environments/metal-door.mp3';
 import WindIndoors from './assets/sfx/environments/wind-indoors.mp3';
 import Whispering from './assets/sfx/environments/whispering.mp3';
 import HandgunShot from './assets/sfx/weapons/handgun-shot.mp3';
@@ -37,7 +38,7 @@ import CatacombsTheme from './assets/music/catacombs_theme.mp3';
 import MuseumTheme from './assets/music/museum_theme.m4a';
 
 export {
-	StoneDoor, WindIndoors, Whispering,
+	StoneDoor, MetalDoor, WindIndoors, Whispering,
 	HandgunShot, GlassVialBreak, MeleeAttackBlade, MeleeAttackBlunt, AttackMiss,
 	Gulp, Mine,
 	ElderThing, ElderThingAttack, ElderThingInjured, ElderThingDeath,
