@@ -212,6 +212,7 @@ h3 {
 	width: 90%;
 	margin: 10px;
 	font-size: 20px;
+	overflow: auto;
 }
 
 .game-options-row {
@@ -1725,16 +1726,13 @@ select {
 		min-width: unset;
 	}
 
-	.ui-panel.dialog {
+	.dialog {
 		font-size: 20px;
+		padding: 5px;
 	}
 
 	#log-container {
 		font-size: 16px;
-	}
-
-	.dialog {
-		padding: 5px;
 	}
 
 	#mode-info-container, #log-container, #party-info-container {
@@ -1746,6 +1744,11 @@ select {
 		top: 15%;
 		font-size: 16px;
 		padding: 10px;
+	}
+
+	#game-options.dialog.ui-panel {
+		top: 15%;
+		height: 70%;
 	}
 
 	.pc-response {
@@ -1994,9 +1997,6 @@ select {
 
 	.object-info-panel, .skill-info-panel {
 		width: 100%;
-		max-height: 300px;
-		overflow: scroll;
-		left: 5%;
 	}
 
 	/* override the  positioning set by javascript */
@@ -2107,11 +2107,6 @@ select {
 
 	.creature-info-container {
 		grid-area: characterInfo;
-	}
-
-	.object-info-panel, .skill-info-panel {
-		max-height: 250px;
-		overflow: scroll;
 	}
 
 	.object-panel-container {

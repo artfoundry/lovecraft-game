@@ -846,7 +846,7 @@ function CharacterInfoPanel(props) {
 	);
 }
 
-function ObjectInfoPanel(props) {
+function ObjectInfoWindow(props) {
 	const {
 		objectInfo,
 		isDraggedObject,
@@ -1411,7 +1411,7 @@ function GameOptions(props) {
 	const gameOptions = {...props.gameOptions};
 
 	return (
-		<div className='dialog ui-panel'>
+		<div id='game-options' className='dialog ui-panel'>
 			<div className='font-fancy'>Game Options</div>
 			<div className='game-options-container'>
 				<div className='game-options-row'>
@@ -1518,4 +1518,4 @@ function GameOptions(props) {
 	);
 }
 
-export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, PartyInfoPanel, JournalWindow, ConversationWindow, DialogWindow, ContextMenu, HelpPopup, GameOptions};
+export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoWindow, ModeInfoPanel, PartyInfoPanel, JournalWindow, ConversationWindow, DialogWindow, ContextMenu, HelpPopup, GameOptions};

@@ -3,7 +3,7 @@ import {
 	CharacterControls,
 	CharacterInfoPanel,
 	CreatureInfoPanel,
-	ObjectInfoPanel,
+	ObjectInfoWindow,
 	ModeInfoPanel,
 	PartyInfoPanel,
 	JournalWindow,
@@ -549,8 +549,8 @@ class UI extends React.PureComponent {
 
 	/**
 	 * adds object to map and removes from PC inv when an object is dropped
-	 * @param draggedItemCount: number (comes from callback from ObjectInfoPanel - only used for stackable items)
-	 * @param sourceItemCount: number (comes from callback from ObjectInfoPanel - only used for stackable items)
+	 * @param draggedItemCount: number (comes from callback from ObjectInfoWindow - only used for stackable items)
+	 * @param sourceItemCount: number (comes from callback from ObjectInfoWindow - only used for stackable items)
 	 */
 	addObjectToMap = (draggedItemCount, sourceItemCount) => {
 		if (!this.state.objectSelected || Object.keys(this.state.objectSelected).length === 0) {
@@ -688,7 +688,7 @@ class UI extends React.PureComponent {
 	showObjectPanel = () => {
 		const creatureCoords = this.props.getAllCharactersPos('creature', 'coords');
 		return (
-			<ObjectInfoPanel
+			<ObjectInfoWindow
 				objectInfo={this.state.objectSelected}
 				isDraggedObject={this.state.draggedObjectMetaData !== null}
 				setObjectSelected={this.setObjectSelected}

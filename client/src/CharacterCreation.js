@@ -1,6 +1,6 @@
 import React from 'react';
 import {convertObjIdToClassId, diceRoll} from './Utils';
-import {ObjectInfoPanel} from './UIElements';
+import {ObjectInfoWindow} from './UIElements';
 import {SoundEffect} from './Audio';
 import PlayerCharacterTypes from './data/playerCharacterTypes.json';
 import ItemTypes from './data/itemTypes.json';
@@ -91,7 +91,7 @@ export default class CharacterCreation extends React.PureComponent {
 		const top = `calc(50% - ${this.props.objectPanelHeight / 2}px)`;
 		const left = this.props.screenData.isNarrow ? 0 : `calc(50% - ${this.props.objectPanelWidth / 2}px)`;
 		return (
-			<ObjectInfoPanel
+			<ObjectInfoWindow
 				objectInfo={this.state.objectSelected}
 				selectedObjPos={{top, left}}
 				isDraggedObject={false}

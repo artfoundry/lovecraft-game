@@ -23,7 +23,7 @@
         "currentRounds": 6
       }
     },
-    "equippedItems": {"right": "coltRevolver0", "left": "lantern0", "armor": ""},
+    "equippedItems": {"right": "coltRevolver0", "left": "", "armor": ""},
     "items": {
       "lantern0": {
         "id": "lantern0",
@@ -63,7 +63,7 @@
         "name": "Pickaxe"
       }
     },
-    "equippedItems": {"right": "pickaxe0", "left": "torch0", "armor": ""},
+    "equippedItems": {"right": "pickaxe0", "left": "", "armor": ""},
     "items": {
       "torch0": {
         "id": "torch0",
@@ -98,7 +98,7 @@
         "currentRounds": 2
       }
     },
-    "equippedItems": {"right": "acidConcoction0", "left": "lantern0", "armor": ""},
+    "equippedItems": {"right": "acidConcoction0", "left": "", "armor": ""},
     "items": {
       "pharmaceuticals0": {
         "id": "pharmaceuticals0",
@@ -133,7 +133,7 @@
     "startingSpirit": 105,
     "skills": ["createFirstAidKit", "medicalExpertise", "resuscitate", "mine"],
     "weapons": {},
-    "equippedItems": {"right": "", "left": "lantern0", "armor": ""},
+    "equippedItems": {"right": "", "left": "", "armor": ""},
     "items": {
       "firstAidKit0": {
         "id": "firstAidKit0",
@@ -184,7 +184,7 @@
         "name": "Baseball Bat"
       }
     },
-    "equippedItems": {"right": "holyWater0", "left": "torch0", "armor": ""},
+    "equippedItems": {"right": "holyWater0", "left": "", "armor": ""},
     "items": {
       "firstAidKit0": {
         "id": "firstAidKit0",
@@ -268,7 +268,7 @@
         "name": "Knife"
       }
     },
-    "equippedItems": {"right": "knife0", "left": "electricTorch0", "armor": ""},
+    "equippedItems": {"right": "knife0", "left": "", "armor": ""},
     "items": {
       "electricTorch0": {
         "id": "electricTorch0",
@@ -300,7 +300,7 @@
         "name": "Kris Knife"
       }
     },
-    "equippedItems": {"right": "krisKnife0", "left": "lantern0", "armor": ""},
+    "equippedItems": {"right": "krisKnife0", "left": "", "armor": ""},
     "items": {
       "lantern0": {
         "id": "lantern0",
