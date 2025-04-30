@@ -53,8 +53,11 @@ export default class Firebase extends React.PureComponent {
 
 	_updateLogin(userData) {
 		this.setState({showDialog: false});
-		this._getData(userData.uid, (gameData) => {
+		this.getData(userData.uid, (gameData) => {
 			this.props.updateLoggedIn(userData, gameData);
+		}).catch(error => {
+			console.error(error);
+			alert(`Unable to retrieve game data. (${error}) Try reloading the page.`)
 		});
 	}
 
@@ -302,18 +305,15 @@ export default class Firebase extends React.PureComponent {
 	 * @param userId: string
 	 * @param callback: function
 	 */
-	_getData(userId, callback) {
+	getData = (userId, callback) => {
 		const dbRef = ref(this.database);
-		get(child(dbRef, `users/${userId}/gameData`)).then((snapshot) => {
+		return get(child(dbRef, `users/${userId}/gameData`)).then((snapshot) => {
 			if (snapshot.exists()) {
 				callback(snapshot.val());
 			} else {
 				console.log("No game save available");
 				callback(null);
 			}
-		}).catch((error) => {
-			console.error(error);
-			callback(null);
 		});
 	}
 
