@@ -23,7 +23,7 @@ h2 {
 
 #char-creation-form {
 	display: flex;
-	min-width: 470px;
+	min-width: 500px;
 	border: 1px solid #CC9933;
 	padding: 10px;
 }
@@ -309,7 +309,7 @@ h2 {
 	}
 
 	.creation-step-label {
-		width: 160px;
+		width: 140px;
 		margin: 5px;
 		padding: 5px;
 	}
@@ -318,7 +318,16 @@ h2 {
 		padding: 0 5px;
 	}
 
+	#profession-names .char-creation-prof-header {
+		width: 140px;
+	}
+
 	#char-creation-finish {
 		margin: 5px;
+	}
+
+	#char-creation-finish .char-creation-button {
+		width: 140px;
+		font-size: 20px;
 	}
 }
