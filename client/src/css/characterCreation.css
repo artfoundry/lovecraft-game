@@ -92,7 +92,6 @@ h2 {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	width: 470px;
 	gap: 20px;
 	margin: auto;
 	margin-bottom: 10px;
@@ -127,7 +126,7 @@ h2 {
 
 #char-creation-stat-roll-container {
 	display: grid;
-	grid-template-columns: 150px 64px 64px 64px;
+	grid-template-columns: 100px 64px 64px 64px;
 	grid-template-areas:
 		"rollButton rollButton rollButton rollButton"
 		"none none none none"
