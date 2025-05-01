@@ -2,8 +2,8 @@ h2 {
 	text-align: center;
 }
 
-#char-creation-container h3 {
-	margin: 50px 0 20px 0;
+#char-creation-container h2 {
+	margin: 40px 0;
 }
 
 #char-creation-container {
@@ -17,12 +17,112 @@ h2 {
 	box-sizing: border-box;
 }
 
+#char-creation-container .hidden {
+	display: none;
+}
+
+#char-creation-form {
+	display: flex;
+	min-width: 470px;
+	border: 1px solid #CC9933;
+	padding: 10px;
+}
+
+#creation-section-labels {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	flex-basis: 30%;
+	padding-right: 10px;
+	border-right: 1px solid #CC9933;
+}
+
+.creation-step-label {
+	width: 200px;
+	margin: 10px;
+	padding: 10px;
+	border: 1px solid #CC9933;
+}
+
+.creation-step-label:hover {
+	border-color: yellow;
+	cursor: pointer;
+}
+
+.creation-step-active {
+	color: black;
+	background-color: burlywood;
+}
+
+#profession-names {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 0 10px;
+	font-size: 12px;
+}
+
+#profession-names .char-creation-prof-header {
+	justify-content: start;
+	width: 160px;
+	margin: 5px;
+	padding: 5px;
+	text-align: left;
+	border-radius: 0;
+	cursor: pointer;
+}
+
+#profession-names .char-creation-prof-header.button-selected {
+	color: black;
+}
+
+#profession-names .char-creation-prof-icon {
+	width: 32px;
+	height: 32px;
+}
+
+#creation-section-options {
+	flex-basis: 70%;
+	min-width: 250px;
+	padding: 10px 10px 10px 20px;
+	box-sizing: border-box;
+}
+
 #name-entry {
 	display: flex;
+	flex-direction: column;
+	align-items: center;
 	width: 470px;
-	gap: 10px;
+	gap: 20px;
 	margin: auto;
 	margin-bottom: 10px;
+	text-align: left;
+}
+
+.name-entry-label {
+	display: inline-block;
+	width: 150px;
+}
+
+#gender-entry {
+	margin-top: 20px;
+}
+
+#attribute-rolls {
+	margin-top: 20px;
+}
+
+#rolls-display {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 20px;
+	margin: 10px 0;
+}
+
+.bottom-rule {
+	padding-bottom: 10px;
+	border-bottom: 1px solid #CC9933;
 }
 
 #char-creation-stat-roll-container {
@@ -74,7 +174,7 @@ h2 {
 	cursor: pointer;
 }
 
-.char-creation-button:hover, .char-creation-prof-header:hover, .char-creation-companion:hover, .char-creation-item:hover, .char-creation-skill:hover {
+.char-creation-button:hover, .char-creation-item:hover, .char-creation-skill:hover {
 	border-color: yellow;
 }
 
@@ -110,7 +210,7 @@ h2 {
 	margin: 20px;
 }
 
-#char-creation-prof-container, #char-creation-companions-container {
+#char-creation-prof-container {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 20px;
@@ -118,7 +218,7 @@ h2 {
 	margin-bottom: 50px;
 }
 
-.char-creation-prof, .char-creation-companion {
+.char-creation-prof {
 	flex-basis: 300px;
 	padding: 10px;
 	border-radius: 5px;
@@ -135,11 +235,10 @@ h2 {
 	gap: 10px;
 	border: 1px solid seagreen;
 	border-radius: 5px;
-	cursor: pointer;
 }
 
 .char-creation-prof-icon {
-	filter: drop-shadow(4px 4px 2px black);
+	filter: drop-shadow(2px 2px 2px black);
 }
 
 .char-creation-skill-icon {
@@ -174,15 +273,6 @@ h2 {
 	background-repeat: no-repeat;
 }
 
-.char-creation-companion {
-	border: 1px solid seagreen;
-	cursor: pointer;
-}
-
-.char-creation-companion.button-disabled {
-	background-color: #224444;
-}
-
 #char-creation-finish {
 	display: flex;
 	flex-direction: column;
@@ -199,4 +289,37 @@ h2 {
 
 .object-text-container, .skill-text-container {
 	text-align: left;
+}
+
+@media (width < 768px) {
+	#char-creation-container {
+		padding: 10px;
+		font-size: 14px;
+	}
+
+	#creation-section-options {
+		padding: 10px;
+	}
+
+	#char-creation-form {
+		padding: 5px;
+	}
+
+	#creation-section-labels {
+		padding-right: 5px;
+	}
+
+	.creation-step-label {
+		width: 160px;
+		margin: 5px;
+		padding: 5px;
+	}
+
+	#profession-names {
+		padding: 0 5px;
+	}
+
+	#char-creation-finish {
+		margin: 5px;
+	}
 }
