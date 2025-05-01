@@ -47,6 +47,7 @@
 	"content content";
 	width: 100%;
 	padding: 10px;
+	margin-bottom: 20px;
 }
 
 .login-email-only-container {
@@ -71,6 +72,10 @@
 	padding: 5px 10px;
 	background-color: burlywood;
 	cursor: pointer;
+}
+
+#login-button, .login-email-only-container .login-button {
+	font-size: 20px;
 }
 
 .message-hidden {
