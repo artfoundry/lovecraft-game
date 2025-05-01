@@ -291,7 +291,7 @@ export default class CharacterCreation extends React.PureComponent {
 	}
 
 	render() {
-		const nameAndGenderEntered = (this.state.firstName || this.state.lastName) && this.state.gender;
+		const nameAndGenderEntered = this.state.firstName && this.state.gender;
 		const attributesRolled = nameAndGenderEntered && this.state.statsSaved.strength > 0 && this.state.statsSaved.agility > 0 && this.state.statsSaved.mentalAcuity > 0;
 		return (
 			<div id='char-creation-container'>
