@@ -6,6 +6,7 @@
 
 .tile.secret:hover {
 	cursor: default;
+	pointer-events: none;
 }
 
 .map-cover {
@@ -321,6 +322,11 @@ as box-shadow greatly dims the lighting */
 
 .dinosaur-skeleton-on-table {
 	content: url('../assets/objects/dinosaur-skeleton-on-table.png');
+}
+
+.hole {
+	content: url('../assets/objects/hole_sml.png');
+	filter: none;
 }
 
 

@@ -130,7 +130,7 @@ class Character extends React.PureComponent {
 		let updatedPcData = deepCopy(pcData);
 		let updatedTargetData = deepCopy(targetData);
 		const pcPronoun = pcData.gender === 'Male' ? 'his' : 'her';
-		const targetName = targetData.type === 'player' ? targetData.name : 'the ' + targetData.name;
+		const targetName = targetData.type === 'player' ? targetData.name.first : 'the ' + targetData.name;
 		const weaponInfo = updatedPcData.weapons[actionId];
 		const equippedSide = pcData.equippedItems.loadout1.right === actionId ? 'right' : 'left';
 		const equippedGunType = weaponInfo.gunType;
@@ -163,7 +163,7 @@ class Character extends React.PureComponent {
 				attackTotal = hitRoll + pcData.agility + steadyHandModifier + sureShotModifier + rangedStrHitModifier;
 				attackTotal -= (Math.round(noGunKnowledgeMod * attackTotal) + Math.round(goBallisticModifier * attackTotal));
 				isHit = attackTotal >= defenseTotal;
-				if (isHit && !failFromCurse) {
+				if (isHit && !failFromCurse && (!weaponInfo.targetRace || weaponInfo.targetRace === targetData.race)) {
 					const attackDifference = attackTotal - defenseTotal;
 					const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 2);
 					damage = rangedStrHitModifier + actionStats.damage + damageModBasedOnAttack;
@@ -178,7 +178,7 @@ class Character extends React.PureComponent {
 				if (failFromCurse) {
 					updateLog(`${pcData.name.first} tries to attack ${targetName}, but ${pcPronoun} curse causes the attack to miss!`);
 				} else {
-					updateLog(`${pcData.name.first} attacks ${targetName} with the ${weaponInfo.name}, scores ${attackTotal} to hit...and ${isHit ? `does ${damage} damage!` : `misses (${targetData.name} scored ${defenseTotal} for defense).`}`);
+					updateLog(`${pcData.name.first} attacks ${targetName} with the ${weaponInfo.name}, scores ${attackTotal} to hit...and ${isHit ? `does ${damage} damage!` : `misses (${targetName} scored ${defenseTotal} for defense).`}`);
 				}
 			}
 		} else {
@@ -215,7 +215,7 @@ class Character extends React.PureComponent {
 			if (failFromCurse) {
 				updateLog(`${pcData.name.first} tries to attack ${targetName}, but ${pcPronoun} curse causes the attack to miss!`);
 			} else {
-				updateLog(`${pcData.name.first} ${sacrificialStrikeText}attacks ${targetName} ${fromShadowsText}with the ${weaponInfo.name}, scores ${attackTotal} to hit...and ${isHit ? `does ${damageTotal} damage!` : `misses (${targetData.name} scored ${defenseTotal} for defense).`}`);
+				updateLog(`${pcData.name.first} ${sacrificialStrikeText}attacks ${targetName} ${fromShadowsText}with the ${weaponInfo.name}, scores ${attackTotal} to hit...and ${isHit ? `does ${damageTotal} damage!` : `misses (${targetName} scored ${defenseTotal} for defense).`}`);
 			}
 		}
 

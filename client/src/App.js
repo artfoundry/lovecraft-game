@@ -10,6 +10,7 @@ import CreatureTypes from './data/creatureTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
 import ItemTypes from './data/itemTypes.json';
 import GameLocations from './data/gameLocations.json';
+import Statuses from './data/statuses.json';
 import './css/app.css';
 import {removeIdNumber, diceRoll, deepCopy, convertCoordsToPos, convertPosToCoords, getDistanceBetweenTargets, articleType} from './Utils';
 import {ProcessAudio, SoundEffect, Music} from './Audio';
@@ -26,6 +27,7 @@ class Game extends React.PureComponent {
 		this.showCharacterCreation = this.gameAttr.showCharacterCreation;
 		this.startingPlayerCharacters = !this.showCharacterCreation ? this.gameAttr.startingCharacters : null;
 		this.startingLocation = this.gameAttr.startingLocation;
+		this.startingFloor = this.gameAttr.startingFloor;
 		this.spawnCreatures = this.gameAttr.spawnCreatures;
 		this.skipIntroConversation = this.gameAttr.skipIntroConversation;
 
@@ -245,9 +247,9 @@ class Game extends React.PureComponent {
 			conversationTarget: null,
 			savedMaps: {},
 			needToSaveData: false,
-			currentLocation: this.gameAttr.startingLocation,
+			currentLocation: this.startingLocation,
 			previousLocation: '',
-			currentFloor: 1,
+			currentFloor: this.startingFloor,
 			previousFloor: null,
 			playerFollowOrder: [], // order of pcs for follow mode
 			showDialog: false,
@@ -292,7 +294,8 @@ class Game extends React.PureComponent {
 			inSearchMode: false,
 			contextMenuChoice: null,
 			centerOnPlayer: false,
-			centeredPlayer: ''
+			centeredPlayer: '',
+			locationChange: null
 		}
 	}
 
@@ -329,7 +332,8 @@ class Game extends React.PureComponent {
 			inSearchMode: false,
 			contextMenuChoice: null,
 			centerOnPlayer: false,
-			centeredPlayer: this.state.playerFollowOrder[0]
+			centeredPlayer: this.state.playerFollowOrder[0],
+			locationChange: null
 		}, () => {
 			if (callback) callback();
 		})
@@ -365,8 +369,8 @@ class Game extends React.PureComponent {
 			conversationTarget: null,
 			savedMaps: {},
 			needToSaveData: false,
-			currentLocation: this.gameAttr.startingLocation,
-			currentFloor: 1,
+			currentLocation: this.startingLocation,
+			currentFloor: this.startingFloor,
 			previousFloor: null,
 			playerFollowOrder: [],
 			showDialog: false,
@@ -411,7 +415,8 @@ class Game extends React.PureComponent {
 			inSearchMode: false,
 			contextMenuChoice: null,
 			centerOnPlayer: false,
-			centeredPlayer: ''
+			centeredPlayer: '',
+			locationChange: null
 		}, () => {
 			if (overwriteSavedData) {
 				this._saveGameData(null, true);
@@ -550,10 +555,10 @@ class Game extends React.PureComponent {
 	saveMapData = (mapData, callback) => {
 		const {playerVisited, mapLayout, exits, worldWidth, worldHeight, newFloorNum, exitToLocation, partyExitCoords} = {...mapData};
 		const savedMaps = deepCopy(this.state.savedMaps);
-		const previousFloor = this.state.currentFloor;
-		const currentFloor = newFloorNum || this.state.currentFloor;
 		const currentLocation = exitToLocation || this.state.currentLocation;
 		const previousLocation = this.state.currentLocation;
+		const previousFloor = this.state.currentFloor;
+		const currentFloor = newFloorNum || this.state.currentFloor;
 		const dataToSave = {
 			playerVisited,
 			mapLayout,
@@ -573,16 +578,19 @@ class Game extends React.PureComponent {
 		}
 		this.setState({savedMaps, previousFloor, currentFloor, currentLocation, previousLocation}, () => {
 			// stop playing sfx and music for previous area then start for new area
-			if (newFloorNum || exitToLocation) {
+			if (newFloorNum || exitToLocation || this.state.locationChange) {
 				this.toggleAudio('environments', previousLocation + 'Background', null, 'stop');
 				this.toggleAudio('environments', this.state.currentLocation + 'Background', null, 'start');
 			}
-			if (exitToLocation) {
+			if (exitToLocation || this.state.locationChange) {
 				this.toggleMusic('environments', previousLocation, 'stop');
 				this.toggleMusic('environments', this.state.currentLocation, 'start');
 			}
 			if (this.state.needToSaveData) {
 				this.toggleNeedToSaveData(false);
+			}
+			if (this.state.locationChange) {
+				this.triggerLocationChange(null);
 			}
 			if (this.forProduction) {
 				this._saveGameData(callback);
@@ -718,7 +726,7 @@ class Game extends React.PureComponent {
 			}
 		}
 		uniqueCreatureId = newCreatureId + uniqueIdNumber;
-		creatureData.creatureId = uniqueCreatureId;
+		creatureData.id = uniqueCreatureId;
 		creatureData.coords = convertPosToCoords(spawnPos);
 		allCreatures[uniqueCreatureId] = new Creature(creatureData);
 		this.updateCharacters('creature', allCreatures, null, lightingHasChanged, false, false, () => {
@@ -777,6 +785,9 @@ class Game extends React.PureComponent {
 							dataIsCopied = true;
 						}
 						updatedPlayerCharacters[pcId].statuses = {};
+						if (playerCharacters[pcId].statuses.levelUp) {
+							updatedPlayerCharacters[pcId].statuses.levelUp = {...playerCharacters[pcId].statuses.levelUp};
+						}
 					}
 				}
 				if (updatedPlayerCharacters) {
@@ -850,7 +861,7 @@ class Game extends React.PureComponent {
 
 			// if entering combat...
 			if (isInCombat && previousListSize === 0) {
-				this.updateLog('Something horrific has been spotted nearby!');
+				this.updateLog('Something horrific has been heard or spotted nearby!');
 				if (this.state.inSearchMode) {
 					this.toggleSearchMode();
 					this.updateLog('Disabling search mode.');
@@ -1104,19 +1115,33 @@ class Game extends React.PureComponent {
 			}
 		}
 		this.setState({partyExpertise, partyLevel}, () => {
+			const updateLevelUpPoints = (groupData) => {
+				for (const charData of Object.values(groupData)) {
+					if (charData.type === 'player' || charData.type === 'playerNpc') {
+						charData.levelUpPoints += this.pointsPerLevelUp;
+						charData.statuses.levelUp = {
+							name: Statuses.levelUp.name,
+							description: Statuses.levelUp.description,
+						}
+					}
+				}
+			}
 			if (partyHasLeveled) {
 				const partyData = deepCopy(this.state.playerCharacters);
-				for (const charData of Object.values(partyData)) {
-					charData.levelUpPoints += this.pointsPerLevelUp;
-				}
-				this.updateCharacters('player', partyData, null, false, false, false);
+				const savedMaps = deepCopy(this.state.savedMaps);
+				const savedMapsNpcs = savedMaps.museum ? savedMaps.museum.floors[1].npcs : {}; // check is for testing without museum level
+				updateLevelUpPoints(partyData);
+				updateLevelUpPoints(savedMapsNpcs);
+				this.updateCharacters('player', partyData, null, false, false, false, () => {
+					this.setState({savedMaps});
+				});
 			}
 		});
 	}
 
 	/**
 	 * Adds allotted points from user's leveling to appropriate pc and deducts available leveling points from that pc
-	 * note: leveling points can be held indefinitely (no reason a player would do it, but they can)
+	 * note: leveling points must all be applied by user in order to save
 	 * @param pcId: string
 	 * @param allocationChoices: object (of objects: {stats: {name: points}, skills: {name: points}}, name being stat/skill name)
 	 */
@@ -1126,9 +1151,10 @@ class Game extends React.PureComponent {
 		for (const [skillsOrStats, skillOrStatNames] of Object.entries(allocationChoices)) {
 			for (const [name, points] of Object.entries(skillOrStatNames)) {
 				skillsOrStats === 'stats' ? pcData[name] += points : pcData.skills[name].level += points;
-				pcData.levelUpPoints--;
 			}
 		}
+		pcData.levelUpPoints = 0;
+		delete pcData.statuses.levelUp;
 		this.updateCharacters('player', pcData, pcId, false, false, false);
 	}
 
@@ -1304,6 +1330,7 @@ class Game extends React.PureComponent {
 					delete nextActiveChar.statuses[statusName];
 				} else {
 					if (statusName === 'slowed') {
+						// setting these values to max amount minus 1 in order to leave pc with only 1 action and 1 move to make
 						activePlayerActionsCompleted = this.playerActionsLimit - 1;
 						activePlayerMovesCompleted = playerMoveLimit - 1;
 					}
@@ -1844,6 +1871,19 @@ class Game extends React.PureComponent {
 	}
 
 	/**
+	 * Called by applyUpdatesFromConv for triggering location change from conversation (like for end of quest)
+	 * Toggles need to save data to start data save process in Map
+	 * @param locationChange string (name of new location, or null for unsetting)
+	 */
+	triggerLocationChange(locationChange) {
+		this.setState({locationChange}, () => {
+			if (locationChange) {
+				this.toggleNeedToSaveData(true);
+			}
+		});
+	}
+
+	/**
 	 *
 	 * @param conversationTarget object ({id, targetType ('player' or 'npc)})
 	 * @param callback
@@ -1853,20 +1893,32 @@ class Game extends React.PureComponent {
 	}
 
 	/**
-	 *
+	 * Updates player or npc conv data (namely nextMessageKey) with statusUpdate from conv json
+	 * (minus journal update, which is only applied to partyJournal)
+	 * Updates partyExpertise as indicated in json
+	 * Adds player npc to party or removes pc from party as chosen by player in conv
+	 * Transfers party to another location as indicated by json
 	 * @param charId string (id of char player was talking to)
-	 * @param updates object (may include nextMessageKey, joinParty, leaveParty)
+	 * @param updates object (may include nextMessageKey, joinParty, leaveParty, changeLocation,
+	 *      journalUpdate (which includes id, description, and possibly goal or xp))
 	 */
 	applyUpdatesFromConv = (charId, updates) => {
 		const charType = this.state.playerCharacters[charId] ? 'player' : 'npc';
 		let playerFollowOrder = [...this.state.playerFollowOrder];
 		let pcObjectOrdering = [...this.state.pcObjectOrdering];
+		let savedMaps = null;
+		let locationChange = null;
+		const changeLocation = () => {
+			if (locationChange) {
+				this.triggerLocationChange(locationChange);
+			}
+		};
 
 		if (updates.journalUpdate) {
 			const updateType = updates.journalUpdate.updateType;
 			const journalId = updates.journalUpdate.id;
 			let partyJournal = deepCopy(this.state.partyJournal);
-			let partyExpertise = this.state.partyExpertise;
+			const xp = updates.journalUpdate.xp;
 
 			if (updateType === 'new') {
 				partyJournal.activeQuests[journalId] = {
@@ -1875,15 +1927,24 @@ class Game extends React.PureComponent {
 					goal: updates.journalUpdate.goal
 				}
 			} else if (updateType === 'update') {
-
+				partyJournal.activeQuests[journalId].description += `\n• ${updates.journalUpdate.description}`;
 			} else {
 				partyJournal.completedQuests[journalId] = {...partyJournal.activeQuests[journalId]};
 				delete partyJournal.activeQuests[journalId];
-				partyExpertise += updates.journalUpdate.xp;
 			}
 			delete updates.journalUpdate;
-			this.setState({partyJournal, partyExpertise});
+			this.setState({partyJournal}, () => {
+				if (xp) {
+					this.updateExpertise(xp);
+				}
+			});
 		}
+		if (updates.changeLocation) {
+			locationChange = {...updates.changeLocation};
+			delete updates.changeLocation;
+		}
+
+		// rest of updates are different conv endings (join party, leave party, or just conv end with pc or npc)
 		if (updates.joinParty) {
 			delete updates.joinParty;
 			const npcs = deepCopy(this.state.npcs);
@@ -1948,7 +2009,9 @@ class Game extends React.PureComponent {
 					this.setState({playerFollowOrder, pcObjectOrdering, unitsTurnOrder}, updateCharacters);
 				});
 			} else {
-				const savedMaps = deepCopy(this.state.savedMaps);
+				if (!savedMaps) {
+					savedMaps = deepCopy(this.state.savedMaps);
+				}
 				const savedMapsNpcs = savedMaps.museum.floors[1].npcs;
 				savedMapsNpcs[charId] = playerCharacters[charId];
 				savedMapsNpcs[charId].type = 'playerNpc';
@@ -1956,14 +2019,26 @@ class Game extends React.PureComponent {
 				savedMapsNpcs[charId].coords = {...GameLocations.museum.floors[1].npcs[charId].coords};
 				this.setState({playerFollowOrder, pcObjectOrdering, unitsTurnOrder, savedMaps}, updateCharacters);
 			}
+		// if conv target is pc, update that pc's conv
 		} else if (charType === 'player') {
 			const charData = deepCopy(this.state.playerCharacters[charId]);
 			charData.conversationStatus = {...updates};
-			this.updateCharacters('player', charData, charId, false, false, false);
+			this.updateCharacters('player', charData, charId, false, false, false, changeLocation);
+		// otherwise update npc's conv
 		} else {
-			const charData = deepCopy(this.state.npcs[charId]);
-			charData.conversationStatus = {...updates};
-			this.updateNpcs(charData, charId);
+			let npcsData = deepCopy(this.state.npcs);
+			if (updates.removeFromMap) {
+				updates.removeFromMap.forEach(itemInfo => {
+					//todo: need to add code for removal of objs or envObjs or creatures?
+					if (itemInfo.type === 'npcs') {
+						delete npcsData[itemInfo.id];
+					}
+				});
+			}
+			if (npcsData[charId]) {
+				npcsData[charId].conversationStatus = {...updates};
+			}
+			this.updateNpcs(npcsData, null, changeLocation);
 		}
 	}
 
@@ -2715,6 +2790,7 @@ class Game extends React.PureComponent {
 						toggleLightingHasChanged={this.toggleLightingHasChanged}
 						creatureSpawnInfo={this.state.creatureSpawnInfo}
 						spawnCreature={this.spawnCreature}
+						partyJournal={this.state.partyJournal}
 						// turn info
 						currentTurn={this.state.currentTurn}
 						updateCurrentTurn={this.updateCurrentTurn}
@@ -2724,6 +2800,7 @@ class Game extends React.PureComponent {
 						currentFloor={this.state.currentFloor}
 						previousFloor={this.state.previousFloor}
 						resetDataForNewArea={this.resetDataForNewArea}
+						locationChange={this.state.locationChange}
 						// ui data/control
 						updateLog={this.updateLog}
 						logText={this.state.logText}

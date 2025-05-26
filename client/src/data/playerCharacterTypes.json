@@ -38,7 +38,7 @@
         "amount": 6
       }
     },
-    "equippedLight": "lantern0"
+    "equippedLight": ""
   },
   "archaeologist": {
     "id": "archaeologist",
@@ -72,7 +72,7 @@
         "time": 100
       }
     },
-    "equippedLight": "torch0"
+    "equippedLight": ""
   },
   "chemist": {
     "id": "chemist",
@@ -113,7 +113,7 @@
         "time": 300
       }
     },
-    "equippedLight": "lantern0"
+    "equippedLight": ""
   },
   "doctor": {
     "id": "doctor",
@@ -154,7 +154,7 @@
         "time": 300
       }
     },
-    "equippedLight": "lantern0"
+    "equippedLight": ""
   },
   "priest": {
     "id": "priest",
@@ -199,7 +199,7 @@
         "time": 100
       }
     },
-    "equippedLight": "torch0"
+    "equippedLight": ""
   },
   "veteran": {
     "id": "veteran",
@@ -275,7 +275,7 @@
         "name": "Electric Torch"
       }
     },
-    "equippedLight": "electricTorch0"
+    "equippedLight": ""
   },
   "occultResearcher": {
     "id": "occultResearcher",
@@ -309,6 +309,6 @@
         "time": 300
       }
     },
-    "equippedLight": "lantern0"
+    "equippedLight": ""
   }
 }

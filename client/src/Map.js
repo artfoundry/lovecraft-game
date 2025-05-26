@@ -1,5 +1,5 @@
 import React, {createRef} from 'react';
-import DungeonMapData from './data/dungonMapData.json';
+import DungeonMapData from './data/dungeonMapData.json';
 import GameLocations from './data/gameLocations.json';
 import CreatureData from './data/creatureTypes.json';
 import Creature from './Creature';
@@ -16,12 +16,12 @@ import {
 	roundTowardZero,
 	deepCopy,
 	diceRoll} from './Utils';
-import './css/map.css';
 import './css/catacombs.css';
 import './css/museum.css';
 import './css/creatures.css';
 import './css/playerCharacters.css';
 import './css/npcs.css';
+import './css/map.css';
 
 /**
  * Map controls entire layout of game elements (objects, tiles, and lighting) as well as movement of players and creatures
@@ -36,7 +36,7 @@ class Map extends React.PureComponent {
 
 		// Constants
 		this.tileSize = 64;
-		this.uiPadding = 290; // extra space above/below map so top/bottom of map aren't under UI and for determining when to move map if pc gets too close to ui
+		this.uiPadding = 310; // extra space above/below map so top/bottom of map aren't under UI and for determining when to move map if pc gets too close to ui
 		// total number of unique map pieces in currentLocationData: 21;
 		this.firstMapPieceCoords = {xPos: 10, yPos: 10}; //arbitrary but shifted from 0,0 to allow space for pieces on all sides
 		this.characterSizePercentage = 0.7;
@@ -138,23 +138,23 @@ class Map extends React.PureComponent {
 	/**
 	 * Save map data in App, which then saves all game data to FB
 	 * @param callback: function
-	 * @param areaChangeValue: number (1 or -1, otherwise undefined when not passed in)
-	 * @param exitToLocation string (name of location exiting to)
+	 * @param newFloorNum: number (optional)
+	 * @param exitToLocation string (name of location exiting to, optional)
 	 */
-	saveAllData = (callback, areaChangeValue, exitToLocation) => {
+	saveAllData = (callback, newFloorNum, exitToLocation) => {
 		const mapData = {
 			playerVisited: deepCopy(this.state.playerVisited),
 			mapLayout: deepCopy(this.state.mapLayout),
 			exits: deepCopy(this.state.exits),
 			worldWidth: this.state.worldWidth,
 			worldHeight: this.state.worldHeight,
-			newFloorNum: areaChangeValue ? this.props.currentFloor + areaChangeValue : null,
+			newFloorNum,
 			exitToLocation
 		};
 		const saveMapData = () => {
 			this.props.saveMapData(mapData, callback);
 		}
-		if (areaChangeValue || exitToLocation) {
+		if (newFloorNum || exitToLocation) {
 			mapData.partyExitCoords = {};
 			// save coords of each pc's last tile before leaving location/floor so know where to place them upon returning
 			this.props.playerFollowOrder.forEach(id => {
@@ -189,13 +189,15 @@ class Map extends React.PureComponent {
 	layoutPieces = () => {
 		const usingSavedMapData = this.state.usingSavedMapData;
 		const savedMapData = usingSavedMapData ? this.props.savedMaps[this.props.currentLocation].floors[this.props.currentFloor] : null;
+		const floorMapData = this.state.currentLocationData.floors[this.props.currentFloor];
 
 		// new randomized map
-		if (!usingSavedMapData && this.state.currentLocationData.floors[this.props.currentFloor].isRandom) {
+		if (!usingSavedMapData && floorMapData.isRandom) {
 			let numPiecesTried = 0;
 			let attemptedPieces = [];
 			const numPieceTemplates = Object.keys(DungeonMapData).length;
 
+			// find how many openings each piece has
 			for (const [pieceName, pieceData] of Object.entries(DungeonMapData)) {
 				let openings = 0;
 				for (const tileSides of Object.values(pieceData)) {
@@ -208,7 +210,16 @@ class Map extends React.PureComponent {
 				this.numberOpeningsPerPiece[pieceName] = openings;
 			}
 
-			while (numPiecesTried < numPieceTemplates && Object.keys(this.mapLayoutTemp).length < this.state.currentLocationData.floors[this.props.currentFloor].mapTileLimit) {
+			if (floorMapData.setPiece) {
+				const pieceName = floorMapData.setPiece.pieceName;
+				const newPiece = DungeonMapData[pieceName];
+				const {updatedPiece, mapOpening, pieceOpening} = this._findNewPiecePosition(newPiece, pieceName);
+				this._updateMapLayout(updatedPiece, mapOpening, pieceOpening, pieceName);
+			}
+
+			// choose random piece, see if there's a valid place for it, and if position found, update map
+			// if tried all of the different pieces, and none fit, or if reached the tile limit, exit loop
+			while (numPiecesTried < numPieceTemplates && Object.keys(this.mapLayoutTemp).length < floorMapData.mapTileLimit) {
 				const {newPiece, pieceName} = this._chooseNewRandomPiece(attemptedPieces);
 				attemptedPieces.push(pieceName);
 				const {positionFound, updatedPiece, mapOpening, pieceOpening} = this._findNewPiecePosition(newPiece, pieceName);
@@ -226,8 +237,8 @@ class Map extends React.PureComponent {
 		// new non-randomized map
 		} else {
 			this._placeStaticPieces();
-			this.worldFarthestX = this.state.currentLocationData.floors[this.props.currentFloor].maxXpos;
-			this.worldFarthestY = this.state.currentLocationData.floors[this.props.currentFloor].maxYpos;
+			this.worldFarthestX = floorMapData.maxXpos;
+			this.worldFarthestY = floorMapData.maxYpos;
 		}
 
 		const worldWidth = usingSavedMapData ? savedMapData.worldWidth : (this.worldFarthestX * this.tileSize) + this.uiPadding;
@@ -240,6 +251,7 @@ class Map extends React.PureComponent {
 		}, () => {
 			this._setExitPosition(() => {
 				this._setInitialCharacterCoords(() => {
+
 					const continueWithObjSetup = () => {
 						this._setInitialObjectData(() => {
 							this._setInitialEnvObjectData(() => {
@@ -251,11 +263,8 @@ class Map extends React.PureComponent {
 											this._moveCreature();
 										}
 									}
-									if (this.state.currentLocationData.floors[this.props.currentFloor].creatures) {
-										const creaturePositions = this.props.getAllCharactersPos('creature', 'pos');
-										const playerPositions = this.props.getAllCharactersPos('player', 'pos');
-										const threatLists = this._findChangesToNearbyThreats(playerPositions, creaturePositions);
-										this.props.updateThreatList(threatLists.threatListToAdd, [], saveNewData, this.isInLineOfSight);
+									if (floorMapData.creatures) {
+										this._updateThreatLists(saveNewData);
 									} else {
 										saveNewData();
 									}
@@ -267,10 +276,35 @@ class Map extends React.PureComponent {
 							})
 						});
 					}
-					if (this.state.currentLocationData.floors[this.props.currentFloor].npcs) {
+					// for unlit maps, warn usr to equip a light
+					if (!floorMapData.allTilesAtLeastAmbientLit) {
+						let anyLightEquipped = false;
+						const partyData = Object.values(this.props.playerCharacters);
+						let count = 0;
+						while (count < partyData.length && !anyLightEquipped) {
+							if (partyData[count].lightRange > 0) {
+								anyLightEquipped = true;
+							}
+							count++;
+						}
+						if (!anyLightEquipped) {
+							const dialogProps = {
+								dialogContent: "You may want to equip a light, lest you get eaten by a Grue! (click/tap a character's name below to open their character info)",
+								closeButtonText: 'Ok',
+								closeButtonCallback: null,
+								disableCloseButton: false,
+								actionButtonVisible: false,
+								actionButtonText: '',
+								actionButtonCallback: null,
+								dialogClasses: ''
+							};
+							this.props.setShowDialogProps(true, dialogProps)
+						}
+					}
+					if (floorMapData.npcs || (floorMapData.setPiece && floorMapData.setPiece.npcs)) {
 						this._setInitialNpcData();
 					}
-					if (this.state.currentLocationData.floors[this.props.currentFloor].creatures) {
+					if (floorMapData.creatures) {
 						this._setInitialCreatureData(continueWithObjSetup);
 					} else {
 						continueWithObjSetup();
@@ -301,7 +335,7 @@ class Map extends React.PureComponent {
 	 */
 	_chooseNewRandomPiece(attemptedPieces) {
 		const pieceNamesList = Object.keys(DungeonMapData);
-		const remainingPieceNameList = pieceNamesList.filter(name => attemptedPieces.indexOf(name) < 0);
+		const remainingPieceNameList = pieceNamesList.filter(name => attemptedPieces.indexOf(name) < 0 && name !== 'roomScripted');
 		const piecesWith3orMoreOpenings = remainingPieceNameList.filter(name => this.numberOpeningsPerPiece[name] >= 3);
 		const percentMapFilled = Object.keys(this.mapLayoutTemp).length / this.state.currentLocationData.floors[this.props.currentFloor].mapTileLimit;
 		// while map is only 30% filled so far, ~66% chance of only using rooms/halls with more than 2 doors - this is to try to prevent small maps
@@ -715,6 +749,50 @@ class Map extends React.PureComponent {
 	}
 
 	/**
+	 * Sets to state the positions for static exits or randomized exits for dungeons
+	 * For randomized (nextArea or previousArea exit - exit where pcs spawn), exits can't be in secret areas
+	 * If previousArea exit, must be in a room (to help prevent pcs from getting separated)
+	 * @param callback : function
+	 * @private
+	 */
+	_setExitPosition(callback) {
+		let exits;
+		if (this.state.usingSavedMapData) {
+			const savedMapData = this.props.savedMaps[this.props.currentLocation].floors[this.props.currentFloor];
+			exits = {...savedMapData.exits};
+		} else if (!this.state.currentLocationData.floors[this.props.currentFloor].isRandom) {
+			const exitTypes = this.state.currentLocationData.floors[this.props.currentFloor].exits;
+			exits = {staticExits: true, stairs: {
+				up: (exitTypes.stairs && exitTypes.stairs.up) ? [...exitTypes.stairs.up] : null,
+				down: (exitTypes.stairs && exitTypes.stairs.down) ? [...exitTypes.stairs.down] : null,
+				doors: exitTypes.doors ? [...exitTypes.doors] : null
+			}};
+		//todo: if we have a setPiece with exits, will need to add another else if here for setPieces
+		} else {
+			exits = {randomExits: true, nextAreaExitCoords: {}, previousAreaExitCoords: {}, enteredFrom: this.state.currentLocationData.enteredFrom};
+			const currentFloorData = this.state.currentLocationData.floors[this.props.currentFloor];
+			const tilePositions = Object.keys(this.state.mapLayout).filter(tilePos => {
+				const tileData = this.state.mapLayout[tilePos];
+				let isValidExit = false;
+				if (tileData.piece.includes('room') && (!currentFloorData.setPiece || currentFloorData.setPiece.pieceName !== tileData.piece)) {
+					const adjacentTiles = this._getAllSurroundingTilesToRange(tilePos, 1)['1Away'].filter(pos => this.state.mapLayout[pos].type === 'floor');
+					isValidExit = adjacentTiles.length >= 3;
+				}
+				return tileData.type === 'floor' && !tileData.piece.includes('secret') && isValidExit;
+			});
+			let exitPosition = tilePositions[Math.floor(Math.random() * tilePositions.length)];
+			exits.previousAreaExitCoords = convertPosToCoords(exitPosition);
+			tilePositions.splice(tilePositions.indexOf(exitPosition), 1);
+			if (this.props.currentFloor < this.state.currentLocationData.numOfFloors) {
+				exits.nextAreaExitCoords = convertPosToCoords(tilePositions[Math.floor(Math.random() * tilePositions.length)]);
+				// for testing: to put two stairs next to each other, uncomment below
+				// exits.nextAreaExitCoords = {xPos: exits.previousAreaExitCoords.xPos+1, yPos: exits.previousAreaExitCoords.yPos};
+			}
+		}
+		this.setState({exits, exitPlaced: true}, callback);
+	}
+
+	/**
 	 * Sets to state coordinates for all PCs when map first loads,
 	 * then moves the map to center on active PC
 	 * @param initialSetupCallback: Function
@@ -760,7 +838,7 @@ class Map extends React.PureComponent {
 						}
 					// changing location (new location is static) or reloading game with saved data
 					} else {
-						if (savedMapData && savedMapData.partyExitCoords) {
+						if (savedMapData && savedMapData.partyExitCoords && savedMapData.partyExitCoords[playerID]) {
 							startingCoords = {...savedMapData.partyExitCoords[playerID]};
 						} else {
 							// find exit in new location whose destination matches previous location
@@ -782,7 +860,7 @@ class Map extends React.PureComponent {
 					tilePos = convertCoordsToPos(startingCoords);
 					newCoords = {...startingCoords};
 				} else {
-					if (savedMapData) {
+					if (savedMapData && savedMapData.partyExitCoords && savedMapData.partyExitCoords[playerID]) {
 						newCoords = {...savedMapData.partyExitCoords[playerID]};
 					} else {
 						// look for empty nearby tile to place 2nd/3rd PC
@@ -807,16 +885,25 @@ class Map extends React.PureComponent {
 	 * @private
 	 */
 	_setInitialNpcData(callback) {
+		const currentFloorData = this.state.currentLocationData.floors[this.props.currentFloor];
 		let npcs = {};
 		if (this.state.usingSavedMapData) {
 			npcs = deepCopy(this.props.savedMaps[this.props.currentLocation].floors[this.props.currentFloor].npcs);
 		} else {
-			for (const [id, data] of Object.entries(this.state.currentLocationData.floors[this.props.currentFloor].npcs)) {
-				if (id !== this.props.createdCharData.id) {
-					// player companion npcs for museum are first initialized in App when starting new game
-					// or restored when loading from fb
-					// but still need to add initial coords
-					npcs[id] = this.props.npcs[id] ? {...this.props.npcs[id], ...data} : {...data};
+			if (currentFloorData.npcs) {
+				for (const [id, data] of Object.entries(currentFloorData.npcs)) {
+					if (id !== this.props.createdCharData.id) {
+						// player companion npcs for museum are first initialized in App when starting new game or restored when loading from fb
+						// but still need to add initial coords from location data
+						npcs[id] = this.props.npcs[id] ? {...this.props.npcs[id], ...deepCopy(data)} : {...deepCopy(data)};
+					}
+				}
+			}
+			if (currentFloorData.setPiece) {
+				for (const [id, data] of Object.entries(currentFloorData.setPiece.npcs)) {
+					npcs[id] = {...deepCopy(data)};
+					npcs[id].coords.xPos += this.firstMapPieceCoords.xPos;
+					npcs[id].coords.yPos += this.firstMapPieceCoords.yPos;
 				}
 			}
 		}
@@ -838,6 +925,7 @@ class Map extends React.PureComponent {
 				callback();
 			});
 		} else {
+			const currentFloorData = this.state.currentLocationData.floors[this.props.currentFloor];
 			let mapCreatures = {};
 			if (this.state.usingSavedMapData) {
 				const creatureSource = deepCopy(this.props.savedMaps[this.props.currentLocation].floors[this.props.currentFloor].mapCreatures);
@@ -846,19 +934,45 @@ class Map extends React.PureComponent {
 					mapCreatures[creatureId] = new Creature(props);
 				}
 			} else {
-				let creatureCoords = {};
-				for (const [genericId, countInfo] of Object.entries(this.state.currentLocationData.floors[this.props.currentFloor].creatures)) {
-					if (countInfo.number > 0 || countInfo.variation > 0) {
-						const zeroOrPosOrNeg = diceRoll(3); // roll 1 = -1, roll 2 = 0, roll 3 = 1
-						const variation = (countInfo.variation > 0 && zeroOrPosOrNeg !== 2) ? diceRoll(countInfo.variation) * (zeroOrPosOrNeg === 1 ? -1 : 1) : 0;
-						const count = (countInfo.number + variation) >= 0 ? countInfo.number + variation : 0;
-						for (let i=0; i < count; i++) {
-							const coords = convertPosToCoords(this._generateRandomLocation(creatureCoords));
+				if (currentFloorData.setPiece) {
+					for (const [genericId, spawnInfo] of Object.entries(currentFloorData.setPiece.creatures)) {
+						for (let i=0; i < spawnInfo.number; i++) {
 							const creatureId = genericId + i;
-							CreatureData[genericId].id = creatureId;
-							mapCreatures[creatureId] = new Creature(CreatureData[genericId]);
-							mapCreatures[creatureId].coords = coords;
-							creatureCoords[creatureId] = coords;
+							const relatedMission = spawnInfo.relatedMission;
+							const coords = {
+								xPos: spawnInfo.coords[i].xPos + this.firstMapPieceCoords.xPos,
+								yPos: spawnInfo.coords[i].yPos + this.firstMapPieceCoords.yPos
+							};
+							mapCreatures[creatureId] = new Creature({
+								...CreatureData[genericId],
+								id: creatureId,
+								coords,
+								relatedMission
+							});
+						}
+					}
+				}
+				let creatureCoords = {};
+				if (currentFloorData.creatures) {
+					for (const [genericId, countInfo] of Object.entries(currentFloorData.creatures)) {
+						if (countInfo.number > 0 || countInfo.variation > 0) {
+							const mapCreatureIds = Object.keys(mapCreatures);
+							const existingCreatureHighestIdVal = mapCreatureIds.reduce((highestValue, currentId) => {
+								const match = currentId.includes(genericId) ? +currentId.match(/\d+/)[0] : null;
+								return match !== null && (!highestValue || match > highestValue) ? match : highestValue;
+							}, null);
+							const startingIdBaseNum = existingCreatureHighestIdVal !== null ? existingCreatureHighestIdVal + 1 : 0;
+							const zeroOrPosOrNeg = diceRoll(3); // roll 1 = -1, roll 2 = 0, roll 3 = 1
+							const variation = (countInfo.variation > 0 && zeroOrPosOrNeg !== 2) ? diceRoll(countInfo.variation) * (zeroOrPosOrNeg === 1 ? -1 : 1) : 0;
+							const count = (countInfo.number + variation) >= 0 ? countInfo.number + variation : 0;
+							for (let i=0; i < count; i++) {
+								const coords = convertPosToCoords(this._generateRandomLocation(creatureCoords, 'floor', 'creature'));
+								// need parens around number calc so it's calculated before conversion to string
+								const creatureId = genericId + (startingIdBaseNum + i);
+								mapCreatures[creatureId] = new Creature({...CreatureData[genericId], id: creatureId});
+								mapCreatures[creatureId].coords = coords;
+								creatureCoords[creatureId] = coords;
+							}
 						}
 					}
 				}
@@ -881,8 +995,33 @@ class Map extends React.PureComponent {
 		if (this.state.usingSavedMapData) {
 			mapItems = deepCopy(this.props.savedMaps[this.props.currentLocation].floors[this.props.currentFloor].mapObjects);
 		} else {
+			const currentFloorData = this.state.currentLocationData.floors[this.props.currentFloor];
+			if (currentFloorData.setPiece && currentFloorData.setPiece.objects) {
+				for (const [objectType, objectInfo] of Object.entries(currentFloorData.setPiece.objects)) {
+					for (const [itemName, itemPlacementInfo] of Object.entries(objectInfo)) {
+						for (let i = 0; i < itemPlacementInfo.number; i++) {
+							const itemInfo = objectType === 'Weapon' ? WeaponTypes[itemName] : ItemTypes[itemName];
+							const lowerCaseName = itemName.slice(0, 1).toLowerCase() + itemName.slice(1, itemName.length).replaceAll(' ', '');
+							const itemID = lowerCaseName + i;
+							const gunType = objectType === 'Weapon' && itemInfo.gunType ? itemInfo.gunType : null;
+							const weaponCurrentRounds = gunType ? Math.round(Math.random() * itemInfo.rounds) : objectType === 'Weapon' ? 1 : null;
+							mapItems[itemID] = {
+								...itemInfo,
+								id: itemID,
+								name: itemName,
+								isIdentified: objectType !== 'Relic',
+								currentRounds: weaponCurrentRounds,
+								coords: {
+									xPos: itemPlacementInfo.coords[i].xPos + this.firstMapPieceCoords.xPos,
+									yPos: itemPlacementInfo.coords[i].yPos + this.firstMapPieceCoords.yPos
+								}
+							};
+						}
+					}
+				}
+			}
 			let itemCoords = {};
-			for (const [objectType, objectTypesInfo] of Object.entries(this.state.currentLocationData.floors[this.props.currentFloor].objects)) {
+			for (const [objectType, objectTypesInfo] of Object.entries(currentFloorData.objects)) {
 				const alwaysOnTheLookoutSkillInfo = this.props.playerCharacters.archaeologist ? this.props.playerCharacters.archaeologist.skills.alwaysOnTheLookout : null;
 				let relicChance = alwaysOnTheLookoutSkillInfo ? alwaysOnTheLookoutSkillInfo.modifier[alwaysOnTheLookoutSkillInfo.level] : 0;
 				for (const [itemName, itemCountInfo] of Object.entries(objectTypesInfo)) {
@@ -891,6 +1030,12 @@ class Map extends React.PureComponent {
 							relicChance = (relicChance + itemCountInfo.chance) * 100;
 						}
 						if (objectType !== 'Relic' || (objectType === 'Relic' && (diceRoll(100) <= relicChance))) {
+							const mapItemIds = Object.keys(mapItems);
+							const existingItemHighestIdVal = mapItemIds.reduce((highestValue, currentId) => {
+								const match = currentId.includes(itemName) ? +currentId.match(/\d+/)[0] : null;
+								return match !== null && (!highestValue || match > highestValue) ? match : highestValue;
+							}, null);
+							const startingIdBaseNum = existingItemHighestIdVal !== null ? existingItemHighestIdVal + 1 : 0;
 							const zeroOrPosOrNeg = diceRoll(3); // roll 1 = -1, roll 2 = 0, roll 3 = 1
 							const variation = (itemCountInfo.variation > 0 && zeroOrPosOrNeg !== 2) ? diceRoll(itemCountInfo.variation) * (zeroOrPosOrNeg === 1 ? -1 : 1) : 0;
 							const count = (itemCountInfo.number + variation) >= 0 ? itemCountInfo.number + variation : 0;
@@ -898,10 +1043,12 @@ class Map extends React.PureComponent {
 								const itemInfo = objectType === 'Weapon' ? WeaponTypes[itemName] : ItemTypes[itemName];
 								const tileType = itemName === 'Torch' ? 'wall' : 'floor';
 								const lowerCaseName = itemName.slice(0, 1).toLowerCase() + itemName.slice(1, itemName.length).replaceAll(' ', '');
-								const itemID = lowerCaseName + (i + 1);
+								// need parens around number calc so it's calculated before conversion to string
+								const itemID = lowerCaseName + (startingIdBaseNum + i);
 								const gunType = objectType === 'Weapon' && itemInfo.gunType ? itemInfo.gunType : null;
 								const weaponCurrentRounds = gunType ? Math.round(Math.random() * itemInfo.rounds) : objectType === 'Weapon' ? 1 : null;
-								const coords = convertPosToCoords(this._generateRandomLocation(itemCoords, tileType)); // use this.props.playerCharacters['privateEye'].coords instead to easily test objects
+								// use this.props.playerCharacters['privateEye'].coords instead to easily test objects
+								const coords = convertPosToCoords(this._generateRandomLocation(itemCoords, tileType, 'object'));
 								mapItems[itemID] = {
 									...itemInfo,
 									id: itemID,
@@ -933,20 +1080,48 @@ class Map extends React.PureComponent {
 	 */
 	_setInitialEnvObjectData(callback) {
 		let envObjects = {};
+		const currentFloorData = this.state.currentLocationData.floors[this.props.currentFloor];
 		if (this.state.usingSavedMapData) {
 			envObjects = deepCopy(this.props.savedMaps[this.props.currentLocation].floors[this.props.currentFloor].envObjects);
-		} else if (this.state.currentLocationData.floors[this.props.currentFloor].isRandom) {
+		} else if (currentFloorData.isRandom) {
+			if (currentFloorData.setPiece && currentFloorData.setPiece.envObjects) {
+				for (const [itemId, objectInfo] of Object.entries(currentFloorData.setPiece.envObjects)) {
+					for (let i = 0; i < objectInfo.number; i++) {
+						//todo: add containers?
+						const envItemInfo = EnvObjectTypes[itemId];
+						const lowerCaseName = itemId.slice(0, 1).toLowerCase() + itemId.slice(1, itemId.length).replaceAll(' ', '');
+						const uniqueItemId = lowerCaseName + i;
+						envObjects[uniqueItemId] = {
+							...envItemInfo,
+							name: itemId,
+							isIdentified: true,
+							isDestroyed: false,
+							coords: {
+								xPos: objectInfo.coords[i].xPos + this.firstMapPieceCoords.xPos,
+								yPos: objectInfo.coords[i].yPos + this.firstMapPieceCoords.yPos
+							}
+						};
+					}
+				}
+			}
 			let itemCoords = {};
-			for (const [itemId, objCountInfo] of Object.entries(this.state.currentLocationData.floors[this.props.currentFloor].envObjects)) {
+			for (const [itemId, objCountInfo] of Object.entries(currentFloorData.envObjects)) {
 				if (objCountInfo.number > 0 || objCountInfo.variation > 0) {
+					const envObjIds = Object.keys(envObjects);
+					const existingItemHighestIdVal = envObjIds.reduce((highestValue, currentId) => {
+						const match = currentId.includes(itemId) ? +currentId.match(/\d+/)[0] : null;
+						return match !== null && (!highestValue || match > highestValue) ? match : highestValue;
+					}, null);
+					const startingIdBaseNum = existingItemHighestIdVal !== null ? existingItemHighestIdVal + 1 : 0;
 					const zeroOrPosOrNeg = diceRoll(3); // roll 1 = -1, roll 2 = 0, roll 3 = 1
 					const variation = (objCountInfo.variation > 0 && zeroOrPosOrNeg !== 2) ? diceRoll(objCountInfo.variation) * (zeroOrPosOrNeg === 1 ? -1 : 1) : 0;
 					const count = (objCountInfo.number + variation) >= 0 ? objCountInfo.number + variation : 0;
 					for (let i = 0; i < count; i++) {
 						const envItemInfo = EnvObjectTypes[itemId];
 						const lowerCaseName = itemId.slice(0, 1).toLowerCase() + itemId.slice(1, itemId.length).replaceAll(' ', '');
-						const uniqueItemId = lowerCaseName + (i + 1);
-						const coords = convertPosToCoords(this._generateRandomLocation(itemCoords, 'floor', true, envItemInfo.isPassable)); // this.props.playerCharacters['privateEye'].coords (to easily test objects)
+						// need parens around number calc so it's calculated before conversion to string
+						const uniqueItemId = lowerCaseName + (startingIdBaseNum + i);
+						const coords = convertPosToCoords(this._generateRandomLocation(itemCoords, 'floor', 'envObject', envItemInfo.isPassable)); // this.props.playerCharacters['privateEye'].coords (to easily test objects)
 						let containerContents = [];
 						if (envItemInfo.type === 'container' || envItemInfo.type === 'mineable') {
 							// adding null option so container could have nothing
@@ -977,7 +1152,6 @@ class Map extends React.PureComponent {
 							...envItemInfo,
 							name: itemId,
 							isIdentified: true,
-							isDestructible: envItemInfo.isDestructible,
 							isDestroyed: false,
 							containerContents,
 							isOpen: envItemInfo.type === 'container' ? false : null,
@@ -991,11 +1165,12 @@ class Map extends React.PureComponent {
 				}
 			}
 		} else {
-			for (const [itemName, itemPositions] of Object.entries(this.state.currentLocationData.floors[this.props.currentFloor].envObjects)) {
+			// for static maps
+			for (const [itemName, itemPositions] of Object.entries(currentFloorData.envObjects)) {
 				const envItemInfo = EnvObjectTypes[itemName];
 				itemPositions.forEach((pos, i) => {
 					const lowerCaseName = itemName.slice(0, 1).toLowerCase() + itemName.slice(1, itemName.length).replaceAll(' ', '');
-					const uniqueItemId = lowerCaseName + (i + 1);
+					const uniqueItemId = lowerCaseName + i;
 					envObjects[uniqueItemId] = {
 						...envItemInfo,
 						name: itemName,
@@ -1016,26 +1191,30 @@ class Map extends React.PureComponent {
 	 * A char and object can occupy same tile, but env obj is placed with nothing else (even if passable)
 	 * If placing env obj, needs to check if canHaveObject, and if so, objectMustBePassable and objectCanBeImpassable
 	 * Note: during map setup, players get placed first, then creatures, then items, then env objects
-	 * @param objectCoords: Object (collection of objects/chars being placed by calling function, before they've been set to state)
-	 * @param tileType: String (either 'floor' or 'wall')
-	 * @param isEnvObj: Boolean
-	 * @param isPassable: Boolean (true if object can be walked over)
+	 * @param objectCoords Object (collection of objects/chars being placed by calling function, before they've been set to state)
+	 * @param tileType String (either 'floor' or 'wall')
+	 * @param objectType String ('creature', 'object', or 'envObject')
+	 * @param isPassable Boolean (true if object can be walked over)
 	 * @returns {string}
 	 * @private
 	 */
-	_generateRandomLocation(objectCoords = {}, tileType = 'floor', isEnvObj = false, isPassable) {
+	_generateRandomLocation(objectCoords = {}, tileType, objectType, isPassable) {
+		const isEnvObj = objectType === 'envObject';
 		let emptyLocFound = false;
-		// list of available floor tiles, in str format, on which to place stuff
+		// list of available tiles, in str format, on which to place stuff
 		let tileList = Object.keys(this.state.mapLayout).filter(tilePos => {
+			// only use floor if desired type is floor, wall if desired type is wall,
+			// and if it's a creature or obj, don't place in a scripted room
+			// (creatures are already designated in gameLocations, and since envobjs get placed after objs, obj could get placed in scripted envObj coords which aren't checked in this func)
 			return (
-				(tileType === 'floor' && this.state.mapLayout[tilePos].type === 'floor') ||
-				(tileType === 'wall' && (this.state.mapLayout[tilePos].classes === 'left-wall' || this.state.mapLayout[tilePos].classes === 'right-wall' || this.state.mapLayout[tilePos].classes === 'top-wall'))
+				(objectType === 'envObject' || this.state.mapLayout[tilePos].piece !== 'roomScripted') &&
+				((tileType === 'floor' && this.state.mapLayout[tilePos].type === 'floor') ||
+				(tileType === 'wall' && (this.state.mapLayout[tilePos].classes === 'left-wall' || this.state.mapLayout[tilePos].classes === 'right-wall' || this.state.mapLayout[tilePos].classes === 'top-wall')))
 			);
 		});
 		let newObjectList = Object.values(objectCoords).length > 0 ? Object.values(objectCoords).map(object => convertCoordsToPos(object)) : null;
 		let randomIndex = 0;
 		let tilePos = '';
-		// todo: this needs to be array of positions
 		const nextExitPos = this.state.exits.nextAreaExitCoords ? convertCoordsToPos(this.state.exits.nextAreaExitCoords) : null;
 		const prevExitPos = this.state.exits.previousAreaExitCoords ? convertCoordsToPos(this.state.exits.previousAreaExitCoords) : null;
 		let allCharacterPos = [];
@@ -1241,47 +1420,6 @@ class Map extends React.PureComponent {
 		this.setState({mapLayout, lightingCalculated: true, playerVisited}, () => {
 			if (callback) callback();
 		});
-	}
-
-	/**
-	 * Sets to state the positions for static exits or randomized exits for dungeons
-	 * For randomized (nextArea or previousArea exit - exit where pcs spawn), exits can't be in secret areas
-	 * If previousArea exit, must be in a room (to help prevent pcs from getting separated)
-	 * @param callback : function
-	 * @private
-	 */
-	_setExitPosition(callback) {
-		let exits;
-		if (this.state.usingSavedMapData) {
-			const savedMapData = this.props.savedMaps[this.props.currentLocation].floors[this.props.currentFloor];
-			exits = {...savedMapData.exits};
-		} else if (!this.state.currentLocationData.floors[this.props.currentFloor].isRandom) {
-			const exitTypes = this.state.currentLocationData.floors[this.props.currentFloor].exits;
-			exits = {staticExits: true, stairs: {
-				up: (exitTypes.stairs && exitTypes.stairs.up) ? [...exitTypes.stairs.up] : null,
-				down: (exitTypes.stairs && exitTypes.stairs.down) ? [...exitTypes.stairs.down] : null,
-				doors: exitTypes.doors ? [...exitTypes.doors] : null
-			}};
-		} else {
-			exits = {randomExits: true, nextAreaExitCoords: {}, previousAreaExitCoords: {}, enteredFrom: this.state.currentLocationData.enteredFrom};
-			const tilePositions = Object.keys(this.state.mapLayout).filter(tilePos => {
-				let isValidExit = false;
-				if (this.state.mapLayout[tilePos].piece.includes('room')) {
-					const adjacentTiles = this._getAllSurroundingTilesToRange(tilePos, 1)['1Away'].filter(pos => this.state.mapLayout[pos].type === 'floor');
-					isValidExit = adjacentTiles.length >= 3;
-				}
-				return this.state.mapLayout[tilePos].type === 'floor' && !this.state.mapLayout[tilePos].piece.includes('secret') && isValidExit;
-			});
-			let exitPosition = tilePositions[Math.floor(Math.random() * tilePositions.length)];
-			exits.previousAreaExitCoords = convertPosToCoords(exitPosition);
-			tilePositions.splice(tilePositions.indexOf(exitPosition), 1);
-			if (this.props.currentFloor < this.state.currentLocationData.numOfFloors) {
-				exits.nextAreaExitCoords = convertPosToCoords(tilePositions[Math.floor(Math.random() * tilePositions.length)]);
-				// for testing: to put two stairs next to each other, uncomment below
-				// exits.nextAreaExitCoords = {xPos: exits.previousAreaExitCoords.xPos+1, yPos: exits.previousAreaExitCoords.yPos};
-			}
-		}
-		this.setState({exits, exitPlaced: true}, callback);
 	}
 
 	/**
@@ -1702,7 +1840,7 @@ class Map extends React.PureComponent {
 
 			if (tileLightStr <= this.maxLightStrength && tileLightStr >= 1) {
 				allClasses += ` light-strength-${tileLightStr} black-light`;
-			} else if (this.state.playerVisited[tilePos] || this.state.currentLocationData.floors[this.props.currentFloor].excludeNonLitTiles) {
+			} else if (this.state.playerVisited[tilePos] || this.state.currentLocationData.floors[this.props.currentFloor].allTilesAtLeastAmbientLit) {
 				allClasses += ' ambient-light black-light';
 			} else {
 				allClasses += ' no-light black-light';
@@ -1818,7 +1956,7 @@ class Map extends React.PureComponent {
 		const exitIsStairsDown = (this.state.exits.stairs && this.state.exits.stairs.down) ? this.state.exits.stairs.down.find(stairsInfo => stairsInfo.pos === activePCpos) : null;
 		const exitIsStairsUp = (this.state.exits.stairs && this.state.exits.stairs.up) ? this.state.exits.stairs.up.find(stairsInfo => stairsInfo.pos === activePCpos) : null;
 		const exitToLocation =
-			(previousAreaExitPos && this.props.currentFloor === 1) ? this.state.exits.enteredFrom :
+			(previousAreaExitPos === activePCpos && this.props.currentFloor === 1) ? this.state.exits.enteredFrom :
 			exitIsStairsDown ? exitIsStairsDown.destination :
 			exitIsStairsUp ? exitIsStairsUp.destination :
 			exitIsDoor ? exitIsDoor.destination : null;
@@ -1860,7 +1998,7 @@ class Map extends React.PureComponent {
 					actionButtonVisible: true,
 					actionButtonText: `Go to the ${exitToLocation}`,
 					actionButtonCallback: () => {
-						this.saveAllData(this.resetMap, 0, exitToLocation);
+						this.saveAllData(this.resetMap, 1, exitToLocation);
 					},
 					dialogClasses: ''
 				};
@@ -1873,7 +2011,7 @@ class Map extends React.PureComponent {
 					actionButtonVisible: true,
 					actionButtonText: 'Take the stairs',
 					actionButtonCallback: () => {
-						this.saveAllData(this.resetMap, nextAreaExitPos === activePCpos ? 1 : -1);
+						this.saveAllData(this.resetMap, nextAreaExitPos === activePCpos ? this.props.currentFloor + 1 : this.props.currentFloor - 1);
 					},
 					dialogClasses: ''
 				};
@@ -2363,6 +2501,22 @@ class Map extends React.PureComponent {
 	}
 
 	/**
+	 * Update threatLists in App, usually any time lighting is changed or monsters are added
+	 * @param callback function
+	 * @private
+	 */
+	_updateThreatLists(callback) {
+		const playerPositions = this.props.getAllCharactersPos('player', 'pos');
+		const creaturePositions = this.props.getAllCharactersPos('creature', 'pos');
+		const threatLists = this._findChangesToNearbyThreats(playerPositions, creaturePositions);
+		if (threatLists.threatListToAdd.length > 0 || threatLists.threatListToRemove.length > 0) {
+			this.props.updateThreatList(threatLists.threatListToAdd, threatLists.threatListToRemove, callback, this.isInLineOfSight);
+		} else if (callback) {
+			callback();
+		}
+	}
+
+	/**
 	 * Looks at all visible/lit tiles around all PCs and lists all creatures that should be
 	 * added to or removed from the App's threatList
 	 * @param playerPositions: array of player pos data (from getAllCharactersPos in App)
@@ -2473,9 +2627,7 @@ class Map extends React.PureComponent {
 	 */
 	moveCharacter = (pathData, newPos = null, followerId = null) => {
 		const newTilePos = newPos || pathData.tilePath[0];
-		const moveItSkill = this.props.playerCharacters[this.props.activeCharacter].skills.moveIt;
-		const playerMoveLimit = this.props.playerLimits.moves + (moveItSkill ? moveItSkill.modifier[moveItSkill.level] : 0);
-		if (this.props.inTacticalMode && this.props.actionsCompleted.moves >= playerMoveLimit) {
+		if (this.props.inTacticalMode && this.props.actionsCompleted.moves >= this.props.playerLimits.moves) {
 			this.props.setShowDialogProps(true, this.props.noMoreMovesDialogProps);
 			return;
 		}
@@ -2928,16 +3080,6 @@ class Map extends React.PureComponent {
 					this.props.updateCurrentTurn();
 				}
 			};
-			const updateThreatAndCurrentTurn = () => {
-				const playerPositions = this.props.getAllCharactersPos('player', 'pos');
-				const creaturePositions = this.props.getAllCharactersPos('creature', 'pos');
-				const threatLists = this._findChangesToNearbyThreats(playerPositions, creaturePositions);
-				if (threatLists.threatListToAdd.length > 0 || threatLists.threatListToRemove.length > 0) {
-					this.props.updateThreatList(threatLists.threatListToAdd, threatLists.threatListToRemove, updateSpiritAndCurrentTurn, this.isInLineOfSight);
-				} else {
-					updateSpiritAndCurrentTurn();
-				}
-			};
 
 			// find closest player within creature's perception for creature to focus on
 			for (const playerData of Object.values(this.props.playerCharacters)) {
@@ -2995,7 +3137,9 @@ class Map extends React.PureComponent {
 							creatureCoords = this._findNewCreatureCoordsRelativeToChar(creatureCoords, -1);
 							newCreatureCoordsArray.push(creatureCoords);
 						}
-						this._storeNewCreatureCoords(creatureID, newCreatureCoordsArray, updateThreatAndCurrentTurn);
+						this._storeNewCreatureCoords(creatureID, newCreatureCoordsArray, () => {
+							this._updateThreatLists(updateSpiritAndCurrentTurn);
+						});
 					}
 					// if player char is within attack range, then use skill or attack
 					if (targetPlayerDistance <= creatureBestRange) {
@@ -3027,10 +3171,12 @@ class Map extends React.PureComponent {
 								skillProps.creatureData = deepCopy(this.props.mapCreatures[creatureID]);
 								creatureData[creatureSkillToUse](skillProps);
 							} else {
-								creatureData.attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog, this.props.toggleAudio, updateThreatAndCurrentTurn);
+								creatureData.attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog, this.props.toggleAudio, () => {
+									this._updateThreatLists(updateSpiritAndCurrentTurn);
+								});
 							}
 						} else {
-							updateThreatAndCurrentTurn();
+							this._updateThreatLists(updateSpiritAndCurrentTurn);
 						}
 					});
 				// otherwise player is in attack range, so use skill or attack
@@ -3043,7 +3189,7 @@ class Map extends React.PureComponent {
 						creatureData.attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog, this.props.toggleAudio, updateSpiritAndCurrentTurn);
 					}
 				}
-			} else {
+			} else if (!creatureData.relatedMission) {
 				creatureDidAct = true;
 				this._moveRandomly();
 				const playerPositions = this.props.getAllCharactersPos('player', 'pos');
@@ -3127,18 +3273,29 @@ class Map extends React.PureComponent {
 		const chosenWeapon = leftHandWeapon && rightHandWeapon ? (diceRoll(2) === 1 ? equippedItems.right : equippedItems.left) : (leftHandWeapon ? equippedItems.left : equippedItems.right);
 		const firstAidInInv = activePcData.items.firstAidKit0;
 		const pharmInInv = activePcData.items.pharmaceuticals0;
+		const reducedHealth = activePcData.currentHealth < activePcData.startingHealth;
+		const reducedSanity = activePcData.currentSanity < activePcData.startingSanity;
+		let actionsRemaining = this.props.playerLimits.actions - this.props.actionsCompleted.actions;
+		let movesRemaining = this.props.playerLimits.moves - this.props.actionsCompleted.moves;
 		// options are 'move', {attack: chosenWeapon}, or {heal: healItem}
 		let availableOptions = {};
 
-		availableOptions.move = true;
-		if ((leftHandWeapon && (!leftHandWeapon.isRanged || leftHandWeapon.currentRounds > 0)) ||
-			(rightHandWeapon && (!rightHandWeapon.isRanged || rightHandWeapon.currentRounds > 0)))
-		{
-			availableOptions.attack = chosenWeapon;
+		if (movesRemaining > 0) {
+			availableOptions.move = true;
 		}
-		if (firstAidInInv || pharmInInv) {
-			const healItem = firstAidInInv && pharmInInv ? (diceRoll(2) === 1 ? firstAidInInv : pharmInInv) : firstAidInInv || pharmInInv;
-			availableOptions.heal = healItem.id;
+		if (actionsRemaining > 0) {
+			if ((leftHandWeapon && (!leftHandWeapon.isRanged || leftHandWeapon.currentRounds > 0)) ||
+				(rightHandWeapon && (!rightHandWeapon.isRanged || rightHandWeapon.currentRounds > 0)))
+			{
+				availableOptions.attack = chosenWeapon;
+			}
+			if ((firstAidInInv && reducedHealth) && (pharmInInv && reducedSanity)) {
+				availableOptions.heal = diceRoll(2) === 1 ? firstAidInInv.id : pharmInInv.id;
+			} else if (firstAidInInv && reducedHealth) {
+				availableOptions.heal = firstAidInInv.id;
+			} else if (pharmInInv && reducedSanity) {
+				availableOptions.heal = pharmInInv.id;
+			}
 		}
 
 		const optionsKeys = Object.keys(availableOptions);
@@ -3146,8 +3303,8 @@ class Map extends React.PureComponent {
 		const chosenActName = optionsKeys[randomIndex];
 		const actionItem = availableOptions[chosenActName];
 		const takeActionCallback = () => {
-			const actionsRemaining = this.props.playerLimits.actions - this.props.actionsCompleted.actions;
-			const movesRemaining = this.props.playerLimits.moves - this.props.actionsCompleted.moves;
+			actionsRemaining = this.props.playerLimits.actions - this.props.actionsCompleted.actions;
+			movesRemaining = this.props.playerLimits.moves - this.props.actionsCompleted.moves;
 			if ((actionsRemaining + movesRemaining) === 0) {
 				this.props.updateCurrentTurn();
 			} else {
@@ -3163,7 +3320,7 @@ class Map extends React.PureComponent {
 			let target = null;
 			// find target
 			if (chosenActName === 'attack') {
-				const nearbyChars = [];
+				let nearbyChars = [];
 				const allCharactersPos = this.props.getAllCharactersPos('all', 'coords');
 				// collect all PCs and creatures (that are threats) in LOS
 				allCharactersPos.forEach(nearbyChar => {
@@ -3442,7 +3599,7 @@ class Map extends React.PureComponent {
 		}
 		if (this.props.lightingHasChanged && !prevProps.lightingHasChanged) {
 			this._calculateLighting(() => {
-				this.props.toggleLightingHasChanged();
+				this._updateThreatLists(this.props.toggleLightingHasChanged);
 			});
 		}
 		if (this.props.centerOnPlayer && !prevProps.centerOnPlayer) {
@@ -3462,7 +3619,11 @@ class Map extends React.PureComponent {
 			this.findNearestTileForSpawn();
 		}
 		if (this.props.needToSaveData && prevProps.needToSaveData !== this.props.needToSaveData) {
-			this.saveAllData();
+			if (this.props.locationChange) {
+				this.saveAllData(this.resetMap, this.props.locationChange.floor, this.props.locationChange.location)
+			} else {
+				this.saveAllData();
+			}
 		}
 	}
 
@@ -3490,7 +3651,7 @@ class Map extends React.PureComponent {
 		const npcsInMap = !npcs || (npcs && this.state.npcsPlaced);
 
 		return (
-			<div className='world'
+			<div id='world'
 			     ref={this.worldRef}
 			     style={{width: `${this.state.worldWidth}px`, height: `${this.state.worldHeight}px`, filter: `brightness(${this.props.gameOptions.brightness})`}}
 			     onPointerDown={() => this.clickedOnWorld = true}

@@ -26,7 +26,7 @@
   "characterTabs": {
     "iconClass": "",
     "name": "Character Tabs",
-    "description": "Shows investigator name and icon. On smaller screens/mobile, tap on a character's icon to display that character's Control Bar.",
+    "description": "Shows investigator name and icon. Click/tap name/icon to open character info. On smaller screens/mobile, tap on a character's icon on the far right to display that character's Control Bar.",
     "source": null
   },
   "contextMenuCloseDoor": {

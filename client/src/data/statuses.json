@@ -15,6 +15,10 @@
     "name": "Invisible",
     "description": "Target cannot be seen or targeted."
   },
+  "levelUp": {
+    "name": "Party Expertise Level Up",
+    "description": "The party's expertise level has increased, providing each investigator points to apply to their attributes and skills. Open an investigator's character info to apply the changes."
+  },
   "sanityProtection": {
     "name": "Protection: Sanity",
     "description": "Target has some protection from attacks and effects that reduce sanity."

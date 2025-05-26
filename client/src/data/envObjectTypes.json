@@ -36,6 +36,11 @@
     "range": 5,
     "unselectable": true
   },
+  "Hole": {
+    "description": "A large hole in the ground that does not seem to be man-made. Peering into it, you see only darkness. But...you hear the faintest of sounds...is something moving down there in the depths?",
+    "isEnvObject": true,
+    "isPassable": false
+  },
   "Spike Trap": {
     "description": "A floor panel with holes in it (out of which nasty spikes project upon triggering), that seems to be triggered by stepping on it. If it can't be disarmed, probably best to go around...",
     "isEnvObject": true,
@@ -75,7 +80,7 @@
     "isHidden": false,
     "isPassable": false,
     "isDestructible": false,
-    "canSpawnCreature": ["ghoul", "ghoul", "ghoul", "shoggoth"],
+    "canSpawnCreature": ["ghoul", "ghoul", "ghast"],
     "mayContain": {
       "Gems": {
         "max": 2

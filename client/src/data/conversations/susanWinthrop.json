@@ -1,0 +1,61 @@
+{
+  "susanWinthrop-1": {
+    "text": "(The woman crouches against the wall, shaking violently, a look of sheer terror contorting her face. Her eyes shut tight as soon as she sees your light.)\nN- No! No no no no no no no! Dark! It must be dark! I can't bare to see...(her words trail off in a whimper)",
+    "responses": {
+      "susanWinthrop-3": "Sorry, but it's too dangerous down here without light. Are you by chance Dr. Susan Winthrop?",
+      "end": {
+        "message": "Sorry, I'll leave you alone.",
+        "statusUpdate": {
+          "nextMessageKey": "susanWinthrop-2"
+        }
+      }
+    },
+    "classes": "susan-winthrop"
+  },
+  "susanWinthrop-2": {
+    "text": "(The woman continues to crouch and shake with her eyes shut tight.)",
+    "responses": {
+      "susanWinthrop-3": "Are you by chance Dr. Susan Winthrop?",
+      "end": {
+        "message": "Sorry, I'll leave you alone.",
+        "statusUpdate": {
+          "nextMessageKey": "susanWinthrop-2"
+        }
+      }
+    },
+    "classes": "susan-winthrop"
+  },
+  "susanWinthrop-3": {
+    "text": "Ye-, yes... I think? I don't know what's real...those...things... They CAN'T be real! They just...no. No, no, no, no. (She begins rocking herself back and forth, arms wrapped around herself, her face buried in them.)",
+    "responses": {
+      "susanWinthrop-4": "Ok, it'll be ok. I'm going to get you out of here."
+    },
+    "classes": "susan-winthrop"
+  },
+  "susanWinthrop-4": {
+    "text": "(Dr. Winthrop continues to just rock back and forth, shaking and whispering to herself)",
+    "responses": {
+      "end-1": {
+        "message": "All right, let's go. (This will take you back to the Museum)",
+        "statusUpdate": {
+          "nextMessageKey": null,
+          "changeLocation": {"location": "museum", "floor": 1},
+          "removeFromMap": [{"type": "npcs", "id": "susanWinthrop"}],
+          "journalUpdate": {
+            "id": "mission1",
+            "updateType": "update",
+            "description": "I have found Dr. Winthrop and am bringing her back to Professor Nymian in the Museum.",
+            "xp": 50
+          }
+        }
+      },
+      "end-2": {
+        "message": "You just sit tight. I'll be back.",
+        "statusUpdate": {
+          "nextMessageKey": "susanWinthrop-4"
+        }
+      }
+    },
+    "classes": "susan-winthrop"
+  }
+}

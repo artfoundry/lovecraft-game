@@ -89,8 +89,7 @@
   "professor-11": {
     "text": "Have you found Dr. Winthrop?",
     "responses": {
-      "professor-12": {"condition": "winthropAlive", "message": "Yes, here she is."},
-      "professor-12a": "Yes, but unfortunately we were unable to save her.",
+      "professor-12": "Yes, but she seems to have suffered some severe psychological trauma from the horrors we encountered down there. I'm quite shaken myself. What we saw...things...not of this earth!",
       "end": {
         "message": "Not yet",
         "statusUpdate": {
@@ -101,46 +100,50 @@
     "classes": "professor-nymian"
   },
   "professor-12": {
-    "text": "Excellent! Dr. Winthrop, so good to have you back, safe and sound.",
+    "text": "Thank you! I will get Dr. Winthrop the care she needs at once. Tell me, what did you see?",
     "responses": {
-      "end": {
-        "message": "...",
-        "statusUpdate": {
-          "nextMessageKey": "professor-13",
-          "journalUpdate": {
-            "id": "mission1",
-            "updateType": "end",
-            "xp": 100
-          }
-        }
-      }
-    },
-    "classes": "professor-nymian"
-  },
-  "professor-12a": {
-    "text": "No! Oh my dear friend, I have failed you...",
-    "responses": {
-      "end": {
-        "message": "...",
-        "statusUpdate": {
-          "nextMessageKey": "professor-13",
-          "journalUpdate": {
-            "id": "mission1",
-            "updateType": "end",
-            "xp": 70
-          }
-        }
-      }
+      "professor-13": "(You describe all of the different horrors, in particular the ones near where you found Dr. Winthrop)"
     },
     "classes": "professor-nymian"
   },
   "professor-13": {
-    "text": "Ok, I have another task for you...",
+    "text": "Quite horrifying indeed! I will need to do some research to see if we have any information on what you've described. Come back to me later.",
     "responses": {
       "end": {
-        "message": "...",
+        "message": "Ok",
         "statusUpdate": {
-          "nextMessageKey": "professor-13"
+          "nextMessageKey": "professor-14",
+          "journalUpdate": {
+            "id": "mission1",
+            "updateType": "end",
+            "description": "Dr. Winthrop has been found and returned to Professor Nymian.",
+            "xp": 50
+          }
+        }
+      }
+    },
+    "classes": "professor-nymian"
+  },
+  "professor-14": {
+    "text": "Yes, what can I do for you?",
+    "responses": {
+      "professor-15": "Any information on the creatures I described to you?",
+      "end": {
+        "message": "Nothing right now.",
+        "statusUpdate": {
+          "nextMessageKey": "professor-14"
+        }
+      }
+    },
+    "classes": "professor-nymian"
+  },
+  "professor-15": {
+    "text": "Nothing yet",
+    "responses": {
+      "end": {
+        "message": "Ok.",
+        "statusUpdate": {
+          "nextMessageKey": "professor-14"
         }
       }
     },

@@ -91,6 +91,7 @@
   "Holy Water": {
     "damage": 6,
     "damageType": "liquid",
+    "targetRace": "Undead",
     "ranged": true,
     "usesStr": false,
     "stackable": true,

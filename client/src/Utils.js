@@ -36,7 +36,12 @@ export function getDistanceBetweenTargets(coords1, coords2) {
 	return xDelta > yDelta ? xDelta : yDelta;
 }
 
-// Returns 'A', 'a', 'An', or 'an' depending on following word
+/**
+ * Returns 'A', 'a', 'An', or 'an' depending on following word
+ * @param word string (the word following the article)
+ * @param isCapital boolean (whether the article should be capitailzed
+ * @return string
+ */
 export function articleType(word, isCapital = false) {
 	const vowels = ['a', 'e', 'i', 'o', 'u'];
 	const firstLetter = word.substring(0,1);

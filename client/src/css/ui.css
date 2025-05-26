@@ -405,6 +405,7 @@ h3 {
 .journal-header {
 	padding: 10px;
 	border: 2px solid transparent;
+	cursor: pointer;
 }
 
 .journal-quest-detail {
@@ -914,6 +915,10 @@ h3 {
 	justify-content: space-between;
 	align-items: center;
 	height: 30px;
+}
+
+.control-bar-tab .character-name {
+	cursor: pointer;
 }
 
 .control-bar-tab-container {

@@ -13,6 +13,8 @@ Mobile friendly but works best on desktop!
 ---
 #### Current status:
 
+5/24/25: Adding static map pieces for use in missions; bug fixes and small improvements
+
 4/20/25: Adding Museum lobby area; adding NPCs; adding conversations with NPCs and investigators; moving companion selection from character creation to Museum lobby through conversations; adding journal updates based on conversations
 
 3/15/25: Adding creature skills and pc/creature statuses; adding framework for popup help
@@ -108,11 +110,15 @@ Alt class data indicates what a tile's class/texture should be changed to when a
 
 #### Neighbor settings
 
-- Select a tile on the grid
+- Select an opening tile on the grid that would be deleted/closed (the floor tile that would connect to another piece's opening)
 - Click 'Select tiles' on the right.
-- Choose a selection mode among the four.
-- Then simply select the tile(s) on the grid. Selecting them will highlight them to indicate the selection.
-- You can then change selection mode and select tiles for that setting.
+- Choose a selection mode among the four radial buttons
+  - deleted tiles are deleted when the opening is removed and neighboring doorway becomes a wall (tiles deleted are usually the floor that's the opening and its two surrounding walls)
+  - tiles changing class are the doorway/opening and its wall neighbors that would change to look like walls
+  - tile changing side type is the floor tile on the inside of the opening that's getting replaced with a wall - it'll change its side type from door/opening to wall in map layout
+  - tile changing type is the doorway next to the opening being closed (changing from door to wall)
+- Then select the tile(s) on the grid that match the mode. Selecting them will highlight them to indicate the selection.
+- You can then change selection mode and then select tiles for that setting.
 - Rinse and repeat. Selecting each mode will show which tiles have been selected for that option.
 - Click the Select tiles button again to exit Neighbor settings.  Your settings will be stored in the tiles
   on the grid.
@@ -121,13 +127,13 @@ Make sure to save the piece to keep your changes!
 
 #### Alt class settings
 
-- Select a tile on the grid
+- Select a wall next to an opening tile (the floor tile that would connect to another piece's opening) - this wall would need an alt class if the opening is closed
 - Click 'Select alts' on the right.
-- Proceed through the three selection modes in order. Not all tiles will need all three settings.
-- Select the tile on the grid that has the opening next to the tile you selected in step 1. It will be highlighted in teal.
+- Start with 'Place opening one' and proceed through the selection modes in order as needed. Not all tiles will need all three settings (most only need one).
+- Select the tile on the grid that has the opening/doorway next to the tile you selected in step 1. It will be highlighted in teal.
 - Then select the tile template at the top as the alternate class. It will get highlighted in teal and the tile in the grid will get temporarily updated to show the alt class.
-- If a second opening alt is needed, change to that selection mode and repeat the last two steps.
-- If an alt is needed for when both openings are deleted/closed, change to that mode. Then you only need to select the alt template (you don't need to select another opening tile on the grid).
+- If a second opening alt is needed (if the wall selected at the beginning is between two openings), change to that selection mode and repeat the last two steps.
+- If an alt is needed for when both openings are deleted/closed (only would happen on a piece with at least 3 openings, like a 3- or 4-way intersection), change to that mode. Then you only need to select the alt template (you don't need to select another opening tile on the grid).
 - Click the Select alts button again to exit alt class settings. Your settings will be stored in the tiles
   on the grid.
 

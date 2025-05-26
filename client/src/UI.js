@@ -158,6 +158,7 @@ class UI extends React.PureComponent {
 						helpPopupButton={this.helpPopupButton}
 						showHelpSystem={this.state.showHelpSystem}
 						toggleHelpPopup={this.toggleHelpPopup}
+						updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
 					/>
 				)
 			}

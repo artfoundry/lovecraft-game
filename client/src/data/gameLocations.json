@@ -6,7 +6,7 @@
 		"floors": {
 			"1": {
 				"isRandom": true,
-				"excludeNonLitTiles": false,
+				"allTilesAtLeastAmbientLit": false,
 				"mapSize": "large",
 				"mapTileLimit": 500,
 				"npcs": {},
@@ -54,7 +54,7 @@
 			},
 			"2": {
 				"isRandom": true,
-				"excludeNonLitTiles": false,
+				"allTilesAtLeastAmbientLit": false,
 				"mapSize": "large",
 				"mapTileLimit": 500,
 				"npcs": {},
@@ -102,37 +102,48 @@
 			},
 			"3": {
 				"isRandom": true,
-				"excludeNonLitTiles": false,
+				"allTilesAtLeastAmbientLit": false,
 				"mapSize": "large",
 				"mapTileLimit": 500,
-				"npcs": {
-					"susanWinthrop": {
-						"id": "susanWinthrop",
-						"name": {"first": "Dr. Susan", "last": "Winthrop"},
-						"type": "npc",
-						"conversationStatus": {
-							"nextMessageKey": "susanWinthrop-1"
-						},
-						"location": "catacombs",
-						"floor": 3,
-						"coords": {
-							"xPos": 15,
-							"yPos": 15
-						},
-						"statuses": {
-							"Confused": {
-								"description": "",
-								"turnsLeft": 3
-							}
+				"setPiece": {
+					"pieceName": "roomScripted",
+					"hasExit": false,
+					"hasEntrance": false,
+					"creatures": {
+						"elderThing": {"number": 1, "coords": [{"xPos": 7, "yPos": 3}], "relatedMission": "mission1"},
+						"shoggoth": {"number": 1, "coords": [{"xPos": 9, "yPos": 3}], "relatedMission": "mission1"}
+					},
+					"npcs": {
+						"susanWinthrop": {
+							"id": "susanWinthrop",
+							"name": {"first": "Dr. Susan", "last": "Winthrop"},
+							"type": "npc",
+							"conversationStatus": {
+								"nextMessageKey": "susanWinthrop-1"
+							},
+							"location": "catacombs",
+							"floor": 3,
+							"relatedMission": "mission1",
+							"coords": {
+								"xPos": 12,
+								"yPos": 2
+							},
+							"statuses": {}
 						}
+					},
+					"objects": {
+						"Relic": {
+							"Elder Sign": {"number": 1, "coords": [{"xPos": 9, "yPos": 5}]}
+						}
+					},
+					"envObjects": {
+						"Hole": {"number": 1, "coords": [{"xPos": 8, "yPos": 4}]}
 					}
 				},
 				"creatures": {
-					"elderThing": {"number": 2, "variation": 1},
 					"flyingPolyp": {"number": 7, "variation": 2},
 					"ghast": {"number": 5, "variation": 3},
-					"ghoul": {"number": 5, "variation": 2},
-					"shoggoth": {"number": 2, "variation": 1}
+					"ghoul": {"number": 5, "variation": 2}
 				},
 				"objects": {
 					"Weapon": {
@@ -177,7 +188,7 @@
 		"floors": {
 			"1": {
 				"isRandom": false,
-				"excludeNonLitTiles": true,
+				"allTilesAtLeastAmbientLit": true,
 				"mapSize": "small",
 				"maxXpos": 20,
 				"maxYpos": 19,

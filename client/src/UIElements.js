@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {convertCamelToKabobCase, capitalizeWord, convertKabobToCamelCase, deepCopy, convertObjIdToClassId, notEnoughSpaceInInventory, handleItemOverDropZone} from './Utils';
 import AllConversations from './data/conversationsLoader';
 
@@ -126,10 +126,6 @@ function CharacterControls(props) {
 	{
 		actionableItems.misc.push('refill');
 	}
-
-	if (currentPCdata.levelUpPoints > 0) {
-		statuses.push('level-up');
-	}
 	for (const statusType of Object.keys(currentPCdata.statuses)) {
 		statuses.push(statusType);
 	}
@@ -140,7 +136,7 @@ function CharacterControls(props) {
 				return (
 					<span
 						key={status}
-						className={iconClass}
+						className={iconClass + (status === 'levelUp' ? ' glow-pulse-once' : '')}
 						onClick={(evt) => {
 							props.toggleHelpPopup(
 								evt,
@@ -432,10 +428,18 @@ function CharacterControls(props) {
 			onDragOver={(evt) => handleItemOverDropZone(evt)}
 			onDrop={(evt) => props.dropItemToPC(evt, props.characterId)}>
 
-			<div className='control-bar-tab' onClick={() => props.setSelectedControlTab(props.characterId)}>
+			<div className='control-bar-tab' onClick={() => {
+				if (!displayCharName) {
+					props.setSelectedControlTab(props.characterId)
+				}
+			}}>
 				{props.showHelpSystem && props.helpPopupButton('characterTabs')}
 				{props.showHelpSystem && props.helpPopupButton('statusIndicators', {'right': '0', 'zIndex': '2'})}
-				<span className='character-name font-fancy'>
+				<span className='character-name font-fancy' onClick={() => {
+					if (displayCharName) {
+						props.updateUnitSelectionStatus(props.characterId, 'player');
+					}
+				}}>
 					<span className={`control-bar-tab-icon ${convertObjIdToClassId(props.characterId)}`}></span>
 					{displayCharName ? props.characterName : ''}
 				</span>
@@ -490,7 +494,13 @@ function CharacterControls(props) {
 }
 
 function CharacterInfoPanel(props) {
-	const [levelUpPointAllocations, updatePointAllocations] = useState({stats: {}, skills: {}});
+	const [levelUpPointAllocations, updatePointAllocations] = useState({id: props.characterInfo.id, stats: {}, skills: {}});
+	const [availableLevelUpPoints, updateLevelUpPoints] = useState(props.characterInfo.levelUpPoints);
+	// if points aren't saved by user and user switches info panels, need to update state
+	useEffect(() => {
+		updatePointAllocations({id: props.characterInfo.id, stats: {}, skills: {}});
+		updateLevelUpPoints(props.characterInfo.levelUpPoints);
+	}, [props.characterInfo.id, props.characterInfo.levelUpPoints]);
 	const updateLevelPointAlloc = (statOrSkill, statOrSkillName, action) => {
 		let updateData = deepCopy(levelUpPointAllocations);
 		if (levelUpPointAllocations[statOrSkill][statOrSkillName]) {
@@ -500,7 +510,6 @@ function CharacterInfoPanel(props) {
 		}
 		updatePointAllocations(updateData);
 	}
-	const [availableLevelUpPoints, updateLevelUpPoints] = useState(props.characterInfo.levelUpPoints);
 	const skillList = Object.entries(props.characterInfo.skills).map(skillInfo => {
 		const skillId = skillInfo[0];
 		const skill = skillInfo[1];
@@ -744,12 +753,13 @@ function CharacterInfoPanel(props) {
 					{props.showHelpSystem && props.helpPopupButton('attributes', {'transform': 'translate(220px, 50px)'})}
 					{props.characterInfo.levelUpPoints > 0 &&
 						<div className='level-up-header highlight-row'>
-							<div className='character-stat-text'>Investigator has increased in expertise.</div>
+							<div className='character-stat-text'>{props.characterInfo.name.first}'s expertise level has increased!</div>
+							<div className='character-stat-text'>Available points are shared between Attributes and Skills</div>
 							<div className='character-stat-text'>
 								<span>Points to add: {availableLevelUpPoints}</span>
-								<span className={`general-button${availableLevelUpPoints === props.characterInfo.levelUpPoints ? ' button-disabled' : ''}`}
+								<span className={`general-button${availableLevelUpPoints > 0 ? ' button-disabled' : ''}`}
 								      onClick={() => {
-										props.assignLevelUpPoints(props.characterInfo.id, levelUpPointAllocations);
+										props.assignLevelUpPoints(levelUpPointAllocations.id, {stats: levelUpPointAllocations.stats, skills: levelUpPointAllocations.skills});
 										updatePointAllocations({stats: {}, skills: {}});
 									  }}
 								>Save</span>
@@ -827,12 +837,13 @@ function CharacterInfoPanel(props) {
 					{props.showHelpSystem && props.helpPopupButton('skills', {'transform': 'translate(220px, 50px)'})}
 					{props.characterInfo.levelUpPoints > 0 &&
 						<div className='level-up-header highlight-row'>
-							<div className='character-stat-text'>Investigator has increased in expertise.</div>
+							<div className='character-stat-text'>{props.characterInfo.name.first}'s expertise level has increased!</div>
+							<div className='character-stat-text'>Available points are shared between Attributes and Skills</div>
 							<div className='character-stat-text'>
 								<span>Points to add: {availableLevelUpPoints}</span>
-								<span className={`general-button${availableLevelUpPoints === props.characterInfo.levelUpPoints ? ' button-disabled' : ''}`}
+								<span className={`general-button${availableLevelUpPoints > 0 ? ' button-disabled' : ''}`}
 								      onClick={() => {
-									      props.assignLevelUpPoints(props.characterInfo.id, levelUpPointAllocations);
+									      props.assignLevelUpPoints(levelUpPointAllocations.id, {stats: levelUpPointAllocations.stats, skills: levelUpPointAllocations.skills});
 									      updatePointAllocations({stats: {}, skills: {}});
 								      }}
 								>Save</span>
@@ -911,21 +922,21 @@ function ObjectInfoWindow(props) {
 					const isEnvObject = obj.isEnvObject;
 					list.push(
 						<div key={obj.id} className='object-row-with-buttons'>
-							<div className={`inv-object ${convertObjIdToClassId(obj.id)}-inv`}></div>
+							<div className={`inv-object ${convertObjIdToClassId(obj.id) + (!isEnvObject ? '-inv' : '')}`}></div>
 							<div>
 								<div className='font-fancy object-list-objname'>{obj.isIdentified ? obj.name : '???'}</div>
-								<div>Type: {obj.itemType ? obj.itemType : (obj.ranged ? 'Ranged' : 'Melee') + ' weapon'}</div>
+								{!isEnvObject && <div>Type: {obj.itemType ? obj.itemType : (obj.ranged ? 'Ranged' : 'Melee') + ' weapon'}</div>}
 								<div>{obj.description}</div>
-								{obj.rounds && <div>Capacity: {obj.rounds} rounds</div>}
-								{obj.amount && <div>Amount: {obj.amount}</div>}
-								{obj.currentRounds !== null && obj.currentRounds >= 0 && <div>Rounds remaining: {obj.currentRounds}</div>}
-								{obj.twoHanded && <div>Two-handed</div>}
-								{obj.damage && <div>Base damage: {obj.damage}</div>}
-								{obj.time !== null && obj.time !== undefined && obj.time >= 0 && <div>Light remaining: {obj.time} steps</div>}
-								{obj.isIdentified && <div>{obj.furtherInfo}</div>}
-								{obj.isIdentified && obj.effect && <div>Effect: {obj.effect}</div>}
-								{obj.isIdentified && obj.sanityCost && <div>Cost to Sanity: -{obj.sanityCost}</div>}
-								{obj.isIdentified && obj.spirit && <div>Required Spirit: -{obj.spirit}</div>}
+								{!isEnvObject && obj.rounds && <div>Capacity: {obj.rounds} rounds</div>}
+								{!isEnvObject && obj.amount && <div>Amount: {obj.amount}</div>}
+								{!isEnvObject && obj.currentRounds !== null && obj.currentRounds >= 0 && <div>Rounds remaining: {obj.currentRounds}</div>}
+								{!isEnvObject && obj.twoHanded && <div>Two-handed</div>}
+								{!isEnvObject && obj.damage && <div>Base damage: {obj.damage}</div>}
+								{!isEnvObject && obj.time !== null && obj.time !== undefined && obj.time >= 0 && <div>Light remaining: {obj.time} steps</div>}
+								{!isEnvObject && obj.isIdentified && <div>{obj.furtherInfo}</div>}
+								{!isEnvObject && obj.isIdentified && obj.effect && <div>Effect: {obj.effect}</div>}
+								{!isEnvObject && obj.isIdentified && obj.sanityCost && <div>Cost to Sanity: -{obj.sanityCost}</div>}
+								{!isEnvObject && obj.isIdentified && obj.spirit && <div>Required Spirit: -{obj.spirit}</div>}
 							</div>
 
 							{isPickUpAction && !isEnvObject &&
@@ -1239,7 +1250,7 @@ function JournalWindow(props) {
 		activeQuests.push(
 			<div key={questId}>
 				<h3 className='journal-quest-detail'>{questInfo.title}</h3>
-				<div className='journal-quest-detail'>{questInfo.description}</div>
+				<div className='journal-quest-detail'>{questInfo.description.split('\n').map((line, index) => <p key={index}>{line}</p>)}</div>
 				<div className='journal-quest-detail'><b>Goal:</b> {questInfo.goal}</div>
 			</div>
 		);
@@ -1248,7 +1259,7 @@ function JournalWindow(props) {
 		completedQuests.push(
 			<div key={questId}>
 				<h3 className='journal-quest-detail'>{questInfo.title}</h3>
-				<div className='journal-quest-detail'>{questInfo.description}</div>
+				<div className='journal-quest-detail'>{questInfo.description.split('\n').map((line, index) => <p key={index}>{line}</p>)}</div>
 				<div className='journal-quest-detail'><b>Goal:</b> {questInfo.goal}</div>
 			</div>
 		);
