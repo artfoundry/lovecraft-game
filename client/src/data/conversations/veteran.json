@@ -14,9 +14,9 @@
     "classes": "veteran"
   },
   "veteran-1a": {
-    "text": "Hey {g:bud/lady}, back again?",
+    "text": "Hey {g:bud/lady}, back again? What can this ol vet do for ya?",
     "responses": {
-      "veteran-2": "Who are you again?",
+      "veteran-2": "So you were in the Great War?",
       "veteran-3": "I forgot, why are you here?",
       "end-1": {
         "message": "I could use your services. Why don't you join me?",
@@ -36,7 +36,7 @@
     "classes": "veteran"
   },
   "veteran-2": {
-    "text": "I'm Professor Mary Simpleton. I'm an veteran here at Arkham University, and I teach ancient and prehistoric societies.",
+    "text": "{g:Yessir/Yes'm}, in the front lines on the Western front. Was damn lucky to make it back in one piece I tells ya.",
     "responses": {
       "veteran-3": "And what's your reason for being here?",
       "end-1": {
@@ -57,7 +57,7 @@
     "classes": "veteran"
   },
   "veteran-3": {
-    "text": "I was on the initial team exploring the catacombs below. Dr. Winthrop is a colleague and a good friend of mine. I'm very worried about her!",
+    "text": "Oh, well the professor just said he wanted someone used to dangerous situations. I guess he figgers my sperience in the trenches could commin handy?",
     "responses": {
       "veteran-2": "And what's your background?",
       "end-1": {
@@ -78,7 +78,7 @@
     "classes": "veteran"
   },
   "veteran-4": {
-    "text": "Sorry, but it looks like you already have enough people with you. Come back again if you have an opening.",
+    "text": "Hmm, I thinks you've gots 'nuff buddies with ya already. Come back again if ya need me!",
     "responses": {
       "end": {
         "message": "Ok",
@@ -90,7 +90,7 @@
     "classes": "veteran"
   },
   "veteran-5": {
-    "text": "Hi, what can I do for you?",
+    "text": "Hey, what's doin?",
     "responses": {
       "veteran-6": "I don't have need of you now.",
       "end": {
@@ -103,7 +103,7 @@
     "classes": "veteran"
   },
   "veteran-6": {
-    "text": "Ok, I'll be looking around the museum if you need me again.",
+    "text": "Okie, I'll be around the museum if ya need me again.",
     "responses": {
       "end": {
         "message": "Ok",
