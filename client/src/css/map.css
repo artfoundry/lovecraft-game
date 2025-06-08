@@ -89,6 +89,20 @@
 }
 
 .creature.invisible {
-	opacity: 0;
+	opacity: 0.2;
 	transition: opacity 1s, transform 0.5s;
+	filter: blur(10px);
+	animation: shimmer 1s infinite linear;
+	background: linear-gradient(gray, darkslategray, lightgrey, gray);
+	background-size: 100% 500%;
+}
+
+@keyframes shimmer {
+	0% {
+		background-position: 0 0;
+	}
+
+	100% {
+		background-position: 0 500%;
+	}
 }

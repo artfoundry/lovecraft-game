@@ -2318,7 +2318,7 @@ class Map extends React.PureComponent {
 			bottomLeft: true,
 			bottomRight: true
 		}
-		const minClearPaths = !checkForCreatures ? 2 : 3;
+		const minClearPaths = 2;
 		// 'numChecks - 1' here because don't need to check the end tile, but still need full value for computing shorterAxisCheckLength
 		while (numOfClearPaths >= minClearPaths && checkNum <= (numChecks - 1)) {
 			tilePointNames.forEach(pointName => {
