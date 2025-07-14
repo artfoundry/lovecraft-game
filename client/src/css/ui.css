@@ -937,6 +937,14 @@ h3 {
 	outline: 2px solid limegreen;
 }
 
+.control-bar-tab-container.active-character:first-child {
+	border-radius: 5px 0 0 0;
+}
+
+.control-bar-tab-container.active-character:last-child {
+	border-radius: 0 5px 0 0;
+}
+
 .control-bar-tab-icon, .character-status-icon {
 	display: inline-block;
 	width: 24px;
@@ -960,6 +968,22 @@ h3 {
 	background-image: url('../assets/ui/levelUp.png');
 }
 
+.confused-status-icon {
+	background-image: url('../assets/ui/confused-status.png');
+}
+
+.cursed-status-icon {
+	background-image: url('../assets/ui/cursed-status.png');
+}
+
+.panicking-status-icon {
+	background-image: url('../assets/ui/panicking-status.png');
+}
+
+.paranoid-status-icon {
+	background-image: url('../assets/ui/paranoid-status.png');
+}
+
 .sanity-protection-status-icon, .feel-the-pain-status-icon {
 	background-image: url('../assets/ui/sanity-protection-status.png');
 }
@@ -968,20 +992,16 @@ h3 {
 	background-image: url('../assets/ui/stealthy-status.png');
 }
 
-.confused-status-icon {
-	background-image: url('../assets/ui/confused-status.png');
-}
-
-.unconscious-status-icon {
-	background-image: url('../assets/ui/unconscious-status.png');
-}
-
 .slowed-status-icon {
 	background-image: url('../assets/ui/slowed-status.png');
 }
 
-.cursed-status-icon {
-	background-image: url('../assets/ui/cursed-status.png');
+.terrified-status-icon {
+	background-image: url('../assets/ui/terrified-status.png');
+}
+
+.unconscious-status-icon {
+	background-image: url('../assets/ui/unconscious-status.png');
 }
 
 .character-name {

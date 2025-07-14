@@ -626,6 +626,7 @@ function CharacterInfoPanel(props) {
 	const rightItemAmount = (rightEquippedItemInfo && rightEquippedItemInfo.amount) ? rightEquippedItemInfo.amount : (rightEquippedItemInfo && rightEquippedItemInfo.currentRounds) ? rightEquippedItemInfo.currentRounds : '';
 	const leftItemAmount = (leftEquippedItemInfo && leftEquippedItemInfo.amount) ? leftEquippedItemInfo.amount : (leftEquippedItemInfo && leftEquippedItemInfo.currentRounds) ? leftEquippedItemInfo.currentRounds : '';
 	const [activeTab, updateActiveTab] = useState('inv');
+	const sanityEffect = props.characterInfo.statuses.paranoid || props.characterInfo.statuses.terrified;
 	let currentStatuses = [];
 	for (const [statusId, statusInfo] of Object.entries(props.characterInfo.statuses)) {
 		let info = statusInfo;
@@ -772,7 +773,7 @@ function CharacterInfoPanel(props) {
 					<div className='character-stat-text'>Sanity: {props.characterInfo.currentSanity} / {props.characterInfo.startingSanity}</div>
 					<div className='character-stat-text'>Spirit: {props.characterInfo.currentSpirit} / {props.characterInfo.startingSpirit}</div>
 					<div className={`character-stat-text${props.characterInfo.levelUpPoints > 0 ? ' highlight-row' : ''}`}>
-						<span>Strength: {props.characterInfo.strength + (levelUpPointAllocations.stats.strength || 0)}</span>
+						<span>Strength: {props.characterInfo.strength + (levelUpPointAllocations.stats.strength || 0)}{(sanityEffect && sanityEffect.attribute === 'strength') ? ` (-${sanityEffect.modifier})` : ''}</span>
 						{props.characterInfo.levelUpPoints > 0 &&
 							<span>
 								<span className={`general-button level-up-button${availableLevelUpPoints === 0 ? ' button-disabled' : ''}`} onClick={() => {
@@ -787,7 +788,7 @@ function CharacterInfoPanel(props) {
 						}
 					</div>
 					<div className={`character-stat-text${props.characterInfo.levelUpPoints > 0 ? ' highlight-row' : ''}`}>
-						<span>Agility: {props.characterInfo.agility + (levelUpPointAllocations.stats.agility || 0)}</span>
+						<span>Agility: {props.characterInfo.agility + (levelUpPointAllocations.stats.agility || 0)}{(sanityEffect && sanityEffect.attribute === 'agility') ? ` (-${sanityEffect.modifier})` : ''}</span>
 						{props.characterInfo.levelUpPoints > 0 &&
 							<span>
 								<span className={`general-button level-up-button${availableLevelUpPoints === 0 ? ' button-disabled' : ''}`} onClick={() => {
@@ -826,7 +827,7 @@ function CharacterInfoPanel(props) {
 								<div className='character-panel-status-row' key={statusInfo.name}>
 									<div className={`character-panel-status-icon ${convertCamelToKabobCase(statusInfo.id)}-status-icon`}></div>
 									<div className='character-panel-status-name'>{statusInfo.name}: {statusInfo.description}</div>
-									<div className='character-panel-status-turns'>Turns left: {statusInfo.turnsLeft}</div>
+									{statusInfo.turnsLeft && <div className='character-panel-status-turns'>Turns left: {statusInfo.turnsLeft}</div>}
 								</div>
 							);
 						})}
@@ -1349,7 +1350,12 @@ function ConversationWindow(props) {
 function DialogWindow(props) {
 	return (
 		<div className={`dialog ui-panel ${props.classes}`}>
-			<div className='general-button dialog-button-x' onClick={() => props.closeDialogCallback()}>X</div>
+			<div className='general-button dialog-button-x' onClick={() => {
+				props.closeDialogCallback();
+				if (props.closeButtonCallback) {
+					props.closeButtonCallback();
+				}
+			}}>X</div>
 			<div className='dialog-message'>{props.dialogContent}</div>
 			<div className='dialog-buttons'>
 				{!props.disableCloseButton &&

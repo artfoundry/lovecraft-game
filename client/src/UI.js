@@ -738,13 +738,7 @@ class UI extends React.PureComponent {
 				updateData.inventory.splice(itemBox, 1, itemId);
 			}
 		}
-		const updatedEquipmentData = {
-			equippedItems: updateData.equippedItems,
-			equippedLight: updateData.equippedLight,
-			lightRange: updateData.lightRange,
-			inventory: updateData.inventory
-		};
-		this.props.updateCharacters('player', updatedEquipmentData, id, lightingChanged, false, false);
+		this.props.updateCharacters('player', updateData, id, lightingChanged, false, false);
 	}
 
 	/**

@@ -15,6 +15,7 @@
     "startingHealth": 100,
     "startingSanity": 80,
     "startingSpirit": 90,
+    "baseMoveSpeed": 3,
     "skills": ["quickReload", "keenInvestigation", "steadyHand", "handgunKnowledge", "shotgunKnowledge", "mine"],
     "weapons": {
       "coltRevolver0": {
@@ -56,6 +57,7 @@
     "startingHealth": 80,
     "startingSanity": 100,
     "startingSpirit": 90,
+    "baseMoveSpeed": 3,
     "skills": ["alwaysOnTheLookout", "expertMining", "mine", "createTorch"],
     "weapons": {
       "pickaxe0": {
@@ -88,8 +90,9 @@
     "agility": 4,
     "mentalAcuity": 7,
     "startingHealth": 60,
-    "startingSanity": 80,
+    "startingSanity": 10,
     "startingSpirit": 70,
+    "baseMoveSpeed": 3,
     "skills": ["createAcidConcoction", "createPharmaceuticals", "betterLivingThroughChemicals", "mine"],
     "weapons": {
       "acidConcoction0": {
@@ -131,6 +134,7 @@
     "startingHealth": 110,
     "startingSanity": 100,
     "startingSpirit": 105,
+    "baseMoveSpeed": 3,
     "skills": ["createFirstAidKit", "medicalExpertise", "resuscitate", "mine"],
     "weapons": {},
     "equippedItems": {"right": "", "left": "", "armor": ""},
@@ -172,6 +176,7 @@
     "startingHealth": 100,
     "startingSanity": 110,
     "startingSpirit": 105,
+    "baseMoveSpeed": 3,
     "skills": ["createHolyWater", "comfortTheFearful", "spiritualInspiration", "mine"],
     "weapons": {
       "holyWater0": {
@@ -217,6 +222,7 @@
     "startingHealth": 120,
     "startingSanity": 60,
     "startingSpirit": 90,
+    "baseMoveSpeed": 3,
     "skills": ["feelThePain", "goBallistic", "moveIt", "handgunKnowledge", "shotgunKnowledge", "machineGunKnowledge", "mine"],
     "weapons": {
       "remington0": {
@@ -261,6 +267,7 @@
     "startingHealth": 80,
     "startingSanity": 80,
     "startingSpirit": 80,
+    "baseMoveSpeed": 3,
     "skills": ["attackFromTheShadows", "stealthy", "disarmTrap", "handgunKnowledge", "mine"],
     "weapons": {
       "knife0": {
@@ -293,6 +300,7 @@
     "startingHealth": 60,
     "startingSanity": 80,
     "startingSpirit": 70,
+    "baseMoveSpeed": 3,
     "skills": ["identifyRelic", "sacrificialStrike", "relicExpertise", "krisKnifeExpertise", "mine"],
     "weapons": {
       "krisKnife0": {
