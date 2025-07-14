@@ -34,7 +34,6 @@ class Game extends React.PureComponent {
 		this.maxPartyLevel = 10;
 		this.pointsPerLevelUp = 2;
 		this.initialDialogContent = '';
-		this.playerMovesLimit = 3;
 		this.playerActionsLimit = 2;
 		this.playerInventoryLimit = 12;
 		this.maxTurnsToReviveDeadPlayer = 3;
@@ -481,12 +480,71 @@ class Game extends React.PureComponent {
 			}, 500);
 		}
 		if (id) {
+			const attributeChangeValue = 1;
+			// determine whether char's sanity is 2/3 of max or lower, thus causing paranoid or terrified
+			if (type === 'player' && updateData.currentSanity <= (updateData.startingSanity * (2/3))) {
+				const pronoun = updateData.gender === 'Male' ? 'he' : 'she';
+				// determine whether char's sanity is 1/3 of max or lower, thus causing terrified
+				if (!updateData.statuses.terrified && updateData.currentSanity <= (updateData.startingSanity / 3)) {
+					updateData.statuses.terrified = {
+						name: Statuses.terrified.name,
+						description: Statuses.terrified.description,
+						attribute: updateData.statuses.paranoid.attribute,
+						modifier: attributeChangeValue,
+						actionsReduced: 1
+					};
+					this.updateLog(`${updateData.name.first}'s sanity is critically low, and ${pronoun} has gone from being paranoid to terrified!`);
+					if (updateData.statuses.paranoid) {
+						delete updateData.statuses.paranoid;
+					}
+				// or if sanity is 2/3 of max or lower (but above 1/3), then add paranoid
+				} else if (updateData.currentSanity > (updateData.startingSanity / 3)) {
+					let wasTerrified = false;
+					// if sanity has been increased above 1/3 of max, remove terrified
+					if (updateData.statuses.terrified) {
+						delete updateData.statuses.terrified;
+						wasTerrified = true;
+					}
+					if (!updateData.statuses.paranoid) {
+						const attrAffected = diceRoll(2) === 1 ? 'strength' : 'agility';
+						updateData.statuses.paranoid = {
+							name: Statuses.paranoid.name,
+							description: Statuses.paranoid.description,
+							attribute: attrAffected,
+							modifier: attributeChangeValue
+						};
+						if (wasTerrified) {
+							this.updateLog(`${updateData.name.first} is no longer terrified...but still paranoid.`);
+						} else {
+							updateData[attrAffected] -= attributeChangeValue;
+							this.updateLog(`${updateData.name.first}'s sanity is threatened, and ${pronoun} is now paranoid!`);
+						}
+					}
+				}
+			} else if (type === 'player') {
+				// sanity has been increased above 2/3 of max, so remove paranoid/terrified
+				if (updateData.statuses.paranoid) {
+					updateData[updateData.statuses.paranoid.attribute] += attributeChangeValue;
+					delete updateData.statuses.paranoid;
+					this.updateLog(`${updateData.name.first} is feeling safer and is no longer paranoid.`);
+				} else if (updateData.statuses.terrified) {
+					updateData[updateData.statuses.terrified.attribute] += attributeChangeValue;
+					delete updateData.statuses.terrified;
+					this.updateLog(`${updateData.name.first}'s mind is much calmer, and the terror and paranoia have subsided.`);
+				}
+			}
+
+			if (type === 'player' && this.state.threatList.length > 0 && (updateData.statuses.paranoid || updateData.statuses.terrified)) {
+				updateData.statuses = this.checkForSanityTempStatuses(updateData.name.first, updateData.statuses) || updateData.statuses;
+			}
+
 			if (type === 'player' && updateData.currentSanity <= 0) {
 				updateData.isDeadOrInsane = true;
 			}
-			if (type === 'player' && updateData.currentHealth > 0 && updateData.currentSanity > 0 &&
-				(updateData.currentHealth < currentChar.currentHealth || updateData.currentSanity < currentChar.currentSanity))
-			{
+			const sanityChange = currentChar.currentSanity - updateData.currentSanity;
+			const healthChange = currentChar.currentHealth - updateData.currentHealth;
+			// play sound fx for getting injured
+			if (type === 'player' && updateData.currentHealth > 0 && updateData.currentSanity > 0 && (healthChange > 1 || sanityChange > 1)) {
 				currentChar.gender === 'Male' ? delayedAudio('maleInjured') : delayedAudio('femaleInjured');
 			} else if (type === 'creature' && updateData.currentHealth > 0 && updateData.currentHealth < currentChar.currentHealth) {
 				delayedAudio(removeIdNumber(id) + 'Injured');
@@ -500,6 +558,7 @@ class Game extends React.PureComponent {
 			} else if (type === 'creature' && updateData.currentHealth <= 0 && currentChar.currentHealth > 0) {
 				delayedAudio(removeIdNumber(id) + 'Death');
 			}
+
 			this.setState(prevState => ({
 				[collection]: {
 					...prevState[collection],
@@ -544,6 +603,37 @@ class Game extends React.PureComponent {
 				}
 			});
 		}
+	}
+
+	/**
+	 * Check to see if active pc gets confused or panicked because of paranoid/terrified status
+	 * Called from either updateCharacters or updateThreatList
+	 * @param name string (pc's first name)
+	 * @param statuses object (pc's statuses)
+	 * @return null || object (object contains updated statuses)
+	 */
+	checkForSanityTempStatuses(name, statuses) {
+		let updatedStatuses = null;
+
+		// check if confused from the paranoia (10% chance)
+		if (statuses.paranoid && !statuses.confused && diceRoll(10) === 1) {
+			updatedStatuses = {...statuses};
+			updatedStatuses.confused = {
+				name: Statuses.confused.name,
+				description: Statuses.confused.description,
+				turnsLeft: 1
+			};
+			this.updateLog(`${name}'s paranoia leads to confusion...`);
+		// check if running away from being terrified (20% chance)
+		} else if (statuses.terrified && !statuses.panicking && diceRoll(5) === 1) {
+			updatedStatuses = {...statuses};
+			updatedStatuses.panicking = {
+				name: Statuses.panicking.name,
+				description: Statuses.panicking.description,
+				turnsLeft: 1
+			};
+		}
+		return updatedStatuses;
 	}
 
 	/**
@@ -657,7 +747,7 @@ class Game extends React.PureComponent {
 	 * Gets the positions for each LIVING character of a type: player, creature, npc, or all
 	 * @param type: String ('player', 'creature', 'npc', or 'all')
 	 * @param format: String ('pos' (string) or 'coords' (object))
-	 * @returns Array (of Objects {id: coords})
+	 * @returns Array (of Objects {id, coords/pos})
 	 */
 	getAllCharactersPos = (type, format) => {
 		const allCharactersPos = [];
@@ -776,17 +866,19 @@ class Game extends React.PureComponent {
 			if (!inTacticalMode) {
 				const resetCounters = () => this._resetCounters(callback);
 				let updatedPlayerCharacters = null;
-				let dataIsCopied = false;
+				let dataCopied = false;
 				const playerCharacters = this.state.playerCharacters;
+				// remove any time limited statuses from pcs
 				for (const pcId of Object.keys(playerCharacters)) {
 					if (Object.keys(playerCharacters[pcId].statuses).length > 0) {
-						if (!dataIsCopied) {
+						// no need to copy data more than once if multiple pcs have statuses
+						if (!dataCopied) {
 							updatedPlayerCharacters = deepCopy(playerCharacters);
-							dataIsCopied = true;
 						}
-						updatedPlayerCharacters[pcId].statuses = {};
-						if (playerCharacters[pcId].statuses.levelUp) {
-							updatedPlayerCharacters[pcId].statuses.levelUp = {...playerCharacters[pcId].statuses.levelUp};
+						for (const [statusId, statusData] of Object.entries(playerCharacters[pcId].statuses)) {
+							if (statusData.turnsLeft) {
+								delete updatedPlayerCharacters[pcId].statuses[statusId];
+							}
 						}
 					}
 				}
@@ -829,7 +921,7 @@ class Game extends React.PureComponent {
 
 	/**
 	 * Adds IDs to or removes IDs from threat list and saves list to state,
-	 * then if there's 0 additions to the list and none before, calls toggleTacticalMode,
+	 * then if there are additions to the list and none before, calls toggleTacticalMode to enter combat,
 	 * and if list becomes empty, calls updateIfPartyIsNearby
 	 * This is the primary entry point for changing/determining whether game is in Follow mode or Tactical mode
 	 * @param threatIdsToAdd: Array (of strings - IDs of creatures attacking player - empty array if none)
@@ -855,21 +947,35 @@ class Game extends React.PureComponent {
 				}
 			});
 		}
-
+		const isInCombat = updatedList.length > 0;
+		if (isInCombat && previousListSize === 0) {
+			this.updateLog('Something horrific has been heard or spotted nearby!');
+		}
 		this.setState({threatList: updatedList}, () => {
-			const isInCombat = updatedList.length > 0;
-
 			// if entering combat...
 			if (isInCombat && previousListSize === 0) {
-				this.updateLog('Something horrific has been heard or spotted nearby!');
 				if (this.state.inSearchMode) {
 					this.toggleSearchMode();
 					this.updateLog('Disabling search mode.');
 				}
+				const checkSanityStatuses = () => {
+					const activePcData = this.state.playerCharacters[this.state.activeCharacter];
+					let playerCharacters = {...this.state.playerCharacters};
+					let updatedStatuses = null;
+					if (updatedList.length > 0 && activePcData && (activePcData.statuses.paranoid || activePcData.statuses.terrified)) {
+						updatedStatuses = this.checkForSanityTempStatuses(activePcData.name.first, deepCopy(activePcData.statuses));
+					}
+					if (updatedStatuses) {
+						// updating entire collection to avoid the extra functions/conditionals called in updating single pc
+						playerCharacters = deepCopy(this.state.playerCharacters);
+						playerCharacters[this.state.activeCharacter].statuses = {...updatedStatuses};
+						this.updateCharacters('player', playerCharacters, null, false, false, callback);
+					}
+				}
 				if (!this.state.inTacticalMode) {
-					this.toggleTacticalMode(isInCombat, callback);
-				} else if (callback) {
-					callback();
+					this.toggleTacticalMode(isInCombat, checkSanityStatuses);
+				} else {
+					checkSanityStatuses();
 				}
 			// leaving combat...
 			} else if (!isInCombat) {
@@ -1151,6 +1257,9 @@ class Game extends React.PureComponent {
 		for (const [skillsOrStats, skillOrStatNames] of Object.entries(allocationChoices)) {
 			for (const [name, points] of Object.entries(skillOrStatNames)) {
 				skillsOrStats === 'stats' ? pcData[name] += points : pcData.skills[name].level += points;
+				if (name === 'moveIt') {
+					pcData.moveSpeed = PlayerCharacterTypes.veteran.baseMoveSpeed + pcData.skills.moveIt.modifier[pcData.skills.moveIt.level];
+				}
 			}
 		}
 		pcData.levelUpPoints = 0;
@@ -1309,6 +1418,17 @@ class Game extends React.PureComponent {
 		let activePlayerActionsCompleted = 0;
 		let activePlayerMovesCompleted = 0;
 
+		if (nextActiveCharIsPc && this.state.threatList.length > 0) {
+			let sanityEffects = 0;
+			this.state.threatList.forEach(creatureId => {
+				sanityEffects += this.state.mapCreatures[creatureId].sanityEffect;
+			});
+			const sanityEffectTotal = sanityEffects - Math.floor(nextActiveChar.mentalAcuity / 2);
+			if (sanityEffectTotal > 0) {
+				nextActiveChar.currentSanity -= sanityEffectTotal;
+				updateOrRemoveChar = true;
+			}
+		}
 		if (nextActiveCharIsPc && (nextActiveChar.currentHealth <= 0 || nextActiveChar.currentSanity <= 0 || nextActiveChar.statuses.unconscious)) {
 			currentTurn++;
 			if (nextActiveChar.currentHealth <= 0 && nextActiveChar.turnsSinceDeath < this.maxTurnsToReviveDeadPlayer) {
@@ -1322,19 +1442,17 @@ class Game extends React.PureComponent {
 			}
 		}
 		if (Object.keys(nextActiveChar.statuses).length > 0) {
-			const moveItSkill = this.state.playerCharacters.veteran ? this.state.playerCharacters.veteran.skills.moveIt : null;
-			const playerMoveLimit = this.playerMovesLimit + (moveItSkill ? moveItSkill.modifier[moveItSkill.level] : 0);
 			updateOrRemoveChar = true;
 			for (const [statusName, statusData] of Object.entries(nextActiveChar.statuses)) {
 				if (statusData.turnsLeft === 0) {
 					delete nextActiveChar.statuses[statusName];
-				} else {
-					if (statusName === 'slowed') {
-						// setting these values to max amount minus 1 in order to leave pc with only 1 action and 1 move to make
-						activePlayerActionsCompleted = this.playerActionsLimit - 1;
-						activePlayerMovesCompleted = playerMoveLimit - 1;
-					}
+				} else if (statusName === 'slowed') {
+					// setting these values to max amount minus 1 in order to leave pc with only 1 action and 1 move to make
+					activePlayerActionsCompleted = this.playerActionsLimit - 1;
+					activePlayerMovesCompleted = nextActiveChar.moveSpeed - 1;
 					statusData.turnsLeft--;
+				} else if (statusName === 'terrified') {
+					activePlayerActionsCompleted = statusData.actionsReduced;
 				}
 			}
 		}
@@ -1716,10 +1834,10 @@ class Game extends React.PureComponent {
 	 * @param containerId: string (container env object id that item was taken from)
 	 */
 	addItemToPlayerInventory = (itemData, objId, recipientId, isPickUpAction, isCreateAction, containerId = null) => {
-		const player = this.state.playerCharacters[recipientId];
+		const playerData = deepCopy(this.state.playerCharacters[recipientId]);
 		const objectType = itemData.itemType ? itemData.itemType : 'Weapon';
 		const invObjectCategory = objectType === 'Weapon' ? 'weapons' : 'items';
-		let invObjects = deepCopy(player[invObjectCategory]);
+		let invObjects = playerData[invObjectCategory];
 		let modifiedObjId = '';
 
 		if (itemData.coords) {
@@ -1761,19 +1879,18 @@ class Game extends React.PureComponent {
 			}
 		}
 
-		let updatedData = {[invObjectCategory]: invObjects};
-		let inventory = [...player.inventory];
+		let inventory = [...playerData.inventory];
 		// if not a stackable/ammo item or is but is new (not yet in inventory), then insert into inventory (modifiedObjId only used for stackable/ammo)
 		if (!modifiedObjId || !inventory.includes(modifiedObjId)) {
-			const firstOpenInvSlot = player.inventory.indexOf(null);
+			const firstOpenInvSlot = playerData.inventory.indexOf(null);
 			if (modifiedObjId) {
 				inventory.splice(firstOpenInvSlot, 1, modifiedObjId);
 			} else {
 				inventory.splice(firstOpenInvSlot, 1, objId);
 			}
-			updatedData.inventory = inventory;
+			playerData.inventory = inventory;
 		}
-		this.updateCharacters('player', updatedData, recipientId, false, false, false, () => {
+		this.updateCharacters('player', playerData, recipientId, false, false, false, () => {
 			if (isPickUpAction) {
 				this._removeItemFromMap(objId, containerId);
 			} else if (isCreateAction) {
@@ -1816,51 +1933,52 @@ class Game extends React.PureComponent {
 	}
 
 	/**
-	 * Call relevant pc function to carry out action for _randomizeTurn in Map
-	 * @param actionName string/key (can be attack or heal)
-	 * @param actionItem string (weapon/item id)
-	 * @param target object (optional (used for attack or targeted skill) deepcopy of target char data obj, from playerCharacters or mapCreatures)
+	 * Call relevant pc function to carry out action (attack or do nothing) for _randomizeTurn in Map,
+	 * then call updateActivePlayerActions, and finally takeActionCallback
+	 * @param actionName string/key (can be attack or doNothing)
+	 * @param weaponId string (weapon id)
+	 * @param target object (optional (used for attack) deepcopy of target char data obj, from playerCharacters or mapCreatures)
 	 * @param checkLineOfSightToParty function (isInLineOfSight from Map)
 	 * @param takeActionCallback function (passed from _randomizeTurn in Map to call takeAction again if necessary)
 	 */
-	takeAutomaticAction = (actionName, actionItem, target, checkLineOfSightToParty, takeActionCallback) => {
+	takeAutomaticAction = (actionName, weaponId, target, checkLineOfSightToParty, takeActionCallback) => {
 		const pcData = this.state.playerCharacters[this.state.activeCharacter];
-		const targetId = target ? target.id : this.state.activeCharacter;
-		const actionStats = actionName === 'attack' ? pcData.weapons[actionItem] : pcData.items[actionItem];
-		const props = {
-			actionId: actionItem,
-			actionStats,
-			targetData: target || pcData,
-			pcData,
-			partyData: this.state.playerCharacters,
-			updateCharacters: this.updateCharacters,
-			updateLog: this.updateLog,
-			setShowDialogProps: this.setShowDialogProps,
-			notEnoughLightDialogProps: this.notEnoughLightDialogProps,
-			calcPcLightChanges: this.calcPcLightChanges,
-			toggleAudio: this.toggleAudio,
-			sfxSelectors: this.sfxActionSelectorAliases,
-			callback: () => {
-				const updateActionsAndTakeNextAction = () => {
-					this.updateActivePlayerActions(false, takeActionCallback);
-				};
-				if (target && target.currentHealth <= 0) {
-					if (target.type === 'player') {
-						this.updateLog(`${pcData.name.first} has killed ${target.name.first}!`);
-					} else {
-						this.updateLog(`The ${target.name} is dead!`);
-						this.updateExpertise(this.state.mapCreatures[targetId].expertisePoints);
-					}
-					this._removeDeadFromTurnOrder(targetId, updateActionsAndTakeNextAction, checkLineOfSightToParty);
-				} else {
-					updateActionsAndTakeNextAction();
-				}
-			}
+		const updateActionsAndTakeNextAction = () => {
+			this.updateActivePlayerActions(false, takeActionCallback);
 		};
-		const targetName = target ? (target.type === 'player' ? target.name.first : `a nearby ${target.name}`) : null;
-		const logAction = actionName === 'attack' ? `attacks ${targetName}!` : `uses a ${pcData.items[actionItem].name}.`;
-		this.updateLog(`${pcData.name.first} is confused and ${logAction}`);
-		pcData[actionName](props);
+		if (actionName === 'doNothing') {
+			this.updateLog(`Reeling from confusion, ${pcData.name.first} does nothing but stare off into space.`);
+			updateActionsAndTakeNextAction();
+		} else {
+			const targetId = target ? target.id : this.state.activeCharacter;
+			const actionStats = pcData.weapons[weaponId];
+			const props = {
+				actionId: weaponId,
+				actionStats,
+				targetData: target,
+				pcData,
+				updateCharacters: this.updateCharacters,
+				updateLog: this.updateLog,
+				toggleAudio: this.toggleAudio,
+				sfxSelectors: this.sfxActionSelectorAliases,
+				callback: () => {
+					if (target && target.currentHealth <= 0) {
+						if (target.type === 'player') {
+							this.updateLog(`${pcData.name.first} has killed ${target.name.first}!`);
+						} else {
+							this.updateLog(`The ${target.name} is dead!`);
+							this.updateExpertise(this.state.mapCreatures[targetId].expertisePoints);
+						}
+						this._removeDeadFromTurnOrder(targetId, updateActionsAndTakeNextAction, checkLineOfSightToParty);
+					} else {
+						updateActionsAndTakeNextAction();
+					}
+				}
+			};
+			const targetName = target ? (target.type === 'player' ? target.name.first + '!' : `a nearby ${target.name}`) : null;
+			this.updateLog(`${pcData.name.first} is confused and attacks ${targetName}`);
+			pcData.attack(props);
+		}
 	}
 
 	toggleCenterOnPlayer = () => {
@@ -2615,8 +2733,8 @@ class Game extends React.PureComponent {
 	}
 
 	render() {
-		const moveItSkill = this.state.playerCharacters[this.state.activeCharacter] ? this.state.playerCharacters[this.state.activeCharacter].skills.moveIt : null;
-		const playerMoveLimit = this.playerMovesLimit + (moveItSkill ? moveItSkill.modifier[moveItSkill.level] : 0);
+		const playerData = this.state.playerCharacters[this.state.activeCharacter];
+		const playerMoveSpeed = playerData ? playerData.moveSpeed : null;
 		return (
 			<div className={`game ${this.state.showDialog ? 'no-click' : ''}`} style={{width: `${this.state.screenData.width}px`, height: `${this.state.screenData.height}px`}}>
 				{!this.state.isLoggedIn &&
@@ -2708,7 +2826,7 @@ class Game extends React.PureComponent {
 						activeCharacter={this.state.activeCharacter}
 						playerCharacters={this.state.playerCharacters}
 						actionsCompleted={{moves: this.state.activePlayerMovesCompleted, actions: this.state.activePlayerActionsCompleted}}
-						playerLimits={{moves: playerMoveLimit, actions: this.playerActionsLimit}}
+						playerLimits={{moves: playerMoveSpeed, actions: this.playerActionsLimit}}
 						// context menu
 						handleContextMenuSelection={this.handleContextMenuSelection}
 						contextMenu={this.state.contextMenu}
@@ -2766,7 +2884,7 @@ class Game extends React.PureComponent {
 						activeCharacter={this.state.activeCharacter}
 						getAllCharactersPos={this.getAllCharactersPos}
 						actionsCompleted={{moves: this.state.activePlayerMovesCompleted, actions: this.state.activePlayerActionsCompleted}}
-						playerLimits={{moves: playerMoveLimit, actions: this.playerActionsLimit}}
+						playerLimits={{moves: playerMoveSpeed, actions: this.playerActionsLimit}}
 						updateActivePlayerMoves={this.updateActivePlayerMoves}
 						mapCreatures={this.state.mapCreatures}
 						updateCharacters={this.updateCharacters}

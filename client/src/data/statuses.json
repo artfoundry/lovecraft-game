@@ -19,6 +19,14 @@
     "name": "Party Expertise Level Up",
     "description": "The party's expertise level has increased, providing each investigator points to apply to their attributes and skills. Open an investigator's character info to apply the changes."
   },
+  "paranoid": {
+    "name": "Paranoid",
+    "description": "The darkness and horrors are taking their toll. Reduced Strength or Agility by 1 and chance of confusion during combat. Increase Sanity to remove status."
+  },
+  "panicking": {
+    "name": "Panicking",
+    "description": "Target is spending all movement to run away from all threats."
+  },
   "sanityProtection": {
     "name": "Protection: Sanity",
     "description": "Target has some protection from attacks and effects that reduce sanity."
@@ -30,6 +38,10 @@
   "stealthy": {
     "name": "Stealthy",
     "description": "Target is less likely to be hit and may get bonuses to attacking."
+  },
+  "terrified": {
+    "name": "Terrified",
+    "description": "Sanity is very low. Reduced Strength or Agility by 1, Actions reduced by 1, and chance of running away during combat. Increase Sanity to remove status."
   },
   "unconscious": {
     "name": "Unconscious",

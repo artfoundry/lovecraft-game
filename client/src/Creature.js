@@ -21,6 +21,7 @@ class Creature extends React.PureComponent {
 		this.isOldOne = props.isOldOne;
 		this.level = props.level;
 		this.expertisePoints = props.expertisePoints;
+		this.sanityEffect = props.sanityEffect;
 		this.coords = props.coords;
 		this.strength = props.strength;
 		this.agility = props.agility;

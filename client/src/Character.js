@@ -43,6 +43,7 @@ class Character extends React.PureComponent {
 		};
 		this.items = props.isSavedData ? props.items : this._populateInvInfo('item', props.items, props.equippedItems);
 		this.maxItems = 12;
+		this.moveSpeed = props.baseMoveSpeed + (this.skills.moveIt ? this.skills.moveIt.modifier[this.skills.moveIt.level] : 0);
 		this.defense = props.isSavedData ? props.defense : this.calculateDefense(props.agility, props.equippedItems.armor ? this.items[props.equippedItems.armor].defense : 0);
 		this.damageReduction = this.equippedItems.armor ? this.items[this.equippedItems.armor].damageReduction : 0;
 		this.coords = props.isSavedData ? {...props.coords} : null;
@@ -257,7 +258,7 @@ class Character extends React.PureComponent {
 		const healItem = pcData.items[actionId].name;
 		const targetStat = actionStats.healingType === 'health' ? 'currentHealth' : 'currentSanity';
 		const startingStatValue = actionStats.healingType === 'health' ? targetData.startingHealth : targetData.startingSanity;
-		let healAmount = Math.round(pcData.mentalAcuity / 2) + (actionStats.healingType === 'health' ? diceRoll(12) : diceRoll(4)) + actionStats.healingAmount;
+		let healAmount = actionStats.healingAmount + diceRoll(6) + (actionStats.healingType === 'health' ? Math.round(pcData.mentalAcuity / 2) : 0);
 		let updatedHealerData = deepCopy(pcData);
 		// if pc is healing itself, target points to healer object
 		let updatedTargetData = targetData.id !== pcData.id ? deepCopy(targetData) : updatedHealerData;
@@ -274,6 +275,10 @@ class Character extends React.PureComponent {
 
 		const healedStatValue = targetData[targetStat] + healAmount;
 		updatedTargetData[targetStat] = healedStatValue > startingStatValue ? startingStatValue : healedStatValue;
+		if (targetStat === 'currentSanity') {
+			delete updatedTargetData.statuses.confused;
+			delete updatedTargetData.statuses.panicking;
+		}
 		if (updatedHealerData.items[actionId].amount === 1) {
 			delete updatedHealerData.items[actionId];
 			const itemInvIndex = updatedHealerData.inventory.indexOf(actionId);
@@ -281,12 +286,13 @@ class Character extends React.PureComponent {
 		} else {
 			updatedHealerData.items[actionId].amount--;
 		}
+		const target = pcData.id === targetData.id ? (targetData.gender === 'Male' ? 'his' : 'her') : targetData.name.first + "'s";
+		updateLog(`${pcData.name.first} uses ${healItem} to recover ${target} ${targetStat.substring(7)}`);
+
 		updateCharacters('player', updatedTargetData, targetData.id, false, false, false, () => {
 			if (targetStat === 'currentSanity') {
 				toggleAudio('items', sfxSelectors[removeIdNumber(actionId)]);
 			}
-			const target = pcData.id === targetData.id ? (targetData.gender === 'Male' ? 'his' : 'her') : targetData.name.first + "'s";
-			updateLog(`${pcData.name.first} uses ${healItem} to recover ${target} ${targetStat.substring(7)}`);
 			if (targetData.id !== pcData.id) {
 				updateCharacters('player', updatedHealerData, pcData.id, false, false, false, callback);
 			} else {
@@ -539,7 +545,7 @@ class Character extends React.PureComponent {
 	}
 
 	/**
-	 * Skill (Priest): provide buff to party, reducing sanity loss until
+	 * Skill (Priest): provide buff to party, reducing sanity loss for certain num of turns
 	 * Called from toggleActionButton in App
 	 * @param props: object {
 	 *     partyData: object,
