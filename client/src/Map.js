@@ -3646,7 +3646,7 @@ class Map extends React.PureComponent {
 		// lighting sources changed, so recalculate lighting
 		if (this.props.lightingHasChanged && !prevProps.lightingHasChanged) {
 			this._calculateLighting(() => {
-				this._updateThreatLists(this.props.toggleLightingHasChanged);
+				this._updateThreatLists(() => this.props.toggleLightingHasChanged(false));
 			});
 		}
 		// player clicked button to center on active pc

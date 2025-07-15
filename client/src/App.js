@@ -579,7 +579,7 @@ class Game extends React.PureComponent {
 				const sacrificialStrikeIsActive = this.state.actionButtonSelected && this.state.actionButtonSelected.stats.sacrificialStrike;
 
 				if (lightingHasChanged) {
-					this.toggleLightingHasChanged(callback);
+					this.toggleLightingHasChanged(true, callback);
 				// check if either veteran, goBallistic button is active, and just unequipped gun or occultResearcher, sacrificialStrike button is active, and just unequipped kris knife
 				} else if ((id === 'veteran' && goBallisticIsActive && ((!rightWeapon && !leftWeapon) || (!rightWeapon.gunType && !leftWeapon.gunType))) ||
 					(id === 'occultResearcher' && sacrificialStrikeIsActive && (equippedRight !== 'krisKnife0' && equippedLeft !== 'krisKnife0')))
@@ -597,7 +597,7 @@ class Game extends React.PureComponent {
 				} else if (isInitialCreatureSetup && this.state.unitsTurnOrder.length === this.state.pcObjectOrdering.length) {
 					this._setAllUnitsTurnOrder('mapCreatures', callback);
 				} else if (lightingHasChanged) {
-					this.toggleLightingHasChanged(callback);
+					this.toggleLightingHasChanged(true, callback);
 				} else if (callback) {
 					callback();
 				}
@@ -710,7 +710,7 @@ class Game extends React.PureComponent {
 	updateMapObjects = (mapObjects, lightingHasChanged, callback) => {
 		this.setState({mapObjects}, () => {
 			if (lightingHasChanged) {
-				this.toggleLightingHasChanged(callback);
+				this.toggleLightingHasChanged(true, callback);
 			} else if (callback) {
 				callback();
 			}
@@ -826,7 +826,7 @@ class Game extends React.PureComponent {
 			this.setState({unitsTurnOrder, creatureSpawnInfo: null}, () => {
 				this.updateThreatList([uniqueCreatureId], [], () => {
 					// call toggleLightingHasChanged if creature projects light
-					// this.toggleLightingHasChanged(lightingHasChanged);
+					// this.toggleLightingHasChanged(true, lightingHasChanged);
 					this.updateLog(`As the lid is opened, ${articleType(creatureData.name)} ${creatureData.name} arises and attacks the party!`);
 				});
 			});
@@ -1816,10 +1816,11 @@ class Game extends React.PureComponent {
 
 	/**
 	 * Set by UI/App when a light source has been equipped/unequipped/dropped to tell Map to recalculate lighting
+	 * @param lightingHasChanged boolean
 	 * @param callback
 	 */
-	toggleLightingHasChanged = (callback) => {
-		this.setState(prevState => ({lightingHasChanged: !prevState.lightingHasChanged}), () => {
+	toggleLightingHasChanged = (lightingHasChanged, callback) => {
+		this.setState({lightingHasChanged}, () => {
 			if (callback) callback();
 		});
 	}
@@ -2808,7 +2809,6 @@ class Game extends React.PureComponent {
 						objHasBeenDropped={this.state.objHasBeenDropped}
 						setHasObjBeenDropped={this.setHasObjBeenDropped}
 						addItemToPlayerInventory={this.addItemToPlayerInventory}
-						toggleLightingHasChanged={this.toggleLightingHasChanged}
 						determineIfShouldSpawnCreature={this.determineIfShouldSpawnCreature}
 						// map object info
 						updateMapObjects={this.updateMapObjects}
