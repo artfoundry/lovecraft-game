@@ -2687,11 +2687,11 @@ class Map extends React.PureComponent {
 		if (activePlayerData.equippedLight && activePlayerData.lightTime > 0) {
 			updateData.items = activePlayerData.items;
 			const lightCost = this.props.inSearchMode ? this.props.lightTimeCosts.search : this.props.lightTimeCosts.move;
-			const {equippedLightItem, lightTime, lightRange, hasLightChanged} = this.props.calcPcLightChanges(activePC, lightCost);
-			updateData.items[activePlayerData.equippedLight] = {...equippedLightItem};
-			updateData.lightTime = lightTime;
-			updateData.lightRange = lightRange;
-			lightingHasChanged = hasLightChanged;
+			const lightChanges = this.props.calcPcLightChanges(activePC, lightCost);
+			updateData.items[activePlayerData.equippedLight] = {...lightChanges.equippedLightItem};
+			updateData.lightTime = lightChanges.lightTime;
+			updateData.lightRange = lightChanges.lightRange;
+			lightingHasChanged = lightChanges.lightingHasChanged;
 		}
 
 		// check if pc moved onto trap that hasn't been disarmed or sprung, then trigger it if so
@@ -2732,62 +2732,64 @@ class Map extends React.PureComponent {
 					if (this.props.threatList.length === 0) {
 						this.props.updateIfPartyIsNearby(this.isInLineOfSight);
 					}
-				}
-
-				// Find any creatures in range that could be a threat
-				const creaturePositions = this.props.getAllCharactersPos('creature', 'pos');
+				};
 				const activePlayerIndex = playerPositions.findIndex(element => element.id === activePC);
 				playerPositions[activePlayerIndex].pos = newTilePos;
 				let threatLists = {threatListToAdd: [], threatListToRemove: []};
-				if (creaturePositions.length > 0) {
-					threatLists = this._findChangesToNearbyThreats(playerPositions, creaturePositions);
-				}
-				if (threatLists.threatListToAdd.length > 0 || threatLists.threatListToRemove.length > 0) {
-					this.props.updateThreatList(threatLists.threatListToAdd, threatLists.threatListToRemove, () => {
-						// If previously in tactical mode before most recent move (and still in tactical mode), then update
-						if (!inFollowMode) {
-							updatePlayerMovesAndPartyStatus();
-						}
-					}, this.isInLineOfSight)
-				} else {
-					this.props.updateFollowModePositions(followModePositions, () => {
-						// If either in combat or not in combat but party not nearby
-						if (this.props.inTacticalMode) {
-							updatePlayerMovesAndPartyStatus();
-						// can do follow mode as long as not in tactical mode either from before most recent move or after
+				const checkForThreats = () => {
+					// Find any creatures in range that could be a threat
+					const creaturePositions = this.props.getAllCharactersPos('creature', 'pos');
+					if (creaturePositions.length > 0) {
+						threatLists = this._findChangesToNearbyThreats(playerPositions, creaturePositions);
+					}
+					if (threatLists.threatListToAdd.length > 0 || threatLists.threatListToRemove.length > 0) {
+						this.props.updateThreatList(threatLists.threatListToAdd, threatLists.threatListToRemove, null, this.isInLineOfSight);
+					}
+				};
+				this.props.updateFollowModePositions(followModePositions, () => {
+					// If either in combat or not in combat but party not nearby
+					if (this.props.inTacticalMode) {
+						checkForThreats();
+						updatePlayerMovesAndPartyStatus();
+					// can do follow mode as long as not in tactical mode either from before most recent move or after
+					} else {
+						// this.slowMovementAnimation(() => { // <- function not working well
+
+						// strip out the ids to make finding available pos easier
+						const listOfPlayerPos = playerPositions.map(player => player.pos);
+						let newFollowerPos = this.props.followModePositions.find(pos => !listOfPlayerPos.includes(pos));
+						// TODO: find temp path using pathAtoB to get follower to pos behind leader in order to prevent followers jumping tiles
+
+						// if leader has moved, there is at least 1 follower, and pc just moved was the leader,
+						// then call moveCharacter to update first follower to next avail pos in followModePositions array
+						if (this.props.followModePositions.length >= 1 && this.props.playerFollowOrder.length >= 2 && !followerId) {
+							// to force characters to move one space at a time
+							setTimeout(() => {
+								this.moveCharacter(pathData, newFollowerPos, this.props.playerFollowOrder[1]);
+							}, this.state.shortMovementDelay);
+
+						// if leader has moved 2x, there are 2 followers, and 1st follower was just moved,
+						// then call moveCharacter to update second follower to next avail pos in followModePositions array
+						} else if (this.props.followModePositions.length >= 2 && this.props.playerFollowOrder.length === 3 && followerId === this.props.playerFollowOrder[1]) {
+							// to force characters to move one space at a time
+							setTimeout(() => {
+								this.moveCharacter(pathData, newFollowerPos, this.props.playerFollowOrder[2]);
+							}, this.state.shortMovementDelay);
+						// otherwise, moving to next tile in path or alert user to blocker
+						} else if (pathData.tilePath.length > 0 || pathData.blocker) {
+							checkForThreats();
+							if (threatLists.threatListToAdd.length === 0) {
+								// to force characters to move one space at a time
+								setTimeout(() => {
+									this.moveCharacter(pathData);
+								}, this.state.leaderMovementDelay);
+							}
 						} else {
-							// strip out the ids to make finding available pos easier
-							// this.slowMovementAnimation(() => {
-								const listOfPlayerPos = playerPositions.map(player => player.pos);
-								let newFollowerPos = this.props.followModePositions.find(pos => !listOfPlayerPos.includes(pos));
-								// TODO: find temp path using pathAtoB to get follower to pos behind leader in order to prevent followers jumping tiles
-
-								// if leader has moved, there is at least 1 follower, and pc just moved was the leader,
-								// then call moveCharacter to update first follower to next avail pos in followModePositions array
-								if (this.props.followModePositions.length >= 1 && this.props.playerFollowOrder.length >= 2 && !followerId) {
-									// to force characters to move one space at a time
-									setTimeout(() => {
-										this.moveCharacter(pathData, newFollowerPos, this.props.playerFollowOrder[1]);
-									}, this.state.shortMovementDelay);
-
-								// if leader has moved 2x, there are 2 followers, and 1st follower was just moved,
-								// then call moveCharacter to update second follower to next avail pos in followModePositions array
-								} else if (this.props.followModePositions.length >= 2 && this.props.playerFollowOrder.length === 3 && followerId === this.props.playerFollowOrder[1]) {
-									// to force characters to move one space at a time
-									setTimeout(() => {
-										this.moveCharacter(pathData, newFollowerPos, this.props.playerFollowOrder[2]);
-									}, this.state.shortMovementDelay);
-								// otherwise, moving to next tile in path or alert user to blocker
-								} else if (pathData.tilePath.length > 0 || pathData.blocker) {
-									// to force characters to move one space at a time
-									setTimeout(() => {
-										this.moveCharacter(pathData);
-									}, this.state.leaderMovementDelay);
-								}
-							// });
+							checkForThreats();
 						}
-					});
-				}
+						// }); // <- block end for slowMovementAnimation
+					}
+				});
 			});
 		});
 	}
@@ -2894,6 +2896,7 @@ class Map extends React.PureComponent {
 	/**
 	 * Finds tile for char to move to that is either toward (directionModifier = 1) a target
 	 * or away from (directionModifier = -1) all targets of a type (PC or creature)
+	 * If no options available, returns char's current coords
 	 * @param currentCharCoords: Object
 	 * @param directionModifier: Integer (1 or -1)
 	 * @param targetType: String ('player' or 'creature' - type that char is moving toward/away from)
@@ -2902,19 +2905,19 @@ class Map extends React.PureComponent {
 	 * @private
 	 */
 	_findNewCoordsRelativeToChar(currentCharCoords, directionModifier, targetType, targetPos = null) {
-		const calcModifiers = (xValue, yValue, xComparison, yComparison) => {
+		const calcModifiers = (xValue, yValue, xComparison, yComparison)=> {
 			let mods = {};
 			if (xValue < xComparison) {
-				mods = yValue < yComparison ? {primary: {x: -1, y: -1}, alt1: {x: -1, y: 0}, alt2: {x: 0, y: -1}, alt3: {x: -1, y: 1}, alt4: {x: 1, y: -1}, alt5: {x: 1, y: 0}, alt6: {x: 0, y: 1}} :
-					yValue === yComparison ? {primary: {x: -1, y: 0}, alt1: {x: -1, y: 1}, alt2: {x: -1, y: -1}, alt3: {x: 0, y: 1}, alt4: {x: 0, y: -1}, alt5: {x: 1, y: -1}, alt6: {x: 1, y: 1}} :
-					{primary: {x: -1, y: 1}, alt1: {x: -1, y: 0}, alt2: {x: 0, y: 1}, alt3: {x: -1, y: -1}, alt4: {x: 1, y: 1}, alt5: {x: 0, y: -1}, alt6: {x: 1, y: 0}};
+				mods = yValue < yComparison ? {option0: {x: -1, y: -1}, option1: {x: -1, y: 0}, option2: {x: 0, y: -1}, option3: {x: -1, y: 1}, option4: {x: 1, y: -1}, option5: {x: 1, y: 0}, option6: {x: 0, y: 1}} :
+					yValue === yComparison ? {option0: {x: -1, y: 0}, option1: {x: -1, y: 1}, option2: {x: -1, y: -1}, option3: {x: 0, y: 1}, option4: {x: 0, y: -1}, option5: {x: 1, y: -1}, option6: {x: 1, y: 1}} :
+					{option0: {x: -1, y: 1}, option1: {x: -1, y: 0}, option2: {x: 0, y: 1}, option3: {x: -1, y: -1}, option4: {x: 1, y: 1}, option5: {x: 0, y: -1}, option6: {x: 1, y: 0}};
 			} else if (xValue === xComparison) {
-				mods = yValue < yComparison ? {primary: {x: 0, y: -1}, alt1: {x: -1, y: -1}, alt2: {x: 1, y: -1}, alt3: {x: -1, y: 0}, alt4: {x: 1, y: 0}, alt5: {x: -1, y: 1}, alt6: {x: 1, y: 1}} :
-					{primary: {x: 0, y: 1}, alt1: {x: -1, y: 1}, alt2: {x: 1, y: 1}, alt3: {x: -1, y: 0}, alt4: {x: 1, y: 0}, alt5: {x: -1, y: -1}, alt6: {x: 1, y: -1}};
+				mods = yValue < yComparison ? {option0: {x: 0, y: -1}, option1: {x: -1, y: -1}, option2: {x: 1, y: -1}, option3: {x: -1, y: 0}, option4: {x: 1, y: 0}, option5: {x: -1, y: 1}, option6: {x: 1, y: 1}} :
+					{option0: {x: 0, y: 1}, option1: {x: -1, y: 1}, option2: {x: 1, y: 1}, option3: {x: -1, y: 0}, option4: {x: 1, y: 0}, option5: {x: -1, y: -1}, option6: {x: 1, y: -1}};
 			} else {
-				mods = yValue < yComparison ? {primary: {x: 1, y: -1}, alt1: {x: 0, y: -1}, alt2: {x: 1, y: 0}, alt3: {x: -1, y: -1}, alt4: {x: 1, y: 1}, alt5: {x: -1, y: 0}, alt6: {x: 0, y: 1}} :
-					yValue === yComparison ? {primary: {x: 1, y: 0}, alt1: {x: 1, y: -1}, alt2: {x: 1, y: 1}, alt3: {x: 0, y: -1}, alt4: {x: 0, y: 1}, alt5: {x: -1, y: -1}, alt6: {x: -1, y: 1}} :
-					{primary: {x: 1, y: 1}, alt1: {x: 1, y: 0}, alt2: {x: 0, y: 1}, alt3: {x: 1, y: -1}, alt4: {x: -1, y: 1}, alt5: {x: 0, y: -1}, alt6: {x: -1, y: 0}};
+				mods = yValue < yComparison ? {option0: {x: 1, y: -1}, option1: {x: 0, y: -1}, option2: {x: 1, y: 0}, option3: {x: -1, y: -1}, option4: {x: 1, y: 1}, option5: {x: -1, y: 0}, option6: {x: 0, y: 1}} :
+					yValue === yComparison ? {option0: {x: 1, y: 0}, option1: {x: 1, y: -1}, option2: {x: 1, y: 1}, option3: {x: 0, y: -1}, option4: {x: 0, y: 1}, option5: {x: -1, y: -1}, option6: {x: -1, y: 1}} :
+					{option0: {x: 1, y: 1}, option1: {x: 1, y: 0}, option2: {x: 0, y: 1}, option3: {x: 1, y: -1}, option4: {x: -1, y: 1}, option5: {x: 0, y: -1}, option6: {x: -1, y: 0}};
 			}
 			return mods;
 		};
@@ -2930,37 +2933,34 @@ class Map extends React.PureComponent {
 
 		// move away from all targets of type targetType
 		} else {
-			const allCharsCoords = this.props.getAllCharactersPos(targetType, 'coords');
+			//todo: for creature running away, should only look at pcs that are in sight (currently looking at all)
+			const allCharsCoords = targetType === 'player' ? this.props.getAllCharactersPos('player', 'coords').map(info => info.coords) : this.props.threatList.map(id => this.props.mapCreatures[id].coords);
 			let avgXCoord = 0;
 			let avgYCoord = 0;
 			let numPCs = allCharsCoords.length;
 			allCharsCoords.forEach(char => {
-				avgXCoord += char.coords.xPos;
-				avgYCoord += char.coords.yPos;
+				avgXCoord += char.xPos;
+				avgYCoord += char.yPos;
 			});
 			avgXCoord = avgXCoord / numPCs;
 			avgYCoord = avgYCoord / numPCs;
 			modifiers = calcModifiers(currentCharCoords.xPos, currentCharCoords.yPos, avgXCoord, avgYCoord);
 		}
 
-		let altNum = 0
-		let tileIsOccupied = true;
+		let optionNum = 0
+		let tileIsFree = false;
 		let newX = 0;
 		let newY = 0;
-		while (altNum < 7 && tileIsOccupied) {
-			if (altNum === 0) {
-				newX = currentCharCoords.xPos + modifiers.primary.x;
-				newY = currentCharCoords.yPos + modifiers.primary.y;
-			} else {
-				newX = currentCharCoords.xPos + modifiers['alt' + altNum].x;
-				newY = currentCharCoords.yPos + modifiers['alt' + altNum].y;
-			}
+		// for moving toward target, look at all 7 options, if moving away, only look at first 5 options
+		while (!tileIsFree && ((directionModifier === 1 && optionNum < 7) || (directionModifier === -1 && optionNum < 5))) {
+			newX = currentCharCoords.xPos + modifiers['option' + optionNum].x;
+			newY = currentCharCoords.yPos + modifiers['option' + optionNum].y;
 			if (this._tileIsFreeToMove({xPos: newX, yPos: newY})) {
-				tileIsOccupied = false;
+				tileIsFree = true;
 				newCharCoords.xPos = newX;
 				newCharCoords.yPos = newY;
 			} else {
-				altNum++;
+				optionNum++;
 			}
 		}
 

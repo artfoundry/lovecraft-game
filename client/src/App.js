@@ -579,7 +579,7 @@ class Game extends React.PureComponent {
 				const sacrificialStrikeIsActive = this.state.actionButtonSelected && this.state.actionButtonSelected.stats.sacrificialStrike;
 
 				if (lightingHasChanged) {
-					this.toggleLightingHasChanged(true, callback);
+					this.toggleLightingHasChanged(lightingHasChanged, callback);
 				// check if either veteran, goBallistic button is active, and just unequipped gun or occultResearcher, sacrificialStrike button is active, and just unequipped kris knife
 				} else if ((id === 'veteran' && goBallisticIsActive && ((!rightWeapon && !leftWeapon) || (!rightWeapon.gunType && !leftWeapon.gunType))) ||
 					(id === 'occultResearcher' && sacrificialStrikeIsActive && (equippedRight !== 'krisKnife0' && equippedLeft !== 'krisKnife0')))
@@ -597,7 +597,7 @@ class Game extends React.PureComponent {
 				} else if (isInitialCreatureSetup && this.state.unitsTurnOrder.length === this.state.pcObjectOrdering.length) {
 					this._setAllUnitsTurnOrder('mapCreatures', callback);
 				} else if (lightingHasChanged) {
-					this.toggleLightingHasChanged(true, callback);
+					this.toggleLightingHasChanged(lightingHasChanged, callback);
 				} else if (callback) {
 					callback();
 				}
@@ -710,7 +710,7 @@ class Game extends React.PureComponent {
 	updateMapObjects = (mapObjects, lightingHasChanged, callback) => {
 		this.setState({mapObjects}, () => {
 			if (lightingHasChanged) {
-				this.toggleLightingHasChanged(true, callback);
+				this.toggleLightingHasChanged(lightingHasChanged, callback);
 			} else if (callback) {
 				callback();
 			}

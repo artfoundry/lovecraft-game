@@ -312,17 +312,17 @@ class Character extends React.PureComponent {
 	 * @private
 	 */
 	_updatePcLights(updatedPartyData, calcPcLightChanges, lightCost) {
-		let lightingHasChanged = false;
+		let hasLightChanged = false;
 		for (const charData of Object.values(updatedPartyData)) {
 			if (charData.equippedLight && charData.lightTime > 0) {
-				const {equippedLightItem, lightTime, lightRange, hasLightChanged} = calcPcLightChanges(charData.id, lightCost);
+				const {equippedLightItem, lightTime, lightRange, lightingHasChanged} = calcPcLightChanges(charData.id, lightCost);
 				charData.items[charData.equippedLight] = {...equippedLightItem};
 				charData.lightTime = lightTime;
 				charData.lightRange = lightRange;
-				lightingHasChanged = hasLightChanged;
+				hasLightChanged = lightingHasChanged;
 			}
 		}
-		return lightingHasChanged;
+		return hasLightChanged;
 	}
 
 	/**

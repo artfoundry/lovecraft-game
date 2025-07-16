@@ -200,10 +200,6 @@ h3 {
 	outline: initial;
 }
 
-.arrow-button-right {
-	transform: rotate(180deg);
-}
-
 .game-options-container {
 	display: flex;
 	flex-direction: column;
@@ -957,11 +953,21 @@ h3 {
 }
 
 .character-status-icons {
+	width: 93px;
+	margin-left: 5px;
 	white-space: nowrap;
 }
 
 .character-status-icon {
-	margin-left: 5px;
+	margin-left: 2px;
+}
+
+.action-button.character-status-scroll {
+	width: 10px;
+	height: 20px;
+	padding: 2px 5px 2px 2px;
+	font-size: 12px;
+	line-height: 20px;
 }
 
 .level-up-status-icon {
@@ -1006,6 +1012,7 @@ h3 {
 
 .character-name {
 	display: inline-block;
+	width: 180px;
 	margin-bottom: 3px;
 	font-size: 16px;
 	border-bottom: 1px solid #225555;
@@ -1161,6 +1168,10 @@ h3 {
 	width: 16px;
 	padding-left: 1px;
 	padding-right: 5px;
+}
+
+.arrow-button-right {
+	transform: rotate(180deg);
 }
 
 .weapon-buttons-container {
@@ -1815,7 +1826,7 @@ select {
 
 	#control-bar-tab-1 .control-bar-tab {
 		padding-left: 0;
-		border-left: none;
+		border: none;
 	}
 
 	.character-name {
@@ -1823,7 +1834,7 @@ select {
 	}
 
 	.control-bar-tab-container:not(#control-bar-tab-1.control-bar-tab-container) {
-		max-width: 40px;
+		max-width: 30px;
 	}
 
 	#control-bar-statuses-container:not(#control-bar-tab-1 #control-bar-statuses-container) {
@@ -1832,6 +1843,12 @@ select {
 
 	.control-bar-tab-container:not(#control-bar-tab-1.control-bar-tab-container) .character-status-icons {
 		display: none;
+	}
+
+	.action-button.character-status-scroll {
+		width: 6px;
+		padding: 2px 7px 2px 2px;
+		font-size: 10px;
 	}
 
 	.action-button:hover {
@@ -2147,7 +2164,7 @@ select {
 	}
 
 	#control-bar-container.control-bar-3-columns {
-		grid-template-columns: 220px 1fr 1fr;
+		grid-template-columns: 240px 1fr 1fr;
 	}
 
 	#control-bar-container.control-bar-2-columns {

@@ -14,6 +14,14 @@ function CharacterControls(props) {
 		skills: [],
 		misc: []
 	};
+	let statusIconCount = 0;
+	const statusIconMax = 3;
+	const [statusPaginationNum, updateStatusPageNum] = useState(1);
+	const shouldStatusIconShow = () => {
+		return (statusIconCount <= statusIconMax && statusPaginationNum === 1) ||
+			(statusIconCount > statusIconMax && statusPaginationNum === 2) ||
+			(statusIconCount > (statusIconMax * 2) && statusPaginationNum === 3);
+	};
 	let actionButtonCount = 0;
 	const actionButtonMax = 6;
 	const [skillPaginationNum, updateSkillPageNum] = useState(1);
@@ -132,7 +140,8 @@ function CharacterControls(props) {
 	const statusIcons = (
 		<span className={'character-status-icons'}>
 			{statuses.map(status => {
-				const iconClass = `character-status-icon ${convertObjIdToClassId(status)}-status-icon`;
+				statusIconCount++;
+				const iconClass = `character-status-icon ${convertObjIdToClassId(status)}-status-icon${shouldStatusIconShow() ? '' : ' hide'}`;
 				return (
 					<span
 						key={status}
@@ -149,7 +158,7 @@ function CharacterControls(props) {
 							);
 						}}
 					></span>
-				)
+				);
 			})}
 		</span>
 	);
@@ -416,7 +425,13 @@ function CharacterControls(props) {
 	const healthLevel = (currentPCdata.currentHealth / currentPCdata.startingHealth) * 100;
 	const sanityLevel = (currentPCdata.currentSanity / currentPCdata.startingSanity) * 100;
 	const spiritLevel = (currentPCdata.currentSpirit / currentPCdata.startingSpirit) * 100;
+	const statusPageTotal = Math.ceil(statusIconCount / statusIconMax);
 	const skillPageTotal = Math.ceil(actionButtonCount / actionButtonMax);
+	const largeScreenSize = !props.screenData.isSmall && !props.screenData.isShort && !props.screenData.isNarrow;
+	// if an icon has been removed and was the only icon on that icons page, reduce current page num
+	if (statusPageTotal < statusPaginationNum && statusPageTotal > 0) {
+		updateStatusPageNum(statusPageTotal);
+	}
 	// if a button has been removed and was the only button on that buttons page, reduce current page num
 	if (skillPageTotal < skillPaginationNum && skillPageTotal > 0) {
 		updateSkillPageNum(skillPageTotal);
@@ -443,7 +458,13 @@ function CharacterControls(props) {
 					<span className={`control-bar-tab-icon ${convertObjIdToClassId(props.characterId)}`}></span>
 					{displayCharName ? props.characterName : ''}
 				</span>
+				{(statusIconCount > statusIconMax) && (statusPaginationNum > 1) && (largeScreenSize || props.characterId === props.selectedControlTab) &&
+					<div className='action-button character-status-scroll' onClick={() => updateStatusPageNum(statusPaginationNum - 1)}>⬅</div>
+				}
 				{statusIcons}
+				{(statusIconCount > statusIconMax) && (statusPageTotal > 1) && (statusPaginationNum < statusPageTotal) && (largeScreenSize || props.characterId === props.selectedControlTab) &&
+					<div className='action-button arrow-button-right character-status-scroll' onClick={() => updateStatusPageNum(statusPaginationNum + 1)}>⬅</div>
+				}
 			</div>
 			<div id='control-bar-statuses-container'>
 				<div className='control-bar-status-bars'>
