@@ -143,7 +143,6 @@ h3 {
 .help-popup {
 	position: absolute;
 	width: 300px;
-	height: 150px;
 	padding: 20px;
 	border: 1px solid blue;
 	filter: drop-shadow(4px 4px 2px black);
@@ -154,7 +153,6 @@ h3 {
 	flex-direction: row;
 	justify-content: space-between;
 	align-items: center;
-	height: 150px;
 }
 
 .help-popup-container .character-status-icon {

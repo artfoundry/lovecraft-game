@@ -647,6 +647,14 @@ function CharacterInfoPanel(props) {
 	const rightItemAmount = (rightEquippedItemInfo && rightEquippedItemInfo.amount) ? rightEquippedItemInfo.amount : (rightEquippedItemInfo && rightEquippedItemInfo.currentRounds) ? rightEquippedItemInfo.currentRounds : '';
 	const leftItemAmount = (leftEquippedItemInfo && leftEquippedItemInfo.amount) ? leftEquippedItemInfo.amount : (leftEquippedItemInfo && leftEquippedItemInfo.currentRounds) ? leftEquippedItemInfo.currentRounds : '';
 	const [activeTab, updateActiveTab] = useState('inv');
+	const attrHelpButtonStyle = {
+		'position': 'relative',
+		'transform': 'translate(-180px, 0)',
+		'width': '22px',
+		'height': '22px',
+		'fontSize': '22px',
+		'lineHeight': '22px'
+	};
 	const sanityEffect = props.characterInfo.statuses.paranoid || props.characterInfo.statuses.terrified;
 	let currentStatuses = [];
 	for (const [statusId, statusInfo] of Object.entries(props.characterInfo.statuses)) {
@@ -772,7 +780,7 @@ function CharacterInfoPanel(props) {
 				</div>
 
 				<div className={`char-info-stats-container ${activeTab !== 'stats' ? 'hide' : ''}`}>
-					{props.showHelpSystem && props.helpPopupButton('attributes', {'transform': 'translate(220px, 50px)'})}
+					{props.showHelpSystem && props.helpPopupButton('attributes', {'transform': 'translate(300px, 0)'})}
 					{props.characterInfo.levelUpPoints > 0 &&
 						<div className='level-up-header highlight-row'>
 							<div className='character-stat-text'>{props.characterInfo.name.first}'s expertise level has increased!</div>
@@ -790,11 +798,12 @@ function CharacterInfoPanel(props) {
 					}
 					<div className='character-stat-text'>Profession: {props.characterInfo.profession}</div>
 					<div className='character-stat-text'>Gender: {props.characterInfo.gender}</div>
-					<div className='character-stat-text'>Health: {props.characterInfo.currentHealth} / {props.characterInfo.startingHealth}</div>
-					<div className='character-stat-text'>Sanity: {props.characterInfo.currentSanity} / {props.characterInfo.startingSanity}</div>
-					<div className='character-stat-text'>Spirit: {props.characterInfo.currentSpirit} / {props.characterInfo.startingSpirit}</div>
+					<div className='character-stat-text'>Health: {props.characterInfo.currentHealth} / {props.characterInfo.startingHealth}{props.showHelpSystem && props.helpPopupButton('health', attrHelpButtonStyle)}</div>
+					<div className='character-stat-text'>Sanity: {props.characterInfo.currentSanity} / {props.characterInfo.startingSanity}{props.showHelpSystem && props.helpPopupButton('sanity', attrHelpButtonStyle)}</div>
+					<div className='character-stat-text'>Spirit: {props.characterInfo.currentSpirit} / {props.characterInfo.startingSpirit}{props.showHelpSystem && props.helpPopupButton('spirit', attrHelpButtonStyle)}</div>
 					<div className={`character-stat-text${props.characterInfo.levelUpPoints > 0 ? ' highlight-row' : ''}`}>
-						<span>Strength: {props.characterInfo.strength + (levelUpPointAllocations.stats.strength || 0)}{(sanityEffect && sanityEffect.attribute === 'strength') ? ` (-${sanityEffect.modifier})` : ''}</span>
+						Strength: {props.characterInfo.strength + (levelUpPointAllocations.stats.strength || 0)}{(sanityEffect && sanityEffect.attribute === 'strength') ? ` (-${sanityEffect.modifier})` : ''}
+						{props.showHelpSystem && props.helpPopupButton('strength', attrHelpButtonStyle)}
 						{props.characterInfo.levelUpPoints > 0 &&
 							<span>
 								<span className={`general-button level-up-button${availableLevelUpPoints === 0 ? ' button-disabled' : ''}`} onClick={() => {
@@ -809,7 +818,8 @@ function CharacterInfoPanel(props) {
 						}
 					</div>
 					<div className={`character-stat-text${props.characterInfo.levelUpPoints > 0 ? ' highlight-row' : ''}`}>
-						<span>Agility: {props.characterInfo.agility + (levelUpPointAllocations.stats.agility || 0)}{(sanityEffect && sanityEffect.attribute === 'agility') ? ` (-${sanityEffect.modifier})` : ''}</span>
+						Agility: {props.characterInfo.agility + (levelUpPointAllocations.stats.agility || 0)}{(sanityEffect && sanityEffect.attribute === 'agility') ? ` (-${sanityEffect.modifier})` : ''}
+						{props.showHelpSystem && props.helpPopupButton('agility', attrHelpButtonStyle)}
 						{props.characterInfo.levelUpPoints > 0 &&
 							<span>
 								<span className={`general-button level-up-button${availableLevelUpPoints === 0 ? ' button-disabled' : ''}`} onClick={() => {
@@ -824,7 +834,8 @@ function CharacterInfoPanel(props) {
 						}
 					</div>
 					<div className={`character-stat-text${props.characterInfo.levelUpPoints > 0 ? ' highlight-row' : ''}`}>
-						<span>Mental Acuity: {props.characterInfo.mentalAcuity + (levelUpPointAllocations.stats.mentalAcuity || 0)}</span>
+						Mental Acuity: {props.characterInfo.mentalAcuity + (levelUpPointAllocations.stats.mentalAcuity || 0)}
+						{props.showHelpSystem && props.helpPopupButton('mentalAcuity', attrHelpButtonStyle)}
 						{props.characterInfo.levelUpPoints > 0 &&
 							<span>
 								<span className={`general-button level-up-button${availableLevelUpPoints === 0 ? ' button-disabled' : ''}`} onClick={() => {
@@ -838,9 +849,9 @@ function CharacterInfoPanel(props) {
 							</span>
 						}
 					</div>
-					<div className='character-stat-text'>Initiative: {props.characterInfo.initiative}</div>
-					<div className='character-stat-text'>Defense: {props.characterInfo.defense}</div>
-					<div className='character-stat-text'>Damage Reduction: {props.characterInfo.damageReduction}{equippedItems.armor ? ` (from ${itemsPossessed[equippedItems.armor].name})` : ''}</div>
+					<div className='character-stat-text'>Initiative: {props.characterInfo.initiative}{props.showHelpSystem && props.helpPopupButton('initiative', attrHelpButtonStyle)}</div>
+					<div className='character-stat-text'>Defense: {props.characterInfo.defense}{props.showHelpSystem && props.helpPopupButton('defense', attrHelpButtonStyle)}</div>
+					<div className='character-stat-text'>Damage Reduction: {props.characterInfo.damageReduction}{equippedItems.armor ? ` (from ${itemsPossessed[equippedItems.armor].name})` : ''}{props.showHelpSystem && props.helpPopupButton('damageReduction', attrHelpButtonStyle)}</div>
 					<div className='character-stat-text'>Current statuses:</div>
 					<div className='character-stat-text character-panel-statuses-list'>
 						{currentStatuses.map(statusInfo => {
@@ -856,7 +867,7 @@ function CharacterInfoPanel(props) {
 				</div>
 
 				<div className={`char-info-skills-container ${activeTab !== 'skills' ? 'hide' : ''}`}>
-					{props.showHelpSystem && props.helpPopupButton('skills', {'transform': 'translate(220px, 50px)'})}
+					{props.showHelpSystem && props.helpPopupButton('skills', {'transform': 'translate(300px, 0)'})}
 					{props.characterInfo.levelUpPoints > 0 &&
 						<div className='level-up-header highlight-row'>
 							<div className='character-stat-text'>{props.characterInfo.name.first}'s expertise level has increased!</div>

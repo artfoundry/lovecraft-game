@@ -738,7 +738,7 @@ class Character extends React.PureComponent {
 		const relicExpertSkillMod = pcData.id === 'occultResearcher' ? pcData.skills.relicExpertise.modifier[pcData.skills.relicExpertise.level] : 0;
 		let sanityReduction = 0;
 
-		//todo: need to decide what each relic will do
+		// todo: need to decide what each relic will do
 
 		updatedPcData.currentSpirit -= actionStats.spiritCost > updatedPcData.currentSpirit ? updatedPcData.currentSpirit : actionStats.spiritCost;
 		sanityReduction = actionStats.sanityCost - (relicExpertSkillMod * actionStats.sanityCost);

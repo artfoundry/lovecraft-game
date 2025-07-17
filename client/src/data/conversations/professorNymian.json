@@ -1,6 +1,6 @@
 {
   "professor-1": {
-    "text": "{n}, welcome my friend to Miskatonic University.\nI was hoping you would come as soon as you had received my letter. We have much to discuss, and I'm sure you have many questions.",
+    "text": "{n}, welcome, my friend, to Miskatonic University!\nI was hoping you would come as soon as you had received my letter. We have much to discuss, and I'm sure you have many questions.",
     "responses": {
       "professor-2": "Yes, why have you called me here? What's going on?",
       "professor-3": "Damn straight! I was in the middle of something very important, so this better be...well even more important!"
