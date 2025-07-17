@@ -449,7 +449,7 @@ function CharacterControls(props) {
 				}
 			}}>
 				{props.showHelpSystem && props.helpPopupButton('characterTabs')}
-				{props.showHelpSystem && props.helpPopupButton('statusIndicators', {'right': '0', 'zIndex': '2'})}
+				{props.showHelpSystem && (largeScreenSize || props.characterId === props.selectedControlTab) && props.helpPopupButton('statusIndicators', {'right': '0', 'zIndex': '2'})}
 				<span className='character-name font-fancy' onClick={() => {
 					if (displayCharName) {
 						props.updateUnitSelectionStatus(props.characterId, 'player');
