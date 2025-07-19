@@ -218,7 +218,7 @@
     "turnsLeft": [2, 2, 3, 3, 4],
     "spirit": [70, 60, 50, 40, 30],
     "modType": "-",
-    "affects": " Sanity damage per Investigator",
+    "affects": " Sanity damage for each Investigator",
     "maxLevel": 4
   },
   "spiritualInspiration": {

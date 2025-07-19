@@ -304,6 +304,7 @@ function CharacterControls(props) {
 					(skill.name === 'Go Ballistic' && !gunIsLoaded) ||
 					(skill.name === 'Feel The Pain' && skill.active) ||
 					(skill.name === 'Stealthy' && !props.inTacticalMode) ||
+					(skill.name === 'Comfort The Fearful' && !props.inTacticalMode) ||
 					(skill.mustNotHaveLightEquipped && currentPCdata.equippedLight) ||
 					(skill.name === 'Disarm Trap' && props.trapsNextToPc.length === 0) ||
 					statuses.includes('confused') ||

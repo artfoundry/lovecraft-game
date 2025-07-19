@@ -160,7 +160,12 @@ class Map extends React.PureComponent {
 			this.props.playerFollowOrder.forEach(id => {
 				mapData.partyExitCoords[id] = {...this.props.playerCharacters[id].coords};
 			});
-			this.setState({mapLayoutDone: false}, saveMapData)
+			this.setState({mapLayoutDone: false}, () => {
+				saveMapData();
+				if (exitToLocation && GameLocations[exitToLocation].recoversSpirit) {
+					this.props.recoverCharsSpirit('all');
+				}
+			});
 		} else {
 			saveMapData();
 		}
@@ -2678,7 +2683,7 @@ class Map extends React.PureComponent {
 
 		// check if in darkness and in follow mode (for tactical mode, checked in componentDidUpdate), if so, reduce sanity
 		const newPosLighting = this.state.mapLayout[newTilePos].lightStrength;
-		if (newPosLighting === 0 && !this.props.inTacticalMode) {
+		if (newPosLighting === 0 && !this.props.inTacticalMode && !this.state.currentLocationData.floors[this.props.currentFloor].allTilesAtLeastAmbientLit) {
 			updateData.currentSanity--;
 		}
 

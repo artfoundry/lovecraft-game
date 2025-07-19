@@ -3,6 +3,7 @@
 		"name": "Catacombs",
 		"numOfFloors": 3,
 		"enteredFrom": "museum",
+		"recoversSpirit": false,
 		"floors": {
 			"1": {
 				"isRandom": true,
@@ -185,6 +186,7 @@
 	"museum": {
 		"name": "Miskatonic Museum",
 		"numOfFloors": 1,
+		"recoversSpirit": true,
 		"floors": {
 			"1": {
 				"isRandom": false,

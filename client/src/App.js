@@ -874,6 +874,7 @@ class Game extends React.PureComponent {
 						// no need to copy data more than once if multiple pcs have statuses
 						if (!dataCopied) {
 							updatedPlayerCharacters = deepCopy(playerCharacters);
+							dataCopied = true;
 						}
 						for (const [statusId, statusData] of Object.entries(playerCharacters[pcId].statuses)) {
 							if (statusData.turnsLeft) {
@@ -1203,6 +1204,22 @@ class Game extends React.PureComponent {
 		const skillData = pcData.skills[skillId];
 		const skillLevel = skillData.level;
 		return pcData.currentSpirit - skillData.spirit[skillLevel];
+	}
+
+	/**
+	 * Used to raise Spirit from entering a location that's not a dungeon or from resting
+	 * @param spiritAmount string || number ('all' or specific value to increase)
+	 */
+	recoverCharsSpirit = (spiritAmount) => {
+		let playerCharacters = deepCopy(this.state.playerCharacters);
+		for (const charData of Object.values(playerCharacters)) {
+			if (spiritAmount === 'all') {
+				charData.currentSpirit = charData.startingSpirit;
+			} else {
+				charData.currentSpirit += spiritAmount;
+			}
+		}
+		this.updateCharacters('player', playerCharacters, null, false, false, false);
 	}
 
 	/**
@@ -2891,6 +2908,7 @@ class Game extends React.PureComponent {
 						calcPcLightChanges={this.calcPcLightChanges}
 						lightTimeCosts={this.lightTimeCosts}
 						takeAutomaticAction={this.takeAutomaticAction}
+						recoverCharsSpirit={this.recoverCharsSpirit}
 						// npcs
 						npcs={this.state.npcs}
 						updateNpcs={this.updateNpcs}

@@ -176,7 +176,7 @@
   "spirit": {
     "iconClass": "",
     "name": "Spirit",
-    "description": "An Investigator's willpower. Fixed starting value that's calculated as an average of Health and Sanity. Used for certain skills. Can be recovered by resting or by the Priest's Spiritual Inspiration skill. Recovers fully upon returning to populated/safe locations such as the Museum.",
+    "description": "An Investigator's willpower. Fixed starting value that's calculated as an average of Health and Sanity. Used for certain skills. Can be partly recovered by resting or by the Priest's Spiritual Inspiration skill. Recovers fully upon returning to populated/safe locations such as the Museum.",
     "source": null
   },
   "statusIndicators": {
