@@ -874,6 +874,8 @@ class UI extends React.PureComponent {
 		const conversationTargetData = this.props.conversationTarget ?
 			(this.props.conversationTarget.targetType === 'player' ?
 			this.props.playerCharacters[this.props.conversationTarget.id] :
+			this.props.conversationTarget.id.includes('story') ?
+			{id: this.props.conversationTarget.id, conversationStatus: {nextMessageKey: this.props.conversationTarget.id}, name: {first: '', last: ''}} :
 			this.props.npcs[this.props.conversationTarget.id]) : null;
 		return (
 			<div id='ui-container'>
@@ -955,12 +957,17 @@ class UI extends React.PureComponent {
 				{this.state.showConversation &&
 				<ConversationWindow
 					storyProgress={this.props.storyProgress}
+					updateStoryProgress={this.props.updateStoryProgress}
 					conversationTargetData={conversationTargetData}
+					identifiedThings={this.props.identifiedThings}
+					updateIdentifiedThings={this.props.updateIdentifiedThings}
 					setConversationTarget={this.props.setConversationTarget}
 					setShowConversation={this.setShowConversation}
 					applyUpdatesFromConv={this.props.applyUpdatesFromConv}
 					createdCharData={{gender: this.props.createdCharData.gender, name: this.props.createdCharData.name}}
 					partySize={Object.keys(this.props.playerCharacters).length}
+					partyJournal={this.props.partyJournal}
+					updateThreatsCallback={this.props.conversationTarget.updateThreatsCallback}
 				/>
 				}
 
@@ -992,6 +999,7 @@ class UI extends React.PureComponent {
 					creatureIsSelected={this.props.creatureIsSelected}
 					updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
 					creatureInfo={this.props.selectedCreatureInfo}
+					identifiedCreatures={this.props.identifiedThings.creatures}
 					showHelpSystem={this.state.showHelpSystem}
 					helpPopupButton={this.helpPopupButton}
 				/>

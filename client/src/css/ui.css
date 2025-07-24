@@ -622,7 +622,7 @@ h3 {
 .character-panel-status-row {
 	display: flex;
 	flex-direction: row;
-	justify-content: space-between;
+	justify-content: space-evenly;
 	padding: 5px 0;
 }
 
@@ -633,11 +633,11 @@ h3 {
 }
 
 .character-panel-status-name {
-	flex-basis: 60%;
+	flex-basis: 55%;
 }
 
 .character-panel-status-turns {
-	flex-basis: 30%;
+	flex-basis: 25%;
 	align-self: center;
 	text-align: right;
 }

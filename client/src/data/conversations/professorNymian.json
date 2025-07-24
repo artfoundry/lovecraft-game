@@ -78,8 +78,8 @@
             "id": "mission1",
             "updateType": "new",
             "title": "Rescue Dr. Winthrop",
-            "description": "Dr. Susan Winthrop has become lost in the catacombs beneath the Miskatonic Museum. Search the catacombs, find her, and bring her back, alive if possible.",
-            "goal": "Bring Dr. Winthrop back to the museum and speak to Professor Nymian."
+            "description": "Dr. Susan Winthrop has become lost in the catacombs beneath the Miskatonic Museum. Search the catacombs, find her, bring her back, alive if possible, and speak to Professor Nymian.",
+            "goal": "Bring Dr. Winthrop back to the museum."
           }
         }
       }
@@ -87,11 +87,29 @@
     "classes": "professor-nymian"
   },
   "professor-11": {
-    "text": "Have you found Dr. Winthrop?",
+    "text": "Yes, what can I do for you?",
     "responses": {
-      "professor-12": "Yes, but she seems to have suffered some severe psychological trauma from the horrors we encountered down there. I'm quite shaken myself. What we saw...things...not of this earth!",
+      "professor-12": {
+        "message": "I've found Dr. Winthrop, but she seems to have suffered some severe psychological trauma from the horrors we encountered down there.",
+        "checkJournal": {
+          "mission": "mission1",
+          "goal": "Completed"
+        },
+        "statusUpdate": {
+          "journalUpdate": {
+            "id": "mission1",
+            "updateType": "end",
+            "description": "Dr. Winthrop has been found and returned to Professor Nymian.",
+            "xp": 50
+          }
+        }
+      },
+      "professor-13": {
+        "message": "I've...seen things you wouldn't believe!",
+        "checkIdentified": true
+      },
       "end": {
-        "message": "Not yet",
+        "message": "Nothing right now.",
         "statusUpdate": {
           "nextMessageKey": "professor-11"
         }
@@ -100,50 +118,35 @@
     "classes": "professor-nymian"
   },
   "professor-12": {
-    "text": "Thank you! I will get Dr. Winthrop the care she needs at once. Tell me, what did you see?",
+    "text": "Thank you! I will get Dr. Winthrop the care she needs at once. Anything else I can do for you?",
     "responses": {
-      "professor-13": "(You describe all of the different horrors, in particular the ones near where you found Dr. Winthrop)"
+      "professor-13": {
+        "message": "What we saw down there...things...not of this earth!",
+        "checkIdentified": true
+      },
+      "end": {
+        "message": "No, thank you.",
+        "statusUpdate": {
+          "nextMessageKey": "professor-11"
+        }
+      }
     },
     "classes": "professor-nymian"
   },
   "professor-13": {
-    "text": "Quite horrifying indeed! I will need to do some research to see if we have any information on what you've described. Come back to me later.",
+    "text": "Oh? Describe to me what you saw. Maybe I can make some sense of it.",
     "responses": {
-      "end": {
-        "message": "Ok",
-        "statusUpdate": {
-          "nextMessageKey": "professor-14",
-          "journalUpdate": {
-            "id": "mission1",
-            "updateType": "end",
-            "description": "Dr. Winthrop has been found and returned to Professor Nymian.",
-            "xp": 50
-          }
-        }
-      }
+      "professor-14": "(You describe all of the different horrors you encountered)"
     },
     "classes": "professor-nymian"
   },
   "professor-14": {
-    "text": "Yes, what can I do for you?",
-    "responses": {
-      "professor-15": "Any information on the creatures I described to you?",
-      "end": {
-        "message": "Nothing right now.",
-        "statusUpdate": {
-          "nextMessageKey": "professor-14"
-        }
-      }
-    },
-    "classes": "professor-nymian"
-  },
-  "professor-15": {
-    "text": "Nothing yet",
+    "text": "Quite horrifying indeed! Let me check my notes here...(he spends some time rifling through a notebook filled with sketches, diagrams, and notes, much of which looks alien to you).\nAh, here! Yes, I've heard about what you've described. I'll give you what information I can.\n(Creature information will be updated the next time you inspect them)",
     "responses": {
       "end": {
-        "message": "Ok.",
+        "message": "Ok, thank you.",
         "statusUpdate": {
-          "nextMessageKey": "professor-14"
+          "nextMessageKey": "professor-11"
         }
       }
     },

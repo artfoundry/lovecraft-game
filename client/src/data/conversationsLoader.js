@@ -1,3 +1,4 @@
+import Story from './conversations/story.json';
 import ProfessorNymian from './conversations/professorNymian.json';
 import SusanWinthrop from './conversations/susanWinthrop.json';
 import PrivateEye from './conversations/privateEye.json';
@@ -10,7 +11,7 @@ import Thief from './conversations/thief.json';
 import OccultResearcher from './conversations/occultResearcher.json';
 
 function AllConversations() {
-	return {...ProfessorNymian, ...SusanWinthrop, ...PrivateEye, ...Archaeologist, ...Chemist, ...Doctor, ...Priest, ...Veteran, ...Thief, ...OccultResearcher};
+	return {...Story, ...ProfessorNymian, ...SusanWinthrop, ...PrivateEye, ...Archaeologist, ...Chemist, ...Doctor, ...Priest, ...Veteran, ...Thief, ...OccultResearcher};
 }
 
 export default AllConversations();

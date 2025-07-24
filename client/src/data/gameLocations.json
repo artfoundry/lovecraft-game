@@ -12,11 +12,9 @@
 				"mapTileLimit": 500,
 				"npcs": {},
 				"creatures": {
-					"elderThing": {"number": 0, "variation": 0},
 					"flyingPolyp": {"number": 2, "variation": 2},
 					"ghast": {"number": 1, "variation": 3},
-					"ghoul": {"number": 8, "variation": 3},
-					"shoggoth": {"number": 0, "variation": 0}
+					"ghoul": {"number": 8, "variation": 3}
 				},
 				"objects": {
 					"Weapon": {
@@ -63,8 +61,7 @@
 					"elderThing": {"number": 1, "variation": 1},
 					"flyingPolyp": {"number": 5, "variation": 2},
 					"ghast": {"number": 8, "variation": 3},
-					"ghoul": {"number": 12, "variation": 3},
-					"shoggoth": {"number": 0, "variation": 0}
+					"ghoul": {"number": 12, "variation": 3}
 				},
 				"objects": {
 					"Weapon": {
@@ -110,9 +107,23 @@
 					"pieceName": "roomScripted",
 					"hasExit": false,
 					"hasEntrance": false,
+					"dialogs": {
+						"story-1": {
+							"triggers": ["elderThing0", "shoggoth0"],
+							"conversation": "story-1"
+						}
+					},
 					"creatures": {
-						"elderThing": {"number": 1, "coords": [{"xPos": 7, "yPos": 3}], "relatedMission": "mission1"},
-						"shoggoth": {"number": 1, "coords": [{"xPos": 9, "yPos": 3}], "relatedMission": "mission1"}
+						"elderThing": {
+							"number": 1,
+							"coords": [{"xPos": 7, "yPos": 3}],
+							"relatedMission": "mission1"
+						},
+						"shoggoth": {
+							"number": 1,
+							"coords": [{"xPos": 9, "yPos": 3}],
+							"relatedMission": "mission1"
+						}
 					},
 					"npcs": {
 						"susanWinthrop": {
@@ -134,7 +145,7 @@
 					},
 					"objects": {
 						"Relic": {
-							"Elder Sign": {"number": 1, "coords": [{"xPos": 9, "yPos": 5}]}
+							"Elder Sign": {"number": 1, "coords": [{"xPos": 12, "yPos": 3}]}
 						}
 					},
 					"envObjects": {

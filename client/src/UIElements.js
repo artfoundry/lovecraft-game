@@ -302,7 +302,7 @@ function CharacterControls(props) {
 					(skill.spirit && !hasEnoughSpirit) || (requiresItemOrWeapon && !hasNeededItem) ||
 					(skill.name === 'Quick Reload' && !hasAmmoForReloadSkill) ||
 					(skill.name === 'Go Ballistic' && !gunIsLoaded) ||
-					(skill.name === 'Feel The Pain' && skill.active) ||
+					(skill.name === 'Feel The Pain' && statuses.includes('feelThePain')) ||
 					(skill.name === 'Stealthy' && !props.inTacticalMode) ||
 					(skill.name === 'Comfort The Fearful' && !props.inTacticalMode) ||
 					(skill.mustNotHaveLightEquipped && currentPCdata.equippedLight) ||
@@ -1090,7 +1090,40 @@ function ObjectInfoWindow(props) {
 	);
 }
 
+/**
+ * Used for both creatures and npcs
+ * @param props object (
+ *      creatureIsSelected: boolean
+ * 	    updateUnitSelectionStatus: function
+ * 	    creatureInfo: object
+ * 	    identifiedCreatures: object
+ * 	    showHelpSystem: boolean
+ * 	    helpPopupButton: function returning JSX
+ * 	)
+ * @return {JSX.Element}
+ * @constructor
+ */
 function CreatureInfoPanel(props) {
+	let skills = '';
+	let statuses = '';
+	const creatureName = props.creatureInfo.name;
+	const identifiedCreature = props.identifiedCreatures[creatureName];
+	const identifiedCreatureName = identifiedCreature ? identifiedCreature.name : null;
+	const identifiedCreatureEncountered = identifiedCreature ? identifiedCreature.encountered : null;
+	const identifiedCreatureStats = identifiedCreature ? identifiedCreature.stats : null;
+	const identifiedCreatureSkills = identifiedCreature ? identifiedCreature.skills : null;
+	if (props.creatureInfo.skills) {
+		for (const skillInfo of Object.values(props.creatureInfo.skills)) {
+			skills += `<div>${skillInfo.name}</div>
+				<div>${skillInfo.description}</div>`;
+		}
+	}
+	if (props.creatureInfo.statuses) {
+		for (const statusInfo of Object.values(props.creatureInfo.statuses)) {
+			statuses += `<div>${statusInfo.name}</div>
+				<div>${statusInfo.description}</div>`;
+		}
+	}
 	return (
 		<div className='creature-info-container ui-panel'>
 			<div className='general-button' onClick={() => props.updateUnitSelectionStatus(props.creatureInfo.id, props.creatureInfo.type)}>X</div>
@@ -1100,20 +1133,22 @@ function CreatureInfoPanel(props) {
 					<div className={`creature-icon ${convertObjIdToClassId(props.creatureInfo.id)}`}></div>
 				</div>
 				<div className='creature-info-column'>
-					{props.creatureInfo.name && <div>Name: {typeof props.creatureInfo.name === 'string' ? props.creatureInfo.name : `${props.creatureInfo.name.first} ${props.creatureInfo.name.last}`}</div>}
-					{props.creatureInfo.level && <div>Level: {props.creatureInfo.level}</div>}
-					{props.creatureInfo.currentHealth && <div>Health: {props.creatureInfo.currentHealth} / {props.creatureInfo.startingHealth}</div>}
-					{props.creatureInfo.currentSpirit && <div>Spirit: {props.creatureInfo.currentSpirit} / {props.creatureInfo.startingSpirit}</div>}
-					{props.creatureInfo.strength && <div>Strength: {props.creatureInfo.strength}</div>}
-					{props.creatureInfo.agility && <div>Agility: {props.creatureInfo.agility}</div>}
-					{props.creatureInfo.mentalAcuity && <div>Mental Acuity: {props.creatureInfo.mentalAcuity}</div>}
-					{props.creatureInfo.initiative && <div>Initiative: {props.creatureInfo.initiative}</div>}
-					{props.creatureInfo.damage && <div>Damage: {props.creatureInfo.damage}</div>}
-					{props.creatureInfo.defense && <div>Defense: {props.creatureInfo.defense}</div>}
-					{props.creatureInfo.damageReduction && <div>Damage Reduction: {props.creatureInfo.damageReduction}</div>}
-					{props.creatureInfo.range && <div>Range: {props.creatureInfo.range}</div>}
-					{props.creatureInfo.moveSpeed && <div>Speed: {props.creatureInfo.moveSpeed}</div>}
-					{props.creatureInfo.perception && <div>Perception: {props.creatureInfo.perception}</div>}
+					<div>Species: {!identifiedCreatureName ? '???' : (typeof creatureName === 'string' ? creatureName : `${creatureName.first} ${creatureName.last}`)}</div>
+					<div>Level: {!identifiedCreatureStats ? '???' : props.creatureInfo.level}</div>
+					<div>Health: {identifiedCreatureEncountered < 3 ? '???' : `${props.creatureInfo.currentHealth} / ${props.creatureInfo.startingHealth}`}</div>
+					<div>Innate Spirit: {!identifiedCreatureStats ? '???' : props.creatureInfo.startingSpirit}</div>
+					<div>Strength: {!identifiedCreatureStats ? '???' : props.creatureInfo.strength}</div>
+					<div>Agility: {!identifiedCreatureStats ? '???' : props.creatureInfo.agility}</div>
+					<div>Mental Acuity: {!identifiedCreatureStats ? '???' : props.creatureInfo.mentalAcuity}</div>
+					<div>Base Initiative: {identifiedCreatureEncountered < 3 ? '???' : props.creatureInfo.initiative}</div>
+					<div>Attack Type: {!identifiedCreatureEncountered ? '???' : props.creatureInfo.attackType}</div>
+					<div>Defense: {!identifiedCreatureStats ? '???' : props.creatureInfo.defense}</div>
+					<div>Damage Reduction: {!identifiedCreatureStats ? '???' : props.creatureInfo.damageReduction}</div>
+					<div>Attack Range: {!identifiedCreatureEncountered ? '???' : props.creatureInfo.range}</div>
+					<div>Movement Speed: {!identifiedCreatureEncountered ? '???' : props.creatureInfo.moveSpeed}</div>
+					<div>Sight Range: {!identifiedCreatureStats ? '???' : props.creatureInfo.perception}</div>
+					<div>Abilities: {!identifiedCreatureSkills ? '???' : skills}</div>
+					<div>Statuses: {!identifiedCreatureEncountered ? '???' : statuses}</div>
 				</div>
 			</div>
 		</div>
@@ -1333,39 +1368,81 @@ function ConversationWindow(props) {
 	}).split('\n').map((line, index) => <p key={index}>{line}</p>);
 
 	for (const [nextMessageKey, response] of Object.entries(convElements.responses)) {
-		responses.push(
-			<div key={nextMessageKey} className='pc-response' onClick={() => {
-				// possible options are:
-				// - non-end response w/o updates
-				// - end response w/updates
-				// - non-end response w/updates (rare)
-				// - end response with joinParty but party is full, so use altNextMessageKey
-				if (response.statusUpdate) {
-					statusUpdates = {...response.statusUpdate};
-					if (nextMessageKey.includes('end') && statusUpdates.joinParty && props.partySize === 3) {
-						updateConversation(AllConversations[response.altNextMessageKey]);
-					} else {
-						// todo: for certain convs may need to update main char data too
-						const update = () => {
-							props.applyUpdatesFromConv(convTargetChar.id, statusUpdates);
-						}
-						// end resp w/updates
-						if (nextMessageKey.includes('end')) {
-							props.setShowConversation(() => {
-								props.setConversationTarget(null, update);
-							});
-						} else {
-							// non-end response w/updates (rare)
-							update();
-							updateConversation(AllConversations[nextMessageKey]);
-						}
-					}
-				// non-end response w/o updates - there will always be a statusUpdate at end of conv, so no need to check that it's not the end
-				} else {
-					updateConversation(AllConversations[nextMessageKey]);
+		let creaturesNeedIdent = null;
+		let identifiedThings = null;
+		let includeMissionResponse = false;
+		const checkJournal = response.checkJournal;
+
+		if (response.checkIdentified) {
+			identifiedThings = deepCopy(props.identifiedThings);
+			for (const identityInfo of Object.values(identifiedThings.creatures)) {
+				if (!identityInfo.name) {
+					identityInfo.name = true;
+					identityInfo.encountered += 2;
+					creaturesNeedIdent = true;
 				}
-			}}>{typeof response === 'string' ? response : response.message}</div>
-		);
+			}
+		} else if (checkJournal) {
+			// for checking if goal is completed/advanced in order to show next conv node (goal is updated in previous conv or event)
+			if (props.partyJournal.activeQuests[checkJournal.mission] && props.partyJournal.activeQuests[checkJournal.mission].goal === checkJournal.goal) {
+				includeMissionResponse = true;
+			}
+		}
+		if ((!response.checkIdentified || creaturesNeedIdent) && (!checkJournal || includeMissionResponse)) {
+			responses.push(
+				<div key={nextMessageKey} className='pc-response' onClick={() => {
+					const triggeredCallback = () => {
+						// could add more possible callbacks in the future
+						const callback = props.updateThreatsCallback || null;
+						if (callback) callback();
+					};
+
+					// possible options are:
+					// - non-end response w/o updates
+					// - end response w/updates
+					// - end response w/o updates (for story/narrative convs)
+					// - non-end response w/updates (usually completing mission but with continued conv)
+					// - end response with joinParty but party is full, so use altNextMessageKey
+
+					if (response.statusUpdate) {
+						statusUpdates = {...response.statusUpdate};
+						// asking npc to join party but not enough space
+						if (nextMessageKey.includes('end') && statusUpdates.joinParty && props.partySize === 3) {
+							updateConversation(AllConversations[response.altNextMessageKey]);
+						} else {
+							// todo: for certain convs may need to update main char data too
+							const update = () => {
+								props.applyUpdatesFromConv(convTargetChar.id, statusUpdates, triggeredCallback);
+							}
+							// end resp w/updates
+							if (nextMessageKey.includes('end')) {
+								props.setShowConversation(() => {
+									props.setConversationTarget(null, update);
+								});
+							} else {
+								// non-end response w/updates (usually completing mission)
+								update();
+								updateConversation(AllConversations[nextMessageKey]);
+							}
+						}
+					// end response w/o update
+					} else if (nextMessageKey.includes('end')) {
+						props.setShowConversation(() => {
+							props.setConversationTarget(null, triggeredCallback);
+							let storyProgress = deepCopy(props.storyProgress);
+							storyProgress.dialogs[convTargetChar.id].triggered = true;
+							props.updateStoryProgress(storyProgress);
+						});
+					// non-end response w/o updates - there will always be a statusUpdate at end of non-story conv, so no need to check that it's not the end
+					} else {
+						updateConversation(AllConversations[nextMessageKey]);
+					}
+					if (creaturesNeedIdent) {
+						props.updateIdentifiedThings(identifiedThings);
+					}
+				}}>{typeof response === 'string' ? response : response.message}</div>
+			);
+		}
 	}
 	return (
 		<div id='conversation-window' className='dialog ui-panel'>

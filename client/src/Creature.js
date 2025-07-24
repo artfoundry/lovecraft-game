@@ -160,7 +160,7 @@ class Creature extends React.PureComponent {
 		const targetAgilityBonus = targetStealth ? targetStealth.modifier : 0;
 		const defenseTotal = pcData[relevantStat] + targetAgilityBonus + this.defenseRoll;
 		let logMessage = '';
-		const logMessageAction = relevantStat === 'mentalAcuity' ? 'reaches out psychically' : 'reaches out with a disgusting appendage';
+		const logMessageAction = relevantStat === 'mentalAcuity' ? 'psychically probes' : 'reaches out with a disgusting appendage';
 		const targetPronoun = pcData.gender === 'Male' ? 'him' : 'her';
 
 		if (hitTotal >= defenseTotal) {

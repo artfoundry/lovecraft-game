@@ -232,7 +232,7 @@ class Game extends React.PureComponent {
 			characterCreated: false,
 			createdCharData: !this.showCharacterCreation ? PlayerCharacterTypes[this.startingPlayerCharacters[0]] : null,
 			gameSetupComplete: false,
-			storyProgress: 'Ch1',
+			storyProgress: {chapter: 1, dialogs: {}},
 			playerCharacters: {},
 			pcObjectOrdering: [], // order of pcs for determining control bar order
 			activeCharacter: !this.showCharacterCreation ? this.startingPlayerCharacters[0] : null,
@@ -243,6 +243,7 @@ class Game extends React.PureComponent {
 				activeQuests: {},
 				completedQuests: {}
 			},
+			identifiedThings: {creatures: {}},
 			conversationTarget: null,
 			savedMaps: {},
 			needToSaveData: false,
@@ -354,7 +355,7 @@ class Game extends React.PureComponent {
 			characterCreated: !overwriteSavedData,
 			createdCharData: !this.showCharacterCreation ? PlayerCharacterTypes[this.startingPlayerCharacters[0]] : null,
 			gameSetupComplete: false,
-			storyProgress: 'Ch1',
+			storyProgress: {chapter: 1, dialogs: {}},
 			playerCharacters: {},
 			pcObjectOrdering: [],
 			activeCharacter: !this.showCharacterCreation ? this.startingPlayerCharacters[0] : null,
@@ -365,6 +366,7 @@ class Game extends React.PureComponent {
 				activeQuests: {},
 				completedQuests: {}
 			},
+			identifiedThings: {creatures: {}},
 			conversationTarget: null,
 			savedMaps: {},
 			needToSaveData: false,
@@ -586,7 +588,7 @@ class Game extends React.PureComponent {
 				{
 					this.toggleActionButton('', '', '', '', callback);
 				} else if (updateData.isDeadOrInsane) {
-					this._removeDeadPCFromGame(id, callback);
+					this._handleDeadPc(id, callback);
 				} else if (callback) callback();
 			});
 		} else {
@@ -769,6 +771,15 @@ class Game extends React.PureComponent {
 	}
 
 	/**
+	 * Updates info about chapter and/or important (story) scripted dialogs
+	 * Called from Map _setScriptedDialogs or UIElements ConversationWindow
+	 * @param storyProgress object ({chapter: number, dialogs: object (usually {"story-1": {triggers: [], conversation: ''}}) })
+	 */
+	updateStoryProgress = (storyProgress) => {
+		this.setState({storyProgress});
+	}
+
+	/**
 	 * Called from UI when container is opened (possibly other sources too)
 	 * Determines if creature should spawn and if so, what kind, then calls _updateCreatureSpawnInfo
 	 * to set spawn info, which Map listens for to find spawn pos and finally call spawnCreature
@@ -877,7 +888,7 @@ class Game extends React.PureComponent {
 							dataCopied = true;
 						}
 						for (const [statusId, statusData] of Object.entries(playerCharacters[pcId].statuses)) {
-							if (statusData.turnsLeft) {
+							if (statusData.turnsLeft >= 0) {
 								delete updatedPlayerCharacters[pcId].statuses[statusId];
 							}
 						}
@@ -971,6 +982,8 @@ class Game extends React.PureComponent {
 						playerCharacters = deepCopy(this.state.playerCharacters);
 						playerCharacters[this.state.activeCharacter].statuses = {...updatedStatuses};
 						this.updateCharacters('player', playerCharacters, null, false, false, callback);
+					} else if (callback) {
+						callback();
 					}
 				}
 				if (!this.state.inTacticalMode) {
@@ -1321,7 +1334,7 @@ class Game extends React.PureComponent {
 								this.updateLog(`The ${this.state.mapCreatures[id].name} is dead!`);
 							}
 							this.updateExpertise(this.state.mapCreatures[id].expertisePoints);
-							this._removeDeadFromTurnOrder(id, this.updateActivePlayerActions, checkLineOfSightToParty);
+							this._removeDeadFromGame(id, this.updateActivePlayerActions, checkLineOfSightToParty);
 						} else {
 							if (target === 'object') {
 								const updatedEnvObjects = deepCopy(this.state.envObjects);
@@ -1463,13 +1476,15 @@ class Game extends React.PureComponent {
 			for (const [statusName, statusData] of Object.entries(nextActiveChar.statuses)) {
 				if (statusData.turnsLeft === 0) {
 					delete nextActiveChar.statuses[statusName];
-				} else if (statusName === 'slowed') {
-					// setting these values to max amount minus 1 in order to leave pc with only 1 action and 1 move to make
-					activePlayerActionsCompleted = this.playerActionsLimit - 1;
-					activePlayerMovesCompleted = nextActiveChar.moveSpeed - 1;
+				} else {
+					if (statusName === 'slowed') {
+						// setting these values to max amount minus 1 in order to leave pc with only 1 action and 1 move to make
+						activePlayerActionsCompleted = this.playerActionsLimit - 1;
+						activePlayerMovesCompleted = nextActiveChar.moveSpeed - 1;
+					} else if (statusName === 'terrified') {
+						activePlayerActionsCompleted = statusData.actionsReduced;
+					}
 					statusData.turnsLeft--;
-				} else if (statusName === 'terrified') {
-					activePlayerActionsCompleted = statusData.actionsReduced;
 				}
 			}
 		}
@@ -1663,6 +1678,7 @@ class Game extends React.PureComponent {
 	 * Possibilities:
 	 * creature and item
 	 * player and item
+	 * talk
 	 * item and move
 	 * dying player (get info) and move
 	 * dying player (get info), item, and move
@@ -1693,7 +1709,7 @@ class Game extends React.PureComponent {
 			} else {
 				const clickedTargetId = evt.currentTarget.id;
 				const contextMenu = {
-					actionsAvailable: {[actionType]: actionInfo},
+					actionsAvailable: actionType === 'npc' ? {} : {[actionType]: actionInfo},
 					creatureId: null,
 					tilePos,
 					evt
@@ -1987,7 +2003,7 @@ class Game extends React.PureComponent {
 							this.updateLog(`The ${target.name} is dead!`);
 							this.updateExpertise(this.state.mapCreatures[targetId].expertisePoints);
 						}
-						this._removeDeadFromTurnOrder(targetId, updateActionsAndTakeNextAction, checkLineOfSightToParty);
+						this._removeDeadFromGame(targetId, updateActionsAndTakeNextAction, checkLineOfSightToParty);
 					} else {
 						updateActionsAndTakeNextAction();
 					}
@@ -2020,9 +2036,18 @@ class Game extends React.PureComponent {
 	}
 
 	/**
-	 *
-	 * @param conversationTarget object ({id, targetType ('player' or 'npc)})
-	 * @param callback
+	 * Update identified things, usually after encountering a creature or conversation with Prof. Nymian
+	 * @param identifiedThings object ({creatures: {}})
+	 * @param callback function
+	 */
+	updateIdentifiedThings = (identifiedThings, callback) => {
+		this.setState({identifiedThings}, () => {if (callback) callback();});
+	}
+
+	/**
+	 * Sets the target of the player's conversation
+	 * @param conversationTarget object ({id, targetType ('player' or 'npc'), updateThreatsCallback})
+	 * @param callback function (for closing context menu or updating conversation or possibly a triggeredCallback to run at end of conv)
 	 */
 	setConversationTarget = (conversationTarget, callback) => {
 		this.setState({conversationTarget}, callback);
@@ -2034,12 +2059,13 @@ class Game extends React.PureComponent {
 	 * Updates partyExpertise as indicated in json
 	 * Adds player npc to party or removes pc from party as chosen by player in conv
 	 * Transfers party to another location as indicated by json
-	 * @param charId string (id of char player was talking to)
+	 * @param charId string (id of char player was talking to or else 'story-{#}' for a story dialog)
 	 * @param updates object (may include nextMessageKey, joinParty, leaveParty, changeLocation,
 	 *      journalUpdate (which includes id, description, and possibly goal or xp))
+	 * @param triggeredCallback function (optional, for triggering something to happen, like updateThreatList after conv ends)
 	 */
-	applyUpdatesFromConv = (charId, updates) => {
-		const charType = this.state.playerCharacters[charId] ? 'player' : 'npc';
+	applyUpdatesFromConv = (charId, updates, triggeredCallback) => {
+		const charType = this.state.playerCharacters[charId] ? 'player' : this.state.npcs[charId] ? 'npc' : null;
 		let playerFollowOrder = [...this.state.playerFollowOrder];
 		let pcObjectOrdering = [...this.state.pcObjectOrdering];
 		let savedMaps = null;
@@ -2064,6 +2090,9 @@ class Game extends React.PureComponent {
 				}
 			} else if (updateType === 'update') {
 				partyJournal.activeQuests[journalId].description += `\n• ${updates.journalUpdate.description}`;
+				if (updates.journalUpdate.goal) {
+					partyJournal.activeQuests[journalId].goal = updates.journalUpdate.goal;
+				}
 			} else {
 				partyJournal.completedQuests[journalId] = {...partyJournal.activeQuests[journalId]};
 				delete partyJournal.activeQuests[journalId];
@@ -2161,7 +2190,7 @@ class Game extends React.PureComponent {
 			charData.conversationStatus = {...updates};
 			this.updateCharacters('player', charData, charId, false, false, false, changeLocation);
 		// otherwise update npc's conv
-		} else {
+		} else if (charType === 'npc') {
 			let npcsData = deepCopy(this.state.npcs);
 			if (updates.removeFromMap) {
 				updates.removeFromMap.forEach(itemInfo => {
@@ -2175,6 +2204,9 @@ class Game extends React.PureComponent {
 				npcsData[charId].conversationStatus = {...updates};
 			}
 			this.updateNpcs(npcsData, null, changeLocation);
+		// currently not in use (currently only triggered callbacks are for encountering scripted dialog before combat, which don't have conv updates)
+		} else if (triggeredCallback) {
+			triggeredCallback();
 		}
 	}
 
@@ -2322,7 +2354,7 @@ class Game extends React.PureComponent {
 		const userId = this.state.userData.uid;
 		const dataToSave = {
 			gameOptions: this.state.gameOptions, // object
-			storyProgress: 'Ch1', // string
+			storyProgress: this.state.storyProgress, // object
 			playerCharacters: this.state.playerCharacters, // object
 			pcObjectOrdering: this.state.pcObjectOrdering, // array
 			characterCreated: this.state.characterCreated, // boolean
@@ -2330,6 +2362,7 @@ class Game extends React.PureComponent {
 			partyLevel: this.state.partyLevel, // number
 			partyExpertise: this.state.partyExpertise, // number
 			partyJournal: this.state.partyJournal, // object
+			identifiedThings: this.state.identifiedThings, // object
 			savedMaps: this.state.savedMaps, // object
 			currentLocation: this.state.currentLocation, // string
 			previousLocation: this.state.previousLocation, // string
@@ -2387,7 +2420,7 @@ class Game extends React.PureComponent {
 
 	/**
 	 * Initialization function. gameSetupComplete in callback indicates Map component can render
-	 * Restores objects/arrays from firebase: gameOptions, partyJournal, savedMaps,
+	 * Restores objects/arrays from firebase: gameOptions, storyProgress, partyJournal, identifiedThings, savedMaps,
 	 * playerFollowOrder, followModePositions, threatList
 	 * playerCharacters object from firebase gets restored in _setupPlayerCharacters
 	 * activeCharacter gets set in _setupPlayerCharacters but updated by updateActiveCharacter after placing creatures in Map if no FB data
@@ -2402,14 +2435,18 @@ class Game extends React.PureComponent {
 			};
 			if (this.state.firebaseGameData) {
 				const gameOptions = {...this.state.firebaseGameData.gameOptions};
+				const storyProgress = {...this.state.firebaseGameData.storyProgress};
 				const partyJournal = deepCopy(this.state.firebaseGameData.partyJournal);
+				const identifiedThings = deepCopy(this.state.firebaseGameData.identifiedThings);
 				const savedMaps = deepCopy(this.state.firebaseGameData.savedMaps);
 				const followModePositions = this.state.firebaseGameData.followModePositions ? [...this.state.firebaseGameData.followModePositions] : [];
 				const threatList = this.state.firebaseGameData.threatList ? [...this.state.firebaseGameData.threatList] : [];
 				const npcs = deepCopy(this.state.firebaseGameData.savedMaps[this.state.currentLocation].floors[this.state.currentFloor]);
 				this.setState({
 					gameOptions,
+					storyProgress,
 					partyJournal,
+					identifiedThings,
 					savedMaps,
 					followModePositions,
 					threatList,
@@ -2609,11 +2646,12 @@ class Game extends React.PureComponent {
 	/**
 	 * remove PC (not creature) from gameplay that has lost all health or sanity
 	 * then drop all items to map if not primary pc or end game if primary pc
+	 * End game if pc is main char
 	 * @param id: String
 	 * @param callback: function
 	 * @private
 	 */
-	_removeDeadPCFromGame(id, callback) {
+	_handleDeadPc(id, callback) {
 		const deadPc = this.state.playerCharacters[id];
 		if (deadPc) {
 			if (deadPc.currentHealth <= 0) {
@@ -2626,7 +2664,7 @@ class Game extends React.PureComponent {
 				this.endGame();
 			} else {
 				this.dropAllItemsInPcInventory(id, () => {
-					this._removeDeadFromTurnOrder(id, callback);
+					this._removeDeadFromGame(id, callback);
 				});
 			}
 		} else if (callback) callback();
@@ -2634,16 +2672,39 @@ class Game extends React.PureComponent {
 
 	/**
 	 * Updates to state the turn order with the dead removed
+	 * Deletes dead PC from playerCharacters
+	 * Updates creature identification stats
 	 * @param id: String
 	 * @param callback: function
 	 * @param checkLineOfSightToParty: function (from Map)
 	 * @private
 	 */
-	_removeDeadFromTurnOrder(id, callback, checkLineOfSightToParty) {
+	_removeDeadFromGame(id, callback, checkLineOfSightToParty) {
 		let playerCharacters = deepCopy(this.state.playerCharacters);
 		let unitsTurnOrder = [...this.state.unitsTurnOrder];
 		let unitNotFound = true;
 		let index = 0;
+		let identifiedThings = null;
+		if (this.state.mapCreatures[id]) {
+			const creatureName = this.state.mapCreatures[id].name;
+			identifiedThings = deepCopy(this.state.identifiedThings);
+			let identifiedCreature = identifiedThings.creatures[creatureName];
+			if (!identifiedCreature) {
+				identifiedThings.creatures[creatureName] = {
+					encountered: 0,
+					name: false,
+					stats: false,
+					skills: false
+				};
+				identifiedCreature = identifiedThings.creatures[creatureName];
+			}
+			identifiedCreature.encountered++;
+			if (identifiedCreature.encountered >= 5) {
+				identifiedCreature.skills = true;
+			} else if (identifiedCreature.encountered >= 10) {
+				identifiedCreature.stats = true;
+			}
+		}
 		while (unitNotFound && index < this.state.unitsTurnOrder.length) {
 			const unitInfo = Object.values(this.state.unitsTurnOrder[index])[0];
 			if (unitInfo.id === id) {
@@ -2654,16 +2715,24 @@ class Game extends React.PureComponent {
 		}
 		delete playerCharacters[id];
 		this.setState({unitsTurnOrder, playerCharacters}, () => {
-			// if creature died
-			if (checkLineOfSightToParty) {
-				this.updateThreatList([], [id], callback, checkLineOfSightToParty);
-			// otherwise player died
+			const updateThreatsOrFollowOrder = () => {
+				// if creature died
+				if (checkLineOfSightToParty) {
+					this.updateThreatList([], [id], callback, checkLineOfSightToParty);
+				// otherwise player died
+				} else {
+					let playerFollowOrder = [...this.state.playerFollowOrder];
+					playerFollowOrder.splice(this.state.playerFollowOrder.indexOf(id), 1);
+					let followModePositions = [...this.state.followModePositions];
+					followModePositions.splice(this.state.followModePositions.indexOf(id), 1);
+					this.setState({playerFollowOrder, followModePositions}, callback);
+				}
+			}
+			// if creature was the one that died, update identified stats
+			if (identifiedThings) {
+				this.updateIdentifiedThings(identifiedThings, updateThreatsOrFollowOrder);
 			} else {
-				let playerFollowOrder = [...this.state.playerFollowOrder];
-				playerFollowOrder.splice(this.state.playerFollowOrder.indexOf(id), 1);
-				let followModePositions = [...this.state.followModePositions];
-				followModePositions.splice(this.state.followModePositions.indexOf(id), 1);
-				this.setState({playerFollowOrder, followModePositions}, callback);
+				updateThreatsOrFollowOrder();
 			}
 		});
 	}
@@ -2814,6 +2883,8 @@ class Game extends React.PureComponent {
 						// character info
 						selectedCharacterInfo={this.state.playerCharacters[this.state.selectedCharacter] || this.state.npcs[this.state.selectedPlayerNpc]}
 						selectedCreatureInfo={this.state.mapCreatures[this.state.selectedCreature] || this.state.npcs[this.state.selectedNpc]}
+						identifiedThings={this.state.identifiedThings}
+						updateIdentifiedThings={this.updateIdentifiedThings}
 						characterIsSelected={this.state.characterIsSelected}
 						creatureIsSelected={this.state.creatureIsSelected}
 						updateUnitSelectionStatus={this.updateUnitSelectionStatus}
@@ -2873,6 +2944,7 @@ class Game extends React.PureComponent {
 						assignLevelUpPoints={this.assignLevelUpPoints}
 						// conversations
 						storyProgress={this.state.storyProgress}
+						updateStoryProgress={this.updateStoryProgress}
 						setConversationTarget={this.setConversationTarget}
 						conversationTarget={this.state.conversationTarget}
 						npcs={this.state.npcs}
@@ -2894,6 +2966,8 @@ class Game extends React.PureComponent {
 						noMoreActionsDialogProps={this.noMoreActionsDialogProps}
 						noMoreMovesDialogProps={this.noMoreMovesDialogProps}
 						lockedDoorDialogProps={this.lockedDoorDialogProps}
+						storyProgress={this.state.storyProgress}
+						updateStoryProgress={this.updateStoryProgress}
 						// character info
 						createdCharData={this.state.createdCharData}
 						pcTypes={this.state.pcTypes}

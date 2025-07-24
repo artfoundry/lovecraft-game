@@ -45,6 +45,7 @@
             "id": "mission1",
             "updateType": "update",
             "description": "I have found Dr. Winthrop and am bringing her back to Professor Nymian in the Museum.",
+            "goal": "Completed",
             "xp": 50
           }
         }

@@ -306,6 +306,9 @@ class Map extends React.PureComponent {
 							this.props.setShowDialogProps(true, dialogProps)
 						}
 					}
+					if (floorMapData.setPiece && floorMapData.setPiece.dialogs) {
+						this._setScriptedDialogs(deepCopy(floorMapData.setPiece.dialogs));
+					}
 					if (floorMapData.npcs || (floorMapData.setPiece && floorMapData.setPiece.npcs)) {
 						this._setInitialNpcData();
 					}
@@ -751,6 +754,19 @@ class Map extends React.PureComponent {
 
 		surroundingTilesCoords[visitedTile] = convertPosToCoords(visitedTile);
 		return surroundingTilesCoords;
+	}
+
+	/**
+	 * Copies scripted dialog info to App state from GameLocations
+	 * @param dialogs object (deepcopy of dialogs data from gameLocations)
+	 * @private
+	 */
+	_setScriptedDialogs(dialogs) {
+		let storyProgress = deepCopy(this.props.storyProgress);
+		for (const [dialogId, dialogInfo] of Object.entries(dialogs)) {
+			storyProgress.dialogs[dialogId] = {...dialogInfo, triggered: false};
+		}
+		this.props.updateStoryProgress(storyProgress);
 	}
 
 	/**
@@ -2024,6 +2040,33 @@ class Map extends React.PureComponent {
 	}
 
 	/**
+	 * Checks if location has a scripted conv with triggers (char ids) that match those in list of encountered chars
+	 * @param newEncounters array (ids of encountered chars (usually creatures))
+	 * @param updateThreatsCallback function (calls updateThreatList in App - check for added/removed threats already done in Map's calling function)
+	 * @private
+	 */
+	_checkForScriptedConversation(newEncounters, updateThreatsCallback) {
+		const floorMapData = this.state.currentLocationData.floors[this.props.currentFloor];
+		let conversation = '';
+		if (floorMapData.setPiece && floorMapData.setPiece.dialogs) {
+			let i = 0;
+			for (const convInfo of Object.values(floorMapData.setPiece.dialogs)) {
+				while (!conversation && i < newEncounters.length) {
+					if (convInfo.triggers.includes(newEncounters[i])) {
+						conversation = convInfo.conversation;
+					}
+					i++;
+				}
+			}
+		}
+		if (conversation && this.props.threatList.length === 0 && !this.props.storyProgress.dialogs[conversation].triggered) {
+			this.props.setConversationTarget({id: conversation, targetType: 'npc', updateThreatsCallback});
+		} else if (updateThreatsCallback) {
+			updateThreatsCallback();
+		}
+	}
+
+	/**
 	 * Checks to see if a creature is in attacking range of active player character, given choice of weapon
 	 * @param id: String (creature id)
 	 * @param weaponData: Object
@@ -2511,8 +2554,13 @@ class Map extends React.PureComponent {
 		const playerPositions = this.props.getAllCharactersPos('player', 'pos');
 		const creaturePositions = this.props.getAllCharactersPos('creature', 'pos');
 		const threatLists = this._findChangesToNearbyThreats(playerPositions, creaturePositions);
-		if (threatLists.threatListToAdd.length > 0 || threatLists.threatListToRemove.length > 0) {
+		const updateThreats = () => {
 			this.props.updateThreatList(threatLists.threatListToAdd, threatLists.threatListToRemove, callback, this.isInLineOfSight);
+		};
+		if (threatLists.threatListToAdd.length > 0) {
+			this._checkForScriptedConversation(threatLists.threatListToAdd, updateThreats);
+		} else if (threatLists.threatListToRemove.length > 0) {
+			updateThreats();
 		} else if (callback) {
 			callback();
 		}
@@ -2660,10 +2708,10 @@ class Map extends React.PureComponent {
 
 		let followModePositions = inFollowMode ? [...this.props.followModePositions] : [];
 		// only update followModePositions if we're moving the leader
-		// newest pos at end, oldest pos at beginning of array
+		// newest pos at front, oldest pos at end of array
 		if (inFollowMode && activePC === this.props.activeCharacter) {
 			followModePositions.unshift(convertCoordsToPos(this.props.playerCharacters[activePC].coords));
-			if (followModePositions.length === 6) {
+			if (followModePositions.length === 3) {
 				followModePositions.pop();
 			}
 		}
@@ -2747,8 +2795,13 @@ class Map extends React.PureComponent {
 					if (creaturePositions.length > 0) {
 						threatLists = this._findChangesToNearbyThreats(playerPositions, creaturePositions);
 					}
-					if (threatLists.threatListToAdd.length > 0 || threatLists.threatListToRemove.length > 0) {
+					const updateThreats = () => {
 						this.props.updateThreatList(threatLists.threatListToAdd, threatLists.threatListToRemove, null, this.isInLineOfSight);
+					};
+					if (threatLists.threatListToAdd.length > 0) {
+						this._checkForScriptedConversation(threatLists.threatListToAdd, updateThreats);
+					} else if (threatLists.threatListToRemove.length > 0) {
+						updateThreats();
 					}
 				};
 				this.props.updateFollowModePositions(followModePositions, () => {
@@ -2760,9 +2813,6 @@ class Map extends React.PureComponent {
 					} else {
 						// this.slowMovementAnimation(() => { // <- function not working well
 
-						// strip out the ids to make finding available pos easier
-						const listOfPlayerPos = playerPositions.map(player => player.pos);
-						let newFollowerPos = this.props.followModePositions.find(pos => !listOfPlayerPos.includes(pos));
 						// TODO: find temp path using pathAtoB to get follower to pos behind leader in order to prevent followers jumping tiles
 
 						// if leader has moved, there is at least 1 follower, and pc just moved was the leader,
@@ -2770,7 +2820,7 @@ class Map extends React.PureComponent {
 						if (this.props.followModePositions.length >= 1 && this.props.playerFollowOrder.length >= 2 && !followerId) {
 							// to force characters to move one space at a time
 							setTimeout(() => {
-								this.moveCharacter(pathData, newFollowerPos, this.props.playerFollowOrder[1]);
+								this.moveCharacter(pathData, this.props.followModePositions[0], this.props.playerFollowOrder[1]);
 							}, this.state.shortMovementDelay);
 
 						// if leader has moved 2x, there are 2 followers, and 1st follower was just moved,
@@ -2778,7 +2828,7 @@ class Map extends React.PureComponent {
 						} else if (this.props.followModePositions.length >= 2 && this.props.playerFollowOrder.length === 3 && followerId === this.props.playerFollowOrder[1]) {
 							// to force characters to move one space at a time
 							setTimeout(() => {
-								this.moveCharacter(pathData, newFollowerPos, this.props.playerFollowOrder[2]);
+								this.moveCharacter(pathData, this.props.followModePositions[1], this.props.playerFollowOrder[2]);
 							}, this.state.shortMovementDelay);
 						// otherwise, moving to next tile in path or alert user to blocker
 						} else if (pathData.tilePath.length > 0 || pathData.blocker) {
@@ -3441,8 +3491,13 @@ class Map extends React.PureComponent {
 					threatLists = this._findChangesToNearbyThreats(playerPositions, creaturePositions);
 				}
 				const doorNowOpen = this.state.mapLayout[doorTilePos].doorIsOpen;
-				if (threatLists.threatListToAdd.length > 0 || threatLists.threatListToRemove.length > 0) {
+				const updateThreats = () => {
 					this.props.updateThreatList(threatLists.threatListToAdd, threatLists.threatListToRemove, null, this.isInLineOfSight);
+				};
+				if (threatLists.threatListToAdd.length > 0) {
+					this._checkForScriptedConversation(threatLists.threatListToAdd, updateThreats);
+				} else if (threatLists.threatListToRemove.length > 0) {
+					updateThreats();
 				} else if ((doorNowOpen && !this.props.partyIsNearby) || (!doorNowOpen && this.props.partyIsNearby)) {
 					this.props.updateIfPartyIsNearby(this.isInLineOfSight, () => {
 						if (!this.props.partyIsNearby && !this.props.inTacticalMode) {
