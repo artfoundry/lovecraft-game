@@ -1958,7 +1958,8 @@ class Game extends React.PureComponent {
 			mapObjects[newMapObjId] = {
 				...objInfo,
 				coords: pcData.coords
-			}
+			};
+			mapObjects[newMapObjId].id = newMapObjId;
 			if (!lightingChanged && objInfo.itemType && objInfo.itemType === 'Light') {
 				lightingChanged = true;
 			}
