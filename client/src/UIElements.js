@@ -535,6 +535,7 @@ function CharacterInfoPanel(props) {
 	const skillList = Object.entries(props.characterInfo.skills).map(skillInfo => {
 		const skillId = skillInfo[0];
 		const skill = skillInfo[1];
+		const skillLevel = skill.level + (levelUpPointAllocations.skills[skillId] || 0);
 		// list of components if they exist
 		const compList = skill.cost ? Object.entries(skill.cost).map(cost => {
 			const compKey = cost[0];
@@ -563,14 +564,14 @@ function CharacterInfoPanel(props) {
 				<div>
 					<div className='char-info-skill-name'>{skill.name}</div>
 					<div>{skillDescription}</div>
-					{skill.maxLevel > 0 ? <div>Skill level: {skill.level + 1 + (levelUpPointAllocations.skills[skillId] || 0)} (Max level: {skill.maxLevel + 1})</div> : null}
+					{skill.maxLevel > 0 ? <div>Skill level: {skillLevel + 1} (Max level: {skill.maxLevel + 1})</div> : null}
 					{skill.modifier ? <div>Effect: {skill.modType}{modifier}{skill.affects}</div> : null}
 					{skill.turnsLeft ? <div>Number of turns effect lasts: {skill.turnsLeft[skill.level]}</div>: null}
 					{skill.mustBeOutOfDanger ? <div>Can't be used during combat</div> : null}
 					{skill.cost && skill.name !== 'Sacrificial Strike' ? <div>Required components: {compList}</div> : null}
 					{skill.cost && skill.name === 'Sacrificial Strike' ? <div>Cost: {compList}</div> : null}
-					{skill.light ? <div>Required time (light): {skill.light[skill.level + (levelUpPointAllocations.skills[skillId] || 0)]}</div> : null}
-					{skill.spirit ? <div>Required Spirit: {skill.spirit[skill.level + (levelUpPointAllocations.skills[skillId] || 0)]}</div> : null}
+					{skill.light ? <div>Required time (light): {skill.light[skillLevel]}</div> : null}
+					{skill.spirit ? <div>Required Spirit: {skill.spirit[skillLevel]}</div> : null}
 					{skill.requiresEquippedGunType ? <div>Requires equipped {skill.requiresEquippedGunType}</div> : null}
 					{skill.requiresEquippedMeleeWeapon ? <div>Requires equipped melee weapon</div> : null}
 					{skill.requiresEquippedItem ? <div>Requires equipped {skill.requiresEquippedItem}</div> : null}

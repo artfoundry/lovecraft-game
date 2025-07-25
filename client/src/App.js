@@ -1063,7 +1063,7 @@ class Game extends React.PureComponent {
 		if (isImmediateAction) {
 			// skillType will either be 'create' or 'active' (except heal and resuscitate skills are called from handleUnitClick)
 			const props = stats.skillType === 'create' ? {
-				itemType: buttonId,
+				skillId: buttonId,
 				activeCharId: characterId,
 				partyData: this.state.playerCharacters,
 				updateCharacters: this.updateCharacters,

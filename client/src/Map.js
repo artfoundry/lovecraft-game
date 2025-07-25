@@ -1955,7 +1955,7 @@ class Map extends React.PureComponent {
 				} else if (doorIsLocked) {
 					this.props.setShowDialogProps(true, this.props.lockedDoorDialogProps);
 				}
-			} else if (tileData.type !== 'wall') {
+			} else if (tileData.type !== 'wall' && newPos !== convertCoordsToPos(activePCCoords)) {
 				const pathData = this._pathFromAtoB(this.props.playerCharacters[this.props.activeCharacter].coords, newCoords);
 				this.moveCharacter(pathData);
 			}

@@ -73,7 +73,7 @@
   "Alcohol": {
     "itemType": "Component",
     "stackable": true,
-    "description": "Component for making First Aid Kits, Pharmaceuticals, Molotov Cocktails, and Torches (requires create skill for the appropriate item)."
+    "description": "Component for making First Aid Kits, Pharmaceuticals, and Molotov Cocktails (requires create skill for the appropriate item)."
   },
   "Chemical": {
     "itemType": "Component",

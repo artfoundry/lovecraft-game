@@ -1,5 +1,5 @@
 import React from 'react';
-import {removeIdNumber, diceRoll, deepCopy} from './Utils';
+import {removeIdNumber, convertNameToId, diceRoll, deepCopy} from './Utils';
 import ItemTypes from './data/itemTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
 import Skills from './data/skills.json';
@@ -87,13 +87,6 @@ class Character extends React.PureComponent {
 		let skillData = {};
 		charSkills.forEach(skillId => {
 			skillData[skillId] = {...Skills[skillId], level: 0};
-			if (skillData[skillId].skillType === 'create') {
-				skillData[skillId].light = [this.lightTimeCosts.create];
-			} else if (skillId === 'mine') {
-				skillData[skillId].light = [this.lightTimeCosts.mine];
-			} else if (skillId === 'expertMining') {
-				skillData[skillId].light = [this.lightTimeCosts.expertMining];
-			}
 		});
 		return skillData;
 	}
@@ -341,7 +334,7 @@ class Character extends React.PureComponent {
 	 */
 	create = (props) => {
 		const {
-			itemType,
+			skillId,
 			activeCharId,
 			partyData,
 			updateCharacters,
@@ -353,10 +346,11 @@ class Character extends React.PureComponent {
 			calcPcLightChanges
 		} = props;
 		const currentPcData = partyData[activeCharId];
-		const createSkill = currentPcData.skills[itemType];
+		const createSkill = currentPcData.skills[skillId];
 		const materialCosts = createSkill.cost;
 		const lightCost = this.lightTimeCosts.create;
 		const itemName = createSkill.name.substring(7); // removes "Create "
+		const itemType = convertNameToId(itemName); // doesn't include id number
 		let updatedPartyData = deepCopy(partyData);
 		let activeCharItems = updatedPartyData[activeCharId].items;
 		let lightingHasChanged = false;
@@ -405,6 +399,7 @@ class Character extends React.PureComponent {
 		} else if (itemCategory === 'weapons') {
 			itemData = {...WeaponTypes[itemName]};
 		}
+		// update amount of stackable weapons/items
 		if ((activeCharItems[itemId] || updatedPartyData[activeCharId].weapons[itemId]) && itemData.stackable) {
 			if (itemCategory === 'items') {
 				activeCharItems[itemId].amount++;
@@ -430,6 +425,7 @@ class Character extends React.PureComponent {
 							}
 						}
 					}
+					itemData.time = 0;
 				}
 				itemId = itemType + greatestItemNumInInv;
 				if (itemData.stackable) {
@@ -441,8 +437,11 @@ class Character extends React.PureComponent {
 				}
 				itemData.name = itemName;
 				itemData.id = itemId;
+				itemData.isIdentified = true;
+
 				// now add item to items/weapons and inv
 				addItemToPlayerInventory(itemData, itemId, activeCharId, false, true);
+
 			// otherwise, not new item (stacked item and count was already updated), so just update actions
 			} else {
 				updateActivePlayerActions();
