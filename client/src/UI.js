@@ -5,6 +5,7 @@ import {
 	CreatureInfoPanel,
 	ObjectInfoWindow,
 	ModeInfoPanel,
+	RestWindow,
 	PartyInfoPanel,
 	JournalWindow,
 	ConversationWindow,
@@ -35,6 +36,7 @@ class UI extends React.PureComponent {
 			showHelpPopup: null,
 			showJournal: false,
 			showConversation: false,
+			showRestWindow: false,
 			logText: this.props.logText,
 			controlBarMinimized: false,
 			selectedControlTab: '',
@@ -784,6 +786,10 @@ class UI extends React.PureComponent {
 		this.setState({showHelpPopup});
 	}
 
+	toggleShowRestWindow = () => {
+		this.setState(prevState => ({showRestWindow: !prevState.showRestWindow}));
+	}
+
 	helpPopupButton = (content, style) => {
 		const helpContent = PopupHelp[content] || content;
 		return (
@@ -865,6 +871,7 @@ class UI extends React.PureComponent {
 			}
 		}
 
+		// initiate conversation
 		if (this.props.conversationTarget && prevProps.conversationTarget !== this.props.conversationTarget) {
 			this.setShowConversation();
 		}
@@ -941,11 +948,21 @@ class UI extends React.PureComponent {
 						updateCurrentTurn={this.props.updateCurrentTurn}
 						showHelpSystem={this.state.showHelpSystem}
 						helpPopupButton={this.helpPopupButton}
+						showRestWindow={this.state.showRestWindow}
+						toggleShowRestWindow={this.toggleShowRestWindow}
 					/>}
 					{/*<div className='minimize-button general-button' onClick={() => {*/}
 					{/*	this.minimizePanel('turnInfo');*/}
 					{/*}}>_</div>*/}
 				</div>
+
+				{this.state.showRestWindow &&
+				<RestWindow
+					toggleShowRestWindow={this.toggleShowRestWindow}
+					partyIsResting={this.props.partyIsResting}
+					processResting={this.props.processResting}
+				/>
+				}
 
 				{this.state.showJournal &&
 				<JournalWindow

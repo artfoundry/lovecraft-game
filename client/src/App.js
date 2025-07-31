@@ -37,7 +37,7 @@ class Game extends React.PureComponent {
 		this.playerActionsLimit = 2;
 		this.playerInventoryLimit = 12;
 		this.maxTurnsToReviveDeadPlayer = 3;
-		this.chanceToSpawnCreature = 2; // spawns on this or lower on roll of d4
+		this.chanceToSpawnCreatureFromContainer = 2; // spawns on this or lower on roll of d4
 		this.minimalLightThreshold = 0.1;
 		this.lowLightThreshold = 0.2;
 		this.lightRanges = {
@@ -252,6 +252,7 @@ class Game extends React.PureComponent {
 			currentFloor: this.startingFloor,
 			previousFloor: null,
 			playerFollowOrder: [], // order of pcs for follow mode
+			partyIsResting: false,
 			showDialog: false,
 			dialogProps: {
 				dialogContent: this.initialDialogContent,
@@ -374,6 +375,7 @@ class Game extends React.PureComponent {
 			currentFloor: this.startingFloor,
 			previousFloor: null,
 			playerFollowOrder: [],
+			partyIsResting: false,
 			showDialog: false,
 			dialogProps: {
 				dialogContent: this.initialDialogContent,
@@ -732,7 +734,11 @@ class Game extends React.PureComponent {
 			if (envObjectId) {
 				const activeEnvObj = envObjects[envObjectId];
 				if (activeEnvObj.type === 'container') {
-					this.determineIfShouldSpawnCreature(envObjectId);
+					this.updateLog('The lid is pushed aside...');
+					const chanceToSpawn = () => {
+						return diceRoll(4) <= this.chanceToSpawnCreatureFromContainer;
+					}
+					this._determineIfShouldSpawnCreature(chanceToSpawn, activeEnvObj.canSpawnCreature, convertCoordsToPos(activeEnvObj.coords));
 				} else if (activeEnvObj.type === 'mineable') {
 					const miningAction = this.state.objectSelected.miningAction;
 					const buttonName = miningAction.substring(0,1).toUpperCase() + miningAction.substring(1, miningAction.length-1);
@@ -780,19 +786,23 @@ class Game extends React.PureComponent {
 	}
 
 	/**
-	 * Called from UI when container is opened (possibly other sources too)
+	 * Called from App.updateMapEnvObjects when container is opened or from App.processResting
 	 * Determines if creature should spawn and if so, what kind, then calls _updateCreatureSpawnInfo
-	 * to set spawn info, which Map listens for to find spawn pos and finally call spawnCreature
-	 * @param envObjectId: string
+	 * to set spawn info, which Map listens for to find spawn pos and finally call App.spawnCreature
+	 * @param chanceToSpawn function (diceRoll compared to some value resulting in boolean)
+	 * @param creatureOptions array (from this.state.envObjects[envObjectId].canSpawnCreature or GameLocations[this.state.currentLocation].floors[this.state.currentFloor].creatures)
+	 * @param spawnPos string (or null if pos unknown (like during resting) and needs to be determined by Map)
+	 * @return boolean
+	 * @private
 	 */
-	determineIfShouldSpawnCreature = (envObjectId) => {
-		// roll die to determine if and what creature to spawn
-		if (diceRoll(4) <= this.chanceToSpawnCreature) {
-			const spawnObj = this.state.envObjects[envObjectId];
-			const spawnIndex = diceRoll(spawnObj.canSpawnCreature.length) - 1;
-			const creatureIdToSpawn = spawnObj.canSpawnCreature[spawnIndex];
-			this._updateCreatureSpawnInfo({envObjectId, creatureIdToSpawn, pos: convertCoordsToPos(spawnObj.coords)});
+	_determineIfShouldSpawnCreature(chanceToSpawn, creatureOptions, spawnPos) {
+		const isSpawning = chanceToSpawn();
+		if (isSpawning) {
+			const spawnIndex = diceRoll(creatureOptions.length) - 1;
+			const creatureIdToSpawn = creatureOptions[spawnIndex];
+			this._updateCreatureSpawnInfo({creatureIdToSpawn, pos: spawnPos});
 		}
+		return isSpawning;
 	}
 
 	/**
@@ -836,9 +846,7 @@ class Game extends React.PureComponent {
 			const unitsTurnOrder = this._sortInitiatives(deepCopy(this.state.unitsTurnOrder), uniqueCreatureId, unitInit, 'mapCreatures');
 			this.setState({unitsTurnOrder, creatureSpawnInfo: null}, () => {
 				this.updateThreatList([uniqueCreatureId], [], () => {
-					// call toggleLightingHasChanged if creature projects light
-					// this.toggleLightingHasChanged(true, lightingHasChanged);
-					this.updateLog(`As the lid is opened, ${articleType(creatureData.name)} ${creatureData.name} arises and attacks the party!`);
+					this.updateLog(`${articleType(creatureData.name, true)} ${creatureData.name} appears and attacks the party!`);
 				});
 			});
 		});
@@ -1000,6 +1008,107 @@ class Game extends React.PureComponent {
 				callback();
 			}
 		});
+	}
+
+	/**
+	 * toggles rest mode on/off
+	 * @param processRestingCallback function (for turning on, goes through rest process, for off, closes rest window)
+	 * @private
+	 */
+	_toggleRestMode(processRestingCallback) {
+		this.setState(prevState => ({partyIsResting: !prevState.partyIsResting}), processRestingCallback);
+	}
+
+	/**
+	 * First switches to follow mode if not already in it, then turns on rest mode, then proceeds through resting
+	 * Each tick of time, it checks if rested the full time, if all lights have gone out, or if a wandering monster occurs
+	 * If monster, spawns monster. Then turns off rest mode and closes rest window.
+	 * @param restTime number (amount of time user entered for resting)
+	 * @param callback function (from UIElements.RestWindow, closes rest window)
+	 */
+	processResting = (restTime, callback) => {
+		let playerCharacters = deepCopy(this.state.playerCharacters);
+		let allLightTimes = {};
+		Object.values(playerCharacters).forEach(info => {
+			if (info.lightTime > 0) {
+				allLightTimes[info.id] = info.lightTime;
+			}
+		});
+		const doResting = () => {
+			this._toggleRestMode(() => {
+				let numLights = Object.values(allLightTimes).length;
+				let healing = 0;
+				let endResting = false;
+				let timePassed = 1;
+				let creatureSpawns = false;
+				let lightingHasChanged = false;
+
+				while (!endResting) {
+					for (const [id, lightTime] of Object.entries(allLightTimes)) {
+						lightTime > 0 ? allLightTimes[id]-- : numLights--;
+					}
+					if (timePassed % 2 === 0) {
+						healing++;
+					}
+					// finished amount of rest time
+					if (timePassed === restTime) {
+						endResting = true;
+						this.updateLog('The party finished resting.');
+						// all lights expired
+					} else if (numLights === 0) {
+						endResting = true;
+						this.updateLog('All equipped lights have expired, so resting has stopped.');
+					} else if (timePassed % 10 === 0) {
+						// more lights reduces chance while more time increases it
+						creatureSpawns = diceRoll(100) <= (timePassed / (numLights * 3));
+						if (creatureSpawns) {
+							endResting = true;
+							this.updateLog('The party is rudely awakened by terrifying sounds!');
+						}
+					}
+					if (endResting) {
+						for (const id of Object.keys(this.state.playerCharacters)) {
+							let updatedInfo = playerCharacters[id];
+							updatedInfo.currentSpirit = (updatedInfo.currentSpirit + healing) >= updatedInfo.startingSpirit ? updatedInfo.startingSpirit : updatedInfo.currentSpirit + healing;
+							updatedInfo.currentSanity = (updatedInfo.currentSanity + healing) >= updatedInfo.startingSanity ? updatedInfo.startingSanity : updatedInfo.currentSanity + healing;
+							updatedInfo.currentHealth = (updatedInfo.currentHealth + healing) >= updatedInfo.startingHealth ? updatedInfo.startingHealth : updatedInfo.currentHealth + healing;
+						}
+						lightingHasChanged = playerCharacters[this.state.activeCharacter].updatePcLights(playerCharacters, this.calcPcLightChanges, timePassed);
+					} else {
+						timePassed++;
+						numLights = Object.values(allLightTimes).length;
+					}
+				}
+				this.updateCharacters('player', playerCharacters, null, lightingHasChanged, false, false, () => {
+					if (creatureSpawns) {
+						const creatureOptions = Object.keys(GameLocations[this.state.currentLocation].floors[this.state.currentFloor].creatures);
+						// find tile that's middle (average) of pc positions
+						let averageCoords = {xPos: 0, yPos: 0};
+						for (const pcInfo of Object.values(playerCharacters)) {
+							averageCoords.xPos += pcInfo.coords.xPos;
+							averageCoords.yPos += pcInfo.coords.yPos;
+						}
+						averageCoords.xPos = Math.round(averageCoords.xPos / Object.values(playerCharacters).length);
+						averageCoords.yPos = Math.round(averageCoords.yPos / Object.values(playerCharacters).length);
+						let pos = convertCoordsToPos(averageCoords);
+						if (!this.state.savedMaps[this.state.currentLocation].floors[this.state.currentFloor].mapLayout[pos]) {
+							pos = convertCoordsToPos(playerCharacters[this.state.playerFollowOrder[0]].coords);
+						}
+						this._determineIfShouldSpawnCreature(() => true, creatureOptions, pos);
+					}
+					// end resting
+					setTimeout(() => {
+						this._toggleRestMode(callback);
+					}, creatureSpawns ? 2000 : numLights === 0 ? 3000 : 4000);
+				});
+			});
+		}
+
+		if (this.state.inTacticalMode) {
+			this.toggleTacticalMode(false, doResting);
+		} else {
+			doResting();
+		}
 	}
 
 	/**
@@ -2898,7 +3007,6 @@ class Game extends React.PureComponent {
 						objHasBeenDropped={this.state.objHasBeenDropped}
 						setHasObjBeenDropped={this.setHasObjBeenDropped}
 						addItemToPlayerInventory={this.addItemToPlayerInventory}
-						determineIfShouldSpawnCreature={this.determineIfShouldSpawnCreature}
 						// map object info
 						updateMapObjects={this.updateMapObjects}
 						mapObjects={this.state.mapObjects}
@@ -2933,6 +3041,8 @@ class Game extends React.PureComponent {
 						pcObjectOrdering={this.state.pcObjectOrdering}
 						inSearchMode={this.state.inSearchMode}
 						toggleSearchMode={this.toggleSearchMode}
+						partyIsResting={this.state.partyIsResting}
+						processResting={this.processResting}
 						// party status panel
 						currentLocation={this.state.currentLocation}
 						currentFloor={this.state.currentFloor}
@@ -3036,6 +3146,8 @@ class Game extends React.PureComponent {
 						followModePositions={this.state.followModePositions}
 						inSearchMode={this.state.inSearchMode}
 						skillModeActive={this.state.skillModeActive}
+						partyIsResting={this.state.partyIsResting}
+						processResting={this.processResting}
 					/>
 				}
 			</div>

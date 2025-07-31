@@ -1206,7 +1206,9 @@ function ModeInfoPanel(props) {
 	}
 	const enemiesNearbyTacticalDialog = "You can't disable Tactical Mode with creatures still about!";
 	const enemiesNearbySearchDialog = "You can't enable Search Mode with creatures nearby.";
+	const enemiesNearbyRestDialog = "You can't rest while creatures are nearby!";
 	const partyNotNearbyDialog = 'Your party must all be in sight of each other to enable Follow mode';
+	const noLightEquippedDialog = 'At least one light must be equipped to rest.';
 	const pcIsDyingDialog = `You can't enter Follow Mode while ${dyingPcName} is dying. Either resuscitate ${dyingPcGender} or End Turn enough times to let death take its course.`
 	const dialogProps = {
 		dialogContent: '',
@@ -1221,49 +1223,72 @@ function ModeInfoPanel(props) {
 	const activePlayerObject = props.players[props.activeCharacter];
 	const charactersTurn = activePlayerObject && (props.inTacticalMode || !props.isPartyNearby) ? `${activePlayerObject.name.first} ${activePlayerObject.name.last}` :
 		props.inTacticalMode && props.threatList.length > 0 ? 'Enemies moving' : 'Wait...';
+	const allPcInfo = Object.values(props.players);
+	const lightIsEquipped = allPcInfo[0].lightTime > 0 || (allPcInfo[1] && allPcInfo[1].lightTime > 0) || (allPcInfo[2] && allPcInfo[2].lightTime > 0);
 
 	return (
 		<div id='mode-info-container' className={`${props.showDialog ? 'no-click' : ''}`}>
 			<div className='mode-buttons-container'>
-				{props.showHelpSystem && props.helpPopupButton('modeInfo')}
-				<div
-					className='general-button'
-					onClick={() => {
-						if (props.inTacticalMode) {
-							if (props.threatList.length > 0) {
-								dialogProps.dialogContent = enemiesNearbyTacticalDialog;
-								props.setShowDialogProps(true, dialogProps);
+				<div>
+					{props.showHelpSystem && props.helpPopupButton('gameModes')}
+					<div
+						className={'general-button ' + (props.inTacticalMode ? 'button-turn-based-mode' : 'button-follow-mode')}
+						onClick={() => {
+							if (props.inTacticalMode) {
+								if (props.threatList.length > 0) {
+									dialogProps.dialogContent = enemiesNearbyTacticalDialog;
+									props.setShowDialogProps(true, dialogProps);
+								} else if (!props.isPartyNearby) {
+									dialogProps.dialogContent = partyNotNearbyDialog;
+									props.setShowDialogProps(true, dialogProps);
+								} else if (dyingPcName) {
+									dialogProps.dialogContent = pcIsDyingDialog;
+									props.setShowDialogProps(true, dialogProps);
+								} else {
+									props.toggleTacticalMode(false);
+								}
 							} else if (!props.isPartyNearby) {
 								dialogProps.dialogContent = partyNotNearbyDialog;
 								props.setShowDialogProps(true, dialogProps);
-							} else if (dyingPcName) {
-								dialogProps.dialogContent = pcIsDyingDialog;
-								props.setShowDialogProps(true, dialogProps);
 							} else {
-								props.toggleTacticalMode(false);
+								props.toggleTacticalMode(true);
 							}
-						} else if (!props.isPartyNearby) {
-							dialogProps.dialogContent = partyNotNearbyDialog;
-							props.setShowDialogProps(true, dialogProps);
-						} else {
-							props.toggleTacticalMode(true);
-						}
-					}}>
-					{props.inTacticalMode ? 'In Tactical Mode' : 'In Follow Mode'}
+						}}>
+					</div>
 				</div>
-				<div className={'general-button button-search-mode' + (props.inSearchMode ? ' button-selected' : '')}
-				     onClick={() => {
-					     if (!props.inSearchMode) {
-						     if (props.threatList.length > 0) {
+				<div>
+					{props.showHelpSystem && props.helpPopupButton('search')}
+					<div className={'general-button button-search-mode' + (props.inSearchMode ? ' button-selected' : '')}
+					     onClick={() => {
+						     if (!props.inSearchMode && props.threatList.length > 0) {
 							     dialogProps.dialogContent = enemiesNearbySearchDialog;
 							     props.setShowDialogProps(true, dialogProps);
 						     } else {
 							     props.toggleSearchMode();
 						     }
-					     } else {
-						     props.toggleSearchMode();
-					     }
-				     }}>
+					     }}>
+					</div>
+				</div>
+				<div>
+					{props.showHelpSystem && props.helpPopupButton('rest')}
+					<div className={'general-button button-rest-mode' + (props.showRestWindow ? ' button-selected button-rest-mode-on' : '')}
+					     onClick={() => {
+						     if (!props.showRestWindow) {
+								 if (!props.isPartyNearby) {
+									 dialogProps.dialogContent = partyNotNearbyDialog;
+									 props.setShowDialogProps(true, dialogProps);
+								 } else if (props.threatList.length > 0) {
+									 dialogProps.dialogContent = enemiesNearbyRestDialog;
+									 props.setShowDialogProps(true, dialogProps);
+								 } else if (!lightIsEquipped) {
+									 dialogProps.dialogContent = noLightEquippedDialog;
+									 props.setShowDialogProps(true, dialogProps);
+								 } else {
+									 props.toggleShowRestWindow();
+								 }
+						     }
+					     }}>
+					</div>
 				</div>
 			</div>
 
@@ -1285,6 +1310,40 @@ function ModeInfoPanel(props) {
 				}}>End Turn</div>
 			</div>
 			}
+		</div>
+	);
+}
+
+function RestWindow(props) {
+	return (
+		<div id='rest-window-container' className='ui-panel'>
+			<div className={'general-button dialog-button-x' + (props.partyIsResting ? ' button-disabled' : '')} onClick={() => props.toggleShowRestWindow()}>X</div>
+				<form onSubmit={evt => {
+					evt.preventDefault();
+					props.processResting(+evt.target[0].value, props.toggleShowRestWindow);
+				}}>
+					{!props.partyIsResting &&
+						<div className='rest-content'>
+							<div className='campfire-unlit'></div>
+							<div>How much time (amount of light) do you want to rest?</div>
+							<div className='small-text'>Note: ALL equipped lights will be used.</div>
+							<div>
+								<label htmlFor='rest-amount'>Time:</label>
+								<input id='rest-amount' type='number' name='rest-amount' size='3' defaultValue='1' min='1' />
+							</div>
+							<div className='dialog-buttons'>
+								<button className='dialog-button' onClick={() => props.toggleShowRestWindow()}>Cancel</button>
+								<button className='dialog-button' type='submit'>Start resting</button>
+							</div>
+						</div>
+					}
+					{props.partyIsResting &&
+						<div className='rest-content'>
+							<div className='campfire'></div>
+							<div>Resting...</div>
+						</div>
+					}
+				</form>
 		</div>
 	);
 }
@@ -1522,11 +1581,13 @@ function ContextMenu(props) {
 function HelpPopup(props) {
 	return (
 		<div className='help-popup ui-panel' style={{'top': props.showHelpPopup.selectedIconPos.top, 'left': props.showHelpPopup.selectedIconPos.left}}>
-			<div className='general-button help-popup-close' onClick={() => props.toggleHelpPopup(null, null)}>X</div>
-			<div className='help-popup-container'>
+			<div id='help-popup-header'>
+				<div className='general-button help-popup-close' onClick={() => props.toggleHelpPopup(null, null)}>X</div>
+				<div className='font-fancy'>{props.showHelpPopup.name}</div>
+			</div>
+			<div id='help-popup-content'>
 				<div className={props.showHelpPopup.iconClass}></div>
 				<div className='help-popup-text'>
-					<div className='font-fancy'>{props.showHelpPopup.name}</div>
 					<div>{props.showHelpPopup.description}</div>
 					{props.showHelpPopup.source && <div>Source: {props.showHelpPopup.source}</div>}
 				</div>
@@ -1646,4 +1707,4 @@ function GameOptions(props) {
 	);
 }
 
-export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoWindow, ModeInfoPanel, PartyInfoPanel, JournalWindow, ConversationWindow, DialogWindow, ContextMenu, HelpPopup, GameOptions};
+export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoWindow, ModeInfoPanel, RestWindow, PartyInfoPanel, JournalWindow, ConversationWindow, DialogWindow, ContextMenu, HelpPopup, GameOptions};

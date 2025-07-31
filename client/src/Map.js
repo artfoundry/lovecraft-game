@@ -2483,7 +2483,11 @@ class Map extends React.PureComponent {
 		return surroundingTiles;
 	}
 
-	findNearestTileForSpawn = () => {
+	/**
+	 * Find tile to spawn creature using this.props.creatureSpawnInfo (creature info, center pos around which to look for spawn point)
+	 * @private
+	 */
+	_findNearestTileForSpawn() {
 		const maxRangeToLook = 2;
 		const surroundingTiles = this._getAllSurroundingTilesToRange(this.props.creatureSpawnInfo.pos, maxRangeToLook);
 		const allCharsPos = this.props.getAllCharactersPos('all', 'pos');
@@ -2887,6 +2891,7 @@ class Map extends React.PureComponent {
 					if (hiddenSecretInfo) {
 						// determine if found
 						// tileLightStrength has a range of 0 to this.maxLightStrength
+						// todo: add mentalAcuity of each member to chance of finding?
 						keenInvestBonus = tileLightStrength === 0 ? 0 : keenInvestBonus;
 						const chanceOfFinding = (tileLightStrength * hiddenSecretInfo.baseChanceOfFinding) + keenInvestBonus;
 						const secretFound = diceRoll(100) <= (chanceOfFinding * 100);
@@ -3724,9 +3729,9 @@ class Map extends React.PureComponent {
 		{
 			this._moveMap();
 		}
-		// new creature spawned (ie. from coffin)
+		// new creature spawned (ie. from coffin or while resting)
 		if (this.props.creatureSpawnInfo && prevProps.creatureSpawnInfo !== this.props.creatureSpawnInfo) {
-			this.findNearestTileForSpawn();
+			this._findNearestTileForSpawn();
 		}
 		// saving data either from location change or options menu button
 		if (this.props.needToSaveData && prevProps.needToSaveData !== this.props.needToSaveData) {

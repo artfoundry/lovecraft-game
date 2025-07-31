@@ -149,10 +149,10 @@
     "description": "An investigator's intelligence and spiritual/psychic fortitude. Affects protection against psychic attacks, reduction of sanity effects, use of certain skills, and determining combat order.",
     "source": null
   },
-  "modeInfo": {
+  "gameModes": {
     "iconClass": "",
-    "name": "Mode Info and Controls",
-    "description": "In Follow Mode one investigator leads, the others follow. In Tactical Mode each investigator takes a turn. In Search Mode (magnifying glass) any investigator that moves makes a search.",
+    "name": "Tactical and Follow Modes",
+    "description": "This allows you to toggle between the two modes. In Follow Mode one investigator leads, the others follow. In Tactical Mode each investigator takes a turn. In Search Mode (magnifying glass) any investigator that moves makes a search.",
     "source": null
   },
   "partyInfo": {
@@ -161,10 +161,22 @@
     "description": "Displays progress toward next party level and where the party currently is.",
     "source": null
   },
+  "rest": {
+    "iconClass": "",
+    "name": "Rest",
+    "description": "Resting allows the investigators to recuperate Health, Sanity, and Spirit at a rate of 1 per 2 light spent. ALL equipped lights will be used and lose light. While more lights equipped reduces the chance of wandering creature encounters, a longer rest increases the chance. If interrupted, results of rest are still maintained.",
+    "source": null
+  },
   "sanity": {
     "iconClass": "",
     "name": "Sanity",
     "description": "An investigator's psychological and emotional stability. Fixed starting value, different for each investigator. Can never go above starting value. Can be reduced by total darkness, presence of creatures, certain creature abilities, the Occult Researcher's Sacrificial Strike skill, and potentially certain experiences. If it drops to 0, the investigator becomes catatonic and is lost for good. If your primary investigator becomes catatonic, it's game over!",
+    "source": null
+  },
+  "search": {
+    "iconClass": "",
+    "name": "Search",
+    "description": "In Search Mode anytime an investigator moves, a search is made of all lit areas within line of sight for traps, secret doors, and other hidden items.",
     "source": null
   },
   "skills": {
