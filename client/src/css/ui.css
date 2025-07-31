@@ -148,27 +148,31 @@ h3 {
 	filter: drop-shadow(4px 4px 2px black);
 }
 
-.help-popup-container {
+#help-popup-header {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 49px;
+	margin-bottom: 10px;
+}
+
+#help-popup-content {
 	display: flex;
 	flex-direction: row;
 	justify-content: space-between;
 	align-items: center;
 }
 
-.help-popup-container .character-status-icon {
+#help-popup-content .character-status-icon {
 	width: 64px;
 }
 
-.help-popup-container .action-button:hover {
+#help-popup-content .action-button:hover {
 	cursor: default;
 }
 
 .help-popup-text {
 	width: 230px;
-}
-
-.help-popup-close {
-	position: absolute;
 }
 
 
@@ -370,6 +374,36 @@ h3 {
 
 .follow-member-occult-researcher {
 	background-image: url('../assets/characters/players/occult-researcher.png');
+}
+
+#rest-window-container {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	padding: 10px;
+	z-index: 5;
+}
+
+.rest-content {
+	font-size: 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	align-items: center;
+	opacity: 1;
+	transition: opacity 0.5s;
+}
+
+.campfire {
+	width: 700px;
+	height: 394px;
+	background-image: url('../assets/ui/campfire.gif');
+}
+
+.campfire-unlit {
+	width: 700px;
+	height: 394px;
+	background-image: url('../assets/ui/campfire-unlit.gif');
 }
 
 #journal-container, #conversation-window {
@@ -1235,6 +1269,34 @@ h3 {
 	gap: 5px;
 }
 
+.button-turn-based-mode {
+	width: 20px;
+	height: 20px;
+	background-image: url('../assets/ui/turn-based-mode.png');
+	background-size: 32px 32px;
+}
+
+.button-follow-mode {
+	width: 20px;
+	height: 20px;
+	background-image: url('../assets/ui/follow-mode.png');
+	background-size: 32px 32px;
+}
+
+.button-rest-mode {
+	width: 20px;
+	height: 20px;
+	background-image: url('../assets/ui/rest-mode-off.png');
+	background-size: 32px 32px;
+}
+
+.button-rest-mode-on {
+	width: 20px;
+	height: 20px;
+	background-image: url('../assets/ui/rest-mode-on.png');
+	background-size: 32px 32px;
+}
+
 .button-search-mode {
 	width: 20px;
 	height: 20px;
@@ -1250,7 +1312,7 @@ h3 {
 	margin: 0 10px;
 	right: 0;
 	bottom: 10px;
-	z-index: 5;
+	z-index: 7;
 }
 
 #screen-zoom-container {

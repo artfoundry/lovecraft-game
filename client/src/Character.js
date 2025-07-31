@@ -302,9 +302,8 @@ class Character extends React.PureComponent {
 	 * @param calcPcLightChanges: function (from App)
 	 * @param lightCost: number (how much light time will be reduced)
 	 * @return {boolean}
-	 * @private
 	 */
-	_updatePcLights(updatedPartyData, calcPcLightChanges, lightCost) {
+	updatePcLights = (updatedPartyData, calcPcLightChanges, lightCost) => {
 		let hasLightChanged = false;
 		for (const charData of Object.values(updatedPartyData)) {
 			if (charData.equippedLight && charData.lightTime > 0) {
@@ -312,7 +311,9 @@ class Character extends React.PureComponent {
 				charData.items[charData.equippedLight] = {...equippedLightItem};
 				charData.lightTime = lightTime;
 				charData.lightRange = lightRange;
-				hasLightChanged = lightingHasChanged;
+				if (lightingHasChanged && !hasLightChanged) {
+					hasLightChanged = true;
+				}
 			}
 		}
 		return hasLightChanged;
@@ -388,8 +389,8 @@ class Character extends React.PureComponent {
 			}
 		}
 
-		// _updatePcLights modifies updatedPartyData directly
-		lightingHasChanged = this._updatePcLights(updatedPartyData, calcPcLightChanges, lightCost);
+		// updatePcLights modifies updatedPartyData directly
+		lightingHasChanged = this.updatePcLights(updatedPartyData, calcPcLightChanges, lightCost);
 
 		let itemId = itemType + '0';
 		const itemCategory = createSkill.itemCategory;
@@ -450,9 +451,13 @@ class Character extends React.PureComponent {
 	}
 
 	/**
-	 *
+	 * Mining skill
 	 * @param props: object {
-	 *
+	 *      partyData: object
+	 *      updateCharacters: function
+	 *      calcPcLightChanges: function
+	 *      toggleAudio: function
+	 *      isExpertMining: boolean
 	 * }
 	 */
 	mine = (props) => {
@@ -461,8 +466,8 @@ class Character extends React.PureComponent {
 		const lightCost = isExpertMining ? this.lightTimeCosts.expertMining : this.lightTimeCosts.mine;
 		const expertMiningSkill = partyData.archaeologist.skills.expertMining;
 
-		// _updatePcLights modifies updatedPartyData directly
-		const lightingHasChanged = this._updatePcLights(updatedPartyData, calcPcLightChanges, lightCost);
+		// updatePcLights modifies updatedPartyData directly
+		const lightingHasChanged = this.updatePcLights(updatedPartyData, calcPcLightChanges, lightCost);
 		if (isExpertMining) {
 			updatedPartyData.archaeologist.currentSpirit -= expertMiningSkill.spirit[expertMiningSkill.level];
 		}
@@ -675,8 +680,8 @@ class Character extends React.PureComponent {
 		if (disarmTrapSkill.light[disarmTrapSkill.level] > thiefData.lightTime) {
 			setShowDialogProps(true, notEnoughLightDialogProps);
 		} else {
-			// _updatePcLights modifies updatedPartyData directly
-			lightingHasChanged = this._updatePcLights(updatedPartyData, calcPcLightChanges, lightCost);
+			// updatePcLights modifies updatedPartyData directly
+			lightingHasChanged = this.updatePcLights(updatedPartyData, calcPcLightChanges, lightCost);
 			updatedPartyData.thief.currentSpirit -= disarmTrapSkill.spirit[disarmTrapSkill.level];
 			updateCharacters('player', updatedPartyData, null, lightingHasChanged, null, null, callback);
 			updateLog(`${thiefData.name.first} disarmed the trap.`);
@@ -718,8 +723,8 @@ class Character extends React.PureComponent {
 			index++;
 		}
 		if (itemFound) {
-			// _updatePcLights modifies updatedPartyData directly
-			lightingHasChanged = this._updatePcLights(updatedPartyData, calcPcLightChanges, lightCost);
+			// updatePcLights modifies updatedPartyData directly
+			lightingHasChanged = this.updatePcLights(updatedPartyData, calcPcLightChanges, lightCost);
 
 			updatedPartyData.occultResearcher.currentSpirit -= identifyRelicSkill.spirit[identifyRelicSkill.level];
 			updateCharacters('player', updatedPartyData, null, lightingHasChanged, false, false, () => {
