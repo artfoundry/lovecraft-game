@@ -2767,6 +2767,7 @@ class Map extends React.PureComponent {
 				updatedEnvObjects[objId].isSprung = true;
 				updatedEnvObjects[objId].isDiscovered = true;
 				this.props.updateLog(`${activePlayerData.name.first} has triggered a ${objInfo.name} and taken damage!`);
+				this.props.toggleAudio('environments', 'spikeTrap', {useReverb: true});
 				pathData.tilePath = [];
 			}
 			objCounter++;
@@ -3351,6 +3352,7 @@ class Map extends React.PureComponent {
 				});
 			} else {
 				const willPlaySound = charData.type !== 'player' && diceRoll(10) <= this.chanceForCreatureSound;
+				// for playing distant creature sfx
 				if (willPlaySound) {
 					this.props.toggleAudio('characters', removeIdNumber(activeCharID), {useVolume: true, useReverb: true, soundCoords: characterCoords});
 				}

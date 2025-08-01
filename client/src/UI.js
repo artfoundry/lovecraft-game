@@ -15,7 +15,7 @@ import {
 	GameOptions
 } from './UIElements';
 import PopupHelp from './data/popupHelp.json';
-import {convertCoordsToPos, notEnoughSpaceInInventory, deepCopy} from './Utils';
+import {removeIdNumber, convertCoordsToPos, notEnoughSpaceInInventory, deepCopy} from './Utils';
 import './css/ui.css';
 
 class UI extends React.PureComponent {
@@ -626,6 +626,7 @@ class UI extends React.PureComponent {
 		if (activeEnvObj.type === 'container') {
 			activeEnvObj.isOpen = true;
 			changeMade = true;
+			this.props.toggleAudio('environments', removeIdNumber(envObjectId), {useReverb: true});
 		} else if (activeEnvObj.type === 'mineable' && !activeEnvObj.isDestroyed) {
 			if (activeEnvObj.isDestructible) {
 				activeEnvObj.isDestroyed = true;

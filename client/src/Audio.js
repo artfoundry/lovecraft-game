@@ -1,8 +1,10 @@
 import React from 'react';
 import {Filter, AdvancedReverb} from './WebAudioReverb';
 import {
-	StoneDoor, MetalDoor, WindIndoors, Whispering,
-	HandgunShot, GlassVialBreak, MeleeAttackBlade, MeleeAttackBlunt, AttackMiss,
+	MetalDoor, StoneDoor, Sarcophagus, WindIndoors, Whispering,
+	SpikeTrap,
+	HandgunShot, ShotgunShot,
+	GlassVialBreak, MeleeAttackBlade, MeleeAttackBlunt, AttackMiss,
 	Gulp, Mine,
 	ElderThing, ElderThingAttack, ElderThingInjured, ElderThingDeath,
 	FlyingPolyp, FlyingPolypAttack, FlyingPolypInjured, FlyingPolypDeath,
@@ -35,7 +37,10 @@ const sfxMap = {
 	catacombsBackground: WindIndoors,
 	museumDoor: MetalDoor,
 	museumBackground: Whispering,
+	sarcophagus: Sarcophagus,
+	spikeTrap: SpikeTrap,
 	handgunShot: HandgunShot,
+	shotgunShot: ShotgunShot,
 	glassVialBreak: GlassVialBreak,
 	meleeAttackBlade: MeleeAttackBlade,
 	meleeAttackBlunt: MeleeAttackBlunt,

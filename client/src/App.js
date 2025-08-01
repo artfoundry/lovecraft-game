@@ -69,7 +69,9 @@ class Game extends React.PureComponent {
 				catacombsDoor: null,
 				catacombsBackground: null,
 				museumDoor: null,
-				museumBackground: null
+				museumBackground: null,
+				sarcophagus: null,
+				spikeTrap: null
 			},
 			characters: {
 				elderThing: null,
@@ -99,6 +101,7 @@ class Game extends React.PureComponent {
 			},
 			weapons: {
 				handgunShot: null,
+				shotgunShot: null,
 				glassVialBreak: null,
 				meleeAttackBlade: null,
 				meleeAttackBlunt: null,
@@ -127,6 +130,7 @@ class Game extends React.PureComponent {
 		// used because some categories of items (like all handguns) will use the same sound
 		this.sfxActionSelectorAliases = {
 			'handgun': 'handgunShot',
+			'shotgun': 'shotgunShot',
 			'liquid': 'glassVialBreak',
 			'blade': 'meleeAttackBlade',
 			'blunt': 'meleeAttackBlunt',
@@ -3012,6 +3016,7 @@ class Game extends React.PureComponent {
 						mapObjects={this.state.mapObjects}
 						updateMapEnvObjects={this.updateMapEnvObjects}
 						envObjects={this.state.envObjects}
+						toggleAudio={this.toggleAudio}
 						// control bars
 						actionButtonSelected={this.state.actionButtonSelected}
 						skillModeActive={this.state.skillModeActive}

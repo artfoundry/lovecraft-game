@@ -111,7 +111,7 @@ class Character extends React.PureComponent {
 	 *  updateCharacters: function (from App),
 	 *  updateLog: function (from App),
 	 *  toggleAudio function (from App),
-	 *  sfxSelectors object (sound fx el selectors from App)
+	 *  sfxSelectors object (sound fx el selector aliases from App for multiple weapons that use the same sound)
 	 *  callback: function (from App - calls toggleWeapon, _removeDeadFromTurnOrder if creature dies, then updateActivePlayerActions)
 	 * )
 	 */
@@ -217,6 +217,8 @@ class Character extends React.PureComponent {
 			if (equippedGunType) {
 				if (equippedGunType === 'handgun') {
 					toggleAudio('weapons', sfxSelectors.handgun, {useReverb: true});
+				} else if (equippedGunType === 'shotgun') {
+					toggleAudio('weapons', sfxSelectors.shotgun, {useReverb: true});
 				}
 			} else if (isHit && !failFromCurse) {
 				toggleAudio('weapons', sfxSelectors[weaponInfo.damageType], {useReverb: true});
