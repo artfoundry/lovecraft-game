@@ -2772,10 +2772,16 @@ class Map extends React.PureComponent {
 		let updateData = deepCopy(activePlayerData);
 		updateData.coords = {...newCoords};
 
-		// check if in darkness and in follow mode (for tactical mode, checked in componentDidUpdate), if so, reduce sanity
 		const newPosLighting = this.state.mapLayout[newTilePos].lightStrength;
-		if (newPosLighting === 0 && !this.props.inTacticalMode && !this.state.currentLocationData.floors[this.props.currentFloor].allTilesAtLeastAmbientLit) {
-			updateData.currentSanity--;
+		if (newPosLighting === 0 && !this.state.currentLocationData.floors[this.props.currentFloor].allTilesAtLeastAmbientLit) {
+			// check if in darkness and in follow mode (for tactical mode, checked in componentDidUpdate), if so, reduce sanity
+			if (!this.props.inTacticalMode) {
+				updateData.currentSanity--;
+			}
+			const logMessage = `Venturing in darkness is making ${activePlayerData.name.first} anxious...`;
+			if (this.props.logText[this.props.logText.length - 1] !== logMessage) {
+				this.props.updateLog(logMessage);
+			}
 		}
 
 		// reduce light time remaining and range if time is really low

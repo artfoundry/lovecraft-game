@@ -37,6 +37,7 @@ class Game extends React.PureComponent {
 		this.playerActionsLimit = 2;
 		this.playerInventoryLimit = 12;
 		this.maxTurnsToReviveDeadPlayer = 3;
+		this.minDamageToPlayPcAudio = 5;
 		this.chanceToSpawnCreatureFromContainer = 2; // spawns on this or lower on roll of d4
 		this.minimalLightThreshold = 0.1;
 		this.lowLightThreshold = 0.2;
@@ -553,7 +554,7 @@ class Game extends React.PureComponent {
 			const sanityChange = currentChar.currentSanity - updateData.currentSanity;
 			const healthChange = currentChar.currentHealth - updateData.currentHealth;
 			// play sound fx for getting injured
-			if (type === 'player' && updateData.currentHealth > 0 && updateData.currentSanity > 0 && (healthChange > 1 || sanityChange > 1)) {
+			if (type === 'player' && updateData.currentHealth > 0 && updateData.currentSanity > 0 && (healthChange > this.minDamageToPlayPcAudio || sanityChange > this.minDamageToPlayPcAudio)) {
 				currentChar.gender === 'Male' ? delayedAudio('maleInjured') : delayedAudio('femaleInjured');
 			} else if (type === 'creature' && updateData.currentHealth > 0 && updateData.currentHealth < currentChar.currentHealth) {
 				delayedAudio(removeIdNumber(id) + 'Injured');
@@ -1571,6 +1572,7 @@ class Game extends React.PureComponent {
 			if (sanityEffectTotal > 0) {
 				nextActiveChar.currentSanity -= sanityEffectTotal;
 				updateOrRemoveChar = true;
+				this.updateLog(`Seeing such horrors, ${nextActiveCharIsPc.name.first}'s sanity suffers.`);
 			}
 		}
 		if (nextActiveCharIsPc && (nextActiveChar.currentHealth <= 0 || nextActiveChar.currentSanity <= 0 || nextActiveChar.statuses.unconscious)) {
