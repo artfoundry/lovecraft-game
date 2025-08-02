@@ -23,7 +23,7 @@ h3 {
 .title-screen {
 	display: flex;
 	flex-direction: column;
-	justify-content: space-between;
+	gap: 20px;
 	align-items: center;
 	height: 100%;
 	padding-bottom: 30px;
@@ -42,7 +42,8 @@ h3 {
 	width: 150px;
 	text-align: center;
 	font-size: 30px;
-	margin-bottom: 50px;
+	line-height: 30px;
+	opacity: 0.8;
 }
 
 .no-click {
