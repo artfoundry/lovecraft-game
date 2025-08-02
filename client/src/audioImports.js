@@ -1,6 +1,7 @@
 import MetalDoor from './assets/sfx/environments/metal-door.mp3';
 import StoneDoor from './assets/sfx/environments/stone-door.mp3';
 import Sarcophagus from './assets/sfx/environments/sarcophagus.mp3';
+import Trunk from './assets/sfx/environments/trunk.mp3';
 import WindIndoors from './assets/sfx/environments/wind-indoors.mp3';
 import Whispering from './assets/sfx/environments/whispering.mp3';
 import SpikeTrap from './assets/sfx/environments/spike-trap.mp3';
@@ -41,7 +42,7 @@ import CatacombsTheme from './assets/music/catacombs_theme.mp3';
 import MuseumTheme from './assets/music/museum_theme.m4a';
 
 export {
-	MetalDoor, StoneDoor, Sarcophagus, WindIndoors, Whispering,
+	MetalDoor, StoneDoor, Sarcophagus, Trunk, WindIndoors, Whispering,
 	SpikeTrap,
 	HandgunShot, ShotgunShot,
 	GlassVialBreak, MeleeAttackBlade, MeleeAttackBlunt, AttackMiss,

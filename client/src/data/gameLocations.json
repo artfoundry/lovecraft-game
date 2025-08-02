@@ -46,6 +46,7 @@
 				},
 				"envObjects": {
 					"Sarcophagus": {"number": 5, "variation": 1},
+					"Trunk": {"number": 1, "variation": 1},
 					"Spike Trap": {"number": 6, "variation": 2},
 					"Rocky Mound": {"number": 3, "variation": 1}
 				}
@@ -92,6 +93,7 @@
 				},
 				"envObjects": {
 					"Sarcophagus": {"number": 4, "variation": 1},
+					"Trunk": {"number": 0, "variation": 1},
 					"Spike Trap": {"number": 6, "variation": 2},
 					"Rocky Mound": {"number": 2, "variation": 1}
 				}

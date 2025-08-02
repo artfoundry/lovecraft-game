@@ -98,5 +98,59 @@
         "max": 1
       }
     }
+  },
+  "Trunk": {
+    "description": "A good sized chest made of wood, leather, and steel, likely left by someone wanting to keep their possessions safe. Possessions that could be valuable. Or just junk.",
+    "isEnvObject": true,
+    "type": "container",
+    "isHidden": false,
+    "isPassable": false,
+    "isDestructible": false,
+    "hasTrap": false,
+    "locked": false,
+    "mayContain": {
+      "Gems": {
+        "max": 2
+      },
+      "Alcohol": {
+        "max": 2
+      },
+      "Cloth": {
+        "max": 3
+      },
+      "Holy Water": {
+        "max": 1
+      },
+      "Knife": {
+        "max": 1
+      },
+      "Machete": {
+        "max": 1
+      },
+      "Electric Torch": {
+        "max": 1
+      },
+      "Lantern": {
+        "max": 1
+      },
+      "Oil": {
+        "max": 30
+      },
+      "First Aid Kit": {
+        "max": 1
+      },
+      "Leather Jacket": {
+        "max": 1
+      },
+      "S And W Revolver": {
+        "max": 1
+      },
+      "Handgun Ammo": {
+        "max": 10
+      },
+      "Shotgun Ammo": {
+        "max": 6
+      }
+    }
   }
 }

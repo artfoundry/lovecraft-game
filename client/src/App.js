@@ -71,6 +71,7 @@ class Game extends React.PureComponent {
 				museumDoor: null,
 				museumBackground: null,
 				sarcophagus: null,
+				trunk: null,
 				spikeTrap: null
 			},
 			characters: {
@@ -737,7 +738,7 @@ class Game extends React.PureComponent {
 		this.setState({envObjects}, () => {
 			if (envObjectId) {
 				const activeEnvObj = envObjects[envObjectId];
-				if (activeEnvObj.type === 'container') {
+				if (envObjectId.includes('sarcophagus')) {
 					this.updateLog('The lid is pushed aside...');
 					const chanceToSpawn = () => {
 						return diceRoll(4) <= this.chanceToSpawnCreatureFromContainer;

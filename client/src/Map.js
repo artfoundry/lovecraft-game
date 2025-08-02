@@ -58,6 +58,7 @@ class Map extends React.PureComponent {
 		this.mapLayoutTemp = {};
 		this.numberOpeningsPerPiece = {};
 		this.staticMapData = null;
+		this.secretRooms = {};
 
 		this.charRefs = {};
 		this.clickedOnWorld = false;
@@ -602,6 +603,8 @@ class Map extends React.PureComponent {
 			mapTileToChange.isSecretDoor = true;
 			mapTileToChange.isDiscovered = false;
 			mapTileToChange.baseChanceOfFinding = this.baseChanceOfFindingSecretDoor;
+
+			this.secretRooms[pieceName] = {...newPiece};
 		}
 	}
 
@@ -1095,6 +1098,41 @@ class Map extends React.PureComponent {
 	}
 
 	/**
+	 * Populates container with nothing or an item chosen randomly from the 'mayContain' attr from items/weapons json
+	 * @param envItemInfo object
+	 * @param coords object (coords of container)
+	 * @return array (could be empty or an object of item info)
+	 * @private
+	 */
+	_populateContainers(envItemInfo, coords) {
+		let containerContents = [];
+		// adding null option so container could have nothing
+		const itemNames = [...Object.keys(envItemInfo.mayContain), null];
+		const selectedItemIndex = diceRoll(itemNames.length) - 1;
+		if (itemNames[selectedItemIndex]) {
+			const selectedItemName = itemNames[selectedItemIndex];
+			const selectedItemUniqueId = selectedItemName.slice(0, 1).toLowerCase() + selectedItemName.slice(1, selectedItemName.length).replaceAll(' ', '') + '0';
+			const objectType = ItemTypes[selectedItemName] ? 'item' : 'weapon';
+			const selectedItemBaseInfo = objectType === 'item' ? ItemTypes[selectedItemName] : WeaponTypes[selectedItemName];
+			let selectedItemInfo = {
+				...selectedItemBaseInfo,
+				id: selectedItemUniqueId,
+				name: selectedItemName,
+				isIdentified: selectedItemBaseInfo.itemType !== 'Relic',
+				coords
+			};
+			const count = diceRoll(envItemInfo.mayContain[selectedItemName].max);
+			if (objectType === 'item' && selectedItemBaseInfo.stackable) {
+				selectedItemInfo.amount = count;
+			} else if (objectType === 'weapon' && (selectedItemBaseInfo.stackable || selectedItemBaseInfo.rounds)) {
+				selectedItemInfo.currentRounds = count
+			}
+			containerContents = [selectedItemInfo];
+		}
+		return containerContents;
+	}
+
+	/**
 	 * Sets initial data for env objects appearing on the map, then calls _calculateLighting as its callback
 	 * @param callback
 	 * @private
@@ -1125,7 +1163,8 @@ class Map extends React.PureComponent {
 					}
 				}
 			}
-			let itemCoords = {};
+			let itemCoords = {}; // temp collection to keep track of where each obj is being placed (to pass to _generateRandomLocation)
+			let lastIdNum = 0;
 			for (const [itemId, objCountInfo] of Object.entries(currentFloorData.envObjects)) {
 				if (objCountInfo.number > 0 || objCountInfo.variation > 0) {
 					const envObjIds = Object.keys(envObjects);
@@ -1143,45 +1182,51 @@ class Map extends React.PureComponent {
 						// need parens around number calc so it's calculated before conversion to string
 						const uniqueItemId = lowerCaseName + (startingIdBaseNum + i);
 						const coords = convertPosToCoords(this._generateRandomLocation(itemCoords, 'floor', 'envObject', envItemInfo.isPassable)); // this.props.playerCharacters['privateEye'].coords (to easily test objects)
-						let containerContents = [];
-						if (envItemInfo.type === 'container' || envItemInfo.type === 'mineable') {
-							// adding null option so container could have nothing
-							const itemNames = [...Object.keys(envItemInfo.mayContain), null];
-							const selectedItemIndex = diceRoll(itemNames.length) - 1;
-							if (itemNames[selectedItemIndex]) {
-								const selectedItemName = itemNames[selectedItemIndex];
-								const selectedItemUniqueId = selectedItemName.slice(0, 1).toLowerCase() + selectedItemName.slice(1, selectedItemName.length).replaceAll(' ', '') + '0';
-								const objectType = ItemTypes[selectedItemName] ? 'item' : 'weapon';
-								const selectedItemBaseInfo = objectType === 'item' ? ItemTypes[selectedItemName] : WeaponTypes[selectedItemName];
-								let selectedItemInfo = {
-									...selectedItemBaseInfo,
-									id: selectedItemUniqueId,
-									name: selectedItemName,
-									isIdentified: selectedItemBaseInfo.itemType !== 'Relic',
-									coords
-								};
-								const count = diceRoll(envItemInfo.mayContain[selectedItemName].max);
-								if (objectType === 'item' && selectedItemBaseInfo.stackable) {
-									selectedItemInfo.amount = count;
-								} else if (objectType === 'weapon' && (selectedItemBaseInfo.stackable || selectedItemBaseInfo.rounds)) {
-									selectedItemInfo.currentRounds = count
-								}
-								containerContents = [selectedItemInfo];
-							}
-						}
 						envObjects[uniqueItemId] = {
 							...envItemInfo,
 							name: itemId,
 							isIdentified: true,
 							isDestroyed: false,
-							containerContents,
 							isOpen: envItemInfo.type === 'container' ? false : null,
 							coords
 						};
+						if (envItemInfo.type === 'container' || envItemInfo.type === 'mineable') {
+							envObjects[uniqueItemId].containerContents = this._populateContainers(envItemInfo, coords);
+						}
 						if (envItemInfo.isHidden) {
 							envObjects[uniqueItemId].isDiscovered = false;
 						}
 						itemCoords[uniqueItemId] = coords;
+						// save last id num so we know where to start numbering secret room trunks
+						if (i === (count - 1)) {
+							lastIdNum = startingIdBaseNum + i;
+						}
+					}
+				}
+			}
+			//add containers to secret rooms
+			for (const roomTiles of Object.values(this.secretRooms)) {
+				const tileInfo = [...Object.values(roomTiles)];
+				let index = diceRoll(tileInfo.length) - 1;
+				let containerPosFound = false;
+				while (!containerPosFound && tileInfo.length > 0) {
+					if (tileInfo[index].canHaveObject && !tileInfo[index].objectMustBePassable) {
+						const envItemInfo = EnvObjectTypes['Trunk'];
+						const uniqueItemId = 'trunk' + lastIdNum;
+						const coords = {xPos: tileInfo[index].xPos, yPos: tileInfo[index].yPos};
+						envObjects[uniqueItemId] = {
+							...envItemInfo,
+							name: 'Trunk',
+							isIdentified: true,
+							isDestroyed: false,
+							isOpen: false,
+							coords
+						};
+						envObjects[uniqueItemId].containerContents = this._populateContainers(envItemInfo, coords);
+						containerPosFound = true;
+					} else {
+						tileInfo.splice(index, 1);
+						index = diceRoll(tileInfo.length) - 1;
 					}
 				}
 			}
@@ -1790,8 +1835,6 @@ class Map extends React.PureComponent {
 					} else {
 						doorClass += isSecret && !isDiscovered ? ' secret-front-door' : isSecret && isDiscovered ? ' secret-front-door-discovered' : ' front-door';
 					}
-					// todo: can remove?
-					// doorClass += tileData.doorIsOpen ? ' front-door-open' : isSecret ? ' secret-front-door' : ' front-door';
 					if (doorClass.includes('open') && !isSecret) {
 						topStyle = (this.tileSize / 2) + 'px';
 						leftStyle = -(this.tileSize / 2) + 'px';
@@ -1802,8 +1845,6 @@ class Map extends React.PureComponent {
 					} else {
 						doorClass += isSecret && !isDiscovered ? ' secret-left-side-door' : isSecret && isDiscovered ? ' secret-side-door-discovered' : ' side-door';
 					}
-					// todo: can remove?
-					// doorClass += tileData.doorIsOpen ? ' left-side-door-open' : isSecret ? ' secret-left-side-door' : ' side-door';
 					if (doorClass.includes('open') && !isSecret) {
 						topStyle = -(this.tileSize / 2) + 'px';
 						leftStyle = -(this.tileSize / 2) + 'px';
@@ -1814,8 +1855,6 @@ class Map extends React.PureComponent {
 					} else {
 						doorClass += isSecret && !isDiscovered ? ' secret-right-side-door' : isSecret && isDiscovered ? ' secret-side-door-discovered' : ' side-door';
 					}
-					// todo: can remove?
-					// doorClass += tileData.doorIsOpen ? ' right-side-door-open' : isSecret ? ' secret-right-side-door' : ' side-door';
 					if (doorClass.includes('open') && !isSecret) {
 						topStyle = -(this.tileSize / 2) + 'px';
 						leftStyle = (this.tileSize / 2) + 'px';

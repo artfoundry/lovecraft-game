@@ -1540,6 +1540,10 @@ select {
 	background-image: url('../assets/objects/knife_lrg.png');
 }
 
+.machete-inv {
+	background-image: url('../assets/objects/machete_lrg.png');
+}
+
 .kris-knife-inv {
 	background-image: url('../assets/objects/krisKnife_lrg.png');
 }
@@ -1632,6 +1636,10 @@ select {
 
 .knife-action {
 	background-image: url('../assets/objects/knife_sml.png');
+}
+
+.machete-action {
+	background-image: url('../assets/objects/machete_sml.png');
 }
 
 .kris-knife-action {
