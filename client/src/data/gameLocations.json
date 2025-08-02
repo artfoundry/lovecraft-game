@@ -12,12 +12,12 @@
 				"mapTileLimit": 500,
 				"npcs": {},
 				"creatures": {
-					"ghast": {"number": 1, "variation": 3},
+					"flyingPolyp": {"number": 0, "variation": 2},
+					"ghast": {"number": 2, "variation": 3},
 					"ghoul": {"number": 8, "variation": 3}
 				},
 				"objects": {
 					"Weapon": {
-						"S And W Revolver": {"number": 1, "variation": 0},
 						"Acid Concoction": {"number": 1, "variation": 1}
 					},
 					"Ammo": {
@@ -27,8 +27,7 @@
 						"First Aid Kit": {"number": 3, "variation": 1}
 					},
 					"Light": {
-						"Lantern": {"number": 1, "variation": 0},
-						"Torch": {"number": 7, "variation": 2}
+						"Torch": {"number": 5, "variation": 2}
 					},
 					"Miscellaneous": {
 						"Oil": {"number": 2, "variation": 0}
@@ -39,9 +38,6 @@
 						"Cloth": {"number": 2, "variation": 0},
 						"Water": {"number": 3, "variation": 0},
 						"Wood": {"number": 2, "variation": 0}
-					},
-					"Relic": {
-						"Elder Sign": {"number": 0, "variation": 0, "chance": 0}
 					}
 				},
 				"envObjects": {
@@ -74,8 +70,8 @@
 						"First Aid Kit": {"number": 1, "variation": 1}
 					},
 					"Light": {
-						"Lantern": {"number": 0, "variation": 0},
-						"Torch": {"number": 5, "variation": 2}
+						"Lantern": {"number": 1, "variation": 0},
+						"Torch": {"number": 2, "variation": 1}
 					},
 					"Miscellaneous": {
 						"Oil": {"number": 2, "variation": 1}
@@ -86,14 +82,11 @@
 						"Cloth": {"number": 2, "variation": 1},
 						"Water": {"number": 2, "variation": 1},
 						"Wood": {"number": 2, "variation": 1}
-					},
-					"Relic": {
-						"Elder Sign": {"number": 1, "variation": 0, "chance": 0.2}
 					}
 				},
 				"envObjects": {
 					"Sarcophagus": {"number": 4, "variation": 1},
-					"Trunk": {"number": 0, "variation": 1},
+					"Trunk": {"number": 1, "variation": 1},
 					"Spike Trap": {"number": 6, "variation": 2},
 					"Rocky Mound": {"number": 2, "variation": 1}
 				}
@@ -171,10 +164,10 @@
 					},
 					"Light": {
 						"Lantern": {"number": 0, "variation": 1},
-						"Torch": {"number": 0, "variation": 0}
+						"Torch": {"number": 0, "variation": 2}
 					},
 					"Miscellaneous": {
-						"Oil": {"number": 0, "variation": 1}
+						"Oil": {"number": 1, "variation": 1}
 					},
 					"Component": {
 						"Alcohol": {"number": 0, "variation": 1},
@@ -182,9 +175,6 @@
 						"Cloth": {"number": 0, "variation": 1},
 						"Water": {"number": 0, "variation": 1},
 						"Wood": {"number": 0, "variation": 1}
-					},
-					"Relic": {
-						"Elder Sign": {"number": 1, "variation": 0, "chance": 0.3}
 					}
 				},
 				"envObjects": {

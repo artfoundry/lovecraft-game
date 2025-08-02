@@ -54,7 +54,7 @@
     "classes": "professor-nymian"
   },
   "professor-8": {
-    "text": "Your assistance is much appreciated! The stairs to the catacombs are near the far wall behind me.\nBut first, speak to the other investigators I've invited who are scattered about the room. I would recommend enlisting one or two of them to help you.\nSome of the areas below are possibly unstable, and who knows what state Susan will be in when you find her.",
+    "text": "Your assistance is much appreciated! The stairs to the catacombs are near the far wall behind me.\nBut first, speak to the other investigators I've invited who are scattered about the lobby. I would recommend enlisting one or two of them to help you.\nSome of the areas below are possibly unstable, and who knows what state Susan will be in when you find her.\nAlso be sure to take light sources with you, and keep your eyes open, as there may be some hidden secrets or unpleasant surprises.",
     "responses": {
       "professor-10": "Thanks, I'll go speak to them now."
     },
