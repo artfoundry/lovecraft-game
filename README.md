@@ -13,6 +13,8 @@ Mobile friendly but works best on desktop!
 ---
 #### Current status:
 
+8/2/25: Revamping character creation; moving object pickup and container open buttons from control bars to context menu; adding final challenge and area to first mission; adding Sanity effects; hiding creature info until identified; adding resting functionality; adding a couple new items/objects; fixing lots of bugs
+
 5/24/25: Adding static map pieces for use in missions; bug fixes and small improvements
 
 4/20/25: Adding Museum lobby area; adding NPCs; adding conversations with NPCs and investigators; moving companion selection from character creation to Museum lobby through conversations; adding journal updates based on conversations
