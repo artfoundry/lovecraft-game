@@ -1028,7 +1028,7 @@ class Map extends React.PureComponent {
 							const lowerCaseName = itemName.slice(0, 1).toLowerCase() + itemName.slice(1, itemName.length).replaceAll(' ', '');
 							const itemID = lowerCaseName + i;
 							const gunType = objectType === 'Weapon' && itemInfo.gunType ? itemInfo.gunType : null;
-							const weaponCurrentRounds = gunType ? Math.round(Math.random() * itemInfo.rounds) : objectType === 'Weapon' ? 1 : null;
+							const weaponCurrentRounds = gunType ? Math.round(Math.random() * itemInfo.rounds) : (objectType === 'Weapon' && itemInfo.stackable) ? 1 : null;
 							mapItems[itemID] = {
 								...itemInfo,
 								id: itemID,
@@ -1070,7 +1070,7 @@ class Map extends React.PureComponent {
 								// need parens around number calc so it's calculated before conversion to string
 								const itemID = lowerCaseName + (startingIdBaseNum + i);
 								const gunType = objectType === 'Weapon' && itemInfo.gunType ? itemInfo.gunType : null;
-								const weaponCurrentRounds = gunType ? Math.round(Math.random() * itemInfo.rounds) : objectType === 'Weapon' ? 1 : null;
+								const weaponCurrentRounds = gunType ? Math.round(Math.random() * itemInfo.rounds) : (objectType === 'Weapon' && itemInfo.stackable) ? 1 : null;
 								// use this.props.playerCharacters['privateEye'].coords instead to easily test objects
 								const coords = convertPosToCoords(this._generateRandomLocation(itemCoords, tileType, 'object'));
 								mapItems[itemID] = {
@@ -1143,6 +1143,7 @@ class Map extends React.PureComponent {
 		if (this.state.usingSavedMapData) {
 			envObjects = deepCopy(this.props.savedMaps[this.props.currentLocation].floors[this.props.currentFloor].envObjects);
 		} else if (currentFloorData.isRandom) {
+			let allNewObjPositions = [];
 			if (currentFloorData.setPiece && currentFloorData.setPiece.envObjects) {
 				for (const [itemId, objectInfo] of Object.entries(currentFloorData.setPiece.envObjects)) {
 					for (let i = 0; i < objectInfo.number; i++) {
@@ -1160,6 +1161,7 @@ class Map extends React.PureComponent {
 								yPos: objectInfo.coords[i].yPos + this.firstMapPieceCoords.yPos
 							}
 						};
+						allNewObjPositions.push(convertCoordsToPos(envObjects[uniqueItemId].coords));
 					}
 				}
 			}
@@ -1197,6 +1199,7 @@ class Map extends React.PureComponent {
 							envObjects[uniqueItemId].isDiscovered = false;
 						}
 						itemCoords[uniqueItemId] = coords;
+						allNewObjPositions.push(convertCoordsToPos(coords));
 						// save last id num so we know where to start numbering secret room trunks
 						if (i === (count - 1)) {
 							lastIdNum = startingIdBaseNum + i;
@@ -1205,15 +1208,18 @@ class Map extends React.PureComponent {
 				}
 			}
 			//add containers to secret rooms
+			//todo: modify _generateRandomLocation so it can take a piece name as attr to limit where chosen pos is
+			const allMapObjPositions = Object.values(this.props.mapObjects).map(objInfo => convertCoordsToPos(objInfo.coords));
 			for (const roomTiles of Object.values(this.secretRooms)) {
 				const tileInfo = [...Object.values(roomTiles)];
 				let index = diceRoll(tileInfo.length) - 1;
 				let containerPosFound = false;
 				while (!containerPosFound && tileInfo.length > 0) {
-					if (tileInfo[index].canHaveObject && !tileInfo[index].objectMustBePassable) {
+					const coords = {xPos: tileInfo[index].xPos, yPos: tileInfo[index].yPos};
+					const pos = convertCoordsToPos(coords);
+					if (tileInfo[index].canHaveObject && !tileInfo[index].objectMustBePassable && !allNewObjPositions.includes(pos) && !allMapObjPositions.includes(pos)) {
 						const envItemInfo = EnvObjectTypes['Trunk'];
 						const uniqueItemId = 'trunk' + lastIdNum;
-						const coords = {xPos: tileInfo[index].xPos, yPos: tileInfo[index].yPos};
 						envObjects[uniqueItemId] = {
 							...envItemInfo,
 							name: 'Trunk',
@@ -1224,6 +1230,7 @@ class Map extends React.PureComponent {
 						};
 						envObjects[uniqueItemId].containerContents = this._populateContainers(envItemInfo, coords);
 						containerPosFound = true;
+						allNewObjPositions.push(pos);
 					} else {
 						tileInfo.splice(index, 1);
 						index = diceRoll(tileInfo.length) - 1;
@@ -1255,7 +1262,7 @@ class Map extends React.PureComponent {
 	 * Makes list of all tiles, chooses one by one at random,
 	 * and checks them for other creatures, players, and objects to find an empty one
 	 * A char and object can occupy same tile, but env obj is placed with nothing else (even if passable)
-	 * If placing env obj, needs to check if canHaveObject, and if so, objectMustBePassable and objectCanBeImpassable
+	 * If placing env obj, needs to check if canHaveObject, and if so, objectMustBePassable
 	 * Note: during map setup, players get placed first, then creatures, then items, then env objects
 	 * @param objectCoords Object (collection of objects/chars being placed by calling function, before they've been set to state)
 	 * @param tileType String (either 'floor' or 'wall')
