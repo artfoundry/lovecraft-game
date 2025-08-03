@@ -3,23 +3,21 @@
 		"name": "Catacombs",
 		"numOfFloors": 3,
 		"enteredFrom": "museum",
+		"recoversSpirit": false,
 		"floors": {
 			"1": {
 				"isRandom": true,
-				"excludeNonLitTiles": false,
+				"allTilesAtLeastAmbientLit": false,
 				"mapSize": "large",
 				"mapTileLimit": 500,
 				"npcs": {},
 				"creatures": {
-					"elderThing": {"number": 0, "variation": 0},
-					"flyingPolyp": {"number": 2, "variation": 2},
-					"ghast": {"number": 1, "variation": 3},
-					"ghoul": {"number": 8, "variation": 3},
-					"shoggoth": {"number": 0, "variation": 0}
+					"flyingPolyp": {"number": 0, "variation": 2},
+					"ghast": {"number": 2, "variation": 3},
+					"ghoul": {"number": 8, "variation": 3}
 				},
 				"objects": {
 					"Weapon": {
-						"S And W Revolver": {"number": 1, "variation": 0},
 						"Acid Concoction": {"number": 1, "variation": 1}
 					},
 					"Ammo": {
@@ -29,8 +27,7 @@
 						"First Aid Kit": {"number": 3, "variation": 1}
 					},
 					"Light": {
-						"Lantern": {"number": 1, "variation": 0},
-						"Torch": {"number": 7, "variation": 2}
+						"Torch": {"number": 5, "variation": 2}
 					},
 					"Miscellaneous": {
 						"Oil": {"number": 2, "variation": 0}
@@ -41,29 +38,25 @@
 						"Cloth": {"number": 2, "variation": 0},
 						"Water": {"number": 3, "variation": 0},
 						"Wood": {"number": 2, "variation": 0}
-					},
-					"Relic": {
-						"Elder Sign": {"number": 0, "variation": 0, "chance": 0}
 					}
 				},
 				"envObjects": {
 					"Sarcophagus": {"number": 5, "variation": 1},
+					"Trunk": {"number": 1, "variation": 1},
 					"Spike Trap": {"number": 6, "variation": 2},
 					"Rocky Mound": {"number": 3, "variation": 1}
 				}
 			},
 			"2": {
 				"isRandom": true,
-				"excludeNonLitTiles": false,
+				"allTilesAtLeastAmbientLit": false,
 				"mapSize": "large",
 				"mapTileLimit": 500,
 				"npcs": {},
 				"creatures": {
-					"elderThing": {"number": 1, "variation": 1},
 					"flyingPolyp": {"number": 5, "variation": 2},
 					"ghast": {"number": 8, "variation": 3},
-					"ghoul": {"number": 12, "variation": 3},
-					"shoggoth": {"number": 0, "variation": 0}
+					"ghoul": {"number": 12, "variation": 3}
 				},
 				"objects": {
 					"Weapon": {
@@ -77,8 +70,8 @@
 						"First Aid Kit": {"number": 1, "variation": 1}
 					},
 					"Light": {
-						"Lantern": {"number": 0, "variation": 0},
-						"Torch": {"number": 5, "variation": 2}
+						"Lantern": {"number": 1, "variation": 0},
+						"Torch": {"number": 2, "variation": 1}
 					},
 					"Miscellaneous": {
 						"Oil": {"number": 2, "variation": 1}
@@ -89,50 +82,74 @@
 						"Cloth": {"number": 2, "variation": 1},
 						"Water": {"number": 2, "variation": 1},
 						"Wood": {"number": 2, "variation": 1}
-					},
-					"Relic": {
-						"Elder Sign": {"number": 1, "variation": 0, "chance": 0.2}
 					}
 				},
 				"envObjects": {
 					"Sarcophagus": {"number": 4, "variation": 1},
+					"Trunk": {"number": 1, "variation": 1},
 					"Spike Trap": {"number": 6, "variation": 2},
 					"Rocky Mound": {"number": 2, "variation": 1}
 				}
 			},
 			"3": {
 				"isRandom": true,
-				"excludeNonLitTiles": false,
+				"allTilesAtLeastAmbientLit": false,
 				"mapSize": "large",
 				"mapTileLimit": 500,
-				"npcs": {
-					"susanWinthrop": {
-						"id": "susanWinthrop",
-						"name": {"first": "Dr. Susan", "last": "Winthrop"},
-						"type": "npc",
-						"conversationStatus": {
-							"nextMessageKey": "susanWinthrop-1"
-						},
-						"location": "catacombs",
-						"floor": 3,
-						"coords": {
-							"xPos": 15,
-							"yPos": 15
-						},
-						"statuses": {
-							"Confused": {
-								"description": "",
-								"turnsLeft": 3
-							}
+				"setPiece": {
+					"pieceName": "roomScripted",
+					"hasExit": false,
+					"hasEntrance": false,
+					"dialogs": {
+						"story-1": {
+							"triggers": ["elderThing0", "shoggoth0"],
+							"conversation": "story-1"
 						}
+					},
+					"creatures": {
+						"elderThing": {
+							"number": 1,
+							"coords": [{"xPos": 7, "yPos": 3}],
+							"relatedMission": "mission1"
+						},
+						"shoggoth": {
+							"number": 1,
+							"coords": [{"xPos": 9, "yPos": 3}],
+							"relatedMission": "mission1"
+						}
+					},
+					"npcs": {
+						"susanWinthrop": {
+							"id": "susanWinthrop",
+							"name": {"first": "Dr. Susan", "last": "Winthrop"},
+							"type": "npc",
+							"conversationStatus": {
+								"nextMessageKey": "susanWinthrop-1"
+							},
+							"location": "catacombs",
+							"floor": 3,
+							"relatedMission": "mission1",
+							"coords": {
+								"xPos": 12,
+								"yPos": 2
+							},
+							"statuses": {}
+						}
+					},
+					"objects": {
+						"Relic": {
+							"Elder Sign": {"number": 1, "coords": [{"xPos": 12, "yPos": 3}]}
+						}
+					},
+					"envObjects": {
+						"Hole": {"number": 1, "coords": [{"xPos": 8, "yPos": 4}]}
 					}
 				},
 				"creatures": {
-					"elderThing": {"number": 2, "variation": 1},
+					"elderThing": {"number": 0, "variation": 1},
 					"flyingPolyp": {"number": 7, "variation": 2},
 					"ghast": {"number": 5, "variation": 3},
-					"ghoul": {"number": 5, "variation": 2},
-					"shoggoth": {"number": 2, "variation": 1}
+					"ghoul": {"number": 5, "variation": 2}
 				},
 				"objects": {
 					"Weapon": {
@@ -147,10 +164,10 @@
 					},
 					"Light": {
 						"Lantern": {"number": 0, "variation": 1},
-						"Torch": {"number": 0, "variation": 0}
+						"Torch": {"number": 0, "variation": 2}
 					},
 					"Miscellaneous": {
-						"Oil": {"number": 0, "variation": 1}
+						"Oil": {"number": 1, "variation": 1}
 					},
 					"Component": {
 						"Alcohol": {"number": 0, "variation": 1},
@@ -158,9 +175,6 @@
 						"Cloth": {"number": 0, "variation": 1},
 						"Water": {"number": 0, "variation": 1},
 						"Wood": {"number": 0, "variation": 1}
-					},
-					"Relic": {
-						"Elder Sign": {"number": 1, "variation": 0, "chance": 0.3}
 					}
 				},
 				"envObjects": {
@@ -174,10 +188,11 @@
 	"museum": {
 		"name": "Miskatonic Museum",
 		"numOfFloors": 1,
+		"recoversSpirit": true,
 		"floors": {
 			"1": {
 				"isRandom": false,
-				"excludeNonLitTiles": true,
+				"allTilesAtLeastAmbientLit": true,
 				"mapSize": "small",
 				"maxXpos": 20,
 				"maxYpos": 19,
@@ -264,9 +279,14 @@
 						"21-14",
 						"21-19"
 					],
+					"Museum Welcome Sign": ["14-19"],
 					"Desk With Chair": ["17-19"],
-					"Display Case Vertical": ["12-14", "20-13"],
-					"Dinosaur Skeleton": ["12-19"]
+					"Display Case Vertical": ["12-14", "20-14"],
+					"Display Case Square One": ["12-13"],
+					"Display Case Square Two": ["20-13", "14-13"],
+					"Display Case Square Three": ["19-13"],
+					"Dinosaur Skeleton": ["13-19"],
+					"Dinosaur Skeleton On Table": ["19-19"]
 				},
 				"initialSpawn": {
 					"xPos": 16,

@@ -335,7 +335,7 @@ class Tool extends React.Component {
 		if (classes.includes('tiles') && (this.state.neighborSelectMode ||
 			this.state.altClassOpeningOneSelectMode || this.state.altClassOpeningTwoSelectMode)) {
 			if (this.state.neighborSelectMode) {
-				let currentNeighborsState = {...this.state.gridPieceData[this.state.gridTileIdSelected].neighbors};
+				let currentNeighborsState = this.deepCopy(this.state.gridPieceData[this.state.gridTileIdSelected].neighbors);
 				if (currentNeighborsState[this.state.neighborTypeSelection] && currentNeighborsState[this.state.neighborTypeSelection].includes(id)) {
 					currentNeighborsState[this.state.neighborTypeSelection] = currentNeighborsState[this.state.neighborTypeSelection].filter(tilePos => tilePos !== id);
 				} else {
@@ -534,10 +534,10 @@ class Tool extends React.Component {
 	}
 
 	deletePiece = () => {
-		let pieces = {...this.state.pieces};
+		let pieces = this.deepCopy(this.state.pieces);
 		delete pieces[this.state.gridPieceName];
 		this.setState({pieces, gridPieceName: '', gridPieceData: {}}, () => {
-			this.socket.emit('save-map-data', JSON.stringify(this.state.pieces));
+			this.socket.emit('save-map-data', JSON.stringify(this.state.pieces), this.state.mapFile);
 		});
 		this.initGridCells();
 	}
@@ -554,6 +554,26 @@ class Tool extends React.Component {
 		if (e.target.checked) {
 			this.setState({neighborTypeSelection: e.target.value});
 		}
+	}
+
+	deepCopy(object) {
+		let objectCopy = null;
+
+		if (Array.isArray(object)) {
+			objectCopy = [];
+			object.forEach((arrayItem, index) => {
+				objectCopy[index] = this.deepCopy(arrayItem);
+			});
+		} else if (!object || typeof object !== 'object') {
+			objectCopy = object;
+		} else {
+			objectCopy = {};
+			for (const [key, value] of Object.entries(object)) {
+				objectCopy[key] = typeof value === 'object' ? this.deepCopy(value) : value;
+			}
+		}
+
+		return objectCopy;
 	}
 
 	componentDidMount() {

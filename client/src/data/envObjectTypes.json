@@ -3,7 +3,23 @@
     "unselectable": true,
     "isPassable": false
   },
+  "Museum Welcome Sign": {
+    "unselectable": true,
+    "isPassable": false
+  },
   "Display Case Vertical": {
+    "unselectable": true,
+    "isPassable": false
+  },
+  "Display Case Square One": {
+    "unselectable": true,
+    "isPassable": false
+  },
+  "Display Case Square Two": {
+    "unselectable": true,
+    "isPassable": false
+  },
+  "Display Case Square Three": {
     "unselectable": true,
     "isPassable": false
   },
@@ -11,10 +27,19 @@
     "unselectable": true,
     "isPassable": false
   },
+  "Dinosaur Skeleton On Table": {
+    "unselectable": true,
+    "isPassable": false
+  },
   "Fancy Wall Light": {
     "type": "light",
     "range": 5,
     "unselectable": true
+  },
+  "Hole": {
+    "description": "A large hole in the ground that does not seem to be man-made. Peering into it, you see only darkness. But...you hear the faintest of sounds...is something moving down there in the depths?",
+    "isEnvObject": true,
+    "isPassable": false
   },
   "Spike Trap": {
     "description": "A floor panel with holes in it (out of which nasty spikes project upon triggering), that seems to be triggered by stepping on it. If it can't be disarmed, probably best to go around...",
@@ -55,7 +80,7 @@
     "isHidden": false,
     "isPassable": false,
     "isDestructible": false,
-    "canSpawnCreature": ["ghoul", "ghoul", "ghoul", "shoggoth"],
+    "canSpawnCreature": ["ghoul", "ghoul", "ghast"],
     "mayContain": {
       "Gems": {
         "max": 2
@@ -71,6 +96,60 @@
       },
       "Knife": {
         "max": 1
+      }
+    }
+  },
+  "Trunk": {
+    "description": "A good sized chest made of wood, leather, and steel, likely left by someone wanting to keep their possessions safe. Possessions that could be valuable. Or just junk.",
+    "isEnvObject": true,
+    "type": "container",
+    "isHidden": false,
+    "isPassable": false,
+    "isDestructible": false,
+    "hasTrap": false,
+    "locked": false,
+    "mayContain": {
+      "Gems": {
+        "max": 2
+      },
+      "Alcohol": {
+        "max": 2
+      },
+      "Cloth": {
+        "max": 3
+      },
+      "Holy Water": {
+        "max": 1
+      },
+      "Knife": {
+        "max": 1
+      },
+      "Machete": {
+        "max": 1
+      },
+      "Electric Torch": {
+        "max": 1
+      },
+      "Lantern": {
+        "max": 1
+      },
+      "Oil": {
+        "max": 30
+      },
+      "First Aid Kit": {
+        "max": 1
+      },
+      "Leather Jacket": {
+        "max": 1
+      },
+      "S And W Revolver": {
+        "max": 1
+      },
+      "Handgun Ammo": {
+        "max": 10
+      },
+      "Shotgun Ammo": {
+        "max": 6
       }
     }
   }

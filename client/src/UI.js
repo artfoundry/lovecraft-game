@@ -3,8 +3,9 @@ import {
 	CharacterControls,
 	CharacterInfoPanel,
 	CreatureInfoPanel,
-	ObjectInfoPanel,
+	ObjectInfoWindow,
 	ModeInfoPanel,
+	RestWindow,
 	PartyInfoPanel,
 	JournalWindow,
 	ConversationWindow,
@@ -14,8 +15,7 @@ import {
 	GameOptions
 } from './UIElements';
 import PopupHelp from './data/popupHelp.json';
-import {Music} from './Audio';
-import {convertCoordsToPos, notEnoughSpaceInInventory, deepCopy} from './Utils';
+import {removeIdNumber, convertCoordsToPos, notEnoughSpaceInInventory, deepCopy} from './Utils';
 import './css/ui.css';
 
 class UI extends React.PureComponent {
@@ -29,12 +29,6 @@ class UI extends React.PureComponent {
 			turnInfo: React.createRef(),
 			log: React.createRef()
 		};
-		this.audioSelectors = {
-			music: {
-				catacombs: {},
-				museum: {}
-			}
-		};
 
 		this.state = {
 			showGameOptions: false,
@@ -42,6 +36,7 @@ class UI extends React.PureComponent {
 			showHelpPopup: null,
 			showJournal: false,
 			showConversation: false,
+			showRestWindow: false,
 			logText: this.props.logText,
 			controlBarMinimized: false,
 			selectedControlTab: '',
@@ -113,8 +108,6 @@ class UI extends React.PureComponent {
 			const playerInfo = this.props.playerCharacters[id];
 			if (playerInfo) {
 				// for setting up Pickup action and Open container/mineable action buttons
-				let mapObjectsOnPcTiles = [];
-				let containersNextToPc = [];
 				let mineablesNextToPc = [];
 				let trapsNextToPc = [];
 				const hasEnoughLight = (id === 'archaeologist' && playerInfo.lightTime >= this.props.lightTimeCosts.expertMining) ||
@@ -125,14 +118,10 @@ class UI extends React.PureComponent {
 					const yDelta = Math.abs(playerInfo.coords.yPos - objInfo.coords.yPos);
 					const objInfoAndId = {...objInfo, id: objId};
 					if (xDelta <= 1 && yDelta <= 1) {
-						if (objInfo.isEnvObject && objInfo.type === 'container' && (!objInfo.isOpen || objInfo.containerContents.length > 0)) {
-							containersNextToPc.push(objInfoAndId);
-						} else if (objInfo.isEnvObject && objInfo.type === 'mineable' && (!objInfo.isDestroyed || objInfo.containerContents.length > 0)) {
+						if (objInfo.isEnvObject && objInfo.type === 'mineable' && (!objInfo.isDestroyed || objInfo.containerContents.length > 0)) {
 							mineablesNextToPc.push(objInfoAndId);
 						} else if (objInfo.isEnvObject && objInfo.type === 'trap' && objInfo.isDiscovered && !objInfo.isDestroyed && !objInfo.isSprung) {
 							trapsNextToPc.push(objInfoAndId);
-						} else if (!objInfo.isEnvObject) {
-							mapObjectsOnPcTiles.push(objInfoAndId);
 						}
 					}
 				}
@@ -163,8 +152,6 @@ class UI extends React.PureComponent {
 						setShowDialogProps={this.props.setShowDialogProps}
 						dropItemToPC={this.dropItemToPC}
 						setMapObjectSelected={this.props.setMapObjectSelected}
-						mapObjectsOnPcTiles={mapObjectsOnPcTiles}
-						containersNextToPc={containersNextToPc}
 						mineablesNextToPc={mineablesNextToPc}
 						trapsNextToPc={trapsNextToPc}
 						screenData={this.props.screenData}
@@ -173,6 +160,7 @@ class UI extends React.PureComponent {
 						helpPopupButton={this.helpPopupButton}
 						showHelpSystem={this.state.showHelpSystem}
 						toggleHelpPopup={this.toggleHelpPopup}
+						updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
 					/>
 				)
 			}
@@ -564,8 +552,8 @@ class UI extends React.PureComponent {
 
 	/**
 	 * adds object to map and removes from PC inv when an object is dropped
-	 * @param draggedItemCount: number (comes from callback from ObjectInfoPanel - only used for stackable items)
-	 * @param sourceItemCount: number (comes from callback from ObjectInfoPanel - only used for stackable items)
+	 * @param draggedItemCount: number (comes from callback from ObjectInfoWindow - only used for stackable items)
+	 * @param sourceItemCount: number (comes from callback from ObjectInfoWindow - only used for stackable items)
 	 */
 	addObjectToMap = (draggedItemCount, sourceItemCount) => {
 		if (!this.state.objectSelected || Object.keys(this.state.objectSelected).length === 0) {
@@ -594,7 +582,7 @@ class UI extends React.PureComponent {
 				}
 			}
 			const newMapObjId = draggedObjGenericId + (highestIdNum + 1);
-			delete draggedObject.id;
+			draggedObject.id = newMapObjId;
 			mapObjects[newMapObjId] = {
 				...draggedObject,
 				coords: sourcePcData.coords
@@ -638,6 +626,7 @@ class UI extends React.PureComponent {
 		if (activeEnvObj.type === 'container') {
 			activeEnvObj.isOpen = true;
 			changeMade = true;
+			this.props.toggleAudio('environments', removeIdNumber(envObjectId), {useReverb: true});
 		} else if (activeEnvObj.type === 'mineable' && !activeEnvObj.isDestroyed) {
 			if (activeEnvObj.isDestructible) {
 				activeEnvObj.isDestroyed = true;
@@ -664,13 +653,13 @@ class UI extends React.PureComponent {
 
 		// use this version for object panels on mobile
 		if (panelType === 'object' && (this.props.screenData.isNarrow || this.props.screenData.isShort)) {
-			const left = this.props.screenData.isNarrow ? 0 : (window.innerWidth - panelWidth) / 2;
-			coords = {left, top: (window.innerHeight - panelHeight) / 2};
+			const left = this.props.screenData.isNarrow ? 0 : (window.innerWidth / 2) - (panelWidth / 2);
+			coords = {left, top: (window.innerHeight / 2) - (panelHeight / 2)};
 		// use this version for full screen or mobile context menu
 		} else {
-			const xBuffer = 30;
+			const xBuffer = 100;
 			const yBuffer = 80;
-			const leftMod = x > (window.innerWidth - panelWidth) ? -(panelWidth + xBuffer) : 0;
+			const leftCoord = x > (window.innerWidth - panelWidth) ? window.innerWidth - panelWidth - xBuffer : x;
 			const halfScreenHeight = this.props.screenData.height / 2;
 			const controlBarTopPos = this.props.screenData.height - this.props.uiControlBarHeight - yBuffer;
 			let topMod = 0;
@@ -679,9 +668,9 @@ class UI extends React.PureComponent {
 				topMod = -yBuffer;
 			// else if object panel and clicked at lower half of screen, bump up a lot if below top of control bar height or a little if above control bar
 			} else if (panelType === 'object' && y > halfScreenHeight) {
-				topMod = y > controlBarTopPos ? -(yBuffer * 4) : -yBuffer;
+				topMod = y > controlBarTopPos ? -(yBuffer * 4) : -(yBuffer * 2);
 			}
-			coords = {left: x + leftMod, top: y + topMod};
+			coords = {left: leftCoord, top: y + topMod};
 		}
 		return coords;
 	}
@@ -703,7 +692,7 @@ class UI extends React.PureComponent {
 	showObjectPanel = () => {
 		const creatureCoords = this.props.getAllCharactersPos('creature', 'coords');
 		return (
-			<ObjectInfoPanel
+			<ObjectInfoWindow
 				objectInfo={this.state.objectSelected}
 				isDraggedObject={this.state.draggedObjectMetaData !== null}
 				setObjectSelected={this.setObjectSelected}
@@ -752,13 +741,7 @@ class UI extends React.PureComponent {
 				updateData.inventory.splice(itemBox, 1, itemId);
 			}
 		}
-		const updatedEquipmentData = {
-			equippedItems: updateData.equippedItems,
-			equippedLight: updateData.equippedLight,
-			lightRange: updateData.lightRange,
-			inventory: updateData.inventory
-		};
-		this.props.updateCharacters('player', updatedEquipmentData, id, lightingChanged, false, false);
+		this.props.updateCharacters('player', updateData, id, lightingChanged, false, false);
 	}
 
 	/**
@@ -785,28 +768,6 @@ class UI extends React.PureComponent {
 		return hasExtraAmmo;
 	}
 
-	toggleMusic = () => {
-		const music = this.audioSelectors.music[this.props.gameOptions.songName];
-		if (this.props.gameOptions.playMusic) {
-			music.volume = this.props.gameOptions.musicVolume;
-			music.play().catch(e => console.log(e));
-		} else if (music) {
-			music.pause();
-		}
-	}
-
-	adjustMusicComponentVolume = (value) => {
-		this.audioSelectors.music[this.props.gameOptions.songName].volume = value;
-	}
-
-	/**
-	 * Sets up selectors for music elements
-	 * @private
-	 */
-	_populateSfxSelectors() {
-		this.audioSelectors.music[this.props.gameOptions.songName] = document.getElementById(`music-${this.props.gameOptions.songName}-theme`);
-	}
-
 	toggleOptionsPanel = () => {
 		this.setState(prevState => ({showGameOptions: !prevState.showGameOptions}));
 	}
@@ -826,6 +787,10 @@ class UI extends React.PureComponent {
 		this.setState({showHelpPopup});
 	}
 
+	toggleShowRestWindow = () => {
+		this.setState(prevState => ({showRestWindow: !prevState.showRestWindow}));
+	}
+
 	helpPopupButton = (content, style) => {
 		const helpContent = PopupHelp[content] || content;
 		return (
@@ -841,19 +806,22 @@ class UI extends React.PureComponent {
 	}
 
 	/**
-	 * When user clicks on tile with object(s) on it or pickup action button, gathers list of objects, then calls functions to
+	 * When user clicks on tile with mapobject(s) or envobject on it, gathers list of objects, then calls functions to
 	 * set object info panel to closed (in case it was open for another tile), store the objects that are selected, and then open object info panel
 	 * @param clickedObjPos: string
 	 */
 	processTileClick = (clickedObjPos) => {
 		// if object was clicked on on the map, check if any other objects are on the same tile
 		let clickedObjects = [];
-		const allObjects = {...this.props.mapObjects, ...this.props.envObjects};
 		if (!this.props.objectSelected.isPickUpAction) {
-			for (const [objId, objInfo] of Object.entries(allObjects)) {
-				const objPos = convertCoordsToPos(objInfo.coords);
-				if (clickedObjPos === objPos) {
-					clickedObjects.push({...objInfo, id: objId});
+			if (this.props.objectSelected.objectList.length > 0) {
+				clickedObjects = deepCopy(this.props.objectSelected.objectList);
+			} else {
+				for (const [objId, objInfo] of Object.entries(this.props.envObjects)) {
+					const objPos = convertCoordsToPos(objInfo.coords);
+					if (clickedObjPos === objPos) {
+						clickedObjects.push({...objInfo, id: objId});
+					}
 				}
 			}
 		} else {
@@ -869,8 +837,6 @@ class UI extends React.PureComponent {
 
 	componentDidMount() {
 		if (this.initialUiLoad) {
-			this._populateSfxSelectors();
-			this.toggleMusic();
 			this.initialUiLoad = false;
 			this.setSelectedControlTab(this.props.activeCharacter);
 		}
@@ -906,10 +872,7 @@ class UI extends React.PureComponent {
 			}
 		}
 
-		if (prevProps.gameOptions.playMusic !== this.props.gameOptions.playMusic) {
-			this.toggleMusic();
-		}
-
+		// initiate conversation
 		if (this.props.conversationTarget && prevProps.conversationTarget !== this.props.conversationTarget) {
 			this.setShowConversation();
 		}
@@ -919,6 +882,8 @@ class UI extends React.PureComponent {
 		const conversationTargetData = this.props.conversationTarget ?
 			(this.props.conversationTarget.targetType === 'player' ?
 			this.props.playerCharacters[this.props.conversationTarget.id] :
+			this.props.conversationTarget.id.includes('story') ?
+			{id: this.props.conversationTarget.id, conversationStatus: {nextMessageKey: this.props.conversationTarget.id}, name: {first: '', last: ''}} :
 			this.props.npcs[this.props.conversationTarget.id]) : null;
 		return (
 			<div id='ui-container'>
@@ -984,11 +949,21 @@ class UI extends React.PureComponent {
 						updateCurrentTurn={this.props.updateCurrentTurn}
 						showHelpSystem={this.state.showHelpSystem}
 						helpPopupButton={this.helpPopupButton}
+						showRestWindow={this.state.showRestWindow}
+						toggleShowRestWindow={this.toggleShowRestWindow}
 					/>}
 					{/*<div className='minimize-button general-button' onClick={() => {*/}
 					{/*	this.minimizePanel('turnInfo');*/}
 					{/*}}>_</div>*/}
 				</div>
+
+				{this.state.showRestWindow &&
+				<RestWindow
+					toggleShowRestWindow={this.toggleShowRestWindow}
+					partyIsResting={this.props.partyIsResting}
+					processResting={this.props.processResting}
+				/>
+				}
 
 				{this.state.showJournal &&
 				<JournalWindow
@@ -1000,12 +975,17 @@ class UI extends React.PureComponent {
 				{this.state.showConversation &&
 				<ConversationWindow
 					storyProgress={this.props.storyProgress}
+					updateStoryProgress={this.props.updateStoryProgress}
 					conversationTargetData={conversationTargetData}
+					identifiedThings={this.props.identifiedThings}
+					updateIdentifiedThings={this.props.updateIdentifiedThings}
 					setConversationTarget={this.props.setConversationTarget}
 					setShowConversation={this.setShowConversation}
 					applyUpdatesFromConv={this.props.applyUpdatesFromConv}
 					createdCharData={{gender: this.props.createdCharData.gender, name: this.props.createdCharData.name}}
 					partySize={Object.keys(this.props.playerCharacters).length}
+					partyJournal={this.props.partyJournal}
+					updateThreatsCallback={this.props.conversationTarget.updateThreatsCallback}
 				/>
 				}
 
@@ -1037,6 +1017,7 @@ class UI extends React.PureComponent {
 					creatureIsSelected={this.props.creatureIsSelected}
 					updateUnitSelectionStatus={this.props.updateUnitSelectionStatus}
 					creatureInfo={this.props.selectedCreatureInfo}
+					identifiedCreatures={this.props.identifiedThings.creatures}
 					showHelpSystem={this.state.showHelpSystem}
 					helpPopupButton={this.helpPopupButton}
 				/>
@@ -1077,18 +1058,13 @@ class UI extends React.PureComponent {
 					gameOptions={this.props.gameOptions}
 					toggleOptionsPanel={this.toggleOptionsPanel}
 					updateGameOptions={this.props.updateGameOptions}
-					adjustMusicComponentVolume={this.adjustMusicComponentVolume}
+					adjustMusicComponentVolume={this.props.adjustMusicComponentVolume}
 					screenData={this.props.screenData}
 					toggleNeedToSaveData={this.props.toggleNeedToSaveData}
 					setShowDialogProps={this.props.setShowDialogProps}
 					resetAllData={this.props.resetAllData}
 				/>
 				}
-
-				<Music
-					idProp={`music-${this.props.gameOptions.songName}-theme`}
-					sourceName={this.props.gameOptions.songName}
-				/>
 			</div>
 		);
 	}

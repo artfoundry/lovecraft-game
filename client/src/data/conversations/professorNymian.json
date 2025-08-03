@@ -1,6 +1,6 @@
 {
   "professor-1": {
-    "text": "{n}, welcome my friend to Miskatonic University.\nI was hoping you would come as soon as you had received my letter. We have much to discuss, and I'm sure you have many questions.",
+    "text": "{n}, welcome, my friend, to Miskatonic University!\nI was hoping you would come as soon as you had received my letter. We have much to discuss, and I'm sure you have many questions.",
     "responses": {
       "professor-2": "Yes, why have you called me here? What's going on?",
       "professor-3": "Damn straight! I was in the middle of something very important, so this better be...well even more important!"
@@ -54,7 +54,7 @@
     "classes": "professor-nymian"
   },
   "professor-8": {
-    "text": "Your assistance is much appreciated! The stairs to the catacombs are near the far wall behind me.\nBut first, speak to the other investigators I've invited who are scattered about the room. I would recommend enlisting one or two of them to help you.\nSome of the areas below are possibly unstable, and who knows what state Susan will be in when you find her.",
+    "text": "Your assistance is much appreciated! The stairs to the catacombs are near the far wall behind me.\nBut first, speak to the other investigators I've invited who are scattered about the lobby. I would recommend enlisting one or two of them to help you.\nSome of the areas below are possibly unstable, and who knows what state Susan will be in when you find her.\nAlso be sure to take light sources with you, and keep your eyes open, as there may be some hidden secrets or unpleasant surprises.",
     "responses": {
       "professor-10": "Thanks, I'll go speak to them now."
     },
@@ -78,8 +78,8 @@
             "id": "mission1",
             "updateType": "new",
             "title": "Rescue Dr. Winthrop",
-            "description": "Dr. Susan Winthrop has become lost in the catacombs beneath the Miskatonic Museum. Search the catacombs, find her, and bring her back, alive if possible.",
-            "goal": "Bring Dr. Winthrop back to the museum and speak to Professor Nymian."
+            "description": "Dr. Susan Winthrop has become lost in the catacombs beneath the Miskatonic Museum. Search the catacombs, find her, bring her back, alive if possible, and speak to Professor Nymian.",
+            "goal": "Bring Dr. Winthrop back to the museum."
           }
         }
       }
@@ -87,12 +87,29 @@
     "classes": "professor-nymian"
   },
   "professor-11": {
-    "text": "Have you found Dr. Winthrop?",
+    "text": "Yes, what can I do for you?",
     "responses": {
-      "professor-12": {"condition": "winthropAlive", "message": "Yes, here she is."},
-      "professor-12a": "Yes, but unfortunately we were unable to save her.",
+      "professor-12": {
+        "message": "I've found Dr. Winthrop, but she seems to have suffered some severe psychological trauma from the horrors we encountered down there.",
+        "checkJournal": {
+          "mission": "mission1",
+          "goal": "Completed"
+        },
+        "statusUpdate": {
+          "journalUpdate": {
+            "id": "mission1",
+            "updateType": "end",
+            "description": "Dr. Winthrop has been found and returned to Professor Nymian.",
+            "xp": 50
+          }
+        }
+      },
+      "professor-13": {
+        "message": "I've...seen things you wouldn't believe!",
+        "checkIdentified": true
+      },
       "end": {
-        "message": "Not yet",
+        "message": "Nothing right now.",
         "statusUpdate": {
           "nextMessageKey": "professor-11"
         }
@@ -101,46 +118,35 @@
     "classes": "professor-nymian"
   },
   "professor-12": {
-    "text": "Excellent! Dr. Winthrop, so good to have you back, safe and sound.",
+    "text": "Thank you! I will get Dr. Winthrop the care she needs at once. Anything else I can do for you?",
     "responses": {
+      "professor-13": {
+        "message": "What we saw down there...things...not of this earth!",
+        "checkIdentified": true
+      },
       "end": {
-        "message": "...",
+        "message": "No, thank you.",
         "statusUpdate": {
-          "nextMessageKey": "professor-13",
-          "journalUpdate": {
-            "id": "mission1",
-            "updateType": "end",
-            "xp": 100
-          }
-        }
-      }
-    },
-    "classes": "professor-nymian"
-  },
-  "professor-12a": {
-    "text": "No! Oh my dear friend, I have failed you...",
-    "responses": {
-      "end": {
-        "message": "...",
-        "statusUpdate": {
-          "nextMessageKey": "professor-13",
-          "journalUpdate": {
-            "id": "mission1",
-            "updateType": "end",
-            "xp": 70
-          }
+          "nextMessageKey": "professor-11"
         }
       }
     },
     "classes": "professor-nymian"
   },
   "professor-13": {
-    "text": "Ok, I have another task for you...",
+    "text": "Oh? Describe to me what you saw. Maybe I can make some sense of it.",
+    "responses": {
+      "professor-14": "(You describe all of the different horrors you encountered)"
+    },
+    "classes": "professor-nymian"
+  },
+  "professor-14": {
+    "text": "Quite horrifying indeed! Let me check my notes here...(he spends some time rifling through a notebook filled with sketches, diagrams, and notes, much of which looks alien to you).\nAh, here! Yes, I've heard about what you've described. I'll give you what information I can.\n(Creature information will be updated the next time you inspect them)",
     "responses": {
       "end": {
-        "message": "...",
+        "message": "Ok, thank you.",
         "statusUpdate": {
-          "nextMessageKey": "professor-13"
+          "nextMessageKey": "professor-11"
         }
       }
     },

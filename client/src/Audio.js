@@ -1,8 +1,10 @@
 import React from 'react';
 import {Filter, AdvancedReverb} from './WebAudioReverb';
 import {
-	StoneDoor, WindIndoors,
-	HandgunShot, GlassVialBreak, MeleeAttackBlade, MeleeAttackBlunt, AttackMiss,
+	MetalDoor, StoneDoor, Sarcophagus, Trunk, WindIndoors, Whispering,
+	SpikeTrap,
+	HandgunShot, ShotgunShot,
+	GlassVialBreak, MeleeAttackBlade, MeleeAttackBlunt, AttackMiss,
 	Gulp, Mine,
 	ElderThing, ElderThingAttack, ElderThingInjured, ElderThingDeath,
 	FlyingPolyp, FlyingPolypAttack, FlyingPolypInjured, FlyingPolypDeath,
@@ -11,7 +13,7 @@ import {
 	Shoggoth, ShoggothAttack, ShoggothInjured, ShoggothDeath,
 	MaleInjured, MaleDeath, FemaleInjured, FemaleDeath,
 	DiceMP3,
-	CatacombsTheme
+	CatacombsTheme, MuseumTheme
 } from './audioImports';
 
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -33,7 +35,13 @@ const audioPipelines = {};
 const sfxMap = {
 	catacombsDoor: StoneDoor,
 	catacombsBackground: WindIndoors,
+	museumDoor: MetalDoor,
+	museumBackground: Whispering,
+	sarcophagus: Sarcophagus,
+	trunk: Trunk,
+	spikeTrap: SpikeTrap,
 	handgunShot: HandgunShot,
+	shotgunShot: ShotgunShot,
 	glassVialBreak: GlassVialBreak,
 	meleeAttackBlade: MeleeAttackBlade,
 	meleeAttackBlunt: MeleeAttackBlunt,
@@ -67,10 +75,12 @@ const sfxMap = {
 	dice: DiceMP3
 };
 const reverbIRMap = {
-	catacombs: 0.8
+	catacombs: 0.8,
+	museum: 0.5
 };
 const musicMap = {
-	catacombs: CatacombsTheme
+	catacombs: CatacombsTheme,
+	museum: MuseumTheme
 };
 
 // https://blog.gskinner.com/archives/2019/02/reverb-web-audio-api.html
@@ -133,7 +143,7 @@ function SoundEffect(props) {
 
 function Music(props) {
 	return (
-		<audio id={props.idProp} preload='auto' className='audio-music' loop>
+		<audio ref={props.musicRef} id={props.id} preload='auto' className='audio-music' loop>
 			<source src={musicMap[props.sourceName]} type='audio/mpeg' />
 		</audio>
 	);

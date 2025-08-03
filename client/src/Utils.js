@@ -1,3 +1,4 @@
+// change 'itemName' to 'item-name'
 export function convertCamelToKabobCase(str) {
 	return str.replace(/([A-Z])/g, match => ('-' + match.toLowerCase()));
 }
@@ -8,6 +9,7 @@ export function removeIdNumber(id) {
 	return id.substring(0, idEndIndex);
 }
 
+// change 'itemName0' to 'item-name'
 export function convertObjIdToClassId(id) {
 	return convertCamelToKabobCase(removeIdNumber(id));
 }
@@ -16,8 +18,14 @@ export function capitalizeWord(word) {
 	return word[0].toUpperCase() + word.substring(1);
 }
 
+// change 'item-name' to 'itemName'
 export function convertKabobToCamelCase(str) {
 	return str.replace(/-[a-z]/g, match => match.substring(1).toUpperCase());
+}
+
+// change 'Item Name' to 'itemName'
+export function convertNameToId(str) {
+	return str[0].toLowerCase() + str.substring(1).replace(/ /g, '');
 }
 
 export function convertPosToCoords(pos) {
@@ -36,7 +44,12 @@ export function getDistanceBetweenTargets(coords1, coords2) {
 	return xDelta > yDelta ? xDelta : yDelta;
 }
 
-// Returns 'A', 'a', 'An', or 'an' depending on following word
+/**
+ * Returns 'A', 'a', 'An', or 'an' depending on following word
+ * @param word string (the word following the article)
+ * @param isCapital boolean (whether the article should be capitailzed
+ * @return string
+ */
 export function articleType(word, isCapital = false) {
 	const vowels = ['a', 'e', 'i', 'o', 'u'];
 	const firstLetter = word.substring(0,1);

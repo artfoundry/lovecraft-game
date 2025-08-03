@@ -1,4 +1,4 @@
-.world {
+#world {
 	position: relative;
 	margin: auto;
 	background-color: black;
@@ -71,6 +71,11 @@
 	box-sizing: border-box;
 }
 
+.unselectable {
+	cursor: initial;
+	pointer-events: none;
+}
+
 .in-range {
 	border: 2px solid yellow;
 	border-radius: 15px;
@@ -84,6 +89,20 @@
 }
 
 .creature.invisible {
-	opacity: 0;
+	opacity: 0.2;
 	transition: opacity 1s, transform 0.5s;
+	filter: blur(10px);
+	animation: shimmer 1s infinite linear;
+	background: linear-gradient(gray, darkslategray, lightgrey, gray);
+	background-size: 100% 500%;
+}
+
+@keyframes shimmer {
+	0% {
+		background-position: 0 0;
+	}
+
+	100% {
+		background-position: 0 500%;
+	}
 }

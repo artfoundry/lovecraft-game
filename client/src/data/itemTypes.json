@@ -27,17 +27,17 @@
   },
   "Pharmaceuticals": {
     "itemType": "Medicine",
-    "healingAmount": 3,
+    "healingAmount": 20,
     "healingType": "sanity",
     "stackable": true,
-    "description": "Western medicine's chemical solution to psychological and physiological maladies. Helps minimize anxiety and placate fears. For a while..."
+    "description": "Western medicine's chemical solution to psychological maladies. Restores some sanity and removes confused and panicking statuses."
   },
   "First Aid Kit": {
     "itemType": "Medicine",
     "healingAmount": 20,
     "healingType": "health",
     "stackable": true,
-    "description": "A basic first aid kit to patch up minor wounds."
+    "description": "A basic first aid kit to patch up minor wounds. More intelligence yields slightly better effects..."
   },
   "Leather Jacket": {
     "itemType": "Armor",
@@ -73,7 +73,7 @@
   "Alcohol": {
     "itemType": "Component",
     "stackable": true,
-    "description": "Component for making First Aid Kits, Pharmaceuticals, Molotov Cocktails, and Torches (requires create skill for the appropriate item)."
+    "description": "Component for making First Aid Kits, Pharmaceuticals, and Molotov Cocktails (requires create skill for the appropriate item)."
   },
   "Chemical": {
     "itemType": "Component",

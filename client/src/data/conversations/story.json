@@ -1,0 +1,26 @@
+{
+	"story-1": {
+		"text": "As you make your way through the enormous, dark, musty room, your dim light suddenly reveals a sight you can comprehend no more than you can forget.\n\nA...thing...stands just at the edge of shadow and light, somewhat cylindrical shape in a vertical orientation with five tentacles covered in some kind of ooze encircling its base, five fluttering, almost bat-like wings around its middle, and five what appear to be narrower tentacles each ending in an eye surrounding the top.\n\nThe creature seems to shudder and writhe slightly, sending feelings of revulsion throughout your entire body. As it does, something else happens: a pulsing, undulating mass forms in front of it, at first no bigger than ant hill. But it quickly grows, and as it does so, the pits and bulges in its surface begin to open, revealing in their places, chattering maws and searching eyes. The mass sprouts tentacles and tubular appendages in every direction as it grows and grows, until it's no smaller than an automobile!\n\nYour mind reels from this terrifying vision, yet you can't seem to pull your gaze away from it.",
+		"responses": {
+			"story-2": "(Make every attempt to look away)",
+			"story-3": "(Resign yourself to the fear, raising your torch higher and pulling out whatever meager weapon you have)"
+		},
+		"classes": ""
+	},
+	"story-2": {
+		"text": "You try with every fiber of your being to pull away. All of those eyes pierce deep into your mind. You suddenly hear a blood-curdling scream, and realize it's your own. There is no escape...",
+		"responses": {
+			"story-3": "(Pull out your weapon, knowing it may be the last time)"
+		},
+		"classes": ""
+	},
+	"story-3": {
+		"text": "Both creatures fix their eyes on you, and their tentacles and appendages twitch and worm their way in your direction...",
+		"responses": {
+			"end": {
+				"message": "(Continue)"
+			}
+		},
+		"classes": ""
+	}
+}

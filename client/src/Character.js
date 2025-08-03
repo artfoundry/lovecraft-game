@@ -1,5 +1,5 @@
 import React from 'react';
-import {removeIdNumber, diceRoll, deepCopy} from './Utils';
+import {removeIdNumber, convertNameToId, diceRoll, deepCopy} from './Utils';
 import ItemTypes from './data/itemTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
 import Skills from './data/skills.json';
@@ -43,6 +43,7 @@ class Character extends React.PureComponent {
 		};
 		this.items = props.isSavedData ? props.items : this._populateInvInfo('item', props.items, props.equippedItems);
 		this.maxItems = 12;
+		this.moveSpeed = props.baseMoveSpeed + (this.skills.moveIt ? this.skills.moveIt.modifier[this.skills.moveIt.level] : 0);
 		this.defense = props.isSavedData ? props.defense : this.calculateDefense(props.agility, props.equippedItems.armor ? this.items[props.equippedItems.armor].defense : 0);
 		this.damageReduction = this.equippedItems.armor ? this.items[this.equippedItems.armor].damageReduction : 0;
 		this.coords = props.isSavedData ? {...props.coords} : null;
@@ -86,13 +87,6 @@ class Character extends React.PureComponent {
 		let skillData = {};
 		charSkills.forEach(skillId => {
 			skillData[skillId] = {...Skills[skillId], level: 0};
-			if (skillData[skillId].skillType === 'create') {
-				skillData[skillId].light = [this.lightTimeCosts.create];
-			} else if (skillId === 'mine') {
-				skillData[skillId].light = [this.lightTimeCosts.mine];
-			} else if (skillId === 'expertMining') {
-				skillData[skillId].light = [this.lightTimeCosts.expertMining];
-			}
 		});
 		return skillData;
 	}
@@ -117,7 +111,7 @@ class Character extends React.PureComponent {
 	 *  updateCharacters: function (from App),
 	 *  updateLog: function (from App),
 	 *  toggleAudio function (from App),
-	 *  sfxSelectors object (sound fx el selectors from App)
+	 *  sfxSelectors object (sound fx el selector aliases from App for multiple weapons that use the same sound)
 	 *  callback: function (from App - calls toggleWeapon, _removeDeadFromTurnOrder if creature dies, then updateActivePlayerActions)
 	 * )
 	 */
@@ -130,7 +124,7 @@ class Character extends React.PureComponent {
 		let updatedPcData = deepCopy(pcData);
 		let updatedTargetData = deepCopy(targetData);
 		const pcPronoun = pcData.gender === 'Male' ? 'his' : 'her';
-		const targetName = targetData.type === 'player' ? targetData.name : 'the ' + targetData.name;
+		const targetName = targetData.type === 'player' ? targetData.name.first : 'the ' + targetData.name;
 		const weaponInfo = updatedPcData.weapons[actionId];
 		const equippedSide = pcData.equippedItems.loadout1.right === actionId ? 'right' : 'left';
 		const equippedGunType = weaponInfo.gunType;
@@ -163,7 +157,7 @@ class Character extends React.PureComponent {
 				attackTotal = hitRoll + pcData.agility + steadyHandModifier + sureShotModifier + rangedStrHitModifier;
 				attackTotal -= (Math.round(noGunKnowledgeMod * attackTotal) + Math.round(goBallisticModifier * attackTotal));
 				isHit = attackTotal >= defenseTotal;
-				if (isHit && !failFromCurse) {
+				if (isHit && !failFromCurse && (!weaponInfo.targetRace || weaponInfo.targetRace === targetData.race)) {
 					const attackDifference = attackTotal - defenseTotal;
 					const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 2);
 					damage = rangedStrHitModifier + actionStats.damage + damageModBasedOnAttack;
@@ -178,7 +172,7 @@ class Character extends React.PureComponent {
 				if (failFromCurse) {
 					updateLog(`${pcData.name.first} tries to attack ${targetName}, but ${pcPronoun} curse causes the attack to miss!`);
 				} else {
-					updateLog(`${pcData.name.first} attacks ${targetName} with the ${weaponInfo.name}, scores ${attackTotal} to hit...and ${isHit ? `does ${damage} damage!` : `misses (${targetData.name} scored ${defenseTotal} for defense).`}`);
+					updateLog(`${pcData.name.first} attacks ${targetName} with the ${weaponInfo.name}, scores ${attackTotal} to hit...and ${isHit ? `does ${damage} damage!` : `misses (${targetName} scored ${defenseTotal} for defense).`}`);
 				}
 			}
 		} else {
@@ -215,7 +209,7 @@ class Character extends React.PureComponent {
 			if (failFromCurse) {
 				updateLog(`${pcData.name.first} tries to attack ${targetName}, but ${pcPronoun} curse causes the attack to miss!`);
 			} else {
-				updateLog(`${pcData.name.first} ${sacrificialStrikeText}attacks ${targetName} ${fromShadowsText}with the ${weaponInfo.name}, scores ${attackTotal} to hit...and ${isHit ? `does ${damageTotal} damage!` : `misses (${targetData.name} scored ${defenseTotal} for defense).`}`);
+				updateLog(`${pcData.name.first} ${sacrificialStrikeText}attacks ${targetName} ${fromShadowsText}with the ${weaponInfo.name}, scores ${attackTotal} to hit...and ${isHit ? `does ${damageTotal} damage!` : `misses (${targetName} scored ${defenseTotal} for defense).`}`);
 			}
 		}
 
@@ -223,6 +217,8 @@ class Character extends React.PureComponent {
 			if (equippedGunType) {
 				if (equippedGunType === 'handgun') {
 					toggleAudio('weapons', sfxSelectors.handgun, {useReverb: true});
+				} else if (equippedGunType === 'shotgun') {
+					toggleAudio('weapons', sfxSelectors.shotgun, {useReverb: true});
 				}
 			} else if (isHit && !failFromCurse) {
 				toggleAudio('weapons', sfxSelectors[weaponInfo.damageType], {useReverb: true});
@@ -257,7 +253,7 @@ class Character extends React.PureComponent {
 		const healItem = pcData.items[actionId].name;
 		const targetStat = actionStats.healingType === 'health' ? 'currentHealth' : 'currentSanity';
 		const startingStatValue = actionStats.healingType === 'health' ? targetData.startingHealth : targetData.startingSanity;
-		let healAmount = Math.round(pcData.mentalAcuity / 2) + (actionStats.healingType === 'health' ? diceRoll(12) : diceRoll(4)) + actionStats.healingAmount;
+		let healAmount = actionStats.healingAmount + diceRoll(6) + (actionStats.healingType === 'health' ? Math.round(pcData.mentalAcuity / 2) : 0);
 		let updatedHealerData = deepCopy(pcData);
 		// if pc is healing itself, target points to healer object
 		let updatedTargetData = targetData.id !== pcData.id ? deepCopy(targetData) : updatedHealerData;
@@ -274,6 +270,10 @@ class Character extends React.PureComponent {
 
 		const healedStatValue = targetData[targetStat] + healAmount;
 		updatedTargetData[targetStat] = healedStatValue > startingStatValue ? startingStatValue : healedStatValue;
+		if (targetStat === 'currentSanity') {
+			delete updatedTargetData.statuses.confused;
+			delete updatedTargetData.statuses.panicking;
+		}
 		if (updatedHealerData.items[actionId].amount === 1) {
 			delete updatedHealerData.items[actionId];
 			const itemInvIndex = updatedHealerData.inventory.indexOf(actionId);
@@ -281,12 +281,13 @@ class Character extends React.PureComponent {
 		} else {
 			updatedHealerData.items[actionId].amount--;
 		}
+		const target = pcData.id === targetData.id ? (targetData.gender === 'Male' ? 'his' : 'her') : targetData.name.first + "'s";
+		updateLog(`${pcData.name.first} uses ${healItem} to recover ${target} ${targetStat.substring(7)}`);
+
 		updateCharacters('player', updatedTargetData, targetData.id, false, false, false, () => {
 			if (targetStat === 'currentSanity') {
 				toggleAudio('items', sfxSelectors[removeIdNumber(actionId)]);
 			}
-			const target = pcData.id === targetData.id ? (targetData.gender === 'Male' ? 'his' : 'her') : targetData.name.first + "'s";
-			updateLog(`${pcData.name.first} uses ${healItem} to recover ${target} ${targetStat.substring(7)}`);
 			if (targetData.id !== pcData.id) {
 				updateCharacters('player', updatedHealerData, pcData.id, false, false, false, callback);
 			} else {
@@ -303,20 +304,21 @@ class Character extends React.PureComponent {
 	 * @param calcPcLightChanges: function (from App)
 	 * @param lightCost: number (how much light time will be reduced)
 	 * @return {boolean}
-	 * @private
 	 */
-	_updatePcLights(updatedPartyData, calcPcLightChanges, lightCost) {
-		let lightingHasChanged = false;
+	updatePcLights = (updatedPartyData, calcPcLightChanges, lightCost) => {
+		let hasLightChanged = false;
 		for (const charData of Object.values(updatedPartyData)) {
 			if (charData.equippedLight && charData.lightTime > 0) {
-				const {equippedLightItem, lightTime, lightRange, hasLightChanged} = calcPcLightChanges(charData.id, lightCost);
+				const {equippedLightItem, lightTime, lightRange, lightingHasChanged} = calcPcLightChanges(charData.id, lightCost);
 				charData.items[charData.equippedLight] = {...equippedLightItem};
 				charData.lightTime = lightTime;
 				charData.lightRange = lightRange;
-				lightingHasChanged = hasLightChanged;
+				if (lightingHasChanged && !hasLightChanged) {
+					hasLightChanged = true;
+				}
 			}
 		}
-		return lightingHasChanged;
+		return hasLightChanged;
 	}
 
 	/**
@@ -335,7 +337,7 @@ class Character extends React.PureComponent {
 	 */
 	create = (props) => {
 		const {
-			itemType,
+			skillId,
 			activeCharId,
 			partyData,
 			updateCharacters,
@@ -347,10 +349,11 @@ class Character extends React.PureComponent {
 			calcPcLightChanges
 		} = props;
 		const currentPcData = partyData[activeCharId];
-		const createSkill = currentPcData.skills[itemType];
+		const createSkill = currentPcData.skills[skillId];
 		const materialCosts = createSkill.cost;
 		const lightCost = this.lightTimeCosts.create;
 		const itemName = createSkill.name.substring(7); // removes "Create "
+		const itemType = convertNameToId(itemName); // doesn't include id number
 		let updatedPartyData = deepCopy(partyData);
 		let activeCharItems = updatedPartyData[activeCharId].items;
 		let lightingHasChanged = false;
@@ -388,8 +391,8 @@ class Character extends React.PureComponent {
 			}
 		}
 
-		// _updatePcLights modifies updatedPartyData directly
-		lightingHasChanged = this._updatePcLights(updatedPartyData, calcPcLightChanges, lightCost);
+		// updatePcLights modifies updatedPartyData directly
+		lightingHasChanged = this.updatePcLights(updatedPartyData, calcPcLightChanges, lightCost);
 
 		let itemId = itemType + '0';
 		const itemCategory = createSkill.itemCategory;
@@ -399,6 +402,7 @@ class Character extends React.PureComponent {
 		} else if (itemCategory === 'weapons') {
 			itemData = {...WeaponTypes[itemName]};
 		}
+		// update amount of stackable weapons/items
 		if ((activeCharItems[itemId] || updatedPartyData[activeCharId].weapons[itemId]) && itemData.stackable) {
 			if (itemCategory === 'items') {
 				activeCharItems[itemId].amount++;
@@ -424,6 +428,7 @@ class Character extends React.PureComponent {
 							}
 						}
 					}
+					itemData.time = 0;
 				}
 				itemId = itemType + greatestItemNumInInv;
 				if (itemData.stackable) {
@@ -435,8 +440,11 @@ class Character extends React.PureComponent {
 				}
 				itemData.name = itemName;
 				itemData.id = itemId;
+				itemData.isIdentified = true;
+
 				// now add item to items/weapons and inv
 				addItemToPlayerInventory(itemData, itemId, activeCharId, false, true);
+
 			// otherwise, not new item (stacked item and count was already updated), so just update actions
 			} else {
 				updateActivePlayerActions();
@@ -445,9 +453,13 @@ class Character extends React.PureComponent {
 	}
 
 	/**
-	 *
+	 * Mining skill
 	 * @param props: object {
-	 *
+	 *      partyData: object
+	 *      updateCharacters: function
+	 *      calcPcLightChanges: function
+	 *      toggleAudio: function
+	 *      isExpertMining: boolean
 	 * }
 	 */
 	mine = (props) => {
@@ -456,8 +468,8 @@ class Character extends React.PureComponent {
 		const lightCost = isExpertMining ? this.lightTimeCosts.expertMining : this.lightTimeCosts.mine;
 		const expertMiningSkill = partyData.archaeologist.skills.expertMining;
 
-		// _updatePcLights modifies updatedPartyData directly
-		const lightingHasChanged = this._updatePcLights(updatedPartyData, calcPcLightChanges, lightCost);
+		// updatePcLights modifies updatedPartyData directly
+		const lightingHasChanged = this.updatePcLights(updatedPartyData, calcPcLightChanges, lightCost);
 		if (isExpertMining) {
 			updatedPartyData.archaeologist.currentSpirit -= expertMiningSkill.spirit[expertMiningSkill.level];
 		}
@@ -539,7 +551,7 @@ class Character extends React.PureComponent {
 	}
 
 	/**
-	 * Skill (Priest): provide buff to party, reducing sanity loss until
+	 * Skill (Priest): provide buff to party, reducing sanity loss for certain num of turns
 	 * Called from toggleActionButton in App
 	 * @param props: object {
 	 *     partyData: object,
@@ -670,8 +682,8 @@ class Character extends React.PureComponent {
 		if (disarmTrapSkill.light[disarmTrapSkill.level] > thiefData.lightTime) {
 			setShowDialogProps(true, notEnoughLightDialogProps);
 		} else {
-			// _updatePcLights modifies updatedPartyData directly
-			lightingHasChanged = this._updatePcLights(updatedPartyData, calcPcLightChanges, lightCost);
+			// updatePcLights modifies updatedPartyData directly
+			lightingHasChanged = this.updatePcLights(updatedPartyData, calcPcLightChanges, lightCost);
 			updatedPartyData.thief.currentSpirit -= disarmTrapSkill.spirit[disarmTrapSkill.level];
 			updateCharacters('player', updatedPartyData, null, lightingHasChanged, null, null, callback);
 			updateLog(`${thiefData.name.first} disarmed the trap.`);
@@ -713,8 +725,8 @@ class Character extends React.PureComponent {
 			index++;
 		}
 		if (itemFound) {
-			// _updatePcLights modifies updatedPartyData directly
-			lightingHasChanged = this._updatePcLights(updatedPartyData, calcPcLightChanges, lightCost);
+			// updatePcLights modifies updatedPartyData directly
+			lightingHasChanged = this.updatePcLights(updatedPartyData, calcPcLightChanges, lightCost);
 
 			updatedPartyData.occultResearcher.currentSpirit -= identifyRelicSkill.spirit[identifyRelicSkill.level];
 			updateCharacters('player', updatedPartyData, null, lightingHasChanged, false, false, () => {
@@ -732,7 +744,7 @@ class Character extends React.PureComponent {
 		const relicExpertSkillMod = pcData.id === 'occultResearcher' ? pcData.skills.relicExpertise.modifier[pcData.skills.relicExpertise.level] : 0;
 		let sanityReduction = 0;
 
-		//todo: need to decide what each relic will do
+		// todo: need to decide what each relic will do
 
 		updatedPcData.currentSpirit -= actionStats.spiritCost > updatedPcData.currentSpirit ? updatedPcData.currentSpirit : actionStats.spiritCost;
 		sanityReduction = actionStats.sanityCost - (relicExpertSkillMod * actionStats.sanityCost);

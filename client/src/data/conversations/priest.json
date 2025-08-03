@@ -97,7 +97,7 @@
     "classes": "priest"
   },
   "priest-6": {
-    "text": "Ok, I'll be at the Arkham Museum should you need me again.",
+    "text": "Ok, I'll be in the museum should you need me again.",
     "responses": {
       "end": {
         "message": "Ok",

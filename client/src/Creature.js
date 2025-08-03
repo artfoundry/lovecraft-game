@@ -1,5 +1,5 @@
 import React from 'react';
-import {removeIdNumber, diceRoll, deepCopy} from './Utils';
+import {removeIdNumber, articleType, diceRoll, deepCopy} from './Utils';
 import Statuses from './data/statuses.json';
 
 class Creature extends React.PureComponent {
@@ -11,6 +11,9 @@ class Creature extends React.PureComponent {
 		this.defenseRoll = 0;
 		this.reactionSoundDelay = 500; // for setTimeouts for when multiple pcs are targeted and output reaction sfx
 
+		//todo: move this to App
+		this.excessiveDamageLimit = 30;
+
 		this.id = props.id;
 		this.name = props.name;
 		this.type = props.type;
@@ -18,6 +21,7 @@ class Creature extends React.PureComponent {
 		this.isOldOne = props.isOldOne;
 		this.level = props.level;
 		this.expertisePoints = props.expertisePoints;
+		this.sanityEffect = props.sanityEffect;
 		this.coords = props.coords;
 		this.strength = props.strength;
 		this.agility = props.agility;
@@ -39,6 +43,7 @@ class Creature extends React.PureComponent {
 		this.skills = deepCopy(props.skills);
 		this.statuses = props.isSavedData ? props.statuses : {};
 		this.isRemoved = props.isSavedData ? props.isRemoved : false;
+		this.relatedMission = props.relatedMission || null;
 	}
 
 	rollForAttackAndDefense() {
@@ -60,8 +65,7 @@ class Creature extends React.PureComponent {
 		const halfAgility = Math.round(this.agility / 2); // bonus for str attacks
 		const targetStealth = targetData.statuses.stealthy;
 		const targetAgilityBonus = targetStealth ? targetStealth.modifier : 0;
-		let article = this.name[0].match(/[aeiouAEIOU]/) ? 'An' : 'A';
-		let logAttackMessage = `${article} ${this.name} lashes at ${targetData.name.first} with something disgusting...`;
+		let logAttackMessage = `${articleType(this.name, true)} ${this.name} lashes at ${targetData.name.first} with something disgusting...`;
 		let logDamageMessage = `The ${this.name} misses.`;
 		this.rollForAttackAndDefense();
 
@@ -71,7 +75,7 @@ class Creature extends React.PureComponent {
 			const attackDifference = hitTotal - defenseTotal;
 			const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 2);
 			damageTotal = halfStr + this.damage + damageModBasedOnAttack - targetData.damageReduction;
-			logAttackMessage = `A ${this.name} launches something at ${targetData.name.first}...`;
+			logAttackMessage = `${articleType(this.name, true)} ${this.name} launches something at ${targetData.name.first}...`;
 		} else if (this.attackType === 'melee') {
 			hitTotal = this.strength + halfAgility + this.hitRoll;
 			defenseTotal = targetData.defense + targetAgilityBonus + this.defenseRoll;
@@ -85,16 +89,16 @@ class Creature extends React.PureComponent {
 			const attackDifference = hitTotal - defenseTotal;
 			const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 2);
 			damageTotal = this.mentalAcuity + damageModBasedOnAttack - damageAdjustment;
-			logAttackMessage = `A ${this.name} psychically attacks ${targetData.name.first}...`;
-			logDamageMessage = `The ${this.name} fails to penetrate ${targetData.name.first}'s mind.`;
+			logAttackMessage = `${articleType(this.name, true)} ${this.name} psychically attacks ${targetData.name.first}...`;
+			logDamageMessage = `...but fails to penetrate ${targetData.name.first}'s mind.`;
 		}
 		damageTotal = damageTotal < 0 ? 0 : damageTotal;
 		isHit = hitTotal >= defenseTotal;
 
 		if (isHit) {
-			const qualifier = damageTotal > 20 ? 'brutally' : '';
-			const attackWord = this.attackType === 'psychic' ? ` invades ${targetData.name.first}'s sanity` : ` hits ${targetData.name.first}`;
-			logDamageMessage = `The ${this.name} ${qualifier}${attackWord}!`;
+			const qualifier = damageTotal > this.excessiveDamageLimit ? (this.attackType === 'psychic' ? 'greatly' : 'brutally') : '';
+			const attackWord = this.attackType === 'psychic' ? ` weakens ${targetData.name.first}'s sanity` : ` hits ${targetData.name.first}`;
+			logDamageMessage = `...and ${qualifier}${attackWord}!`;
 		}
 		updateLog(logAttackMessage);
 		updateLog(logDamageMessage);
@@ -156,7 +160,7 @@ class Creature extends React.PureComponent {
 		const targetAgilityBonus = targetStealth ? targetStealth.modifier : 0;
 		const defenseTotal = pcData[relevantStat] + targetAgilityBonus + this.defenseRoll;
 		let logMessage = '';
-		const logMessageAction = relevantStat === 'mentalAcuity' ? 'reaches out psychically' : 'reaches out with a disgusting appendage';
+		const logMessageAction = relevantStat === 'mentalAcuity' ? 'psychically probes' : 'reaches out with a disgusting appendage';
 		const targetPronoun = pcData.gender === 'Male' ? 'him' : 'her';
 
 		if (hitTotal >= defenseTotal) {
@@ -166,7 +170,7 @@ class Creature extends React.PureComponent {
 				turnsLeft: diceRoll(skill.maxTurns),
 				chanceOfEffect: skill.chanceOfEffect
 			}
-			logMessage = `A ${this.name} ${logMessageAction} to ${pcData.name.first} and causes ${targetPronoun} to be ${status}!`;
+			logMessage = `${articleType(this.name, true)} ${this.name} ${logMessageAction} to ${pcData.name.first} and causes ${targetPronoun} to be ${status}!`;
 			//todo: add skill specific audio?
 			toggleAudio('characters', removeIdNumber(this.id) + 'Attack', {useReverb: true, useVolume: true, soundCoords: this.coords});
 			this._updateSpirit(creatureData, skill.spirit, updateCharacters, () => {
@@ -176,7 +180,7 @@ class Creature extends React.PureComponent {
 				});
 			});
 		} else {
-			logMessage = `A ${this.name} ${logMessageAction} to ${pcData.name.first} but fortunately fails to make contact.`;
+			logMessage = `${articleType(this.name, true)} ${this.name} ${logMessageAction} to ${pcData.name.first} but fortunately fails to make contact.`;
 			this._updateSpirit(creatureData, skill.spirit, updateCharacters, updateTurnCallback);
 		}
 		updateLog(logMessage);
@@ -280,7 +284,7 @@ class Creature extends React.PureComponent {
 				individualPcData.currentSanity = damageResult < 0 ? 0 : damageResult;
 				// todo: add skill specific audio
 				toggleAudio('characters', 'shoggothAttack', {useReverb: true, useVolume: true, soundCoords: this.coords});
-				logMessage = `${individualPcData.name.first} succumbs to the horrible sound and its accompanying visions of dread.`;
+				logMessage = `${individualPcData.name.first} reels from the horrible sound and its accompanying visions of dread.`;
 				affectedPCs.push(individualPcData.id);
 			} else {
 				logMessage = `${individualPcData.name.first} resists the wail's effects.`;

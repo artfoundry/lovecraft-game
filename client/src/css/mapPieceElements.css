@@ -6,6 +6,7 @@
 
 .tile.secret:hover {
 	cursor: default;
+	pointer-events: none;
 }
 
 .map-cover {
@@ -174,6 +175,10 @@ as box-shadow greatly dims the lighting */
 	content: url('../assets/objects/krisKnife_sml.png');
 }
 
+.machete {
+	content: url('../assets/objects/machete_sml.png');
+}
+
 .baseball-bat {
 	content: url('../assets/objects/baseballBat_sml.png');
 }
@@ -243,8 +248,36 @@ as box-shadow greatly dims the lighting */
 .env-object {
 	position: absolute;
 	user-select: none;
-	filter: drop-shadow(1px 1px 1px black);
+	filter: drop-shadow(2px 2px 2px black);
 	transition: opacity 0.5s;
+}
+
+.desk-with-chair {
+	content: url('../assets/objects/desk-with-chair.png');
+}
+
+.display-case-vertical {
+	content: url('../assets/objects/display-case-vertical.png');
+}
+
+.display-case-square-one {
+	content: url('../assets/objects/display-case-square-1.png');
+}
+
+.display-case-square-two {
+	content: url('../assets/objects/display-case-square-2.png');
+}
+
+.display-case-square-three {
+	content: url('../assets/objects/display-case-square-3.png');
+}
+
+.dinosaur-skeleton {
+	content: url('../assets/objects/dinosaur-skeleton.png');
+}
+
+.dinosaur-skeleton-on-table {
+	content: url('../assets/objects/dinosaur-skeleton-on-table.png');
 }
 
 .door {
@@ -253,6 +286,31 @@ as box-shadow greatly dims the lighting */
 	user-select: none;
 	transition: opacity 0.5s;
 	z-index: 1;
+}
+
+.fancy-wall-light, .fancy-wall-light-top-wall {
+	content: url('../assets/objects/wall-light-fancy.png');
+}
+
+.fancy-wall-light-top-wall {
+	top: 5px;
+}
+
+.hole {
+	content: url('../assets/objects/hole_sml.png');
+	filter: none;
+}
+
+.museum-welcome-sign {
+	content: url('../assets/objects/museum-welcome-sign.png');
+}
+
+.rocky-mound {
+	content: url('../assets/objects/rocky-mound.png');
+}
+
+.rocky-mound-destroyed {
+	content: url('../assets/objects/rocky-mound-destroyed.png');
 }
 
 .sarcophagus {
@@ -275,38 +333,14 @@ as box-shadow greatly dims the lighting */
 	content: url('../assets/objects/spike-trap-triggered.png');
 }
 
-.rocky-mound {
-	content: url('../assets/objects/rocky-mound.png');
+.trunk {
+	content: url('../assets/objects/trunk.png');
 }
 
-.rocky-mound-destroyed {
-	content: url('../assets/objects/rocky-mound-destroyed.png');
+.trunk-open {
+	content: url('../assets/objects/trunk-open.png');
 }
 
-.fancy-wall-light, .fancy-wall-light-top-wall {
-	content: url('../assets/objects/wall-light-fancy.png');
-}
-
-.fancy-wall-light-top-wall {
-	top: 5px;
-}
-
-.desk-with-chair {
-	content: url('../assets/objects/desk-with-chair.png');
-}
-
-.display-case-vertical {
-	content: url('../assets/objects/display-case-vertical.png');
-}
-
-.dinosaur-skeleton {
-	content: url('../assets/objects/dinosaurSkeleton.png');
-}
-
-.unselectable {
-	cursor: initial;
-	pointer-events: none;
-}
 
 /* EFFECTS */
 

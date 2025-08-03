@@ -1,6 +1,6 @@
 import React from 'react';
 import {convertObjIdToClassId, diceRoll} from './Utils';
-import {ObjectInfoPanel} from './UIElements';
+import {ObjectInfoWindow} from './UIElements';
 import {SoundEffect} from './Audio';
 import PlayerCharacterTypes from './data/playerCharacterTypes.json';
 import ItemTypes from './data/itemTypes.json';
@@ -79,7 +79,8 @@ export default class CharacterCreation extends React.PureComponent {
 			objectSelected: null,
 			needToShowObjectPanel: false,
 			skillSelected: null,
-			needToShowSkillPanel: false
+			needToShowSkillPanel: false,
+			currentStep: 'name'
 		}
 	}
 
@@ -91,7 +92,7 @@ export default class CharacterCreation extends React.PureComponent {
 		const top = `calc(50% - ${this.props.objectPanelHeight / 2}px)`;
 		const left = this.props.screenData.isNarrow ? 0 : `calc(50% - ${this.props.objectPanelWidth / 2}px)`;
 		return (
-			<ObjectInfoPanel
+			<ObjectInfoWindow
 				objectInfo={this.state.objectSelected}
 				selectedObjPos={{top, left}}
 				isDraggedObject={false}
@@ -241,10 +242,8 @@ export default class CharacterCreation extends React.PureComponent {
 
 		for (const [id, profInfo] of Object.entries(PlayerCharacterTypes)) {
 			professionsList.push(
-				<div className='char-creation-prof' key={id}>
-					<div className={`char-creation-prof-header ${this.state.profession === id ? 'button-selected' : ''}`}
-					     onClick={() => this.updateValue({profession: id})}
-					>
+				<div className={`char-creation-prof${this.state.profession === id ? '' : ' hidden'}`} key={id}>
+					<div className='char-creation-prof-header'>
 						<div className={`char-creation-prof-icon ${convertObjIdToClassId(id)}`}></div>
 						<h4 className='font-fancy'>{profInfo.profession}</h4>
 					</div>
@@ -269,102 +268,166 @@ export default class CharacterCreation extends React.PureComponent {
 		return professionsList;
 	}
 
+	listProfessionNames = () => {
+		let professionsList = [];
+
+		for (const [id, profInfo] of Object.entries(PlayerCharacterTypes)) {
+			professionsList.push(
+				<div
+					key={id}
+					className={`char-creation-prof-header ${this.state.profession === id ? 'button-selected' : ''}`}
+					onClick={() => this.updateValue({profession: id})}
+				>
+					<div className={`char-creation-prof-icon ${convertObjIdToClassId(id)}`}></div>
+					<div className='font-fancy'>{profInfo.profession}</div>
+				</div>
+			);
+		}
+		return professionsList;
+	}
+
+	updateCurrentStep = (currentStep) => {
+		this.setState({currentStep});
+	}
+
 	render() {
+		const nameAndGenderEntered = this.state.firstName && this.state.gender;
+		const attributesRolled = nameAndGenderEntered && this.state.statsSaved.strength > 0 && this.state.statsSaved.agility > 0 && this.state.statsSaved.mentalAcuity > 0;
 		return (
 			<div id='char-creation-container'>
-				<h2 className='font-fancy'>War of the Old Ones</h2>
+				<h1 className='font-fancy'>War of the Old Ones</h1>
 
-				<form>
-					<h3><u>Create your lead investigator</u></h3>
+				<h2>Create your lead investigator</h2>
 
-					<h3 className='font-fancy'>~ Name ~</h3>
-					<div id='name-entry'>
-						<div>First: <input type='text' value={this.state.firstName} maxLength='14' onChange={evt => this.updateValue({firstName: evt.target.value})} /></div>
-						<div>Last (optional): <input type='text' value={this.state.lastName} maxLength={14 - this.state.firstName.length} onChange={evt => this.updateValue({lastName: evt.target.value})} /></div>
-					</div>
-					<div>Max 14 characters for the entire name.</div>
-
-					<h3 className='font-fancy'>~ Gender ~</h3>
-					<label>
-						<input
-							type="radio"
-							name="char-gender"
-							value="Male"
-							checked={this.state.gender === "Male"}
-							onChange={evt => this.updateValue({gender: evt.target.value})}
-						/>
-						Male
-					</label>
-					<label>
-						<input
-							type="radio"
-							name="char-gender"
-							value="Female"
-							checked={this.state.gender === "Female"}
-							onChange={evt => this.updateValue({gender: evt.target.value})}
-						/>
-						Female
-					</label>
-
-					<h3 className='font-fancy'>~ Attributes ~</h3>
-					<div>Roll your initial attributes: Roll up to three times, then choose one.</div>
-
-					<div id='char-creation-stat-roll-container'>
-						<SoundEffect key='sfx-Dice' idProp='sfx-dice' sourceName='dice' />
-						<div className={`char-creation-button roll-button${this.state.rollStarted ? ' button-disabled' : ''}`}
-						     onClick={() => {
-								 this.toggleDiceSound();
-								 this.rollStats();
-							 }}
-						>Roll</div>
-						<div>Strength:</div>
-						<div className={`stat-roll-box dice die-${this.state.statsRolled.roll1.strength}`}></div>
-						<div className={`stat-roll-box dice die-${this.state.statsRolled.roll2.strength}`}></div>
-						<div className={`stat-roll-box dice die-${this.state.statsRolled.roll3.strength}`}></div>
-						<div>Agility:</div>
-						<div className={`stat-roll-box dice die-${this.state.statsRolled.roll1.agility}`}></div>
-						<div className={`stat-roll-box dice die-${this.state.statsRolled.roll2.agility}`}></div>
-						<div className={`stat-roll-box dice die-${this.state.statsRolled.roll3.agility}`}></div>
-						<div>Mental Acuity:</div>
-						<div className={`stat-roll-box dice die-${this.state.statsRolled.roll1.mentalAcuity}`}></div>
-						<div className={`stat-roll-box dice die-${this.state.statsRolled.roll2.mentalAcuity}`}></div>
-						<div className={`stat-roll-box dice die-${this.state.statsRolled.roll3.mentalAcuity}`}></div>
-						<div>Now choose:</div>
-						<div className={`char-creation-button ${this.state.statsRolled.roll1.strength === 0 ? 'button-disabled' : ''} ${this.state.rollNumSaved === 1 ? 'button-selected' : ''}`}
-						     onClick={() => this.updateValue({statsSaved: this.state.statsRolled.roll1, rollNumSaved: 1})}
-						>1</div>
-						<div className={`char-creation-button ${this.state.statsRolled.roll2.strength === 0 ? 'button-disabled' : ''} ${this.state.rollNumSaved === 2 ? 'button-selected' : ''}`}
-						     onClick={() => this.updateValue({statsSaved: this.state.statsRolled.roll2, rollNumSaved: 2})}
-						>2</div>
-						<div className={`char-creation-button ${this.state.statsRolled.roll3.strength === 0 ? 'button-disabled' : ''} ${this.state.rollNumSaved === 3 ? 'button-selected' : ''}`}
-						     onClick={() => this.updateValue({statsSaved: this.state.statsRolled.roll3, rollNumSaved: 3})}
-						>3</div>
-					</div>
-					<div>(you can change it anytime before finishing character creation)</div>
-
-					<h3 className='font-fancy'>~ Professions ~</h3>
-					<div id='char-creation-prof-container'>
-						{<this.listProfessions />}
+				<div id='char-creation-form'>
+					<div id='creation-section-labels'>
+						<div className={`creation-step-label font-fancy${this.state.currentStep === 'name' ? ' creation-step-active' : ''}`}
+							onClick={() => this.updateCurrentStep('name')}
+						>Name and gender</div>
+						<div className={`creation-step-label font-fancy${this.state.currentStep === 'attributes' ? ' creation-step-active' : nameAndGenderEntered ? '' : ' button-disabled'}`}
+						     onClick={() => this.updateCurrentStep('attributes')}
+						>Attributes</div>
+						<div className={`creation-step-label font-fancy${this.state.currentStep === 'profession' ? ' creation-step-active' : attributesRolled ? '' : ' button-disabled'}`}
+						     onClick={() => this.updateCurrentStep('profession')}
+						>Professions</div>
+						<div id='profession-names' className={this.state.currentStep === 'profession' ? '' : 'hidden'}>
+							{<this.listProfessionNames />}
+						</div>
+						<div id='char-creation-finish'>
+							<div className={`char-creation-button ${(this.state.firstName.length === 0 || this.state.gender.length === 0 || this.state.rollNumSaved === 0 || !this.state.profession) ? 'hidden' : ''}`}
+							     onClick={() => {
+								     const pcData = {
+									     id: this.state.profession,
+									     name: {first: this.state.firstName, last: this.state.lastName},
+									     gender: this.state.gender,
+									     strength: this.state.statsSaved.strength + this.bonuses[this.state.profession].strength,
+									     agility: this.state.statsSaved.agility + this.bonuses[this.state.profession].agility,
+									     mentalAcuity: this.state.statsSaved.mentalAcuity + this.bonuses[this.state.profession].mentalAcuity
+								     };
+								     this.props.saveCreatedCharacter(pcData);
+							     }}
+							>Venture Forth!</div>
+						</div>
 					</div>
 
-					<hr />
-					<div id='char-creation-finish'>
-						<p>Once you've created your investigator, you can...</p>
-						<div className={`char-creation-button ${(this.state.firstName.length === 0 || this.state.gender.length === 0 || this.state.rollNumSaved === 0 || !this.state.profession) ? 'button-disabled' : ''}`}
-							onClick={() => {
-								const pcData = {
-									id: this.state.profession,
-									name: {first: this.state.firstName, last: this.state.lastName},
-									gender: this.state.gender,
-									strength: this.state.statsSaved.strength + this.bonuses[this.state.profession].strength,
-									agility: this.state.statsSaved.agility + this.bonuses[this.state.profession].agility,
-									mentalAcuity: this.state.statsSaved.mentalAcuity + this.bonuses[this.state.profession].mentalAcuity
-								};
-								this.props.saveCreatedCharacter(pcData);
-							}}
-						>Venture Forth!</div>
+					<div id='creation-section-options'>
+						<form>
+							<div id='name-entry' className={`${this.state.currentStep === 'name' ? '' : 'hidden'}`}>
+								<div>
+									<label htmlFor='first-name' className='name-entry-label'>First:</label>
+									<input id='first-name' type='text' value={this.state.firstName} maxLength='14' onChange={evt => {
+										this.updateValue({firstName: evt.target.value});
+									}} />
+								</div>
+								<div>
+									<label htmlFor='last-name' className='name-entry-label'>Last (optional):</label>
+									<input id='last-name' type='text' value={this.state.lastName} maxLength={14 - this.state.firstName.length} onChange={evt => {
+										this.updateValue({lastName: evt.target.value});
+									}} />
+								</div>
+								<div>Max 14 characters for the entire name.</div>
+							</div>
+							<h3 id='name-display' className={`font-fancy${this.state.currentStep === 'name' ? ' hidden' : ''}`}>{this.state.firstName} {this.state.lastName}</h3>
+
+							<div id='gender-entry' className={this.state.currentStep === 'attributes' ? 'bottom-rule' : ''}>
+								<label>
+									<input
+										type="radio"
+										name="char-gender"
+										value="Male"
+										checked={this.state.gender === "Male"}
+										onChange={evt => this.updateValue({gender: evt.target.value})}
+									/>
+									Male
+								</label>
+								<label>
+									<input
+										type="radio"
+										name="char-gender"
+										value="Female"
+										checked={this.state.gender === "Female"}
+										onChange={evt => this.updateValue({gender: evt.target.value})}
+									/>
+									Female
+								</label>
+							</div>
+						</form>
+
+						<div id='attribute-rolls' className={`${this.state.currentStep === 'attributes' ? '' : 'hidden'}`}>
+							<div>Roll your initial attributes, then choose one.</div>
+							<div id='char-creation-stat-roll-container'>
+								<SoundEffect key='sfx-Dice' idProp='sfx-dice' sourceName='dice' />
+								<div className={`char-creation-button roll-button${this.state.rollStarted ? ' button-disabled' : ''}`}
+								     onClick={() => {
+									     this.toggleDiceSound();
+									     this.rollStats();
+								     }}
+								>Roll</div>
+								<div>Strength:</div>
+								<div className={`stat-roll-box dice die-${this.state.statsRolled.roll1.strength}`}></div>
+								<div className={`stat-roll-box dice die-${this.state.statsRolled.roll2.strength}`}></div>
+								<div className={`stat-roll-box dice die-${this.state.statsRolled.roll3.strength}`}></div>
+								<div>Agility:</div>
+								<div className={`stat-roll-box dice die-${this.state.statsRolled.roll1.agility}`}></div>
+								<div className={`stat-roll-box dice die-${this.state.statsRolled.roll2.agility}`}></div>
+								<div className={`stat-roll-box dice die-${this.state.statsRolled.roll3.agility}`}></div>
+								<div>Mental Acuity:</div>
+								<div className={`stat-roll-box dice die-${this.state.statsRolled.roll1.mentalAcuity}`}></div>
+								<div className={`stat-roll-box dice die-${this.state.statsRolled.roll2.mentalAcuity}`}></div>
+								<div className={`stat-roll-box dice die-${this.state.statsRolled.roll3.mentalAcuity}`}></div>
+								<div>Now choose:</div>
+								<div className={`char-creation-button ${this.state.statsRolled.roll1.strength === 0 ? 'button-disabled' : ''} ${this.state.rollNumSaved === 1 ? 'button-selected' : ''}`}
+								     onClick={() => this.updateValue({statsSaved: this.state.statsRolled.roll1, rollNumSaved: 1})}
+								>1</div>
+								<div className={`char-creation-button ${this.state.statsRolled.roll2.strength === 0 ? 'button-disabled' : ''} ${this.state.rollNumSaved === 2 ? 'button-selected' : ''}`}
+								     onClick={() => this.updateValue({statsSaved: this.state.statsRolled.roll2, rollNumSaved: 2})}
+								>2</div>
+								<div className={`char-creation-button ${this.state.statsRolled.roll3.strength === 0 ? 'button-disabled' : ''} ${this.state.rollNumSaved === 3 ? 'button-selected' : ''}`}
+								     onClick={() => this.updateValue({statsSaved: this.state.statsRolled.roll3, rollNumSaved: 3})}
+								>3</div>
+							</div>
+						</div>
+						<div id='rolls-display' className={`${this.state.currentStep === 'profession' ? 'bottom-rule' : 'hidden'}`}>
+							<div>Str: {this.state.statsSaved.strength}</div>
+							<div>Agi: {this.state.statsSaved.agility}</div>
+							<div>MenAcu: {this.state.statsSaved.mentalAcuity}</div>
+							<div className={`char-creation-button ${this.state.statsRolled.roll1.strength === 0 ? 'button-disabled' : ''} ${this.state.rollNumSaved === 1 ? 'button-selected' : ''}`}
+							     onClick={() => this.updateValue({statsSaved: this.state.statsRolled.roll1, rollNumSaved: 1})}
+							>1</div>
+							<div className={`char-creation-button ${this.state.statsRolled.roll2.strength === 0 ? 'button-disabled' : ''} ${this.state.rollNumSaved === 2 ? 'button-selected' : ''}`}
+							     onClick={() => this.updateValue({statsSaved: this.state.statsRolled.roll2, rollNumSaved: 2})}
+							>2</div>
+							<div className={`char-creation-button ${this.state.statsRolled.roll3.strength === 0 ? 'button-disabled' : ''} ${this.state.rollNumSaved === 3 ? 'button-selected' : ''}`}
+							     onClick={() => this.updateValue({statsSaved: this.state.statsRolled.roll3, rollNumSaved: 3})}
+							>3</div>
+						</div>
+
+						<div id='char-creation-prof-container' className={`${this.state.currentStep === 'profession' ? '' : 'hidden'}`}>
+							{<this.listProfessions />}
+						</div>
 					</div>
-				</form>
+				</div>
+
 				{this.state.needToShowObjectPanel && <this.showObjectPanel />}
 				{this.state.needToShowSkillPanel && <this.showSkillPanel />}
 			</div>

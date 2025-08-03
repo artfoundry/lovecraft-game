@@ -15,6 +15,7 @@
     "startingHealth": 100,
     "startingSanity": 80,
     "startingSpirit": 90,
+    "baseMoveSpeed": 3,
     "skills": ["quickReload", "keenInvestigation", "steadyHand", "handgunKnowledge", "shotgunKnowledge", "mine"],
     "weapons": {
       "coltRevolver0": {
@@ -23,7 +24,7 @@
         "currentRounds": 6
       }
     },
-    "equippedItems": {"right": "coltRevolver0", "left": "lantern0", "armor": ""},
+    "equippedItems": {"right": "coltRevolver0", "left": "", "armor": ""},
     "items": {
       "lantern0": {
         "id": "lantern0",
@@ -38,7 +39,7 @@
         "amount": 6
       }
     },
-    "equippedLight": "lantern0"
+    "equippedLight": ""
   },
   "archaeologist": {
     "id": "archaeologist",
@@ -56,6 +57,7 @@
     "startingHealth": 80,
     "startingSanity": 100,
     "startingSpirit": 90,
+    "baseMoveSpeed": 3,
     "skills": ["alwaysOnTheLookout", "expertMining", "mine", "createTorch"],
     "weapons": {
       "pickaxe0": {
@@ -63,7 +65,7 @@
         "name": "Pickaxe"
       }
     },
-    "equippedItems": {"right": "pickaxe0", "left": "torch0", "armor": ""},
+    "equippedItems": {"right": "pickaxe0", "left": "", "armor": ""},
     "items": {
       "torch0": {
         "id": "torch0",
@@ -72,7 +74,7 @@
         "time": 100
       }
     },
-    "equippedLight": "torch0"
+    "equippedLight": ""
   },
   "chemist": {
     "id": "chemist",
@@ -88,8 +90,9 @@
     "agility": 4,
     "mentalAcuity": 7,
     "startingHealth": 60,
-    "startingSanity": 80,
+    "startingSanity": 10,
     "startingSpirit": 70,
+    "baseMoveSpeed": 3,
     "skills": ["createAcidConcoction", "createPharmaceuticals", "betterLivingThroughChemicals", "mine"],
     "weapons": {
       "acidConcoction0": {
@@ -98,7 +101,7 @@
         "currentRounds": 2
       }
     },
-    "equippedItems": {"right": "acidConcoction0", "left": "lantern0", "armor": ""},
+    "equippedItems": {"right": "acidConcoction0", "left": "", "armor": ""},
     "items": {
       "pharmaceuticals0": {
         "id": "pharmaceuticals0",
@@ -113,7 +116,7 @@
         "time": 300
       }
     },
-    "equippedLight": "lantern0"
+    "equippedLight": ""
   },
   "doctor": {
     "id": "doctor",
@@ -131,9 +134,10 @@
     "startingHealth": 110,
     "startingSanity": 100,
     "startingSpirit": 105,
+    "baseMoveSpeed": 3,
     "skills": ["createFirstAidKit", "medicalExpertise", "resuscitate", "mine"],
     "weapons": {},
-    "equippedItems": {"right": "", "left": "lantern0", "armor": ""},
+    "equippedItems": {"right": "", "left": "", "armor": ""},
     "items": {
       "firstAidKit0": {
         "id": "firstAidKit0",
@@ -154,7 +158,7 @@
         "time": 300
       }
     },
-    "equippedLight": "lantern0"
+    "equippedLight": ""
   },
   "priest": {
     "id": "priest",
@@ -172,6 +176,7 @@
     "startingHealth": 100,
     "startingSanity": 110,
     "startingSpirit": 105,
+    "baseMoveSpeed": 3,
     "skills": ["createHolyWater", "comfortTheFearful", "spiritualInspiration", "mine"],
     "weapons": {
       "holyWater0": {
@@ -184,7 +189,7 @@
         "name": "Baseball Bat"
       }
     },
-    "equippedItems": {"right": "holyWater0", "left": "torch0", "armor": ""},
+    "equippedItems": {"right": "holyWater0", "left": "", "armor": ""},
     "items": {
       "firstAidKit0": {
         "id": "firstAidKit0",
@@ -199,7 +204,7 @@
         "time": 100
       }
     },
-    "equippedLight": "torch0"
+    "equippedLight": ""
   },
   "veteran": {
     "id": "veteran",
@@ -217,6 +222,7 @@
     "startingHealth": 120,
     "startingSanity": 60,
     "startingSpirit": 90,
+    "baseMoveSpeed": 3,
     "skills": ["feelThePain", "goBallistic", "moveIt", "handgunKnowledge", "shotgunKnowledge", "machineGunKnowledge", "mine"],
     "weapons": {
       "remington0": {
@@ -261,6 +267,7 @@
     "startingHealth": 80,
     "startingSanity": 80,
     "startingSpirit": 80,
+    "baseMoveSpeed": 3,
     "skills": ["attackFromTheShadows", "stealthy", "disarmTrap", "handgunKnowledge", "mine"],
     "weapons": {
       "knife0": {
@@ -268,14 +275,14 @@
         "name": "Knife"
       }
     },
-    "equippedItems": {"right": "knife0", "left": "electricTorch0", "armor": ""},
+    "equippedItems": {"right": "knife0", "left": "", "armor": ""},
     "items": {
       "electricTorch0": {
         "id": "electricTorch0",
         "name": "Electric Torch"
       }
     },
-    "equippedLight": "electricTorch0"
+    "equippedLight": ""
   },
   "occultResearcher": {
     "id": "occultResearcher",
@@ -293,6 +300,7 @@
     "startingHealth": 60,
     "startingSanity": 80,
     "startingSpirit": 70,
+    "baseMoveSpeed": 3,
     "skills": ["identifyRelic", "sacrificialStrike", "relicExpertise", "krisKnifeExpertise", "mine"],
     "weapons": {
       "krisKnife0": {
@@ -300,7 +308,7 @@
         "name": "Kris Knife"
       }
     },
-    "equippedItems": {"right": "krisKnife0", "left": "lantern0", "armor": ""},
+    "equippedItems": {"right": "krisKnife0", "left": "", "armor": ""},
     "items": {
       "lantern0": {
         "id": "lantern0",
@@ -309,6 +317,6 @@
         "time": 300
       }
     },
-    "equippedLight": "lantern0"
+    "equippedLight": ""
   }
 }

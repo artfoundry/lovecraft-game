@@ -59,10 +59,9 @@
     "classes": "chemist"
   },
   "chemist-3": {
-    "text": "Doctor Wade contacted me and asked if I could come up here and provide my services to complement his medical knowledge.",
+    "text": "Dr. Winthrop contacted me and asked if I could come up here and provide my services in doing chemical analysis of the findings in the catacombs.",
     "responses": {
       "chemist-2": "And what's your background?",
-      "end": "Ok, I could definitely use your skill set. Why don't you join me?",
       "end-1": {
         "message": "Ok, I could definitely use your skill set. Why don't you join me?",
         "altNextMessageKey": "chemist-4",

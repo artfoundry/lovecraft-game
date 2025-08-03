@@ -23,7 +23,7 @@ h3 {
 .title-screen {
 	display: flex;
 	flex-direction: column;
-	justify-content: space-between;
+	gap: 20px;
 	align-items: center;
 	height: 100%;
 	padding-bottom: 30px;
@@ -42,7 +42,8 @@ h3 {
 	width: 150px;
 	text-align: center;
 	font-size: 30px;
-	margin-bottom: 50px;
+	line-height: 30px;
+	opacity: 0.8;
 }
 
 .no-click {
@@ -143,34 +144,36 @@ h3 {
 .help-popup {
 	position: absolute;
 	width: 300px;
-	height: 150px;
 	padding: 20px;
 	border: 1px solid blue;
 	filter: drop-shadow(4px 4px 2px black);
 }
 
-.help-popup-container {
+#help-popup-header {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 49px;
+	margin-bottom: 10px;
+}
+
+#help-popup-content {
 	display: flex;
 	flex-direction: row;
 	justify-content: space-between;
 	align-items: center;
-	height: 150px;
 }
 
-.help-popup-container .character-status-icon {
+#help-popup-content .character-status-icon {
 	width: 64px;
 }
 
-.help-popup-container .action-button:hover {
+#help-popup-content .action-button:hover {
 	cursor: default;
 }
 
 .help-popup-text {
 	width: 230px;
-}
-
-.help-popup-close {
-	position: absolute;
 }
 
 
@@ -200,10 +203,6 @@ h3 {
 	outline: initial;
 }
 
-.arrow-button-right {
-	transform: rotate(180deg);
-}
-
 .game-options-container {
 	display: flex;
 	flex-direction: column;
@@ -212,6 +211,7 @@ h3 {
 	width: 90%;
 	margin: 10px;
 	font-size: 20px;
+	overflow: auto;
 }
 
 .game-options-row {
@@ -377,6 +377,43 @@ h3 {
 	background-image: url('../assets/characters/players/occult-researcher.png');
 }
 
+#rest-window-container {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	padding: 10px;
+	overflow-y: auto;
+	box-sizing: border-box;
+	z-index: 5;
+}
+
+.rest-content {
+	font-size: 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	align-items: center;
+	text-align: center;
+}
+
+#rest-amount {
+	width: 55px;
+	margin-left: 10px;
+	font-size: 20px;
+}
+
+.campfire {
+	width: 700px;
+	height: 394px;
+	background-image: url('../assets/ui/campfire.gif');
+}
+
+.campfire-unlit {
+	width: 700px;
+	height: 394px;
+	background-image: url('../assets/ui/campfire-unlit.gif');
+}
+
 #journal-container, #conversation-window {
 	justify-content: normal;
 	width: 80%;
@@ -404,6 +441,7 @@ h3 {
 .journal-header {
 	padding: 10px;
 	border: 2px solid transparent;
+	cursor: pointer;
 }
 
 .journal-quest-detail {
@@ -524,6 +562,38 @@ h3 {
 	overflow: auto;
 }
 
+.char-info-equipment-container {
+	display: flex;
+	align-items: end;
+}
+
+.char-info-item-drop-container {
+	margin: 10px;
+}
+
+.char-info-item-drop-zone {
+	width: 64px;
+	height: 64px;
+	border: 1px solid seagreen;
+	border-radius: 5px;
+	background-image: url('../assets/ui/drop_item.png');
+}
+
+.char-info-equip-toggle-container {
+	margin: 10px;
+}
+
+.char-info-equip-toggle-button {
+	width: 64px;
+	height: 64px;
+	margin: 0;
+	padding: 0;
+	background-image: url('../assets/ui/swap-equipment.png');
+	background-size: 64px 64px;
+	background-position: center;
+	background-repeat: no-repeat;
+}
+
 .char-info-doll-container {
 	position: relative;
 	display: flex;
@@ -594,7 +664,7 @@ h3 {
 .character-panel-status-row {
 	display: flex;
 	flex-direction: row;
-	justify-content: space-between;
+	justify-content: space-evenly;
 	padding: 5px 0;
 }
 
@@ -605,11 +675,11 @@ h3 {
 }
 
 .character-panel-status-name {
-	flex-basis: 60%;
+	flex-basis: 55%;
 }
 
 .character-panel-status-turns {
-	flex-basis: 30%;
+	flex-basis: 25%;
 	align-self: center;
 	text-align: right;
 }
@@ -632,17 +702,6 @@ h3 {
 	display: inline-block;
 	width: 20px;
 	margin: 0 7px;
-}
-
-.char-info-item-drop-zone {
-	display: inline-block;
-	width: 64px;
-	height: 64px;
-	margin: 10px;
-	border: 1px solid seagreen;
-	border-radius: 5px;
-	background-image: url('../assets/ui/drop_item.png');
-	vertical-align: middle;
 }
 
 .char-info-inv-items {
@@ -894,6 +953,10 @@ h3 {
 	height: 30px;
 }
 
+.control-bar-tab .character-name {
+	cursor: pointer;
+}
+
 .control-bar-tab-container {
 	display: flex;
 	flex-direction: column;
@@ -910,6 +973,14 @@ h3 {
 	outline: 2px solid limegreen;
 }
 
+.control-bar-tab-container.active-character:first-child {
+	border-radius: 5px 0 0 0;
+}
+
+.control-bar-tab-container.active-character:last-child {
+	border-radius: 0 5px 0 0;
+}
+
 .control-bar-tab-icon, .character-status-icon {
 	display: inline-block;
 	width: 24px;
@@ -922,15 +993,41 @@ h3 {
 }
 
 .character-status-icons {
+	width: 93px;
+	margin-left: 5px;
 	white-space: nowrap;
 }
 
 .character-status-icon {
-	margin-left: 5px;
+	margin-left: 2px;
+}
+
+.action-button.character-status-scroll {
+	width: 10px;
+	height: 20px;
+	padding: 2px 5px 2px 2px;
+	font-size: 12px;
+	line-height: 20px;
 }
 
 .level-up-status-icon {
 	background-image: url('../assets/ui/levelUp.png');
+}
+
+.confused-status-icon {
+	background-image: url('../assets/ui/confused-status.png');
+}
+
+.cursed-status-icon {
+	background-image: url('../assets/ui/cursed-status.png');
+}
+
+.panicking-status-icon {
+	background-image: url('../assets/ui/panicking-status.png');
+}
+
+.paranoid-status-icon {
+	background-image: url('../assets/ui/paranoid-status.png');
 }
 
 .sanity-protection-status-icon, .feel-the-pain-status-icon {
@@ -941,24 +1038,21 @@ h3 {
 	background-image: url('../assets/ui/stealthy-status.png');
 }
 
-.confused-status-icon {
-	background-image: url('../assets/ui/confused-status.png');
+.slowed-status-icon {
+	background-image: url('../assets/ui/slowed-status.png');
+}
+
+.terrified-status-icon {
+	background-image: url('../assets/ui/terrified-status.png');
 }
 
 .unconscious-status-icon {
 	background-image: url('../assets/ui/unconscious-status.png');
 }
 
-.slowed-status-icon {
-	background-image: url('../assets/ui/slowed-status.png');
-}
-
-.cursed-status-icon {
-	background-image: url('../assets/ui/cursed-status.png');
-}
-
 .character-name {
 	display: inline-block;
+	width: 180px;
 	margin-bottom: 3px;
 	font-size: 16px;
 	border-bottom: 1px solid #225555;
@@ -1116,6 +1210,10 @@ h3 {
 	padding-right: 5px;
 }
 
+.arrow-button-right {
+	transform: rotate(180deg);
+}
+
 .weapon-buttons-container {
 	align-items: center;
 }
@@ -1179,6 +1277,34 @@ h3 {
 	gap: 5px;
 }
 
+.button-turn-based-mode {
+	width: 20px;
+	height: 20px;
+	background-image: url('../assets/ui/turn-based-mode.png');
+	background-size: 32px 32px;
+}
+
+.button-follow-mode {
+	width: 20px;
+	height: 20px;
+	background-image: url('../assets/ui/follow-mode.png');
+	background-size: 32px 32px;
+}
+
+.button-rest-mode {
+	width: 20px;
+	height: 20px;
+	background-image: url('../assets/ui/rest-mode-off.png');
+	background-size: 32px 32px;
+}
+
+.button-rest-mode-on {
+	width: 20px;
+	height: 20px;
+	background-image: url('../assets/ui/rest-mode-on.png');
+	background-size: 32px 32px;
+}
+
 .button-search-mode {
 	width: 20px;
 	height: 20px;
@@ -1194,6 +1320,7 @@ h3 {
 	margin: 0 10px;
 	right: 0;
 	bottom: 10px;
+	z-index: 7;
 }
 
 #screen-zoom-container {
@@ -1255,7 +1382,7 @@ select {
 
 .object-info-panel, .skill-info-panel {
 	position: fixed;
-	width: 400px;
+	width: 500px;
 	max-height: 350px;
 	padding: 10px;
 	background-color: #225555;
@@ -1414,6 +1541,10 @@ select {
 	background-image: url('../assets/objects/knife_lrg.png');
 }
 
+.machete-inv {
+	background-image: url('../assets/objects/machete_lrg.png');
+}
+
 .kris-knife-inv {
 	background-image: url('../assets/objects/krisKnife_lrg.png');
 }
@@ -1506,6 +1637,10 @@ select {
 
 .knife-action {
 	background-image: url('../assets/objects/knife_sml.png');
+}
+
+.machete-action {
+	background-image: url('../assets/objects/machete_sml.png');
 }
 
 .kris-knife-action {
@@ -1703,12 +1838,13 @@ select {
 		min-width: unset;
 	}
 
-	.ui-panel, #log-container {
-		font-size: 16px;
+	.dialog {
+		font-size: 20px;
+		padding: 5px;
 	}
 
-	.dialog {
-		padding: 5px;
+	#log-container {
+		font-size: 16px;
 	}
 
 	#mode-info-container, #log-container, #party-info-container {
@@ -1722,6 +1858,11 @@ select {
 		padding: 10px;
 	}
 
+	#game-options.dialog.ui-panel {
+		top: 15%;
+		height: 70%;
+	}
+
 	.pc-response {
 		padding: 5px 10px;
 	}
@@ -1730,19 +1871,16 @@ select {
 		padding-bottom: 10px;
 	}
 
-	.char-info-doll-container {
-		margin-right: 10px;
-	}
-
-	.character-info-container, .creature-info-container {
-		justify-content: start;
+	.character-info-container {
+		grid-area: turnInfo / characterInfo / characterInfo / creatureInfo;
 		border-radius: 0;
 		border: 0;
-		min-height: unset;
 	}
 
 	.creature-info-container {
 		grid-area: characterInfo;
+		border-radius: 0;
+		border: 0;
 	}
 
 	#control-bar-container {
@@ -1764,7 +1902,7 @@ select {
 
 	#control-bar-tab-1 .control-bar-tab {
 		padding-left: 0;
-		border-left: none;
+		border: none;
 	}
 
 	.character-name {
@@ -1772,7 +1910,7 @@ select {
 	}
 
 	.control-bar-tab-container:not(#control-bar-tab-1.control-bar-tab-container) {
-		max-width: 40px;
+		max-width: 30px;
 	}
 
 	#control-bar-statuses-container:not(#control-bar-tab-1 #control-bar-statuses-container) {
@@ -1781,6 +1919,12 @@ select {
 
 	.control-bar-tab-container:not(#control-bar-tab-1.control-bar-tab-container) .character-status-icons {
 		display: none;
+	}
+
+	.action-button.character-status-scroll {
+		width: 6px;
+		padding: 2px 7px 2px 2px;
+		font-size: 10px;
 	}
 
 	.action-button:hover {
@@ -1825,13 +1969,10 @@ select {
 	}
 
 	.creature-info-container {
+		grid-area: creatureInfo;
 		border: 2px solid seagreen;
 		border-right: 0;
 		border-radius: 5px 0 0 5px;
-	}
-
-	.creature-info-container {
-		grid-area: creatureInfo;
 	}
 
 	#control-bar-container {
@@ -1974,9 +2115,6 @@ select {
 
 	.object-info-panel, .skill-info-panel {
 		width: 100%;
-		max-height: 300px;
-		overflow: scroll;
-		left: 5%;
 	}
 
 	/* override the  positioning set by javascript */
@@ -2080,12 +2218,13 @@ select {
 	}
 
 	.character-info-container, .creature-info-container {
+		min-height: unset;
 		border-left: 2px solid seagreen;
+		border-top: none;
 	}
 
-	.object-info-panel, .skill-info-panel {
-		max-height: 250px;
-		overflow: scroll;
+	.creature-info-container {
+		grid-area: characterInfo;
 	}
 
 	.object-panel-container {
@@ -2101,7 +2240,7 @@ select {
 	}
 
 	#control-bar-container.control-bar-3-columns {
-		grid-template-columns: 220px 1fr 1fr;
+		grid-template-columns: 240px 1fr 1fr;
 	}
 
 	#control-bar-container.control-bar-2-columns {

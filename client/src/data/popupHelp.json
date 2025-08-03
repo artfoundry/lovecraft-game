@@ -5,6 +5,12 @@
     "description": "Remaining actions and moves for the current investigator's turn in Tactical Mode.",
     "source": null
   },
+  "agility": {
+    "iconClass": "",
+    "name": "Agility",
+    "description": "An investigator's speed and accuracy. Affects ranged attacks, defense, avoiding traps, being stealthy (Thief only), and determining combat order.",
+    "source": null
+  },
   "attributeBars": {
     "iconClass": "",
     "name": "Attribute Bars",
@@ -17,16 +23,10 @@
     "description": "All attributes and statuses are displayed here. The higher the attribute the better. When party levels up, points can be added here to increase certain attributes.",
     "source": null
   },
-  "equipment": {
-    "iconClass": "",
-    "name": "Equipment",
-    "description": "Items, armor, and weapons can be equipped by dragging them to the three slots. Weapons show remaining ammunition. If light is equipped, remaining time is displayed.",
-    "source": null
-  },
   "characterTabs": {
     "iconClass": "",
     "name": "Character Tabs",
-    "description": "Shows investigator name and icon. On smaller screens/mobile, tap on a character's icon to display that character's Control Bar.",
+    "description": "Shows investigator name and icon. Click/tap name/icon to open character info. On smaller screens/mobile, tap on a character's icon on the far right to display that character's Control Bar.",
     "source": null
   },
   "contextMenuCloseDoor": {
@@ -71,7 +71,7 @@
     "description": "Open the investigator's character information.",
     "source": null
   },
-  "contextMenuPickUp": {
+  "contextMenuPickup": {
     "iconClass": "action-button pickup-action",
     "name": "Pick Up",
     "description": "Open a window that lists all objects on the selected spot with options to pick up any of them.",
@@ -89,16 +89,46 @@
     "description": "Shows any information investigators have learned about the creature. Will only show the creature's image if nothing is known.",
     "source": null
   },
+  "damageReduction": {
+    "iconClass": "",
+    "name": "Damage Reduction",
+    "description": "Provided by armor, reduces physical damage taken when hit.",
+    "source": null
+  },
+  "defense": {
+    "iconClass": "",
+    "name": "Defense",
+    "description": "Calculated from Agility and armor. Reduces the chances of getting hit by physical attacks.",
+    "source": null
+  },
   "dropEquipment": {
     "iconClass": "",
     "name": "Drop Equipment",
     "description": "Drag any inventory or equipped item here to drop it to the ground.",
     "source": null
   },
+  "equipment": {
+    "iconClass": "",
+    "name": "Equipment",
+    "description": "Items, armor, and weapons can be equipped by dragging them to the three slots. Weapons show remaining ammunition. If light is equipped, remaining time is displayed.",
+    "source": null
+  },
   "gameLog": {
     "iconClass": "",
     "name": "Log",
     "description": "Displays information on investigator and creature actions as well as changes in the investigators' surroundings.",
+    "source": null
+  },
+  "health": {
+    "iconClass": "",
+    "name": "Health",
+    "description": "Fixed starting value, different for each investigator. Can never go above starting value. Can be reduced by physical attacks, traps, and potentially other experiences, If it drops to 0, the investigator dies if not revived by the Doctor within 3 turns. A dead investigator is lost for good. If your primary investigator dies, it's game over!",
+    "source": null
+  },
+  "initiative": {
+    "iconClass": "",
+    "name": "Initiative",
+    "description": "Determines turn order in combat. Calculated for each battle using Agility, Mental Acuity, and roll of the dice.",
     "source": null
   },
   "inventory": {
@@ -113,10 +143,16 @@
     "description": "Select investigators, creatures, and objects to get info, target them for actions, or interact with them. Click/tap or use keyboard arrow keys to move the active investigator. Context menu appears if multiple options.",
     "source": null
   },
-  "modeInfo": {
+  "mentalAcuity": {
     "iconClass": "",
-    "name": "Mode Info and Controls",
-    "description": "In Follow Mode one investigator leads, the others follow. In Tactical Mode each investigator takes a turn. In Search Mode (magnifying glass) all investigators search surroundings every move.",
+    "name": "Mental Acuity",
+    "description": "An investigator's intelligence and spiritual/psychic fortitude. Affects protection against psychic attacks, reduction of sanity effects, use of certain skills, and determining combat order.",
+    "source": null
+  },
+  "gameModes": {
+    "iconClass": "",
+    "name": "Tactical and Follow Modes",
+    "description": "This allows you to toggle between the two modes. In Follow Mode one investigator leads, the others follow. In Tactical Mode each investigator takes a turn. In Search Mode (magnifying glass) any investigator that moves makes a search.",
     "source": null
   },
   "partyInfo": {
@@ -125,16 +161,46 @@
     "description": "Displays progress toward next party level and where the party currently is.",
     "source": null
   },
+  "rest": {
+    "iconClass": "",
+    "name": "Rest",
+    "description": "Resting allows the investigators to recuperate Health, Sanity, and Spirit at a rate of 1 per 2 light spent. ALL equipped lights will be used and lose light. While more lights equipped reduces the chance of wandering creature encounters, a longer rest increases the chance. If interrupted, results of rest are still maintained.",
+    "source": null
+  },
+  "sanity": {
+    "iconClass": "",
+    "name": "Sanity",
+    "description": "An investigator's psychological and emotional stability. Fixed starting value, different for each investigator. Can never go above starting value. Can be reduced by total darkness, presence of creatures, certain creature abilities, the Occult Researcher's Sacrificial Strike skill, and potentially certain experiences. If it drops to 0, the investigator becomes catatonic and is lost for good. If your primary investigator becomes catatonic, it's game over!",
+    "source": null
+  },
+  "search": {
+    "iconClass": "",
+    "name": "Search",
+    "description": "In Search Mode anytime an investigator moves, a search is made of all lit areas within line of sight for traps, secret doors, and other hidden items.",
+    "source": null
+  },
   "skills": {
     "iconClass": "",
     "name": "Skills",
     "description": "Investigator's known skills are listed here. When party levels up, points can be added here to improve certain skills.",
     "source": null
   },
+  "spirit": {
+    "iconClass": "",
+    "name": "Spirit",
+    "description": "An Investigator's willpower. Fixed starting value that's calculated as an average of Health and Sanity. Used for certain skills. Can be partly recovered by resting or by the Priest's Spiritual Inspiration skill. Recovers fully upon returning to populated/safe locations such as the Museum.",
+    "source": null
+  },
   "statusIndicators": {
     "iconClass": "",
     "name": "Status Indicators",
     "description": "Icons indicating temporary statuses. Click/tap on an icon for more info on the status.",
+    "source": null
+  },
+  "strength": {
+    "iconClass": "",
+    "name": "Strength",
+    "description": "Affects an Investigator's ability to successfully attack with a melee weapon and certain thrown weapons as well as the damage done by melee and certain thrown weapon attacks.",
     "source": null
   },
   "switchEquipment": {

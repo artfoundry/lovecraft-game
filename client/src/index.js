@@ -9,8 +9,9 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 const bareBonesAttr = {
     showLogin: false,
     showCharacterCreation: false,
-    startingCharacters: ['privateEye'],
-    startingLocation: 'museum',
+    startingCharacters: ['privateEye', 'doctor', 'priest'],
+    startingLocation: 'catacombs',
+    startingFloor: 1,
     playMusic: false,
     spawnCreatures: false,
     skipIntroConversation: true
@@ -18,8 +19,9 @@ const bareBonesAttr = {
 const dungeonTestAttributes = {
     showLogin: false,
     showCharacterCreation: false,
-    startingCharacters: ['privateEye', 'doctor', 'priest'],
+    startingCharacters: ['privateEye', 'archaeologist', 'veteran'],
     startingLocation: 'catacombs',
+    startingFloor: 1,
     playMusic: false,
     spawnCreatures: true
 };
@@ -28,6 +30,7 @@ const worldTestAttributes = {
     showCharacterCreation: false,
     startingCharacters: ['privateEye'],
     startingLocation: 'museum',
+    startingFloor: 1,
     playMusic: false,
     spawnCreatures: true,
     skipIntroConversation: false
@@ -38,6 +41,7 @@ const prodAttributes = {
     showCharacterCreation: true,
     startingCharacters: ['privateEye'],
     startingLocation: 'museum',
+    startingFloor: 1,
     playMusic: true,
     spawnCreatures: true,
     skipIntroConversation: false

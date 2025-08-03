@@ -10,9 +10,10 @@ import CreatureTypes from './data/creatureTypes.json';
 import WeaponTypes from './data/weaponTypes.json';
 import ItemTypes from './data/itemTypes.json';
 import GameLocations from './data/gameLocations.json';
+import Statuses from './data/statuses.json';
 import './css/app.css';
-import {removeIdNumber, diceRoll, deepCopy, convertCoordsToPos, convertPosToCoords, articleType} from './Utils';
-import {ProcessAudio, SoundEffect} from './Audio';
+import {removeIdNumber, diceRoll, deepCopy, convertCoordsToPos, convertPosToCoords, getDistanceBetweenTargets, articleType} from './Utils';
+import {ProcessAudio, SoundEffect, Music} from './Audio';
 
 
 class Game extends React.PureComponent {
@@ -26,17 +27,18 @@ class Game extends React.PureComponent {
 		this.showCharacterCreation = this.gameAttr.showCharacterCreation;
 		this.startingPlayerCharacters = !this.showCharacterCreation ? this.gameAttr.startingCharacters : null;
 		this.startingLocation = this.gameAttr.startingLocation;
+		this.startingFloor = this.gameAttr.startingFloor;
 		this.spawnCreatures = this.gameAttr.spawnCreatures;
 		this.skipIntroConversation = this.gameAttr.skipIntroConversation;
 
 		this.maxPartyLevel = 10;
 		this.pointsPerLevelUp = 2;
 		this.initialDialogContent = '';
-		this.playerMovesLimit = 3;
 		this.playerActionsLimit = 2;
 		this.playerInventoryLimit = 12;
 		this.maxTurnsToReviveDeadPlayer = 3;
-		this.chanceToSpawnCreature = 2; // spawns on this or lower on roll of d4
+		this.minDamageToPlayPcAudio = 5;
+		this.chanceToSpawnCreatureFromContainer = 2; // spawns on this or lower on roll of d4
 		this.minimalLightThreshold = 0.1;
 		this.lowLightThreshold = 0.2;
 		this.lightRanges = {
@@ -68,7 +70,10 @@ class Game extends React.PureComponent {
 				catacombsDoor: null,
 				catacombsBackground: null,
 				museumDoor: null,
-				museumBackground: null
+				museumBackground: null,
+				sarcophagus: null,
+				trunk: null,
+				spikeTrap: null
 			},
 			characters: {
 				elderThing: null,
@@ -98,6 +103,7 @@ class Game extends React.PureComponent {
 			},
 			weapons: {
 				handgunShot: null,
+				shotgunShot: null,
 				glassVialBreak: null,
 				meleeAttackBlade: null,
 				meleeAttackBlunt: null,
@@ -114,10 +120,19 @@ class Game extends React.PureComponent {
 			}
 		};
 
+		this.musicSelectors = {
+			environments: {
+				catacombs: null,
+				museum: null
+			},
+			scenarios: {}
+		};
+
 		// certain action types matched with their appropriate sfxSelector IDs
 		// used because some categories of items (like all handguns) will use the same sound
 		this.sfxActionSelectorAliases = {
 			'handgun': 'handgunShot',
+			'shotgun': 'shotgunShot',
 			'liquid': 'glassVialBreak',
 			'blade': 'meleeAttackBlade',
 			'blunt': 'meleeAttackBlunt',
@@ -128,7 +143,7 @@ class Game extends React.PureComponent {
 		this.minScreenWidthForSmall = 1000;
 		this.minScreenWidthForNarrow = 768;
 		this.minScreenHeight = 768;
-		this.objectPanelWidth = 400;
+		this.objectPanelWidth = 500;
 		this.objectPanelHeight = 250;
 		this.contextMenuWidth = 128;
 		this.contextMenuHeight = 32;
@@ -204,7 +219,6 @@ class Game extends React.PureComponent {
 				playFx: true,
 				musicVolume: 1,
 				playMusic: this.gameAttr.playMusic,
-				songName: this.gameAttr.startingLocation,
 				screenZoom: 1.0,
 				brightness: 1.3,
 				spawnCreatures: this.gameAttr.spawnCreatures
@@ -221,13 +235,13 @@ class Game extends React.PureComponent {
 			isLoginWindowRequested: false,
 			isLoggedIn: false,
 			firebaseGameData: null,
-			loadedFromFB: false,
 			characterCreated: false,
 			createdCharData: !this.showCharacterCreation ? PlayerCharacterTypes[this.startingPlayerCharacters[0]] : null,
 			gameSetupComplete: false,
-			storyProgress: 'Ch1',
+			storyProgress: {chapter: 1, dialogs: {}},
 			playerCharacters: {},
 			pcObjectOrdering: [], // order of pcs for determining control bar order
+			activeCharacter: !this.showCharacterCreation ? this.startingPlayerCharacters[0] : null,
 			pcTypes: PlayerCharacterTypes,
 			partyLevel: 1,
 			partyExpertise: 0,
@@ -235,14 +249,16 @@ class Game extends React.PureComponent {
 				activeQuests: {},
 				completedQuests: {}
 			},
+			identifiedThings: {creatures: {}},
 			conversationTarget: null,
 			savedMaps: {},
 			needToSaveData: false,
-			currentLocation: this.gameAttr.startingLocation,
+			currentLocation: this.startingLocation,
 			previousLocation: '',
-			currentFloor: 1,
+			currentFloor: this.startingFloor,
 			previousFloor: null,
 			playerFollowOrder: [], // order of pcs for follow mode
+			partyIsResting: false,
 			showDialog: false,
 			dialogProps: {
 				dialogContent: this.initialDialogContent,
@@ -255,6 +271,8 @@ class Game extends React.PureComponent {
 				dialogClasses: ''
 			},
 			sfxReverbProcessed: {},
+			music: {category: 'environments', songName: this.gameAttr.startingLocation},
+			logText: [],
 			// these need resetting on floor change
 			npcs: {},
 			mapCreatures: {},
@@ -263,7 +281,6 @@ class Game extends React.PureComponent {
 			creatureSpawnInfo: null,
 			unitsTurnOrder: [],
 			currentTurn: 0,
-			activeCharacter: !this.showCharacterCreation ? this.startingPlayerCharacters[0] : null,
 			activePlayerMovesCompleted: 0,
 			activePlayerActionsCompleted: 0,
 			followModePositions: [], // list of tile positions used for moving pcs in order
@@ -285,7 +302,7 @@ class Game extends React.PureComponent {
 			contextMenuChoice: null,
 			centerOnPlayer: false,
 			centeredPlayer: '',
-			logText: []
+			locationChange: null
 		}
 	}
 
@@ -293,8 +310,7 @@ class Game extends React.PureComponent {
 	 * Resets floor related data in state back to defaults when changing floors
 	 * @param callback: function
 	 */
-	resetDataForNewFloor = (callback) => {
-		this.toggleAudio('environments', this.state.currentLocation + 'Background');
+	resetDataForNewArea = (callback) => {
 		this.setState({
 			npcs: {},
 			mapCreatures: {},
@@ -303,10 +319,9 @@ class Game extends React.PureComponent {
 			creatureSpawnInfo: null,
 			unitsTurnOrder: [],
 			currentTurn: 0,
-			activeCharacter: !this.showCharacterCreation ? this.startingPlayerCharacters[0] : null,
 			activePlayerMovesCompleted: 0,
 			activePlayerActionsCompleted: 0,
-			followModePositions: [],
+			followModePositions: [], // list of tile positions used for moving pcs in order
 			characterIsSelected: false,
 			creatureIsSelected: false,
 			selectedCharacter: '',
@@ -325,29 +340,32 @@ class Game extends React.PureComponent {
 			contextMenuChoice: null,
 			centerOnPlayer: false,
 			centeredPlayer: this.state.playerFollowOrder[0],
-			logText: []
+			locationChange: null
 		}, () => {
 			if (callback) callback();
 		})
 	}
 
 	/**
-	 *
+	 * Used for restarting game from scratch or for loading from saved game (from FB)
+	 * If loading FB, firebaseGameData will be populated with firebase.getData call in _restoreGameDataFromFB
 	 * @param overwriteSavedData boolean (yes for restarting to create new char, no for reloading from saved game)
 	 */
 	resetAllData = (overwriteSavedData) => {
-		this.toggleAudio('environments', this.state.currentLocation + 'Background');
-		const gameOptions = {...this.state.gameOptions, songName: this.gameAttr.startingLocation};
+		const gameOptions = {...this.state.gameOptions};
+
+		this.toggleAudio('environments', this.state.currentLocation + 'Background', null, 'stop');
+		this.toggleMusic('environments', this.state.currentLocation, 'stop');
 		this.setState({
 			gameOptions,
-			firebaseGameData: overwriteSavedData ? null : this.state.firebaseGameData,
-			loadedFromFB: false,
-			characterCreated: false,
+			firebaseGameData: null,
+			characterCreated: !overwriteSavedData,
 			createdCharData: !this.showCharacterCreation ? PlayerCharacterTypes[this.startingPlayerCharacters[0]] : null,
 			gameSetupComplete: false,
-			storyProgress: 'Ch1',
+			storyProgress: {chapter: 1, dialogs: {}},
 			playerCharacters: {},
 			pcObjectOrdering: [],
+			activeCharacter: !this.showCharacterCreation ? this.startingPlayerCharacters[0] : null,
 			pcTypes: PlayerCharacterTypes,
 			partyLevel: 1,
 			partyExpertise: 0,
@@ -355,14 +373,15 @@ class Game extends React.PureComponent {
 				activeQuests: {},
 				completedQuests: {}
 			},
-			npcs: {},
+			identifiedThings: {creatures: {}},
 			conversationTarget: null,
 			savedMaps: {},
 			needToSaveData: false,
-			currentLocation: this.gameAttr.startingLocation,
-			currentFloor: 1,
+			currentLocation: this.startingLocation,
+			currentFloor: this.startingFloor,
 			previousFloor: null,
 			playerFollowOrder: [],
+			partyIsResting: false,
 			showDialog: false,
 			dialogProps: {
 				dialogContent: this.initialDialogContent,
@@ -375,17 +394,19 @@ class Game extends React.PureComponent {
 				dialogClasses: ''
 			},
 			sfxReverbProcessed: {},
+			music: {category: 'environments', songName: this.gameAttr.startingLocation},
+			logText: [],
 			// these need resetting on floor change
+			npcs: {},
 			mapCreatures: {},
 			mapObjects: {},
 			envObjects: {},
 			creatureSpawnInfo: null,
 			unitsTurnOrder: [],
 			currentTurn: 0,
-			activeCharacter: !this.showCharacterCreation ? this.startingPlayerCharacters[0] : null,
 			activePlayerMovesCompleted: 0,
 			activePlayerActionsCompleted: 0,
-			followModePositions: [],
+			followModePositions: [], // list of tile positions used for moving pcs in order
 			characterIsSelected: false,
 			creatureIsSelected: false,
 			selectedCharacter: '',
@@ -404,7 +425,7 @@ class Game extends React.PureComponent {
 			contextMenuChoice: null,
 			centerOnPlayer: false,
 			centeredPlayer: '',
-			logText: []
+			locationChange: null
 		}, () => {
 			if (overwriteSavedData) {
 				this._saveGameData(null, true);
@@ -469,12 +490,71 @@ class Game extends React.PureComponent {
 			}, 500);
 		}
 		if (id) {
+			const attributeChangeValue = 1;
+			// determine whether char's sanity is 2/3 of max or lower, thus causing paranoid or terrified
+			if (type === 'player' && updateData.currentSanity <= (updateData.startingSanity * (2/3))) {
+				const pronoun = updateData.gender === 'Male' ? 'he' : 'she';
+				// determine whether char's sanity is 1/3 of max or lower, thus causing terrified
+				if (!updateData.statuses.terrified && updateData.currentSanity <= (updateData.startingSanity / 3)) {
+					updateData.statuses.terrified = {
+						name: Statuses.terrified.name,
+						description: Statuses.terrified.description,
+						attribute: updateData.statuses.paranoid.attribute,
+						modifier: attributeChangeValue,
+						actionsReduced: 1
+					};
+					this.updateLog(`${updateData.name.first}'s sanity is critically low, and ${pronoun} has gone from being paranoid to terrified!`);
+					if (updateData.statuses.paranoid) {
+						delete updateData.statuses.paranoid;
+					}
+				// or if sanity is 2/3 of max or lower (but above 1/3), then add paranoid
+				} else if (updateData.currentSanity > (updateData.startingSanity / 3)) {
+					let wasTerrified = false;
+					// if sanity has been increased above 1/3 of max, remove terrified
+					if (updateData.statuses.terrified) {
+						delete updateData.statuses.terrified;
+						wasTerrified = true;
+					}
+					if (!updateData.statuses.paranoid) {
+						const attrAffected = diceRoll(2) === 1 ? 'strength' : 'agility';
+						updateData.statuses.paranoid = {
+							name: Statuses.paranoid.name,
+							description: Statuses.paranoid.description,
+							attribute: attrAffected,
+							modifier: attributeChangeValue
+						};
+						if (wasTerrified) {
+							this.updateLog(`${updateData.name.first} is no longer terrified...but still paranoid.`);
+						} else {
+							updateData[attrAffected] -= attributeChangeValue;
+							this.updateLog(`${updateData.name.first}'s sanity is threatened, and ${pronoun} is now paranoid!`);
+						}
+					}
+				}
+			} else if (type === 'player') {
+				// sanity has been increased above 2/3 of max, so remove paranoid/terrified
+				if (updateData.statuses.paranoid) {
+					updateData[updateData.statuses.paranoid.attribute] += attributeChangeValue;
+					delete updateData.statuses.paranoid;
+					this.updateLog(`${updateData.name.first} is feeling safer and is no longer paranoid.`);
+				} else if (updateData.statuses.terrified) {
+					updateData[updateData.statuses.terrified.attribute] += attributeChangeValue;
+					delete updateData.statuses.terrified;
+					this.updateLog(`${updateData.name.first}'s mind is much calmer, and the terror and paranoia have subsided.`);
+				}
+			}
+
+			if (type === 'player' && this.state.threatList.length > 0 && (updateData.statuses.paranoid || updateData.statuses.terrified)) {
+				updateData.statuses = this.checkForSanityTempStatuses(updateData.name.first, updateData.statuses) || updateData.statuses;
+			}
+
 			if (type === 'player' && updateData.currentSanity <= 0) {
 				updateData.isDeadOrInsane = true;
 			}
-			if (type === 'player' && updateData.currentHealth > 0 && updateData.currentSanity > 0 &&
-				(updateData.currentHealth < currentChar.currentHealth || updateData.currentSanity < currentChar.currentSanity))
-			{
+			const sanityChange = currentChar.currentSanity - updateData.currentSanity;
+			const healthChange = currentChar.currentHealth - updateData.currentHealth;
+			// play sound fx for getting injured
+			if (type === 'player' && updateData.currentHealth > 0 && updateData.currentSanity > 0 && (healthChange > this.minDamageToPlayPcAudio || sanityChange > this.minDamageToPlayPcAudio)) {
 				currentChar.gender === 'Male' ? delayedAudio('maleInjured') : delayedAudio('femaleInjured');
 			} else if (type === 'creature' && updateData.currentHealth > 0 && updateData.currentHealth < currentChar.currentHealth) {
 				delayedAudio(removeIdNumber(id) + 'Injured');
@@ -488,6 +568,7 @@ class Game extends React.PureComponent {
 			} else if (type === 'creature' && updateData.currentHealth <= 0 && currentChar.currentHealth > 0) {
 				delayedAudio(removeIdNumber(id) + 'Death');
 			}
+
 			this.setState(prevState => ({
 				[collection]: {
 					...prevState[collection],
@@ -508,29 +589,61 @@ class Game extends React.PureComponent {
 				const sacrificialStrikeIsActive = this.state.actionButtonSelected && this.state.actionButtonSelected.stats.sacrificialStrike;
 
 				if (lightingHasChanged) {
-					this.toggleLightingHasChanged(callback);
+					this.toggleLightingHasChanged(lightingHasChanged, callback);
 				// check if either veteran, goBallistic button is active, and just unequipped gun or occultResearcher, sacrificialStrike button is active, and just unequipped kris knife
 				} else if ((id === 'veteran' && goBallisticIsActive && ((!rightWeapon && !leftWeapon) || (!rightWeapon.gunType && !leftWeapon.gunType))) ||
 					(id === 'occultResearcher' && sacrificialStrikeIsActive && (equippedRight !== 'krisKnife0' && equippedLeft !== 'krisKnife0')))
 				{
 					this.toggleActionButton('', '', '', '', callback);
 				} else if (updateData.isDeadOrInsane) {
-					this._removeDeadPCFromGame(id, callback);
+					this._handleDeadPc(id, callback);
 				} else if (callback) callback();
 			});
 		} else {
 			this.setState({[collection]: updateData}, () => {
 				if (isInitialCharacterSetup) {
+					// skipped by Map._setInitialCharacterCoords if loaded from FB
 					this._setAllUnitsTurnOrder('playerCharacters', callback);
-				} else if (isInitialCreatureSetup) {
+				} else if (isInitialCreatureSetup && this.state.unitsTurnOrder.length === this.state.pcObjectOrdering.length) {
 					this._setAllUnitsTurnOrder('mapCreatures', callback);
 				} else if (lightingHasChanged) {
-					this.toggleLightingHasChanged(callback);
+					this.toggleLightingHasChanged(lightingHasChanged, callback);
 				} else if (callback) {
 					callback();
 				}
 			});
 		}
+	}
+
+	/**
+	 * Check to see if active pc gets confused or panicked because of paranoid/terrified status
+	 * Called from either updateCharacters or updateThreatList
+	 * @param name string (pc's first name)
+	 * @param statuses object (pc's statuses)
+	 * @return null || object (object contains updated statuses)
+	 */
+	checkForSanityTempStatuses(name, statuses) {
+		let updatedStatuses = null;
+
+		// check if confused from the paranoia (10% chance)
+		if (statuses.paranoid && !statuses.confused && diceRoll(10) === 1) {
+			updatedStatuses = {...statuses};
+			updatedStatuses.confused = {
+				name: Statuses.confused.name,
+				description: Statuses.confused.description,
+				turnsLeft: 1
+			};
+			this.updateLog(`${name}'s paranoia leads to confusion...`);
+		// check if running away from being terrified (20% chance)
+		} else if (statuses.terrified && !statuses.panicking && diceRoll(5) === 1) {
+			updatedStatuses = {...statuses};
+			updatedStatuses.panicking = {
+				name: Statuses.panicking.name,
+				description: Statuses.panicking.description,
+				turnsLeft: 1
+			};
+		}
+		return updatedStatuses;
 	}
 
 	/**
@@ -542,10 +655,10 @@ class Game extends React.PureComponent {
 	saveMapData = (mapData, callback) => {
 		const {playerVisited, mapLayout, exits, worldWidth, worldHeight, newFloorNum, exitToLocation, partyExitCoords} = {...mapData};
 		const savedMaps = deepCopy(this.state.savedMaps);
-		const previousFloor = this.state.currentFloor;
-		const currentFloor = newFloorNum || this.state.currentFloor;
 		const currentLocation = exitToLocation || this.state.currentLocation;
 		const previousLocation = this.state.currentLocation;
+		const previousFloor = this.state.currentFloor;
+		const currentFloor = newFloorNum || this.state.currentFloor;
 		const dataToSave = {
 			playerVisited,
 			mapLayout,
@@ -563,10 +676,21 @@ class Game extends React.PureComponent {
 		} else {
 			savedMaps[this.state.currentLocation] = {floors: {[this.state.currentFloor]: dataToSave}};
 		}
-
 		this.setState({savedMaps, previousFloor, currentFloor, currentLocation, previousLocation}, () => {
+			// stop playing sfx and music for previous area then start for new area
+			if (newFloorNum || exitToLocation || this.state.locationChange) {
+				this.toggleAudio('environments', previousLocation + 'Background', null, 'stop');
+				this.toggleAudio('environments', this.state.currentLocation + 'Background', null, 'start');
+			}
+			if (exitToLocation || this.state.locationChange) {
+				this.toggleMusic('environments', previousLocation, 'stop');
+				this.toggleMusic('environments', this.state.currentLocation, 'start');
+			}
 			if (this.state.needToSaveData) {
 				this.toggleNeedToSaveData(false);
+			}
+			if (this.state.locationChange) {
+				this.triggerLocationChange(null);
 			}
 			if (this.forProduction) {
 				this._saveGameData(callback);
@@ -596,7 +720,7 @@ class Game extends React.PureComponent {
 	updateMapObjects = (mapObjects, lightingHasChanged, callback) => {
 		this.setState({mapObjects}, () => {
 			if (lightingHasChanged) {
-				this.toggleLightingHasChanged(callback);
+				this.toggleLightingHasChanged(lightingHasChanged, callback);
 			} else if (callback) {
 				callback();
 			}
@@ -615,8 +739,12 @@ class Game extends React.PureComponent {
 		this.setState({envObjects}, () => {
 			if (envObjectId) {
 				const activeEnvObj = envObjects[envObjectId];
-				if (activeEnvObj.type === 'container') {
-					this.determineIfShouldSpawnCreature(envObjectId);
+				if (envObjectId.includes('sarcophagus')) {
+					this.updateLog('The lid is pushed aside...');
+					const chanceToSpawn = () => {
+						return diceRoll(4) <= this.chanceToSpawnCreatureFromContainer;
+					}
+					this._determineIfShouldSpawnCreature(chanceToSpawn, activeEnvObj.canSpawnCreature, convertCoordsToPos(activeEnvObj.coords));
 				} else if (activeEnvObj.type === 'mineable') {
 					const miningAction = this.state.objectSelected.miningAction;
 					const buttonName = miningAction.substring(0,1).toUpperCase() + miningAction.substring(1, miningAction.length-1);
@@ -633,7 +761,7 @@ class Game extends React.PureComponent {
 	 * Gets the positions for each LIVING character of a type: player, creature, npc, or all
 	 * @param type: String ('player', 'creature', 'npc', or 'all')
 	 * @param format: String ('pos' (string) or 'coords' (object))
-	 * @returns Array (of Objects {id: coords})
+	 * @returns Array (of Objects {id, coords/pos})
 	 */
 	getAllCharactersPos = (type, format) => {
 		const allCharactersPos = [];
@@ -655,19 +783,32 @@ class Game extends React.PureComponent {
 	}
 
 	/**
-	 * Called from UI when container is opened (possibly other sources too)
-	 * Determines if creature should spawn and if so, what kind, then calls _updateCreatureSpawnInfo
-	 * to set spawn info, which Map listens for to find spawn pos and finally call spawnCreature
-	 * @param envObjectId: string
+	 * Updates info about chapter and/or important (story) scripted dialogs
+	 * Called from Map _setScriptedDialogs or UIElements ConversationWindow
+	 * @param storyProgress object ({chapter: number, dialogs: object (usually {"story-1": {triggers: [], conversation: ''}}) })
 	 */
-	determineIfShouldSpawnCreature = (envObjectId) => {
-		// roll die to determine if and what creature to spawn
-		if (diceRoll(4) <= this.chanceToSpawnCreature) {
-			const spawnObj = this.state.envObjects[envObjectId];
-			const spawnIndex = diceRoll(spawnObj.canSpawnCreature.length) - 1;
-			const creatureIdToSpawn = spawnObj.canSpawnCreature[spawnIndex];
-			this._updateCreatureSpawnInfo({envObjectId, creatureIdToSpawn, pos: convertCoordsToPos(spawnObj.coords)});
+	updateStoryProgress = (storyProgress) => {
+		this.setState({storyProgress});
+	}
+
+	/**
+	 * Called from App.updateMapEnvObjects when container is opened or from App.processResting
+	 * Determines if creature should spawn and if so, what kind, then calls _updateCreatureSpawnInfo
+	 * to set spawn info, which Map listens for to find spawn pos and finally call App.spawnCreature
+	 * @param chanceToSpawn function (diceRoll compared to some value resulting in boolean)
+	 * @param creatureOptions array (from this.state.envObjects[envObjectId].canSpawnCreature or GameLocations[this.state.currentLocation].floors[this.state.currentFloor].creatures)
+	 * @param spawnPos string (or null if pos unknown (like during resting) and needs to be determined by Map)
+	 * @return boolean
+	 * @private
+	 */
+	_determineIfShouldSpawnCreature(chanceToSpawn, creatureOptions, spawnPos) {
+		const isSpawning = chanceToSpawn();
+		if (isSpawning) {
+			const spawnIndex = diceRoll(creatureOptions.length) - 1;
+			const creatureIdToSpawn = creatureOptions[spawnIndex];
+			this._updateCreatureSpawnInfo({creatureIdToSpawn, pos: spawnPos});
 		}
+		return isSpawning;
 	}
 
 	/**
@@ -702,7 +843,7 @@ class Game extends React.PureComponent {
 			}
 		}
 		uniqueCreatureId = newCreatureId + uniqueIdNumber;
-		creatureData.creatureId = uniqueCreatureId;
+		creatureData.id = uniqueCreatureId;
 		creatureData.coords = convertPosToCoords(spawnPos);
 		allCreatures[uniqueCreatureId] = new Creature(creatureData);
 		this.updateCharacters('creature', allCreatures, null, lightingHasChanged, false, false, () => {
@@ -711,9 +852,7 @@ class Game extends React.PureComponent {
 			const unitsTurnOrder = this._sortInitiatives(deepCopy(this.state.unitsTurnOrder), uniqueCreatureId, unitInit, 'mapCreatures');
 			this.setState({unitsTurnOrder, creatureSpawnInfo: null}, () => {
 				this.updateThreatList([uniqueCreatureId], [], () => {
-					// call toggleLightingHasChanged if creature projects light
-					// this.toggleLightingHasChanged(lightingHasChanged);
-					this.updateLog(`As the lid is opened, ${articleType(creatureData.name)} ${creatureData.name} arises and attacks the party!`);
+					this.updateLog(`${articleType(creatureData.name, true)} ${creatureData.name} appears and attacks the party!`);
 				});
 			});
 		});
@@ -752,15 +891,21 @@ class Game extends React.PureComponent {
 			if (!inTacticalMode) {
 				const resetCounters = () => this._resetCounters(callback);
 				let updatedPlayerCharacters = null;
-				let dataIsCopied = false;
+				let dataCopied = false;
 				const playerCharacters = this.state.playerCharacters;
+				// remove any time limited statuses from pcs
 				for (const pcId of Object.keys(playerCharacters)) {
 					if (Object.keys(playerCharacters[pcId].statuses).length > 0) {
-						if (!dataIsCopied) {
+						// no need to copy data more than once if multiple pcs have statuses
+						if (!dataCopied) {
 							updatedPlayerCharacters = deepCopy(playerCharacters);
-							dataIsCopied = true;
+							dataCopied = true;
 						}
-						updatedPlayerCharacters[pcId].statuses = {};
+						for (const [statusId, statusData] of Object.entries(playerCharacters[pcId].statuses)) {
+							if (statusData.turnsLeft >= 0) {
+								delete updatedPlayerCharacters[pcId].statuses[statusId];
+							}
+						}
 					}
 				}
 				if (updatedPlayerCharacters) {
@@ -802,7 +947,7 @@ class Game extends React.PureComponent {
 
 	/**
 	 * Adds IDs to or removes IDs from threat list and saves list to state,
-	 * then if there's 0 additions to the list and none before, calls toggleTacticalMode,
+	 * then if there are additions to the list and none before, calls toggleTacticalMode to enter combat,
 	 * and if list becomes empty, calls updateIfPartyIsNearby
 	 * This is the primary entry point for changing/determining whether game is in Follow mode or Tactical mode
 	 * @param threatIdsToAdd: Array (of strings - IDs of creatures attacking player - empty array if none)
@@ -828,21 +973,37 @@ class Game extends React.PureComponent {
 				}
 			});
 		}
-
+		const isInCombat = updatedList.length > 0;
+		if (isInCombat && previousListSize === 0) {
+			this.updateLog('Something horrific has been heard or spotted nearby!');
+		}
 		this.setState({threatList: updatedList}, () => {
-			const isInCombat = updatedList.length > 0;
-
 			// if entering combat...
 			if (isInCombat && previousListSize === 0) {
-				this.updateLog('Something horrific has been spotted nearby!');
 				if (this.state.inSearchMode) {
 					this.toggleSearchMode();
 					this.updateLog('Disabling search mode.');
 				}
+				const checkSanityStatuses = () => {
+					const activePcData = this.state.playerCharacters[this.state.activeCharacter];
+					let playerCharacters = {...this.state.playerCharacters};
+					let updatedStatuses = null;
+					if (updatedList.length > 0 && activePcData && (activePcData.statuses.paranoid || activePcData.statuses.terrified)) {
+						updatedStatuses = this.checkForSanityTempStatuses(activePcData.name.first, deepCopy(activePcData.statuses));
+					}
+					if (updatedStatuses) {
+						// updating entire collection to avoid the extra functions/conditionals called in updating single pc
+						playerCharacters = deepCopy(this.state.playerCharacters);
+						playerCharacters[this.state.activeCharacter].statuses = {...updatedStatuses};
+						this.updateCharacters('player', playerCharacters, null, false, false, callback);
+					} else if (callback) {
+						callback();
+					}
+				}
 				if (!this.state.inTacticalMode) {
-					this.toggleTacticalMode(isInCombat, callback);
-				} else if (callback) {
-					callback();
+					this.toggleTacticalMode(isInCombat, checkSanityStatuses);
+				} else {
+					checkSanityStatuses();
 				}
 			// leaving combat...
 			} else if (!isInCombat) {
@@ -853,6 +1014,107 @@ class Game extends React.PureComponent {
 				callback();
 			}
 		});
+	}
+
+	/**
+	 * toggles rest mode on/off
+	 * @param processRestingCallback function (for turning on, goes through rest process, for off, closes rest window)
+	 * @private
+	 */
+	_toggleRestMode(processRestingCallback) {
+		this.setState(prevState => ({partyIsResting: !prevState.partyIsResting}), processRestingCallback);
+	}
+
+	/**
+	 * First switches to follow mode if not already in it, then turns on rest mode, then proceeds through resting
+	 * Each tick of time, it checks if rested the full time, if all lights have gone out, or if a wandering monster occurs
+	 * If monster, spawns monster. Then turns off rest mode and closes rest window.
+	 * @param restTime number (amount of time user entered for resting)
+	 * @param callback function (from UIElements.RestWindow, closes rest window)
+	 */
+	processResting = (restTime, callback) => {
+		let playerCharacters = deepCopy(this.state.playerCharacters);
+		let allLightTimes = {};
+		Object.values(playerCharacters).forEach(info => {
+			if (info.lightTime > 0) {
+				allLightTimes[info.id] = info.lightTime;
+			}
+		});
+		const doResting = () => {
+			this._toggleRestMode(() => {
+				let numLights = Object.values(allLightTimes).length;
+				let healing = 0;
+				let endResting = false;
+				let timePassed = 1;
+				let creatureSpawns = false;
+				let lightingHasChanged = false;
+
+				while (!endResting) {
+					for (const [id, lightTime] of Object.entries(allLightTimes)) {
+						lightTime > 0 ? allLightTimes[id]-- : numLights--;
+					}
+					if (timePassed % 2 === 0) {
+						healing++;
+					}
+					// finished amount of rest time
+					if (timePassed === restTime) {
+						endResting = true;
+						this.updateLog('The party finished resting.');
+						// all lights expired
+					} else if (numLights === 0) {
+						endResting = true;
+						this.updateLog('All equipped lights have expired, so resting has stopped.');
+					} else if (timePassed % 10 === 0) {
+						// more lights reduces chance while more time increases it
+						creatureSpawns = diceRoll(100) <= (timePassed / (numLights * 3));
+						if (creatureSpawns) {
+							endResting = true;
+							this.updateLog('The party is rudely awakened by terrifying sounds!');
+						}
+					}
+					if (endResting) {
+						for (const id of Object.keys(this.state.playerCharacters)) {
+							let updatedInfo = playerCharacters[id];
+							updatedInfo.currentSpirit = (updatedInfo.currentSpirit + healing) >= updatedInfo.startingSpirit ? updatedInfo.startingSpirit : updatedInfo.currentSpirit + healing;
+							updatedInfo.currentSanity = (updatedInfo.currentSanity + healing) >= updatedInfo.startingSanity ? updatedInfo.startingSanity : updatedInfo.currentSanity + healing;
+							updatedInfo.currentHealth = (updatedInfo.currentHealth + healing) >= updatedInfo.startingHealth ? updatedInfo.startingHealth : updatedInfo.currentHealth + healing;
+						}
+						lightingHasChanged = playerCharacters[this.state.activeCharacter].updatePcLights(playerCharacters, this.calcPcLightChanges, timePassed);
+					} else {
+						timePassed++;
+						numLights = Object.values(allLightTimes).length;
+					}
+				}
+				this.updateCharacters('player', playerCharacters, null, lightingHasChanged, false, false, () => {
+					if (creatureSpawns) {
+						const creatureOptions = Object.keys(GameLocations[this.state.currentLocation].floors[this.state.currentFloor].creatures);
+						// find tile that's middle (average) of pc positions
+						let averageCoords = {xPos: 0, yPos: 0};
+						for (const pcInfo of Object.values(playerCharacters)) {
+							averageCoords.xPos += pcInfo.coords.xPos;
+							averageCoords.yPos += pcInfo.coords.yPos;
+						}
+						averageCoords.xPos = Math.round(averageCoords.xPos / Object.values(playerCharacters).length);
+						averageCoords.yPos = Math.round(averageCoords.yPos / Object.values(playerCharacters).length);
+						let pos = convertCoordsToPos(averageCoords);
+						if (!this.state.savedMaps[this.state.currentLocation].floors[this.state.currentFloor].mapLayout[pos]) {
+							pos = convertCoordsToPos(playerCharacters[this.state.playerFollowOrder[0]].coords);
+						}
+						this._determineIfShouldSpawnCreature(() => true, creatureOptions, pos);
+					}
+					// end resting
+					setTimeout(() => {
+						this._toggleRestMode(callback);
+					}, creatureSpawns ? 2000 : numLights === 0 ? 3000 : 4000);
+				});
+			});
+		}
+
+		if (this.state.inTacticalMode) {
+			this.toggleTacticalMode(false, doResting);
+		} else {
+			doResting();
+		}
 	}
 
 	/**
@@ -874,7 +1136,7 @@ class Game extends React.PureComponent {
 	 * @param callback: Function
 	 * @param targetData: Array (of objects containing env obj info and id)
 	 */
-	toggleActionButton = (characterId, buttonId, buttonName, buttonType, callback, targetData = null) => {
+	toggleActionButton = (characterId, buttonId, buttonName, buttonType, callback = null, targetData = null) => {
 		let buttonState = null;
 		let isImmediateAction = false; // action takes effect without needing user to select a target
 		let stats = null;
@@ -916,7 +1178,7 @@ class Game extends React.PureComponent {
 		if (isImmediateAction) {
 			// skillType will either be 'create' or 'active' (except heal and resuscitate skills are called from handleUnitClick)
 			const props = stats.skillType === 'create' ? {
-				itemType: buttonId,
+				skillId: buttonId,
 				activeCharId: characterId,
 				partyData: this.state.playerCharacters,
 				updateCharacters: this.updateCharacters,
@@ -1073,6 +1335,22 @@ class Game extends React.PureComponent {
 	}
 
 	/**
+	 * Used to raise Spirit from entering a location that's not a dungeon or from resting
+	 * @param spiritAmount string || number ('all' or specific value to increase)
+	 */
+	recoverCharsSpirit = (spiritAmount) => {
+		let playerCharacters = deepCopy(this.state.playerCharacters);
+		for (const charData of Object.values(playerCharacters)) {
+			if (spiritAmount === 'all') {
+				charData.currentSpirit = charData.startingSpirit;
+			} else {
+				charData.currentSpirit += spiritAmount;
+			}
+		}
+		this.updateCharacters('player', playerCharacters, null, false, false, false);
+	}
+
+	/**
 	 * Increases party expertise count and level if count has crossed threshold
 	 * @param points: number
 	 */
@@ -1088,19 +1366,33 @@ class Game extends React.PureComponent {
 			}
 		}
 		this.setState({partyExpertise, partyLevel}, () => {
+			const updateLevelUpPoints = (groupData) => {
+				for (const charData of Object.values(groupData)) {
+					if (charData.type === 'player' || charData.type === 'playerNpc') {
+						charData.levelUpPoints += this.pointsPerLevelUp;
+						charData.statuses.levelUp = {
+							name: Statuses.levelUp.name,
+							description: Statuses.levelUp.description,
+						}
+					}
+				}
+			}
 			if (partyHasLeveled) {
 				const partyData = deepCopy(this.state.playerCharacters);
-				for (const charData of Object.values(partyData)) {
-					charData.levelUpPoints += this.pointsPerLevelUp;
-				}
-				this.updateCharacters('player', partyData, null, false, false, false);
+				const savedMaps = deepCopy(this.state.savedMaps);
+				const savedMapsNpcs = savedMaps.museum ? savedMaps.museum.floors[1].npcs : {}; // check is for testing without museum level
+				updateLevelUpPoints(partyData);
+				updateLevelUpPoints(savedMapsNpcs);
+				this.updateCharacters('player', partyData, null, false, false, false, () => {
+					this.setState({savedMaps});
+				});
 			}
 		});
 	}
 
 	/**
 	 * Adds allotted points from user's leveling to appropriate pc and deducts available leveling points from that pc
-	 * note: leveling points can be held indefinitely (no reason a player would do it, but they can)
+	 * note: leveling points must all be applied by user in order to save
 	 * @param pcId: string
 	 * @param allocationChoices: object (of objects: {stats: {name: points}, skills: {name: points}}, name being stat/skill name)
 	 */
@@ -1110,9 +1402,13 @@ class Game extends React.PureComponent {
 		for (const [skillsOrStats, skillOrStatNames] of Object.entries(allocationChoices)) {
 			for (const [name, points] of Object.entries(skillOrStatNames)) {
 				skillsOrStats === 'stats' ? pcData[name] += points : pcData.skills[name].level += points;
-				pcData.levelUpPoints--;
+				if (name === 'moveIt') {
+					pcData.moveSpeed = PlayerCharacterTypes.veteran.baseMoveSpeed + pcData.skills.moveIt.modifier[pcData.skills.moveIt.level];
+				}
 			}
 		}
+		pcData.levelUpPoints = 0;
+		delete pcData.statuses.levelUp;
 		this.updateCharacters('player', pcData, pcId, false, false, false);
 	}
 
@@ -1153,7 +1449,7 @@ class Game extends React.PureComponent {
 								this.updateLog(`The ${this.state.mapCreatures[id].name} is dead!`);
 							}
 							this.updateExpertise(this.state.mapCreatures[id].expertisePoints);
-							this._removeDeadFromTurnOrder(id, this.updateActivePlayerActions, checkLineOfSightToParty);
+							this._removeDeadFromGame(id, this.updateActivePlayerActions, checkLineOfSightToParty);
 						} else {
 							if (target === 'object') {
 								const updatedEnvObjects = deepCopy(this.state.envObjects);
@@ -1267,6 +1563,18 @@ class Game extends React.PureComponent {
 		let activePlayerActionsCompleted = 0;
 		let activePlayerMovesCompleted = 0;
 
+		if (nextActiveCharIsPc && this.state.threatList.length > 0) {
+			let sanityEffects = 0;
+			this.state.threatList.forEach(creatureId => {
+				sanityEffects += this.state.mapCreatures[creatureId].sanityEffect;
+			});
+			const sanityEffectTotal = sanityEffects - Math.floor(nextActiveChar.mentalAcuity / 2);
+			if (sanityEffectTotal > 0) {
+				nextActiveChar.currentSanity -= sanityEffectTotal;
+				updateOrRemoveChar = true;
+				this.updateLog(`Seeing such horrors, ${nextActiveCharIsPc.name.first}'s sanity suffers.`);
+			}
+		}
 		if (nextActiveCharIsPc && (nextActiveChar.currentHealth <= 0 || nextActiveChar.currentSanity <= 0 || nextActiveChar.statuses.unconscious)) {
 			currentTurn++;
 			if (nextActiveChar.currentHealth <= 0 && nextActiveChar.turnsSinceDeath < this.maxTurnsToReviveDeadPlayer) {
@@ -1280,17 +1588,18 @@ class Game extends React.PureComponent {
 			}
 		}
 		if (Object.keys(nextActiveChar.statuses).length > 0) {
-			const moveItSkill = this.state.playerCharacters.veteran ? this.state.playerCharacters.veteran.skills.moveIt : null;
-			const playerMoveLimit = this.playerMovesLimit + (moveItSkill ? moveItSkill.modifier[moveItSkill.level] : 0);
 			updateOrRemoveChar = true;
 			for (const [statusName, statusData] of Object.entries(nextActiveChar.statuses)) {
-				if (statusName === 'slowed') {
-					activePlayerActionsCompleted = this.playerActionsLimit - 1;
-					activePlayerMovesCompleted = playerMoveLimit - 1;
-				}
 				if (statusData.turnsLeft === 0) {
 					delete nextActiveChar.statuses[statusName];
 				} else {
+					if (statusName === 'slowed') {
+						// setting these values to max amount minus 1 in order to leave pc with only 1 action and 1 move to make
+						activePlayerActionsCompleted = this.playerActionsLimit - 1;
+						activePlayerMovesCompleted = nextActiveChar.moveSpeed - 1;
+					} else if (statusName === 'terrified') {
+						activePlayerActionsCompleted = statusData.actionsReduced;
+					}
 					statusData.turnsLeft--;
 				}
 			}
@@ -1379,6 +1688,15 @@ class Game extends React.PureComponent {
 	}
 
 	/**
+	 * checks if clicked target is within 1 tile from active pc
+	 * @return {*|boolean}
+	 */
+	targetWithinReach = (tilePos) => {
+		const activePc = this.state.playerCharacters[this.state.activeCharacter];
+		return activePc && getDistanceBetweenTargets(activePc.coords, convertPosToCoords(tilePos)) <= 1;
+	}
+
+	/**
 	 * Checks if context menu should be shown or other action processed
 	 * Other action possibilities:
 	 * -close menu
@@ -1421,6 +1739,7 @@ class Game extends React.PureComponent {
 			}
 		}
 
+		const targetWithinReach = tilePos && this.targetWithinReach(tilePos);
 		// bypass setting up context menu if clicked target is the main pc or creature with nothing else on the tile and no action cued up...
 		if (!objectOnTile && !this.state.actionButtonSelected && ((actionType === 'player' && clickedTargetId === this.state.createdCharData.id) || actionType === 'creature')) {
 			contextMenuNeeded = {
@@ -1453,11 +1772,17 @@ class Game extends React.PureComponent {
 					actionToProcess: () => this.handleUnitClick(actionInfo.id, actionInfo.target, actionInfo.isInRange, actionInfo.checkLineOfSightToParty)
 				};
 			}
-		// ...or if clicked target is a torch or non-trap env object
-		} else if (actionType === 'examine' && (actionObjInfo.name === 'Torch' || (actionObjInfo.isEnvObject && actionObjInfo.type !== 'trap'))) {
+		// ...or if examine action and target is a torch or an env obj that's not within reach, or target is within reach and an env obj that's not a trap
+		// (nearby traps need menu for move and examine)
+		} else if (actionType === 'examine' &&
+			(actionObjInfo.name === 'Torch' ||
+			(!targetWithinReach && actionObjInfo.isEnvObject) ||
+			(targetWithinReach && actionObjInfo.isEnvObject && actionObjInfo.type !== 'trap'))
+		) {
+			const isPickUpAction = actionInfo.isPickUpAction || (targetWithinReach && (actionObjInfo.name === 'Torch' || actionObjInfo.type === 'container'));
 			contextMenuNeeded = {
 				menuNeeded: false,
-				actionToProcess: () => this.setMapObjectSelected(actionInfo.objectInfo, actionInfo.selectionEvt, actionInfo.isPickUpAction)
+				actionToProcess: () => this.setMapObjectSelected(actionInfo.objectInfo, actionInfo.selectionEvt, isPickUpAction)
 			};
 		}
 
@@ -1469,11 +1794,12 @@ class Game extends React.PureComponent {
 	 * Possibilities:
 	 * creature and item
 	 * player and item
+	 * talk
 	 * item and move
 	 * dying player (get info) and move
 	 * dying player (get info), item, and move
 	 * action (shoot) and reload
-	 * @param actionType: string (possibilities: 'examine', 'creature', 'player', 'npc', null)
+	 * @param actionType: string (possibilities: 'examine', 'creature', 'player', 'npc', 'playerNpc', null)
 	 * @param tilePos: string
 	 * @param evt: event object
 	 * @param actionInfo: object (props for appropriate function called upon clicking menu button)
@@ -1499,24 +1825,52 @@ class Game extends React.PureComponent {
 			} else {
 				const clickedTargetId = evt.currentTarget.id;
 				const contextMenu = {
-					actionsAvailable: {[actionType]: actionInfo},
+					actionsAvailable: actionType === 'npc' ? {} : {[actionType]: actionInfo},
 					creatureId: null,
 					tilePos,
 					evt
 				};
+				const targetWithinReach = this.targetWithinReach(tilePos);
+				const targetIsEnvObj = actionInfo && actionInfo.objectInfo.length > 0 && this.state.envObjects[actionInfo.objectInfo[0].id];
+				const objectsOnTile = this._isObjectOnTile(tilePos, evt);
+
 				if (actionInfo && actionInfo.id) {
 					contextMenu.creatureId = actionInfo.id;
 				}
-				// todo: add distance to target check?
+				// todo: add distance to target check to force pc to be near target?
 				if ((actionType === 'player' && clickedTargetId !== this.state.createdCharData.id) || actionType === 'npc' || actionType === 'playerNpc') {
 					contextMenu.actionsAvailable.talk = clickedTargetId;
 				}
-				if (actionType !== 'player' && actionType !== 'creature' && actionType !== 'npc' && actionType !== 'playerNpc') {
+				// if target isn't in reach and not an env obj
+				// or target IS in reach and target either isn't an env obj or else is a trap and target isn't a character
+				if ((!targetWithinReach && !targetIsEnvObj) ||
+					(targetWithinReach && (!targetIsEnvObj || targetIsEnvObj.type === 'trap') &&
+					(actionType !== 'npc' && actionType !== 'player' && actionType !== 'playerNpc' && actionType !== 'creature')))
+				{
 					contextMenu.actionsAvailable.move = true;
+				}
+				if (actionType === 'examine') {
+					if (objectsOnTile) {
+						if (targetWithinReach) {
+							// use objectsOnTile in case multiple items on tile
+							objectsOnTile.isPickUpAction = true;
+							contextMenu.actionsAvailable.pickup = objectsOnTile;
+							delete contextMenu.actionsAvailable.examine;
+						} else {
+							contextMenu.actionsAvailable.examine = objectsOnTile;
+						}
+					} else {
+						// for anything that's not an object?
+					}
 				} else {
-					const objectOnTile = this._isObjectOnTile(tilePos, evt);
-					if (objectOnTile) {
-						contextMenu.actionsAvailable.examine = objectOnTile;
+					// target is a character, so check if object under it
+					if (objectsOnTile) {
+						if (targetWithinReach) {
+							objectsOnTile.isPickUpAction = true;
+							contextMenu.actionsAvailable.pickup = objectsOnTile;
+						} else {
+							contextMenu.actionsAvailable.examine = objectsOnTile;
+						}
 					}
 				}
 				this.setState({contextMenu, contextMenuChoice: null});
@@ -1533,7 +1887,7 @@ class Game extends React.PureComponent {
 	 */
 	handleContextMenuSelection = (actionType) => {
 		const storedActionInfo = this.state.contextMenu.actionsAvailable[actionType];
-		if (actionType === 'examine') {
+		if (actionType === 'examine' || actionType === 'pickup') {
 			this.setMapObjectSelected(storedActionInfo.objectInfo, storedActionInfo.selectionEvt, storedActionInfo.isPickUpAction);
 			this.setState({contextMenu: null});
 		} else if (actionType === 'creature' || actionType === 'player' || actionType === 'npc' || actionType === 'playerNpc') {
@@ -1611,10 +1965,11 @@ class Game extends React.PureComponent {
 
 	/**
 	 * Set by UI/App when a light source has been equipped/unequipped/dropped to tell Map to recalculate lighting
+	 * @param lightingHasChanged boolean
 	 * @param callback
 	 */
-	toggleLightingHasChanged = (callback) => {
-		this.setState(prevState => ({lightingHasChanged: !prevState.lightingHasChanged}), () => {
+	toggleLightingHasChanged = (lightingHasChanged, callback) => {
+		this.setState({lightingHasChanged}, () => {
 			if (callback) callback();
 		});
 	}
@@ -1629,10 +1984,10 @@ class Game extends React.PureComponent {
 	 * @param containerId: string (container env object id that item was taken from)
 	 */
 	addItemToPlayerInventory = (itemData, objId, recipientId, isPickUpAction, isCreateAction, containerId = null) => {
-		const player = this.state.playerCharacters[recipientId];
+		const playerData = deepCopy(this.state.playerCharacters[recipientId]);
 		const objectType = itemData.itemType ? itemData.itemType : 'Weapon';
 		const invObjectCategory = objectType === 'Weapon' ? 'weapons' : 'items';
-		let invObjects = deepCopy(player[invObjectCategory]);
+		let invObjects = playerData[invObjectCategory];
 		let modifiedObjId = '';
 
 		if (itemData.coords) {
@@ -1674,19 +2029,18 @@ class Game extends React.PureComponent {
 			}
 		}
 
-		let updatedData = {[invObjectCategory]: invObjects};
-		let inventory = [...player.inventory];
+		let inventory = [...playerData.inventory];
 		// if not a stackable/ammo item or is but is new (not yet in inventory), then insert into inventory (modifiedObjId only used for stackable/ammo)
 		if (!modifiedObjId || !inventory.includes(modifiedObjId)) {
-			const firstOpenInvSlot = player.inventory.indexOf(null);
+			const firstOpenInvSlot = playerData.inventory.indexOf(null);
 			if (modifiedObjId) {
 				inventory.splice(firstOpenInvSlot, 1, modifiedObjId);
 			} else {
 				inventory.splice(firstOpenInvSlot, 1, objId);
 			}
-			updatedData.inventory = inventory;
+			playerData.inventory = inventory;
 		}
-		this.updateCharacters('player', updatedData, recipientId, false, false, false, () => {
+		this.updateCharacters('player', playerData, recipientId, false, false, false, () => {
 			if (isPickUpAction) {
 				this._removeItemFromMap(objId, containerId);
 			} else if (isCreateAction) {
@@ -1720,7 +2074,8 @@ class Game extends React.PureComponent {
 			mapObjects[newMapObjId] = {
 				...objInfo,
 				coords: pcData.coords
-			}
+			};
+			mapObjects[newMapObjId].id = newMapObjId;
 			if (!lightingChanged && objInfo.itemType && objInfo.itemType === 'Light') {
 				lightingChanged = true;
 			}
@@ -1729,51 +2084,52 @@ class Game extends React.PureComponent {
 	}
 
 	/**
-	 * Call relevant pc function to carry out action for _randomizeTurn in Map
-	 * @param actionName string/key (can be attack or heal)
-	 * @param actionItem string (weapon/item id)
-	 * @param target object (optional (used for attack or targeted skill) deepcopy of target char data obj, from playerCharacters or mapCreatures)
+	 * Call relevant pc function to carry out action (attack or do nothing) for _randomizeTurn in Map,
+	 * then call updateActivePlayerActions, and finally takeActionCallback
+	 * @param actionName string/key (can be attack or doNothing)
+	 * @param weaponId string (weapon id)
+	 * @param target object (optional (used for attack) deepcopy of target char data obj, from playerCharacters or mapCreatures)
 	 * @param checkLineOfSightToParty function (isInLineOfSight from Map)
 	 * @param takeActionCallback function (passed from _randomizeTurn in Map to call takeAction again if necessary)
 	 */
-	takeAutomaticAction = (actionName, actionItem, target, checkLineOfSightToParty, takeActionCallback) => {
+	takeAutomaticAction = (actionName, weaponId, target, checkLineOfSightToParty, takeActionCallback) => {
 		const pcData = this.state.playerCharacters[this.state.activeCharacter];
-		const targetId = target ? target.id : this.state.activeCharacter;
-		const actionStats = actionName === 'attack' ? pcData.weapons[actionItem] : pcData.items[actionItem];
-		const props = {
-			actionId: actionItem,
-			actionStats,
-			targetData: target || pcData,
-			pcData,
-			partyData: this.state.playerCharacters,
-			updateCharacters: this.updateCharacters,
-			updateLog: this.updateLog,
-			setShowDialogProps: this.setShowDialogProps,
-			notEnoughLightDialogProps: this.notEnoughLightDialogProps,
-			calcPcLightChanges: this.calcPcLightChanges,
-			toggleAudio: this.toggleAudio,
-			sfxSelectors: this.sfxActionSelectorAliases,
-			callback: () => {
-				const updateActionsAndTakeNextAction = () => {
-					this.updateActivePlayerActions(false, takeActionCallback);
-				};
-				if (target && target.currentHealth <= 0) {
-					if (target.type === 'player') {
-						this.updateLog(`${pcData.name.first} has killed ${target.name.first}!`);
-					} else {
-						this.updateLog(`The ${target.name} is dead!`);
-						this.updateExpertise(this.state.mapCreatures[targetId].expertisePoints);
-					}
-					this._removeDeadFromTurnOrder(targetId, updateActionsAndTakeNextAction, checkLineOfSightToParty);
-				} else {
-					updateActionsAndTakeNextAction();
-				}
-			}
+		const updateActionsAndTakeNextAction = () => {
+			this.updateActivePlayerActions(false, takeActionCallback);
 		};
-		const targetName = target ? (target.type === 'player' ? target.name.first : `a nearby ${target.name}`) : null;
-		const logAction = actionName === 'attack' ? `attacks ${targetName}!` : `uses a ${pcData.items[actionItem].name}.`;
-		this.updateLog(`${pcData.name.first} is confused and ${logAction}`);
-		pcData[actionName](props);
+		if (actionName === 'doNothing') {
+			this.updateLog(`Reeling from confusion, ${pcData.name.first} does nothing but stare off into space.`);
+			updateActionsAndTakeNextAction();
+		} else {
+			const targetId = target ? target.id : this.state.activeCharacter;
+			const actionStats = pcData.weapons[weaponId];
+			const props = {
+				actionId: weaponId,
+				actionStats,
+				targetData: target,
+				pcData,
+				updateCharacters: this.updateCharacters,
+				updateLog: this.updateLog,
+				toggleAudio: this.toggleAudio,
+				sfxSelectors: this.sfxActionSelectorAliases,
+				callback: () => {
+					if (target && target.currentHealth <= 0) {
+						if (target.type === 'player') {
+							this.updateLog(`${pcData.name.first} has killed ${target.name.first}!`);
+						} else {
+							this.updateLog(`The ${target.name} is dead!`);
+							this.updateExpertise(this.state.mapCreatures[targetId].expertisePoints);
+						}
+						this._removeDeadFromGame(targetId, updateActionsAndTakeNextAction, checkLineOfSightToParty);
+					} else {
+						updateActionsAndTakeNextAction();
+					}
+				}
+			};
+			const targetName = target ? (target.type === 'player' ? target.name.first + '!' : `a nearby ${target.name}`) : null;
+			this.updateLog(`${pcData.name.first} is confused and attacks ${targetName}`);
+			pcData.attack(props);
+		}
 	}
 
 	toggleCenterOnPlayer = () => {
@@ -1784,29 +2140,64 @@ class Game extends React.PureComponent {
 	}
 
 	/**
-	 *
-	 * @param conversationTarget object ({id, targetType ('player' or 'npc)})
-	 * @param callback
+	 * Called by applyUpdatesFromConv for triggering location change from conversation (like for end of quest)
+	 * Toggles need to save data to start data save process in Map
+	 * @param locationChange string (name of new location, or null for unsetting)
+	 */
+	triggerLocationChange(locationChange) {
+		this.setState({locationChange}, () => {
+			if (locationChange) {
+				this.toggleNeedToSaveData(true);
+			}
+		});
+	}
+
+	/**
+	 * Update identified things, usually after encountering a creature or conversation with Prof. Nymian
+	 * @param identifiedThings object ({creatures: {}})
+	 * @param callback function
+	 */
+	updateIdentifiedThings = (identifiedThings, callback) => {
+		this.setState({identifiedThings}, () => {if (callback) callback();});
+	}
+
+	/**
+	 * Sets the target of the player's conversation
+	 * @param conversationTarget object ({id, targetType ('player' or 'npc'), updateThreatsCallback})
+	 * @param callback function (for closing context menu or updating conversation or possibly a triggeredCallback to run at end of conv)
 	 */
 	setConversationTarget = (conversationTarget, callback) => {
 		this.setState({conversationTarget}, callback);
 	}
 
 	/**
-	 *
-	 * @param charId string (id of char player was talking to)
-	 * @param updates object (may include nextMessageKey, joinParty, leaveParty)
+	 * Updates player or npc conv data (namely nextMessageKey) with statusUpdate from conv json
+	 * (minus journal update, which is only applied to partyJournal)
+	 * Updates partyExpertise as indicated in json
+	 * Adds player npc to party or removes pc from party as chosen by player in conv
+	 * Transfers party to another location as indicated by json
+	 * @param charId string (id of char player was talking to or else 'story-{#}' for a story dialog)
+	 * @param updates object (may include nextMessageKey, joinParty, leaveParty, changeLocation,
+	 *      journalUpdate (which includes id, description, and possibly goal or xp))
+	 * @param triggeredCallback function (optional, for triggering something to happen, like updateThreatList after conv ends)
 	 */
-	applyUpdatesFromConv = (charId, updates) => {
-		const charType = this.state.playerCharacters[charId] ? 'player' : 'npc';
+	applyUpdatesFromConv = (charId, updates, triggeredCallback) => {
+		const charType = this.state.playerCharacters[charId] ? 'player' : this.state.npcs[charId] ? 'npc' : null;
 		let playerFollowOrder = [...this.state.playerFollowOrder];
 		let pcObjectOrdering = [...this.state.pcObjectOrdering];
+		let savedMaps = null;
+		let locationChange = null;
+		const changeLocation = () => {
+			if (locationChange) {
+				this.triggerLocationChange(locationChange);
+			}
+		};
 
 		if (updates.journalUpdate) {
 			const updateType = updates.journalUpdate.updateType;
 			const journalId = updates.journalUpdate.id;
 			let partyJournal = deepCopy(this.state.partyJournal);
-			let partyExpertise = this.state.partyExpertise;
+			const xp = updates.journalUpdate.xp;
 
 			if (updateType === 'new') {
 				partyJournal.activeQuests[journalId] = {
@@ -1815,15 +2206,27 @@ class Game extends React.PureComponent {
 					goal: updates.journalUpdate.goal
 				}
 			} else if (updateType === 'update') {
-
+				partyJournal.activeQuests[journalId].description += `\n• ${updates.journalUpdate.description}`;
+				if (updates.journalUpdate.goal) {
+					partyJournal.activeQuests[journalId].goal = updates.journalUpdate.goal;
+				}
 			} else {
 				partyJournal.completedQuests[journalId] = {...partyJournal.activeQuests[journalId]};
 				delete partyJournal.activeQuests[journalId];
-				partyExpertise += updates.journalUpdate.xp;
 			}
 			delete updates.journalUpdate;
-			this.setState({partyJournal, partyExpertise});
+			this.setState({partyJournal}, () => {
+				if (xp) {
+					this.updateExpertise(xp);
+				}
+			});
 		}
+		if (updates.changeLocation) {
+			locationChange = {...updates.changeLocation};
+			delete updates.changeLocation;
+		}
+
+		// rest of updates are different conv endings (join party, leave party, or just conv end with pc or npc)
 		if (updates.joinParty) {
 			delete updates.joinParty;
 			const npcs = deepCopy(this.state.npcs);
@@ -1888,7 +2291,9 @@ class Game extends React.PureComponent {
 					this.setState({playerFollowOrder, pcObjectOrdering, unitsTurnOrder}, updateCharacters);
 				});
 			} else {
-				const savedMaps = deepCopy(this.state.savedMaps);
+				if (!savedMaps) {
+					savedMaps = deepCopy(this.state.savedMaps);
+				}
 				const savedMapsNpcs = savedMaps.museum.floors[1].npcs;
 				savedMapsNpcs[charId] = playerCharacters[charId];
 				savedMapsNpcs[charId].type = 'playerNpc';
@@ -1896,14 +2301,29 @@ class Game extends React.PureComponent {
 				savedMapsNpcs[charId].coords = {...GameLocations.museum.floors[1].npcs[charId].coords};
 				this.setState({playerFollowOrder, pcObjectOrdering, unitsTurnOrder, savedMaps}, updateCharacters);
 			}
+		// if conv target is pc, update that pc's conv
 		} else if (charType === 'player') {
 			const charData = deepCopy(this.state.playerCharacters[charId]);
 			charData.conversationStatus = {...updates};
-			this.updateCharacters('player', charData, charId, false, false, false);
-		} else {
-			const charData = deepCopy(this.state.npcs[charId]);
-			charData.conversationStatus = {...updates};
-			this.updateNpcs(charData, charId);
+			this.updateCharacters('player', charData, charId, false, false, false, changeLocation);
+		// otherwise update npc's conv
+		} else if (charType === 'npc') {
+			let npcsData = deepCopy(this.state.npcs);
+			if (updates.removeFromMap) {
+				updates.removeFromMap.forEach(itemInfo => {
+					//todo: need to add code for removal of objs or envObjs or creatures?
+					if (itemInfo.type === 'npcs') {
+						delete npcsData[itemInfo.id];
+					}
+				});
+			}
+			if (npcsData[charId]) {
+				npcsData[charId].conversationStatus = {...updates};
+			}
+			this.updateNpcs(npcsData, null, changeLocation);
+		// currently not in use (currently only triggered callbacks are for encountering scripted dialog before combat, which don't have conv updates)
+		} else if (triggeredCallback) {
+			triggeredCallback();
 		}
 	}
 
@@ -1921,13 +2341,14 @@ class Game extends React.PureComponent {
 	 *      soundCoords: {xPos: x, yPos: y}
 	 *  }
 	 * )
+	 * @param command string ('start' or 'stop', for background fx)
 	 */
-	toggleAudio = (category, selectorName, processors) => {
+	toggleAudio = (category, selectorName, processors, command) => {
 		const sfxReverbProcessed = {...this.state.sfxReverbProcessed};
-		const audioEl = this.sfxSelectors[category][selectorName].current;
+		const audioRef = this.sfxSelectors[category][selectorName].current;
 		const isBackgroundSfx = category === 'environments' && selectorName.includes('Background');
 
-		if (audioEl.paused && this.state.gameOptions.playFx) {
+		if ((audioRef.paused || command === 'start') && this.state.gameOptions.playFx) {
 			let processValues = null;
 			if (processors) {
 				processValues = {};
@@ -1950,24 +2371,59 @@ class Game extends React.PureComponent {
 					processValues.panSetting = {x: sndCoords.xPos - activePcCoors.xPos, y: sndCoords.yPos - activePcCoors.yPos};
 				}
 			}
-			ProcessAudio(selectorName, audioEl, processValues);
-			audioEl.volume = this.state.gameOptions.fxVolume;
+			ProcessAudio(selectorName, audioRef, processValues);
+			audioRef.volume = this.state.gameOptions.fxVolume;
 
 			if (isBackgroundSfx) {
-				audioEl.loop = true;
+				audioRef.loop = true;
 			}
-			audioEl.play().catch(e => console.log(e));
+			audioRef.play().catch(e => console.log(e));
 
 			if (sfxReverbProcessed[selectorName] !== this.state.sfxReverbProcessed[selectorName]) {
 				this.setState({sfxReverbProcessed});
 			}
-		} else if (isBackgroundSfx && (!audioEl.paused || !this.state.gameOptions.playFx)) {
-			audioEl.pause();
+		} else if (isBackgroundSfx && (command === 'stop' || !this.state.gameOptions.playFx)) {
+			audioRef.pause();
+			audioRef.currentTime = 0;
 		}
 	}
 
+	/**
+	 *
+	 * @param category string (music category - 'environments', 'scenarios')
+	 * @param songName string (music name - ex 'catacombs', 'museum', etc.)
+	 * @param command string ('start' or 'stop')
+	 */
+	toggleMusic = (category, songName, command) => {
+		const musicRef = this.musicSelectors[category][songName].current;
+		const shouldStartPlaying = command === 'start' && this.state.gameOptions.playMusic;
+		const shouldStopPlaying = command === 'stop' || !this.state.gameOptions.playMusic;
+
+		if (musicRef && shouldStartPlaying) {
+			musicRef.volume = this.state.gameOptions.musicVolume;
+			musicRef.play().catch(e => console.log(e));
+			this.setState({musicSelector: {category, songName}});
+		} else if (musicRef && shouldStopPlaying) {
+			musicRef.pause();
+			musicRef.currentTime = 0;
+		}
+	}
+
+	adjustMusicComponentVolume = (value) => {
+		this.musicSelectors[this.state.music.category][this.state.music.songName].current.volume = value;
+	}
+
 	updateGameOptions = (gameOptions) => {
-		this.setState({gameOptions});
+		const fxOptionChange = gameOptions.playFx !== this.state.gameOptions.playFx;
+		const musicOptionChange = gameOptions.playMusic !== this.state.gameOptions.playMusic;
+		this.setState({gameOptions}, () => {
+			if (fxOptionChange) {
+				this.toggleAudio('environments', this.state.currentLocation + 'Background', null, gameOptions.playFx ? 'start' : 'stop');
+			}
+			if (musicOptionChange) {
+				this.toggleMusic('environments', this.state.currentLocation, gameOptions.playMusic ? 'start' : 'stop');
+			}
+		});
 	}
 
 	/**
@@ -2015,7 +2471,7 @@ class Game extends React.PureComponent {
 		const userId = this.state.userData.uid;
 		const dataToSave = {
 			gameOptions: this.state.gameOptions, // object
-			storyProgress: 'Ch1', // string
+			storyProgress: this.state.storyProgress, // object
 			playerCharacters: this.state.playerCharacters, // object
 			pcObjectOrdering: this.state.pcObjectOrdering, // array
 			characterCreated: this.state.characterCreated, // boolean
@@ -2023,6 +2479,7 @@ class Game extends React.PureComponent {
 			partyLevel: this.state.partyLevel, // number
 			partyExpertise: this.state.partyExpertise, // number
 			partyJournal: this.state.partyJournal, // object
+			identifiedThings: this.state.identifiedThings, // object
 			savedMaps: this.state.savedMaps, // object
 			currentLocation: this.state.currentLocation, // string
 			previousLocation: this.state.previousLocation, // string
@@ -2035,7 +2492,8 @@ class Game extends React.PureComponent {
 			activePlayerMovesCompleted: this.state.activePlayerMovesCompleted, // number
 			activePlayerActionsCompleted: this.state.activePlayerActionsCompleted, // number
 			followModePositions: this.state.followModePositions, // array
-			threatList: this.state.threatList // array
+			threatList: this.state.threatList, // array
+			inTacticalMode: this.state.inTacticalMode // boolean
 		};
 		this.firebase.setData(userId, isReset ? null : deepCopy(dataToSave, true), (logMessage) => {
 			if (!isReset) {
@@ -2050,20 +2508,36 @@ class Game extends React.PureComponent {
 	 * Skips activeCharacter, as that is restored in updateActiveCharacter
 	 * @param callback: function
 	 */
-	_restoreGameDataFromFB = (callback) => {
+	_restoreGameDataFromFB = async (callback) => {
+		let firebaseGameData = this.state.firebaseGameData;
+		// no fb data when loading from saved game (firebaseGameData is only fetched/saved to state during login)
+		if (!firebaseGameData) {
+			await this.firebase.getData(this.state.userData.uid, response => {
+				if (response) {
+					firebaseGameData = response;
+				}
+			}).catch(error => {
+				console.error(error);
+				alert(`Unable to retrieve game data. (${error}) Try reloading the page.`)
+			});
+		}
 		let dataToRestore = {};
-		for (const [stateKey, stateValue] of Object.entries(this.state.firebaseGameData)) {
+		for (const [stateKey, stateValue] of Object.entries(firebaseGameData)) {
 			// will set activeCharacter in _setupPlayerCharacters
 			if (typeof stateValue !== 'object' && stateKey !== 'activeCharacter') {
 				dataToRestore[stateKey] = stateValue;
 			}
 		}
-		this.setState({...dataToRestore, loadedFromFB: true}, callback);
+		if (this.state.firebaseGameData) {
+			this.setState({...dataToRestore}, callback);
+		} else {
+			this.setState({...dataToRestore, firebaseGameData}, callback);
+		}
 	}
 
 	/**
 	 * Initialization function. gameSetupComplete in callback indicates Map component can render
-	 * Restores objects/arrays from firebase: gameOptions, createdCharData, partyJournal, savedMaps,
+	 * Restores objects/arrays from firebase: gameOptions, storyProgress, partyJournal, identifiedThings, savedMaps,
 	 * playerFollowOrder, followModePositions, threatList
 	 * playerCharacters object from firebase gets restored in _setupPlayerCharacters
 	 * activeCharacter gets set in _setupPlayerCharacters but updated by updateActiveCharacter after placing creatures in Map if no FB data
@@ -2078,16 +2552,18 @@ class Game extends React.PureComponent {
 			};
 			if (this.state.firebaseGameData) {
 				const gameOptions = {...this.state.firebaseGameData.gameOptions};
-				const createdCharData = this.state.createdCharData || {...this.state.firebaseGameData.createdCharData};
+				const storyProgress = {...this.state.firebaseGameData.storyProgress};
 				const partyJournal = deepCopy(this.state.firebaseGameData.partyJournal);
+				const identifiedThings = deepCopy(this.state.firebaseGameData.identifiedThings);
 				const savedMaps = deepCopy(this.state.firebaseGameData.savedMaps);
 				const followModePositions = this.state.firebaseGameData.followModePositions ? [...this.state.firebaseGameData.followModePositions] : [];
 				const threatList = this.state.firebaseGameData.threatList ? [...this.state.firebaseGameData.threatList] : [];
 				const npcs = deepCopy(this.state.firebaseGameData.savedMaps[this.state.currentLocation].floors[this.state.currentFloor]);
 				this.setState({
 					gameOptions,
-					createdCharData,
+					storyProgress,
 					partyJournal,
+					identifiedThings,
 					savedMaps,
 					followModePositions,
 					threatList,
@@ -2111,7 +2587,7 @@ class Game extends React.PureComponent {
 		let playerFollowOrder = [];
 		let pcObjectOrdering = [];
 		let activeCharacter = this.state.activeCharacter;
-		const createdCharData = this.state.createdCharData;
+		const createdCharData = this.state.createdCharData || deepCopy(firebaseDataLoaded.createdCharData);
 
 		// char initialization for starting new game
 		if (!firebaseDataLoaded || Object.keys(firebaseDataLoaded.playerCharacters).length === 0) {
@@ -2164,22 +2640,13 @@ class Game extends React.PureComponent {
 			});
 			this.setState({
 				playerCharacters,
+				createdCharData,
 				activeCharacter: firebaseDataLoaded.activeCharacter,
 				playerFollowOrder: [...firebaseDataLoaded.playerFollowOrder],
-				pcObjectOrdering: [...firebaseDataLoaded.pcObjectOrdering]
+				pcObjectOrdering: [...firebaseDataLoaded.pcObjectOrdering],
+				unitsTurnOrder: deepCopy(firebaseDataLoaded.unitsTurnOrder)
 			}, gameSetupCallback);
 		}
-	}
-
-	/**
-	 * Saves new game location to state.
-	 * @param newLocation string
-	 * @private
-	 */
-	_setLocation(newLocation) {
-		const gameOptions = {...this.state.gameOptions};
-		gameOptions.songName = newLocation;
-		this.setState({currentLocation: newLocation, gameOptions});
 	}
 
 	/**
@@ -2252,25 +2719,15 @@ class Game extends React.PureComponent {
 	 * @private
 	 */
 	_setAllUnitsTurnOrder(unitType, callback) {
-		let unitsTurnOrder = [];
-		const fbGameData = this.state.firebaseGameData;
+		let unitsTurnOrder = deepCopy(this.state.unitsTurnOrder);
 
-		if (fbGameData && fbGameData.unitsTurnOrder) {
-			unitsTurnOrder = deepCopy(fbGameData.unitsTurnOrder);
-		} else {
-			unitsTurnOrder = deepCopy(this.state.unitsTurnOrder);
-			for (const [id, charData] of Object.entries(this.state[unitType])) {
-				const unitInitiative = this._rollCharInitiative(charData.initiative);
-				unitsTurnOrder = this._sortInitiatives(unitsTurnOrder, id, unitInitiative, unitType);
-			}
+		for (const [id, charData] of Object.entries(this.state[unitType])) {
+			const unitInitiative = this._rollCharInitiative(charData.initiative);
+			unitsTurnOrder = this._sortInitiatives(unitsTurnOrder, id, unitInitiative, unitType);
 		}
 
 		this.setState({unitsTurnOrder}, () => {
-			if (!fbGameData) {
-				this.updateActiveCharacter(callback);
-			} else {
-				callback();
-			}
+			this.updateActiveCharacter(callback);
 		});
 	}
 
@@ -2289,32 +2746,29 @@ class Game extends React.PureComponent {
 	 * Determines if object is on a clicked tile (checking for context menu)
 	 * @param tilePos
 	 * @param evt
-	 * @returns null or object ({objectInfo, selectionEvt, isPickUpAction})
+	 * @returns null or object ({[objectsInfo], selectionEvt, isPickUpAction})
 	 * @private
 	 */
 	_isObjectOnTile(tilePos, evt) {
-		let objectOnTile = null;
-		const objects = Object.values(this.state.mapObjects);
-		let i = 0;
-		while (!objectOnTile && i < objects.length) {
-			if (convertCoordsToPos(objects[i].coords) === tilePos) {
-				// objectInfo needs to be in array for setMapObjectSelected
-				objectOnTile = {objectInfo: [objects[i]], selectionEvt: evt, isPickUpAction: false};
-			} else {
-				i++;
+		let objectsArray = [];
+		for (const objectInfo of Object.values(this.state.mapObjects)) {
+			if (convertCoordsToPos(objectInfo.coords) === tilePos) {
+				objectsArray.push(objectInfo);
 			}
 		}
-		return objectOnTile;
+		// objectInfo needs to be in array for setMapObjectSelected
+		return objectsArray.length > 0 ? {objectInfo: objectsArray, selectionEvt: evt, isPickUpAction: false} : null;
 	}
 
 	/**
 	 * remove PC (not creature) from gameplay that has lost all health or sanity
 	 * then drop all items to map if not primary pc or end game if primary pc
+	 * End game if pc is main char
 	 * @param id: String
 	 * @param callback: function
 	 * @private
 	 */
-	_removeDeadPCFromGame(id, callback) {
+	_handleDeadPc(id, callback) {
 		const deadPc = this.state.playerCharacters[id];
 		if (deadPc) {
 			if (deadPc.currentHealth <= 0) {
@@ -2327,7 +2781,7 @@ class Game extends React.PureComponent {
 				this.endGame();
 			} else {
 				this.dropAllItemsInPcInventory(id, () => {
-					this._removeDeadFromTurnOrder(id, callback);
+					this._removeDeadFromGame(id, callback);
 				});
 			}
 		} else if (callback) callback();
@@ -2335,16 +2789,39 @@ class Game extends React.PureComponent {
 
 	/**
 	 * Updates to state the turn order with the dead removed
+	 * Deletes dead PC from playerCharacters
+	 * Updates creature identification stats
 	 * @param id: String
 	 * @param callback: function
 	 * @param checkLineOfSightToParty: function (from Map)
 	 * @private
 	 */
-	_removeDeadFromTurnOrder(id, callback, checkLineOfSightToParty) {
+	_removeDeadFromGame(id, callback, checkLineOfSightToParty) {
 		let playerCharacters = deepCopy(this.state.playerCharacters);
 		let unitsTurnOrder = [...this.state.unitsTurnOrder];
 		let unitNotFound = true;
 		let index = 0;
+		let identifiedThings = null;
+		if (this.state.mapCreatures[id]) {
+			const creatureName = this.state.mapCreatures[id].name;
+			identifiedThings = deepCopy(this.state.identifiedThings);
+			let identifiedCreature = identifiedThings.creatures[creatureName];
+			if (!identifiedCreature) {
+				identifiedThings.creatures[creatureName] = {
+					encountered: 0,
+					name: false,
+					stats: false,
+					skills: false
+				};
+				identifiedCreature = identifiedThings.creatures[creatureName];
+			}
+			identifiedCreature.encountered++;
+			if (identifiedCreature.encountered >= 5) {
+				identifiedCreature.skills = true;
+			} else if (identifiedCreature.encountered >= 10) {
+				identifiedCreature.stats = true;
+			}
+		}
 		while (unitNotFound && index < this.state.unitsTurnOrder.length) {
 			const unitInfo = Object.values(this.state.unitsTurnOrder[index])[0];
 			if (unitInfo.id === id) {
@@ -2355,16 +2832,24 @@ class Game extends React.PureComponent {
 		}
 		delete playerCharacters[id];
 		this.setState({unitsTurnOrder, playerCharacters}, () => {
-			// if creature died
-			if (checkLineOfSightToParty) {
-				this.updateThreatList([], [id], callback, checkLineOfSightToParty);
-			// otherwise player died
+			const updateThreatsOrFollowOrder = () => {
+				// if creature died
+				if (checkLineOfSightToParty) {
+					this.updateThreatList([], [id], callback, checkLineOfSightToParty);
+				// otherwise player died
+				} else {
+					let playerFollowOrder = [...this.state.playerFollowOrder];
+					playerFollowOrder.splice(this.state.playerFollowOrder.indexOf(id), 1);
+					let followModePositions = [...this.state.followModePositions];
+					followModePositions.splice(this.state.followModePositions.indexOf(id), 1);
+					this.setState({playerFollowOrder, followModePositions}, callback);
+				}
+			}
+			// if creature was the one that died, update identified stats
+			if (identifiedThings) {
+				this.updateIdentifiedThings(identifiedThings, updateThreatsOrFollowOrder);
 			} else {
-				let playerFollowOrder = [...this.state.playerFollowOrder];
-				playerFollowOrder.splice(this.state.playerFollowOrder.indexOf(id), 1);
-				let followModePositions = [...this.state.followModePositions];
-				followModePositions.splice(this.state.followModePositions.indexOf(id), 1);
-				this.setState({playerFollowOrder, followModePositions}, callback);
+				updateThreatsOrFollowOrder();
 			}
 		});
 	}
@@ -2401,6 +2886,22 @@ class Game extends React.PureComponent {
 		return effects;
 	}
 
+	/**
+	 * Called by render() to set up array of music elements
+	 * @returns {*[]}
+	 */
+	setupMusic = () => {
+		let music = [];
+
+		for (const [category, names] of Object.entries(this.musicSelectors)) {
+			for (const name of Object.keys(names)) {
+				this.musicSelectors[category][name] = createRef();
+				music.push(<Music musicRef={this.musicSelectors[category][name]} key={'music' + name} id={`music-${name}-theme`} sourceName={name} />);
+			}
+		}
+
+		return music;
+	}
 
 
 	/***************************
@@ -2433,14 +2934,11 @@ class Game extends React.PureComponent {
 	}
 
 	componentDidUpdate(prevProps, prevState, snapShot) {
-		if (prevState.gameOptions.playFx !== this.state.gameOptions.playFx) {
-			this.toggleAudio('environments', this.state.currentLocation + 'Background');
-		}
 	}
 
 	render() {
-		const moveItSkill = this.state.playerCharacters[this.state.activeCharacter] ? this.state.playerCharacters[this.state.activeCharacter].skills.moveIt : null;
-		const playerMoveLimit = this.playerMovesLimit + (moveItSkill ? moveItSkill.modifier[moveItSkill.level] : 0);
+		const playerData = this.state.playerCharacters[this.state.activeCharacter];
+		const playerMoveSpeed = playerData ? playerData.moveSpeed : null;
 		return (
 			<div className={`game ${this.state.showDialog ? 'no-click' : ''}`} style={{width: `${this.state.screenData.width}px`, height: `${this.state.screenData.height}px`}}>
 				{!this.state.isLoggedIn &&
@@ -2458,6 +2956,7 @@ class Game extends React.PureComponent {
 				}
 
 				{this.state.isLoggedIn && <this.setupSoundEffects /> }
+				{this.state.isLoggedIn && <this.setupMusic /> }
 
 				{this.showLogin && this.state.isLoginWindowRequested &&
 					<Firebase
@@ -2481,6 +2980,7 @@ class Game extends React.PureComponent {
 						screenData={this.state.screenData}
 						updateGameOptions={this.updateGameOptions}
 						gameOptions={this.state.gameOptions}
+						adjustMusicComponentVolume={this.adjustMusicComponentVolume}
 						toggleNeedToSaveData={this.toggleNeedToSaveData}
 						resetAllData={this.resetAllData}
 						objectPanelWidth={this.objectPanelWidth}
@@ -2500,6 +3000,8 @@ class Game extends React.PureComponent {
 						// character info
 						selectedCharacterInfo={this.state.playerCharacters[this.state.selectedCharacter] || this.state.npcs[this.state.selectedPlayerNpc]}
 						selectedCreatureInfo={this.state.mapCreatures[this.state.selectedCreature] || this.state.npcs[this.state.selectedNpc]}
+						identifiedThings={this.state.identifiedThings}
+						updateIdentifiedThings={this.updateIdentifiedThings}
 						characterIsSelected={this.state.characterIsSelected}
 						creatureIsSelected={this.state.creatureIsSelected}
 						updateUnitSelectionStatus={this.updateUnitSelectionStatus}
@@ -2512,13 +3014,12 @@ class Game extends React.PureComponent {
 						objHasBeenDropped={this.state.objHasBeenDropped}
 						setHasObjBeenDropped={this.setHasObjBeenDropped}
 						addItemToPlayerInventory={this.addItemToPlayerInventory}
-						toggleLightingHasChanged={this.toggleLightingHasChanged}
-						determineIfShouldSpawnCreature={this.determineIfShouldSpawnCreature}
 						// map object info
 						updateMapObjects={this.updateMapObjects}
 						mapObjects={this.state.mapObjects}
 						updateMapEnvObjects={this.updateMapEnvObjects}
 						envObjects={this.state.envObjects}
+						toggleAudio={this.toggleAudio}
 						// control bars
 						actionButtonSelected={this.state.actionButtonSelected}
 						skillModeActive={this.state.skillModeActive}
@@ -2530,7 +3031,7 @@ class Game extends React.PureComponent {
 						activeCharacter={this.state.activeCharacter}
 						playerCharacters={this.state.playerCharacters}
 						actionsCompleted={{moves: this.state.activePlayerMovesCompleted, actions: this.state.activePlayerActionsCompleted}}
-						playerLimits={{moves: playerMoveLimit, actions: this.playerActionsLimit}}
+						playerLimits={{moves: playerMoveSpeed, actions: this.playerActionsLimit}}
 						// context menu
 						handleContextMenuSelection={this.handleContextMenuSelection}
 						contextMenu={this.state.contextMenu}
@@ -2548,6 +3049,8 @@ class Game extends React.PureComponent {
 						pcObjectOrdering={this.state.pcObjectOrdering}
 						inSearchMode={this.state.inSearchMode}
 						toggleSearchMode={this.toggleSearchMode}
+						partyIsResting={this.state.partyIsResting}
+						processResting={this.processResting}
 						// party status panel
 						currentLocation={this.state.currentLocation}
 						currentFloor={this.state.currentFloor}
@@ -2560,6 +3063,7 @@ class Game extends React.PureComponent {
 						assignLevelUpPoints={this.assignLevelUpPoints}
 						// conversations
 						storyProgress={this.state.storyProgress}
+						updateStoryProgress={this.updateStoryProgress}
 						setConversationTarget={this.setConversationTarget}
 						conversationTarget={this.state.conversationTarget}
 						npcs={this.state.npcs}
@@ -2575,13 +3079,14 @@ class Game extends React.PureComponent {
 						gameOptions={this.state.gameOptions}
 						objectPanelWidth={this.objectPanelWidth}
 						needToSaveData={this.state.needToSaveData}
-						loadedFromFB={this.state.loadedFromFB}
 						// dialogs
 						setShowDialogProps={this.setShowDialogProps}
 						notEnoughSpaceDialogProps={this.notEnoughSpaceDialogProps}
 						noMoreActionsDialogProps={this.noMoreActionsDialogProps}
 						noMoreMovesDialogProps={this.noMoreMovesDialogProps}
 						lockedDoorDialogProps={this.lockedDoorDialogProps}
+						storyProgress={this.state.storyProgress}
+						updateStoryProgress={this.updateStoryProgress}
 						// character info
 						createdCharData={this.state.createdCharData}
 						pcTypes={this.state.pcTypes}
@@ -2589,13 +3094,14 @@ class Game extends React.PureComponent {
 						activeCharacter={this.state.activeCharacter}
 						getAllCharactersPos={this.getAllCharactersPos}
 						actionsCompleted={{moves: this.state.activePlayerMovesCompleted, actions: this.state.activePlayerActionsCompleted}}
-						playerLimits={{moves: playerMoveLimit, actions: this.playerActionsLimit}}
+						playerLimits={{moves: playerMoveSpeed, actions: this.playerActionsLimit}}
 						updateActivePlayerMoves={this.updateActivePlayerMoves}
 						mapCreatures={this.state.mapCreatures}
 						updateCharacters={this.updateCharacters}
 						calcPcLightChanges={this.calcPcLightChanges}
 						lightTimeCosts={this.lightTimeCosts}
 						takeAutomaticAction={this.takeAutomaticAction}
+						recoverCharsSpirit={this.recoverCharsSpirit}
 						// npcs
 						npcs={this.state.npcs}
 						updateNpcs={this.updateNpcs}
@@ -2613,6 +3119,7 @@ class Game extends React.PureComponent {
 						toggleLightingHasChanged={this.toggleLightingHasChanged}
 						creatureSpawnInfo={this.state.creatureSpawnInfo}
 						spawnCreature={this.spawnCreature}
+						partyJournal={this.state.partyJournal}
 						// turn info
 						currentTurn={this.state.currentTurn}
 						updateCurrentTurn={this.updateCurrentTurn}
@@ -2621,7 +3128,8 @@ class Game extends React.PureComponent {
 						previousLocation={this.state.previousLocation}
 						currentFloor={this.state.currentFloor}
 						previousFloor={this.state.previousFloor}
-						resetDataForNewFloor={this.resetDataForNewFloor}
+						resetDataForNewArea={this.resetDataForNewArea}
+						locationChange={this.state.locationChange}
 						// ui data/control
 						updateLog={this.updateLog}
 						logText={this.state.logText}
@@ -2633,6 +3141,7 @@ class Game extends React.PureComponent {
 						centerOnPlayer={this.state.centerOnPlayer}
 						toggleCenterOnPlayer={this.toggleCenterOnPlayer}
 						toggleAudio={this.toggleAudio}
+						toggleMusic={this.toggleMusic}
 						// modes info
 						updateThreatList={this.updateThreatList}
 						threatList={this.state.threatList}
@@ -2645,6 +3154,8 @@ class Game extends React.PureComponent {
 						followModePositions={this.state.followModePositions}
 						inSearchMode={this.state.inSearchMode}
 						skillModeActive={this.state.skillModeActive}
+						partyIsResting={this.state.partyIsResting}
+						processResting={this.processResting}
 					/>
 				}
 			</div>

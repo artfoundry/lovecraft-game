@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {convertCamelToKabobCase, capitalizeWord, convertKabobToCamelCase, deepCopy, convertObjIdToClassId, notEnoughSpaceInInventory, handleItemOverDropZone} from './Utils';
 import AllConversations from './data/conversationsLoader';
 
@@ -13,6 +13,14 @@ function CharacterControls(props) {
 		medicine: [],
 		skills: [],
 		misc: []
+	};
+	let statusIconCount = 0;
+	const statusIconMax = 3;
+	const [statusPaginationNum, updateStatusPageNum] = useState(1);
+	const shouldStatusIconShow = () => {
+		return (statusIconCount <= statusIconMax && statusPaginationNum === 1) ||
+			(statusIconCount > statusIconMax && statusPaginationNum === 2) ||
+			(statusIconCount > (statusIconMax * 2) && statusPaginationNum === 3);
 	};
 	let actionButtonCount = 0;
 	const actionButtonMax = 6;
@@ -121,20 +129,10 @@ function CharacterControls(props) {
 	// to ensure expertMining skill and mine skill are displayed next to each other in control bar
 
 	// add misc actions to actionableItems.misc
-	if (props.mapObjectsOnPcTiles.length > 0) {
-		actionableItems.misc.push('pickup');
-	}
-	if (props.containersNextToPc.length > 0) {
-		actionableItems.misc.push('open-container');
-	}
 	if ((currentPCdata.equippedLight && (currentPCdata.equippedLight.includes('lantern') || currentPCdata.equippedLight.includes('torch'))) &&
 		currentPCdata.lightTime < currentPCdata.items[currentPCdata.equippedLight].maxTime && currentPCdata.items.oil0)
 	{
 		actionableItems.misc.push('refill');
-	}
-
-	if (currentPCdata.levelUpPoints > 0) {
-		statuses.push('level-up');
 	}
 	for (const statusType of Object.keys(currentPCdata.statuses)) {
 		statuses.push(statusType);
@@ -142,11 +140,12 @@ function CharacterControls(props) {
 	const statusIcons = (
 		<span className={'character-status-icons'}>
 			{statuses.map(status => {
-				const iconClass = `character-status-icon ${convertObjIdToClassId(status)}-status-icon`;
+				statusIconCount++;
+				const iconClass = `character-status-icon ${convertObjIdToClassId(status)}-status-icon${shouldStatusIconShow() ? '' : ' hide'}`;
 				return (
 					<span
 						key={status}
-						className={iconClass}
+						className={iconClass + (status === 'levelUp' ? ' glow-pulse-once' : '')}
 						onClick={(evt) => {
 							props.toggleHelpPopup(
 								evt,
@@ -159,7 +158,7 @@ function CharacterControls(props) {
 							);
 						}}
 					></span>
-				)
+				);
 			})}
 		</span>
 	);
@@ -303,8 +302,9 @@ function CharacterControls(props) {
 					(skill.spirit && !hasEnoughSpirit) || (requiresItemOrWeapon && !hasNeededItem) ||
 					(skill.name === 'Quick Reload' && !hasAmmoForReloadSkill) ||
 					(skill.name === 'Go Ballistic' && !gunIsLoaded) ||
-					(skill.name === 'Feel The Pain' && skill.active) ||
+					(skill.name === 'Feel The Pain' && statuses.includes('feelThePain')) ||
 					(skill.name === 'Stealthy' && !props.inTacticalMode) ||
+					(skill.name === 'Comfort The Fearful' && !props.inTacticalMode) ||
 					(skill.mustNotHaveLightEquipped && currentPCdata.equippedLight) ||
 					(skill.name === 'Disarm Trap' && props.trapsNextToPc.length === 0) ||
 					statuses.includes('confused') ||
@@ -381,40 +381,7 @@ function CharacterControls(props) {
 				actionButtonCount++;
 				// help button needs to be at same level in tree as clickable element.
 				// If clickable element may not have any content, it's height would be 0, so it needs to have button classes
-				if (item === 'pickup') {
-					button = (
-						<div
-							key={item + index}
-							className={shouldActionButtonShow() ? '' : 'hide'}
-						>
-							{props.showHelpSystem && props.helpPopupButton({
-								iconClass: `action-button ${item}-action`,
-								name: 'Pick up item',
-								description: 'Pick up items on the ground from the tile on which the investigator is standing.',
-								source: null
-							}, {'transform': 'translate(6px, 6px)'})}
-							<div className={`action-button ${item}-action${actionButtonState}`}
-								onClick={(evt) => props.setMapObjectSelected(props.mapObjectsOnPcTiles, evt, true)}></div>
-						</div>
-					);
-				} else if (item === 'open-container') {
-					button = (
-						<div
-							key={item + index}
-							className={shouldActionButtonShow() ? '' : 'hide'}
-						>
-							{props.showHelpSystem && props.helpPopupButton({
-								iconClass: `action-button ${item}-action`,
-								name: 'Open',
-								description: 'Open the nearby container.',
-								source: null
-							}, {'transform': 'translate(6px, 6px)'})}
-							<div
-								className={`action-button ${item}-action${actionButtonState}`}
-								onClick={(evt) => props.setMapObjectSelected(props.containersNextToPc, evt, true)}></div>
-						</div>
-					);
-				} else if (item === 'refill') {
+				if (item === 'refill') {
 					button = (
 						<div
 							key={item + index}
@@ -459,7 +426,13 @@ function CharacterControls(props) {
 	const healthLevel = (currentPCdata.currentHealth / currentPCdata.startingHealth) * 100;
 	const sanityLevel = (currentPCdata.currentSanity / currentPCdata.startingSanity) * 100;
 	const spiritLevel = (currentPCdata.currentSpirit / currentPCdata.startingSpirit) * 100;
+	const statusPageTotal = Math.ceil(statusIconCount / statusIconMax);
 	const skillPageTotal = Math.ceil(actionButtonCount / actionButtonMax);
+	const largeScreenSize = !props.screenData.isSmall && !props.screenData.isShort && !props.screenData.isNarrow;
+	// if an icon has been removed and was the only icon on that icons page, reduce current page num
+	if (statusPageTotal < statusPaginationNum && statusPageTotal > 0) {
+		updateStatusPageNum(statusPageTotal);
+	}
 	// if a button has been removed and was the only button on that buttons page, reduce current page num
 	if (skillPageTotal < skillPaginationNum && skillPageTotal > 0) {
 		updateSkillPageNum(skillPageTotal);
@@ -471,14 +444,28 @@ function CharacterControls(props) {
 			onDragOver={(evt) => handleItemOverDropZone(evt)}
 			onDrop={(evt) => props.dropItemToPC(evt, props.characterId)}>
 
-			<div className='control-bar-tab' onClick={() => props.setSelectedControlTab(props.characterId)}>
+			<div className='control-bar-tab' onClick={() => {
+				if (!displayCharName) {
+					props.setSelectedControlTab(props.characterId)
+				}
+			}}>
 				{props.showHelpSystem && props.helpPopupButton('characterTabs')}
-				{props.showHelpSystem && props.helpPopupButton('statusIndicators', {'right': '0', 'zIndex': '2'})}
-				<span className='character-name font-fancy'>
+				{props.showHelpSystem && (largeScreenSize || props.characterId === props.selectedControlTab) && props.helpPopupButton('statusIndicators', {'right': '0', 'zIndex': '2'})}
+				<span className='character-name font-fancy' onClick={() => {
+					if (displayCharName) {
+						props.updateUnitSelectionStatus(props.characterId, 'player');
+					}
+				}}>
 					<span className={`control-bar-tab-icon ${convertObjIdToClassId(props.characterId)}`}></span>
 					{displayCharName ? props.characterName : ''}
 				</span>
+				{(statusIconCount > statusIconMax) && (statusPaginationNum > 1) && (largeScreenSize || props.characterId === props.selectedControlTab) &&
+					<div className='action-button character-status-scroll' onClick={() => updateStatusPageNum(statusPaginationNum - 1)}>⬅</div>
+				}
 				{statusIcons}
+				{(statusIconCount > statusIconMax) && (statusPageTotal > 1) && (statusPaginationNum < statusPageTotal) && (largeScreenSize || props.characterId === props.selectedControlTab) &&
+					<div className='action-button arrow-button-right character-status-scroll' onClick={() => updateStatusPageNum(statusPaginationNum + 1)}>⬅</div>
+				}
 			</div>
 			<div id='control-bar-statuses-container'>
 				<div className='control-bar-status-bars'>
@@ -529,7 +516,13 @@ function CharacterControls(props) {
 }
 
 function CharacterInfoPanel(props) {
-	const [levelUpPointAllocations, updatePointAllocations] = useState({stats: {}, skills: {}});
+	const [levelUpPointAllocations, updatePointAllocations] = useState({id: props.characterInfo.id, stats: {}, skills: {}});
+	const [availableLevelUpPoints, updateLevelUpPoints] = useState(props.characterInfo.levelUpPoints);
+	// if points aren't saved by user and user switches info panels, need to update state
+	useEffect(() => {
+		updatePointAllocations({id: props.characterInfo.id, stats: {}, skills: {}});
+		updateLevelUpPoints(props.characterInfo.levelUpPoints);
+	}, [props.characterInfo.id, props.characterInfo.levelUpPoints]);
 	const updateLevelPointAlloc = (statOrSkill, statOrSkillName, action) => {
 		let updateData = deepCopy(levelUpPointAllocations);
 		if (levelUpPointAllocations[statOrSkill][statOrSkillName]) {
@@ -539,10 +532,10 @@ function CharacterInfoPanel(props) {
 		}
 		updatePointAllocations(updateData);
 	}
-	const [availableLevelUpPoints, updateLevelUpPoints] = useState(props.characterInfo.levelUpPoints);
 	const skillList = Object.entries(props.characterInfo.skills).map(skillInfo => {
 		const skillId = skillInfo[0];
 		const skill = skillInfo[1];
+		const skillLevel = skill.level + (levelUpPointAllocations.skills[skillId] || 0);
 		// list of components if they exist
 		const compList = skill.cost ? Object.entries(skill.cost).map(cost => {
 			const compKey = cost[0];
@@ -571,14 +564,14 @@ function CharacterInfoPanel(props) {
 				<div>
 					<div className='char-info-skill-name'>{skill.name}</div>
 					<div>{skillDescription}</div>
-					{skill.maxLevel > 0 ? <div>Skill level: {skill.level + 1 + (levelUpPointAllocations.skills[skillId] || 0)} (Max level: {skill.maxLevel + 1})</div> : null}
+					{skill.maxLevel > 0 ? <div>Skill level: {skillLevel + 1} (Max level: {skill.maxLevel + 1})</div> : null}
 					{skill.modifier ? <div>Effect: {skill.modType}{modifier}{skill.affects}</div> : null}
 					{skill.turnsLeft ? <div>Number of turns effect lasts: {skill.turnsLeft[skill.level]}</div>: null}
 					{skill.mustBeOutOfDanger ? <div>Can't be used during combat</div> : null}
 					{skill.cost && skill.name !== 'Sacrificial Strike' ? <div>Required components: {compList}</div> : null}
 					{skill.cost && skill.name === 'Sacrificial Strike' ? <div>Cost: {compList}</div> : null}
-					{skill.light ? <div>Required time (light): {skill.light[skill.level + (levelUpPointAllocations.skills[skillId] || 0)]}</div> : null}
-					{skill.spirit ? <div>Required Spirit: {skill.spirit[skill.level + (levelUpPointAllocations.skills[skillId] || 0)]}</div> : null}
+					{skill.light ? <div>Required time (light): {skill.light[skillLevel]}</div> : null}
+					{skill.spirit ? <div>Required Spirit: {skill.spirit[skillLevel]}</div> : null}
 					{skill.requiresEquippedGunType ? <div>Requires equipped {skill.requiresEquippedGunType}</div> : null}
 					{skill.requiresEquippedMeleeWeapon ? <div>Requires equipped melee weapon</div> : null}
 					{skill.requiresEquippedItem ? <div>Requires equipped {skill.requiresEquippedItem}</div> : null}
@@ -656,6 +649,15 @@ function CharacterInfoPanel(props) {
 	const rightItemAmount = (rightEquippedItemInfo && rightEquippedItemInfo.amount) ? rightEquippedItemInfo.amount : (rightEquippedItemInfo && rightEquippedItemInfo.currentRounds) ? rightEquippedItemInfo.currentRounds : '';
 	const leftItemAmount = (leftEquippedItemInfo && leftEquippedItemInfo.amount) ? leftEquippedItemInfo.amount : (leftEquippedItemInfo && leftEquippedItemInfo.currentRounds) ? leftEquippedItemInfo.currentRounds : '';
 	const [activeTab, updateActiveTab] = useState('inv');
+	const attrHelpButtonStyle = {
+		'position': 'relative',
+		'transform': 'translate(-180px, 0)',
+		'width': '22px',
+		'height': '22px',
+		'fontSize': '22px',
+		'lineHeight': '22px'
+	};
+	const sanityEffect = props.characterInfo.statuses.paranoid || props.characterInfo.statuses.terrified;
 	let currentStatuses = [];
 	for (const [statusId, statusInfo] of Object.entries(props.characterInfo.statuses)) {
 		let info = statusInfo;
@@ -692,103 +694,104 @@ function CharacterInfoPanel(props) {
 					<div className='char-info-equipped-light'>Equipped Light: {props.characterInfo.equippedLight ? `${equippedLight.name} (Time left: ${equippedLight.time})`: 'none'}</div>
 
 					{props.showHelpSystem && props.helpPopupButton('equipment', {'transform': 'translate(-5px, 70px)'})}
-					<div className='char-info-doll-container'>
-						<div className='char-info-paper-doll'></div>
-						<div className='char-info-doll-boxes-container'>
-							<div
-								className='char-info-paper-doll-body char-info-paper-doll-box'
-								onDragOver={evt => handleItemOverDropZone(evt)}
-								onDrop={evt => props.dropItemToEquipped(evt)}
-							>
-								{(equippedItems.armor &&
-									<div
-										id={equippedItems.armor ? equippedItems.armor : 'body'}
-										className={`inv-object ${convertObjIdToClassId(equippedItems.armor)}-inv`}
-										draggable={true}
-										onDragStart={evt => dragItem(evt, equippedItems.armor)}
-										onClick={evt => {
-											props.setObjectSelected({...itemsPossessed[equippedItems.armor], id: equippedItems.armor}, null);
-											props.setObjectPanelDisplayOption(true, evt);
-										}}
-									></div>) || 'Body'}
-							</div>
+					<div className='char-info-equipment-container'>
+						<div className='char-info-item-drop-container'>
+							<div className='char-info-item-drop-zone'
+							     onDragOver={evt => handleItemOverDropZone(evt)}
+							     onDrop={evt => {
+								     if (props.objectIsSelected) {
+									     props.setHasObjBeenDropped({objHasBeenDropped: true, evt})
+								     }
+							     }}
+							>{props.showHelpSystem && props.helpPopupButton('dropEquipment', {'transform': 'translate(15px, 15px)', 'position': 'relative'})}</div>
+						</div>
 
-							<div
-								className='char-info-paper-doll-right-arm char-info-paper-doll-box'
-								onDragOver={evt => handleItemOverDropZone(evt)}
-								onDrop={evt => props.dropItemToEquipped(evt)}
-							>
-								{(equippedItems.loadout1.right &&
-									<div
-										id={equippedItems.loadout1.right ? equippedItems.loadout1.right : 'right-hand'}
-										className={`inv-object ${convertObjIdToClassId(equippedItems.loadout1.right)}-inv`}
-										draggable={true}
-										onDragStart={evt => dragItem(evt, equippedItems.loadout1.right)}
-										onClick={evt => {
-											props.setObjectSelected({...rightEquippedItemInfo, id: equippedItems.loadout1.right}, null);
-											props.setObjectPanelDisplayOption(true, evt);
-										}}
-									>{equippedItems.loadout1.right ? rightItemAmount : ''}</div>) || 'Right Hand'}
-							</div>
+						<div className='char-info-doll-container'>
+							<div className='char-info-paper-doll'></div>
+							<div className='char-info-doll-boxes-container'>
+								<div
+									className='char-info-paper-doll-body char-info-paper-doll-box'
+									onDragOver={evt => handleItemOverDropZone(evt)}
+									onDrop={evt => props.dropItemToEquipped(evt)}
+								>
+									{(equippedItems.armor &&
+										<div
+											id={equippedItems.armor ? equippedItems.armor : 'body'}
+											className={`inv-object ${convertObjIdToClassId(equippedItems.armor)}-inv`}
+											draggable={true}
+											onDragStart={evt => dragItem(evt, equippedItems.armor)}
+											onClick={evt => {
+												props.setObjectSelected({...itemsPossessed[equippedItems.armor], id: equippedItems.armor}, null);
+												props.setObjectPanelDisplayOption(true, evt);
+											}}
+										></div>) || 'Body'}
+								</div>
 
-							<div
-								className='char-info-paper-doll-left-arm char-info-paper-doll-box'
-								onDragOver={evt => handleItemOverDropZone(evt)}
-								onDrop={evt => props.dropItemToEquipped(evt)}
-							>
-								{(equippedItems.loadout1.left &&
-									<div
-										id={equippedIsTwoHanded ? equippedItems.loadout1.left + '-leftHand' :
-											equippedItems.loadout1.left ? equippedItems.loadout1.left : 'left-hand'}
-										className={`inv-object ${convertObjIdToClassId(equippedItems.loadout1.left)}-inv`}
-										draggable={true}
-										onDragStart={evt => dragItem(evt, equippedItems.loadout1.left)}
-										onClick={evt => {
-											props.setObjectSelected({...leftEquippedItemInfo, id: equippedItems.loadout1.left}, null);
-											props.setObjectPanelDisplayOption(true, evt);
-										}}
-									>{equippedItems.loadout1.left ? leftItemAmount : ''}</div>) || 'Left Hand'}
+								<div
+									className='char-info-paper-doll-right-arm char-info-paper-doll-box'
+									onDragOver={evt => handleItemOverDropZone(evt)}
+									onDrop={evt => props.dropItemToEquipped(evt)}
+								>
+									{(equippedItems.loadout1.right &&
+										<div
+											id={equippedItems.loadout1.right ? equippedItems.loadout1.right : 'right-hand'}
+											className={`inv-object ${convertObjIdToClassId(equippedItems.loadout1.right)}-inv`}
+											draggable={true}
+											onDragStart={evt => dragItem(evt, equippedItems.loadout1.right)}
+											onClick={evt => {
+												props.setObjectSelected({...rightEquippedItemInfo, id: equippedItems.loadout1.right}, null);
+												props.setObjectPanelDisplayOption(true, evt);
+											}}
+										>{equippedItems.loadout1.right ? rightItemAmount : ''}</div>) || 'Right Hand'}
+								</div>
+
+								<div
+									className='char-info-paper-doll-left-arm char-info-paper-doll-box'
+									onDragOver={evt => handleItemOverDropZone(evt)}
+									onDrop={evt => props.dropItemToEquipped(evt)}
+								>
+									{(equippedItems.loadout1.left &&
+										<div
+											id={equippedIsTwoHanded ? equippedItems.loadout1.left + '-leftHand' :
+												equippedItems.loadout1.left ? equippedItems.loadout1.left : 'left-hand'}
+											className={`inv-object ${convertObjIdToClassId(equippedItems.loadout1.left)}-inv`}
+											draggable={true}
+											onDragStart={evt => dragItem(evt, equippedItems.loadout1.left)}
+											onClick={evt => {
+												props.setObjectSelected({...leftEquippedItemInfo, id: equippedItems.loadout1.left}, null);
+												props.setObjectPanelDisplayOption(true, evt);
+											}}
+										>{equippedItems.loadout1.left ? leftItemAmount : ''}</div>) || 'Left Hand'}
+								</div>
 							</div>
 						</div>
-					</div>
 
-					<div className='char-info-equip-toggle-button general-button'>
-						{props.showHelpSystem && props.helpPopupButton('switchEquipment', {'transform': 'translate(-50px, -7px)'})}
-						<div onClick={() => {
-							if (!notEnoughSpaceInInventory(numItemsInLoadout1, numItemsInLoadout2, props.characterInfo)) {
-								props.switchEquipment(props.characterInfo.id)
-							} else {
-								props.setShowDialogProps(true, props.notEnoughSpaceDialogProps);
-							}
-						}}>Switch equipment</div>
-					</div>
-
-
-					<div>
-						<div className='char-info-item-drop-zone'
-						     onDragOver={evt => handleItemOverDropZone(evt)}
-						     onDrop={evt => {
-							     if (props.objectIsSelected) {
-								     props.setHasObjBeenDropped({objHasBeenDropped: true, evt})
-							     }
-						     }}
-						>{props.showHelpSystem && props.helpPopupButton('dropEquipment', {'transform': 'translate(15px, 15px)', 'position': 'relative'})}</div>
-						<span>Drag item here to drop</span>
+						<div className='char-info-equip-toggle-container'>
+							{props.showHelpSystem && props.helpPopupButton('switchEquipment', {'transform': 'translate(15px, 15px)'})}
+							<div className='char-info-equip-toggle-button general-button' onClick={() => {
+								if (!notEnoughSpaceInInventory(numItemsInLoadout1, numItemsInLoadout2, props.characterInfo)) {
+									props.switchEquipment(props.characterInfo.id)
+								} else {
+									props.setShowDialogProps(true, props.notEnoughSpaceDialogProps);
+								}
+							}}></div>
+						</div>
 					</div>
 
 					{itemsIntoElements}
 				</div>
 
 				<div className={`char-info-stats-container ${activeTab !== 'stats' ? 'hide' : ''}`}>
-					{props.showHelpSystem && props.helpPopupButton('attributes', {'transform': 'translate(220px, 50px)'})}
+					{props.showHelpSystem && props.helpPopupButton('attributes', {'transform': 'translate(300px, 0)'})}
 					{props.characterInfo.levelUpPoints > 0 &&
 						<div className='level-up-header highlight-row'>
-							<div className='character-stat-text'>Investigator has increased in expertise.</div>
+							<div className='character-stat-text'>{props.characterInfo.name.first}'s expertise level has increased!</div>
+							<div className='character-stat-text'>Available points are shared between Attributes and Skills</div>
 							<div className='character-stat-text'>
 								<span>Points to add: {availableLevelUpPoints}</span>
-								<span className={`general-button${availableLevelUpPoints === props.characterInfo.levelUpPoints ? ' button-disabled' : ''}`}
+								<span className={`general-button${availableLevelUpPoints > 0 ? ' button-disabled' : ''}`}
 								      onClick={() => {
-										props.assignLevelUpPoints(props.characterInfo.id, levelUpPointAllocations);
+										props.assignLevelUpPoints(levelUpPointAllocations.id, {stats: levelUpPointAllocations.stats, skills: levelUpPointAllocations.skills});
 										updatePointAllocations({stats: {}, skills: {}});
 									  }}
 								>Save</span>
@@ -797,11 +800,12 @@ function CharacterInfoPanel(props) {
 					}
 					<div className='character-stat-text'>Profession: {props.characterInfo.profession}</div>
 					<div className='character-stat-text'>Gender: {props.characterInfo.gender}</div>
-					<div className='character-stat-text'>Health: {props.characterInfo.currentHealth} / {props.characterInfo.startingHealth}</div>
-					<div className='character-stat-text'>Sanity: {props.characterInfo.currentSanity} / {props.characterInfo.startingSanity}</div>
-					<div className='character-stat-text'>Spirit: {props.characterInfo.currentSpirit} / {props.characterInfo.startingSpirit}</div>
+					<div className='character-stat-text'>Health: {props.characterInfo.currentHealth} / {props.characterInfo.startingHealth}{props.showHelpSystem && props.helpPopupButton('health', attrHelpButtonStyle)}</div>
+					<div className='character-stat-text'>Sanity: {props.characterInfo.currentSanity} / {props.characterInfo.startingSanity}{props.showHelpSystem && props.helpPopupButton('sanity', attrHelpButtonStyle)}</div>
+					<div className='character-stat-text'>Spirit: {props.characterInfo.currentSpirit} / {props.characterInfo.startingSpirit}{props.showHelpSystem && props.helpPopupButton('spirit', attrHelpButtonStyle)}</div>
 					<div className={`character-stat-text${props.characterInfo.levelUpPoints > 0 ? ' highlight-row' : ''}`}>
-						<span>Strength: {props.characterInfo.strength + (levelUpPointAllocations.stats.strength || 0)}</span>
+						Strength: {props.characterInfo.strength + (levelUpPointAllocations.stats.strength || 0)}{(sanityEffect && sanityEffect.attribute === 'strength') ? ` (-${sanityEffect.modifier})` : ''}
+						{props.showHelpSystem && props.helpPopupButton('strength', attrHelpButtonStyle)}
 						{props.characterInfo.levelUpPoints > 0 &&
 							<span>
 								<span className={`general-button level-up-button${availableLevelUpPoints === 0 ? ' button-disabled' : ''}`} onClick={() => {
@@ -816,7 +820,8 @@ function CharacterInfoPanel(props) {
 						}
 					</div>
 					<div className={`character-stat-text${props.characterInfo.levelUpPoints > 0 ? ' highlight-row' : ''}`}>
-						<span>Agility: {props.characterInfo.agility + (levelUpPointAllocations.stats.agility || 0)}</span>
+						Agility: {props.characterInfo.agility + (levelUpPointAllocations.stats.agility || 0)}{(sanityEffect && sanityEffect.attribute === 'agility') ? ` (-${sanityEffect.modifier})` : ''}
+						{props.showHelpSystem && props.helpPopupButton('agility', attrHelpButtonStyle)}
 						{props.characterInfo.levelUpPoints > 0 &&
 							<span>
 								<span className={`general-button level-up-button${availableLevelUpPoints === 0 ? ' button-disabled' : ''}`} onClick={() => {
@@ -831,7 +836,8 @@ function CharacterInfoPanel(props) {
 						}
 					</div>
 					<div className={`character-stat-text${props.characterInfo.levelUpPoints > 0 ? ' highlight-row' : ''}`}>
-						<span>Mental Acuity: {props.characterInfo.mentalAcuity + (levelUpPointAllocations.stats.mentalAcuity || 0)}</span>
+						Mental Acuity: {props.characterInfo.mentalAcuity + (levelUpPointAllocations.stats.mentalAcuity || 0)}
+						{props.showHelpSystem && props.helpPopupButton('mentalAcuity', attrHelpButtonStyle)}
 						{props.characterInfo.levelUpPoints > 0 &&
 							<span>
 								<span className={`general-button level-up-button${availableLevelUpPoints === 0 ? ' button-disabled' : ''}`} onClick={() => {
@@ -845,9 +851,9 @@ function CharacterInfoPanel(props) {
 							</span>
 						}
 					</div>
-					<div className='character-stat-text'>Initiative: {props.characterInfo.initiative}</div>
-					<div className='character-stat-text'>Defense: {props.characterInfo.defense}</div>
-					<div className='character-stat-text'>Damage Reduction: {props.characterInfo.damageReduction}{equippedItems.armor ? ` (from ${itemsPossessed[equippedItems.armor].name})` : ''}</div>
+					<div className='character-stat-text'>Initiative: {props.characterInfo.initiative}{props.showHelpSystem && props.helpPopupButton('initiative', attrHelpButtonStyle)}</div>
+					<div className='character-stat-text'>Defense: {props.characterInfo.defense}{props.showHelpSystem && props.helpPopupButton('defense', attrHelpButtonStyle)}</div>
+					<div className='character-stat-text'>Damage Reduction: {props.characterInfo.damageReduction}{equippedItems.armor ? ` (from ${itemsPossessed[equippedItems.armor].name})` : ''}{props.showHelpSystem && props.helpPopupButton('damageReduction', attrHelpButtonStyle)}</div>
 					<div className='character-stat-text'>Current statuses:</div>
 					<div className='character-stat-text character-panel-statuses-list'>
 						{currentStatuses.map(statusInfo => {
@@ -855,7 +861,7 @@ function CharacterInfoPanel(props) {
 								<div className='character-panel-status-row' key={statusInfo.name}>
 									<div className={`character-panel-status-icon ${convertCamelToKabobCase(statusInfo.id)}-status-icon`}></div>
 									<div className='character-panel-status-name'>{statusInfo.name}: {statusInfo.description}</div>
-									<div className='character-panel-status-turns'>Turns left: {statusInfo.turnsLeft}</div>
+									{statusInfo.turnsLeft && <div className='character-panel-status-turns'>Turns left: {statusInfo.turnsLeft}</div>}
 								</div>
 							);
 						})}
@@ -863,15 +869,16 @@ function CharacterInfoPanel(props) {
 				</div>
 
 				<div className={`char-info-skills-container ${activeTab !== 'skills' ? 'hide' : ''}`}>
-					{props.showHelpSystem && props.helpPopupButton('skills', {'transform': 'translate(220px, 50px)'})}
+					{props.showHelpSystem && props.helpPopupButton('skills', {'transform': 'translate(300px, 0)'})}
 					{props.characterInfo.levelUpPoints > 0 &&
 						<div className='level-up-header highlight-row'>
-							<div className='character-stat-text'>Investigator has increased in expertise.</div>
+							<div className='character-stat-text'>{props.characterInfo.name.first}'s expertise level has increased!</div>
+							<div className='character-stat-text'>Available points are shared between Attributes and Skills</div>
 							<div className='character-stat-text'>
 								<span>Points to add: {availableLevelUpPoints}</span>
-								<span className={`general-button${availableLevelUpPoints === props.characterInfo.levelUpPoints ? ' button-disabled' : ''}`}
+								<span className={`general-button${availableLevelUpPoints > 0 ? ' button-disabled' : ''}`}
 								      onClick={() => {
-									      props.assignLevelUpPoints(props.characterInfo.id, levelUpPointAllocations);
+									      props.assignLevelUpPoints(levelUpPointAllocations.id, {stats: levelUpPointAllocations.stats, skills: levelUpPointAllocations.skills});
 									      updatePointAllocations({stats: {}, skills: {}});
 								      }}
 								>Save</span>
@@ -885,7 +892,7 @@ function CharacterInfoPanel(props) {
 	);
 }
 
-function ObjectInfoPanel(props) {
+function ObjectInfoWindow(props) {
 	const {
 		objectInfo,
 		isDraggedObject,
@@ -910,7 +917,7 @@ function ObjectInfoPanel(props) {
 		setContainerOpenState} = {...props};
 	const [origObjectList, updateOrigObjectList] = useState(objectInfo);
 	const [containerId, updateContainerId] = useState(null);
-	const [objectToShow, updateObjToShow] = useState(isMapObj ? null : objectInfo);
+	const [objectToShow] = useState(isMapObj ? null : objectInfo);
 	const splitStack = (evt) => {
 		evt.preventDefault();
 		const splitValue = +evt.target[0].value;
@@ -949,50 +956,57 @@ function ObjectInfoPanel(props) {
 				if (obj) {
 					const isEnvObject = obj.isEnvObject;
 					list.push(
-						<div key={obj.id}>
-							<div className='object-row-with-buttons'>
-								<div className={`inv-object ${convertObjIdToClassId(obj.id)}`}></div>
-								<div>
-									<div className='font-fancy object-list-objname'>{obj.isIdentified ? obj.name : '???'}</div>
-									<div>{obj.description}</div>
-								</div>
-								{isPickUpAction && !isEnvObject &&
-									<div className='general-button' onClick={() => updateObjToShow(obj)}>Show</div>
-								}
-								{isPickUpAction && !isEnvObject &&
-								<div className='general-button' onClick={() => {
-									if (creatureCoords.find(creature => creature.coords.xPos === obj.coords.xPos && creature.coords.yPos === obj.coords.yPos)) {
-										const guardedDialogProps = {
-											dialogContent: "That item can't be picked up, as it's being guarded by something horrid!",
-											closeButtonText: 'Ok',
-											closeButtonCallback: null,
-											disableCloseButton: false,
-											actionButtonVisible: false,
-											actionButtonText: '',
-											actionButtonCallback: null,
-											dialogClasses: ''
-										}
-										setShowDialogProps(true, guardedDialogProps);
-									} else if (notEnoughSpaceInInventory(1, 0, activePcInfo)) {
-										setShowDialogProps(true, notEnoughSpaceDialogProps);
-									} else {
-										addItemToPlayerInventory(obj, obj.id, activePc, isPickUpAction, false, containerId);
-										const updatedList = origObjectList;
-										updatedList[index] = undefined;
-										updateOrigObjectList(updatedList);
-										if (updatedList.every(obj => obj === undefined)) {
-											cancelObjPanel();
-										}
-									}
-								}}>Pick up</div>
-								}
-								{isPickUpAction && isEnvObject && (obj.type === 'container' || obj.type === 'mineable') &&
-									<div className='general-button' onClick={() => {
-										openContainer(obj);
-									}}>{(obj.isOpen || obj.isDestroyed) ? 'Collect Contents' : obj.type === 'mineable' ? 'Mine' : 'Open'}</div>
-								}
-
+						<div key={obj.id} className='object-row-with-buttons'>
+							<div className={`inv-object ${convertObjIdToClassId(obj.id) + (!isEnvObject ? '-inv' : '')}`}></div>
+							<div>
+								<div className='font-fancy object-list-objname'>{obj.isIdentified ? obj.name : '???'}</div>
+								{!isEnvObject && <div>Type: {obj.itemType ? obj.itemType : (obj.ranged ? 'Ranged' : 'Melee') + ' weapon'}</div>}
+								<div>{obj.description}</div>
+								{!isEnvObject && obj.rounds && <div>Capacity: {obj.rounds} rounds</div>}
+								{!isEnvObject && obj.amount && <div>Amount: {obj.amount}</div>}
+								{!isEnvObject && obj.currentRounds !== null && obj.currentRounds >= 0 && <div>Rounds remaining: {obj.currentRounds}</div>}
+								{!isEnvObject && obj.twoHanded && <div>Two-handed</div>}
+								{!isEnvObject && obj.damage && <div>Base damage: {obj.damage}</div>}
+								{!isEnvObject && obj.time !== null && obj.time !== undefined && obj.time >= 0 && <div>Light remaining: {obj.time} steps</div>}
+								{!isEnvObject && obj.isIdentified && <div>{obj.furtherInfo}</div>}
+								{!isEnvObject && obj.isIdentified && obj.effect && <div>Effect: {obj.effect}</div>}
+								{!isEnvObject && obj.isIdentified && obj.sanityCost && <div>Cost to Sanity: -{obj.sanityCost}</div>}
+								{!isEnvObject && obj.isIdentified && obj.spirit && <div>Required Spirit: -{obj.spirit}</div>}
 							</div>
+
+							{isPickUpAction && !isEnvObject &&
+							<div className='general-button' onClick={() => {
+								if (creatureCoords.find(creature => creature.coords.xPos === obj.coords.xPos && creature.coords.yPos === obj.coords.yPos)) {
+									const guardedDialogProps = {
+										dialogContent: "That item can't be picked up, as it's being guarded by something horrid!",
+										closeButtonText: 'Ok',
+										closeButtonCallback: null,
+										disableCloseButton: false,
+										actionButtonVisible: false,
+										actionButtonText: '',
+										actionButtonCallback: null,
+										dialogClasses: ''
+									}
+									setShowDialogProps(true, guardedDialogProps);
+								} else if (notEnoughSpaceInInventory(1, 0, activePcInfo)) {
+									setShowDialogProps(true, notEnoughSpaceDialogProps);
+								} else {
+									addItemToPlayerInventory(obj, obj.id, activePc, isPickUpAction, false, containerId);
+									const updatedList = origObjectList;
+									updatedList[index] = undefined;
+									updateOrigObjectList(updatedList);
+									if (updatedList.every(obj => obj === undefined)) {
+										cancelObjPanel();
+									}
+								}
+							}}>Pick up</div>
+							}
+							{isPickUpAction && isEnvObject && (obj.type === 'container' || obj.type === 'mineable') &&
+								<div className='general-button' onClick={() => {
+									openContainer(obj);
+								}}>{(obj.isOpen || obj.isDestroyed) ? 'Collect Contents' : obj.type === 'mineable' ? 'Mine' : 'Open'}</div>
+							}
+
 						</div>
 					)
 				}
@@ -1024,7 +1038,7 @@ function ObjectInfoPanel(props) {
 					<div className={`inv-object ${convertObjIdToClassId(objectToShow.id)}-inv`}></div>
 					<div className='object-text-container'>
 						<div className='font-fancy'>{objectToShow.isIdentified ? objectToShow.name : '???'}</div>
-						<div>{objectToShow.itemType ? objectToShow.itemType : (objectToShow.ranged ? 'Ranged' : 'Melee') + ' weapon'}</div>
+						<div>Type: {objectToShow.itemType ? objectToShow.itemType : (objectToShow.ranged ? 'Ranged' : 'Melee') + ' weapon'}</div>
 						{objectToShow.rounds && <div>Capacity: {objectToShow.rounds} rounds</div>}
 						{objectToShow.amount && <div>Amount: {objectToShow.amount}</div>}
 						{objectToShow.currentRounds !== null && objectToShow.currentRounds >= 0 && <div>Rounds remaining: {objectToShow.currentRounds}</div>}
@@ -1036,7 +1050,7 @@ function ObjectInfoPanel(props) {
 						{objectToShow.isIdentified && objectToShow.effect && <div>Effect: {objectToShow.effect}</div>}
 						{objectToShow.isIdentified && objectToShow.sanityCost && <div>Cost to Sanity: -{objectToShow.sanityCost}</div>}
 						{objectToShow.isIdentified && objectToShow.spirit && <div>Required Spirit: -{objectToShow.spirit}</div>}
-						</div>
+					</div>
 				</div>
 				<div className='object-panel-buttons-container'>
 					{isDraggedObject && objectToShow.stackable &&
@@ -1046,9 +1060,6 @@ function ObjectInfoPanel(props) {
 							<div className='all-button general-button' onClick={evt => evt.target.previousSibling.value = objectToShow.amount || objectToShow.currentRounds}>All</div>
 							<button className='general-button' type='submit'>{objHasBeenDropped ? 'Drop' : 'Trade'}</button>
 						</form>
-					}
-					{isMapObj &&
-						<span className='general-button' onClick={() => updateObjToShow(null)}>Back</span>
 					}
 					{/* MAY ADD THESE BUTTONS FOR MOVING ITEMS (INSTEAD OF DRAG AND DROP) IN LATER IF NEEDED */}
 
@@ -1080,7 +1091,40 @@ function ObjectInfoPanel(props) {
 	);
 }
 
+/**
+ * Used for both creatures and npcs
+ * @param props object (
+ *      creatureIsSelected: boolean
+ * 	    updateUnitSelectionStatus: function
+ * 	    creatureInfo: object
+ * 	    identifiedCreatures: object
+ * 	    showHelpSystem: boolean
+ * 	    helpPopupButton: function returning JSX
+ * 	)
+ * @return {JSX.Element}
+ * @constructor
+ */
 function CreatureInfoPanel(props) {
+	let skills = '';
+	let statuses = '';
+	const creatureName = props.creatureInfo.name;
+	const identifiedCreature = props.identifiedCreatures[creatureName];
+	const identifiedCreatureName = identifiedCreature ? identifiedCreature.name : null;
+	const identifiedCreatureEncountered = identifiedCreature ? identifiedCreature.encountered : null;
+	const identifiedCreatureStats = identifiedCreature ? identifiedCreature.stats : null;
+	const identifiedCreatureSkills = identifiedCreature ? identifiedCreature.skills : null;
+	if (props.creatureInfo.skills) {
+		for (const skillInfo of Object.values(props.creatureInfo.skills)) {
+			skills += `<div>${skillInfo.name}</div>
+				<div>${skillInfo.description}</div>`;
+		}
+	}
+	if (props.creatureInfo.statuses) {
+		for (const statusInfo of Object.values(props.creatureInfo.statuses)) {
+			statuses += `<div>${statusInfo.name}</div>
+				<div>${statusInfo.description}</div>`;
+		}
+	}
 	return (
 		<div className='creature-info-container ui-panel'>
 			<div className='general-button' onClick={() => props.updateUnitSelectionStatus(props.creatureInfo.id, props.creatureInfo.type)}>X</div>
@@ -1090,20 +1134,22 @@ function CreatureInfoPanel(props) {
 					<div className={`creature-icon ${convertObjIdToClassId(props.creatureInfo.id)}`}></div>
 				</div>
 				<div className='creature-info-column'>
-					{props.creatureInfo.name && <div>Name: {typeof props.creatureInfo.name === 'string' ? props.creatureInfo.name : `${props.creatureInfo.name.first} ${props.creatureInfo.name.last}`}</div>}
-					{props.creatureInfo.level && <div>Level: {props.creatureInfo.level}</div>}
-					{props.creatureInfo.currentHealth && <div>Health: {props.creatureInfo.currentHealth} / {props.creatureInfo.startingHealth}</div>}
-					{props.creatureInfo.currentSpirit && <div>Spirit: {props.creatureInfo.currentSpirit} / {props.creatureInfo.startingSpirit}</div>}
-					{props.creatureInfo.strength && <div>Strength: {props.creatureInfo.strength}</div>}
-					{props.creatureInfo.agility && <div>Agility: {props.creatureInfo.agility}</div>}
-					{props.creatureInfo.mentalAcuity && <div>Mental Acuity: {props.creatureInfo.mentalAcuity}</div>}
-					{props.creatureInfo.initiative && <div>Initiative: {props.creatureInfo.initiative}</div>}
-					{props.creatureInfo.damage && <div>Damage: {props.creatureInfo.damage}</div>}
-					{props.creatureInfo.defense && <div>Defense: {props.creatureInfo.defense}</div>}
-					{props.creatureInfo.damageReduction && <div>Damage Reduction: {props.creatureInfo.damageReduction}</div>}
-					{props.creatureInfo.range && <div>Range: {props.creatureInfo.range}</div>}
-					{props.creatureInfo.moveSpeed && <div>Speed: {props.creatureInfo.moveSpeed}</div>}
-					{props.creatureInfo.perception && <div>Perception: {props.creatureInfo.perception}</div>}
+					<div>Species: {!identifiedCreatureName ? '???' : (typeof creatureName === 'string' ? creatureName : `${creatureName.first} ${creatureName.last}`)}</div>
+					<div>Level: {!identifiedCreatureStats ? '???' : props.creatureInfo.level}</div>
+					<div>Health: {identifiedCreatureEncountered < 3 ? '???' : `${props.creatureInfo.currentHealth} / ${props.creatureInfo.startingHealth}`}</div>
+					<div>Innate Spirit: {!identifiedCreatureStats ? '???' : props.creatureInfo.startingSpirit}</div>
+					<div>Strength: {!identifiedCreatureStats ? '???' : props.creatureInfo.strength}</div>
+					<div>Agility: {!identifiedCreatureStats ? '???' : props.creatureInfo.agility}</div>
+					<div>Mental Acuity: {!identifiedCreatureStats ? '???' : props.creatureInfo.mentalAcuity}</div>
+					<div>Base Initiative: {identifiedCreatureEncountered < 3 ? '???' : props.creatureInfo.initiative}</div>
+					<div>Attack Type: {!identifiedCreatureEncountered ? '???' : props.creatureInfo.attackType}</div>
+					<div>Defense: {!identifiedCreatureStats ? '???' : props.creatureInfo.defense}</div>
+					<div>Damage Reduction: {!identifiedCreatureStats ? '???' : props.creatureInfo.damageReduction}</div>
+					<div>Attack Range: {!identifiedCreatureEncountered ? '???' : props.creatureInfo.range}</div>
+					<div>Movement Speed: {!identifiedCreatureEncountered ? '???' : props.creatureInfo.moveSpeed}</div>
+					<div>Sight Range: {!identifiedCreatureStats ? '???' : props.creatureInfo.perception}</div>
+					<div>Abilities: {!identifiedCreatureSkills ? '???' : skills}</div>
+					<div>Statuses: {!identifiedCreatureEncountered ? '???' : statuses}</div>
 				</div>
 			</div>
 		</div>
@@ -1160,7 +1206,9 @@ function ModeInfoPanel(props) {
 	}
 	const enemiesNearbyTacticalDialog = "You can't disable Tactical Mode with creatures still about!";
 	const enemiesNearbySearchDialog = "You can't enable Search Mode with creatures nearby.";
+	const enemiesNearbyRestDialog = "You can't rest while creatures are nearby!";
 	const partyNotNearbyDialog = 'Your party must all be in sight of each other to enable Follow mode';
+	const noLightEquippedDialog = 'At least one light must be equipped to rest.';
 	const pcIsDyingDialog = `You can't enter Follow Mode while ${dyingPcName} is dying. Either resuscitate ${dyingPcGender} or End Turn enough times to let death take its course.`
 	const dialogProps = {
 		dialogContent: '',
@@ -1175,49 +1223,72 @@ function ModeInfoPanel(props) {
 	const activePlayerObject = props.players[props.activeCharacter];
 	const charactersTurn = activePlayerObject && (props.inTacticalMode || !props.isPartyNearby) ? `${activePlayerObject.name.first} ${activePlayerObject.name.last}` :
 		props.inTacticalMode && props.threatList.length > 0 ? 'Enemies moving' : 'Wait...';
+	const allPcInfo = Object.values(props.players);
+	const lightIsEquipped = allPcInfo[0].lightTime > 0 || (allPcInfo[1] && allPcInfo[1].lightTime > 0) || (allPcInfo[2] && allPcInfo[2].lightTime > 0);
 
 	return (
 		<div id='mode-info-container' className={`${props.showDialog ? 'no-click' : ''}`}>
 			<div className='mode-buttons-container'>
-				{props.showHelpSystem && props.helpPopupButton('modeInfo')}
-				<div
-					className='general-button'
-					onClick={() => {
-						if (props.inTacticalMode) {
-							if (props.threatList.length > 0) {
-								dialogProps.dialogContent = enemiesNearbyTacticalDialog;
-								props.setShowDialogProps(true, dialogProps);
+				<div>
+					{props.showHelpSystem && props.helpPopupButton('gameModes')}
+					<div
+						className={'general-button ' + (props.inTacticalMode ? 'button-turn-based-mode' : 'button-follow-mode')}
+						onClick={() => {
+							if (props.inTacticalMode) {
+								if (props.threatList.length > 0) {
+									dialogProps.dialogContent = enemiesNearbyTacticalDialog;
+									props.setShowDialogProps(true, dialogProps);
+								} else if (!props.isPartyNearby) {
+									dialogProps.dialogContent = partyNotNearbyDialog;
+									props.setShowDialogProps(true, dialogProps);
+								} else if (dyingPcName) {
+									dialogProps.dialogContent = pcIsDyingDialog;
+									props.setShowDialogProps(true, dialogProps);
+								} else {
+									props.toggleTacticalMode(false);
+								}
 							} else if (!props.isPartyNearby) {
 								dialogProps.dialogContent = partyNotNearbyDialog;
 								props.setShowDialogProps(true, dialogProps);
-							} else if (dyingPcName) {
-								dialogProps.dialogContent = pcIsDyingDialog;
-								props.setShowDialogProps(true, dialogProps);
 							} else {
-								props.toggleTacticalMode(false);
+								props.toggleTacticalMode(true);
 							}
-						} else if (!props.isPartyNearby) {
-							dialogProps.dialogContent = partyNotNearbyDialog;
-							props.setShowDialogProps(true, dialogProps);
-						} else {
-							props.toggleTacticalMode(true);
-						}
-					}}>
-					{props.inTacticalMode ? 'In Tactical Mode' : 'In Follow Mode'}
+						}}>
+					</div>
 				</div>
-				<div className={'general-button button-search-mode' + (props.inSearchMode ? ' button-selected' : '')}
-				     onClick={() => {
-					     if (!props.inSearchMode) {
-						     if (props.threatList.length > 0) {
+				<div>
+					{props.showHelpSystem && props.helpPopupButton('search')}
+					<div className={'general-button button-search-mode' + (props.inSearchMode ? ' button-selected' : '')}
+					     onClick={() => {
+						     if (!props.inSearchMode && props.threatList.length > 0) {
 							     dialogProps.dialogContent = enemiesNearbySearchDialog;
 							     props.setShowDialogProps(true, dialogProps);
 						     } else {
 							     props.toggleSearchMode();
 						     }
-					     } else {
-						     props.toggleSearchMode();
-					     }
-				     }}>
+					     }}>
+					</div>
+				</div>
+				<div>
+					{props.showHelpSystem && props.helpPopupButton('rest')}
+					<div className={'general-button button-rest-mode' + (props.showRestWindow ? ' button-selected button-rest-mode-on' : '')}
+					     onClick={() => {
+						     if (!props.showRestWindow) {
+								 if (!props.isPartyNearby) {
+									 dialogProps.dialogContent = partyNotNearbyDialog;
+									 props.setShowDialogProps(true, dialogProps);
+								 } else if (props.threatList.length > 0) {
+									 dialogProps.dialogContent = enemiesNearbyRestDialog;
+									 props.setShowDialogProps(true, dialogProps);
+								 } else if (!lightIsEquipped) {
+									 dialogProps.dialogContent = noLightEquippedDialog;
+									 props.setShowDialogProps(true, dialogProps);
+								 } else {
+									 props.toggleShowRestWindow();
+								 }
+						     }
+					     }}>
+					</div>
 				</div>
 			</div>
 
@@ -1239,6 +1310,40 @@ function ModeInfoPanel(props) {
 				}}>End Turn</div>
 			</div>
 			}
+		</div>
+	);
+}
+
+function RestWindow(props) {
+	return (
+		<div id='rest-window-container' className='ui-panel'>
+			<div className={'general-button dialog-button-x' + (props.partyIsResting ? ' button-disabled' : '')} onClick={() => props.toggleShowRestWindow()}>X</div>
+				<form onSubmit={evt => {
+					evt.preventDefault();
+					props.processResting(+evt.target[0].value, props.toggleShowRestWindow);
+				}}>
+					{!props.partyIsResting &&
+						<div className='rest-content'>
+							<div className='campfire-unlit'></div>
+							<div>How much time (amount of light) do you want to rest?</div>
+							<div className='small-text'>Note: ALL equipped lights will be used.</div>
+							<div>
+								<label htmlFor='rest-amount'>Time:</label>
+								<input id='rest-amount' type='number' name='rest-amount' size='3' defaultValue='1' min='1' />
+							</div>
+							<div className='dialog-buttons'>
+								<button className='dialog-button' onClick={() => props.toggleShowRestWindow()}>Cancel</button>
+								<button className='dialog-button' type='submit'>Start resting</button>
+							</div>
+						</div>
+					}
+					{props.partyIsResting &&
+						<div className='rest-content'>
+							<div className='campfire'></div>
+							<div>Resting...</div>
+						</div>
+					}
+				</form>
 		</div>
 	);
 }
@@ -1274,7 +1379,7 @@ function JournalWindow(props) {
 		activeQuests.push(
 			<div key={questId}>
 				<h3 className='journal-quest-detail'>{questInfo.title}</h3>
-				<div className='journal-quest-detail'>{questInfo.description}</div>
+				<div className='journal-quest-detail'>{questInfo.description.split('\n').map((line, index) => <p key={index}>{line}</p>)}</div>
 				<div className='journal-quest-detail'><b>Goal:</b> {questInfo.goal}</div>
 			</div>
 		);
@@ -1283,7 +1388,7 @@ function JournalWindow(props) {
 		completedQuests.push(
 			<div key={questId}>
 				<h3 className='journal-quest-detail'>{questInfo.title}</h3>
-				<div className='journal-quest-detail'>{questInfo.description}</div>
+				<div className='journal-quest-detail'>{questInfo.description.split('\n').map((line, index) => <p key={index}>{line}</p>)}</div>
 				<div className='journal-quest-detail'><b>Goal:</b> {questInfo.goal}</div>
 			</div>
 		);
@@ -1323,39 +1428,81 @@ function ConversationWindow(props) {
 	}).split('\n').map((line, index) => <p key={index}>{line}</p>);
 
 	for (const [nextMessageKey, response] of Object.entries(convElements.responses)) {
-		responses.push(
-			<div key={nextMessageKey} className='pc-response' onClick={() => {
-				// possible options are:
-				// - non-end response w/o updates
-				// - end response w/updates
-				// - non-end response w/updates (rare)
-				// - end response with joinParty but party is full, so use altNextMessageKey
-				if (response.statusUpdate) {
-					statusUpdates = {...response.statusUpdate};
-					if (nextMessageKey.includes('end') && statusUpdates.joinParty && props.partySize === 3) {
-						updateConversation(AllConversations[response.altNextMessageKey]);
-					} else {
-						// todo: for certain convs may need to update main char data too
-						const update = () => {
-							props.applyUpdatesFromConv(convTargetChar.id, statusUpdates);
-						}
-						// end resp w/updates
-						if (nextMessageKey.includes('end')) {
-							props.setShowConversation(() => {
-								props.setConversationTarget(null, update);
-							});
-						} else {
-							// non-end response w/updates (rare)
-							update();
-							updateConversation(AllConversations[nextMessageKey]);
-						}
-					}
-				// non-end response w/o updates - there will always be a statusUpdate at end of conv, so no need to check that it's not the end
-				} else {
-					updateConversation(AllConversations[nextMessageKey]);
+		let creaturesNeedIdent = null;
+		let identifiedThings = null;
+		let includeMissionResponse = false;
+		const checkJournal = response.checkJournal;
+
+		if (response.checkIdentified) {
+			identifiedThings = deepCopy(props.identifiedThings);
+			for (const identityInfo of Object.values(identifiedThings.creatures)) {
+				if (!identityInfo.name) {
+					identityInfo.name = true;
+					identityInfo.encountered += 2;
+					creaturesNeedIdent = true;
 				}
-			}}>{typeof response === 'string' ? response : response.message}</div>
-		);
+			}
+		} else if (checkJournal) {
+			// for checking if goal is completed/advanced in order to show next conv node (goal is updated in previous conv or event)
+			if (props.partyJournal.activeQuests[checkJournal.mission] && props.partyJournal.activeQuests[checkJournal.mission].goal === checkJournal.goal) {
+				includeMissionResponse = true;
+			}
+		}
+		if ((!response.checkIdentified || creaturesNeedIdent) && (!checkJournal || includeMissionResponse)) {
+			responses.push(
+				<div key={nextMessageKey} className='pc-response' onClick={() => {
+					const triggeredCallback = () => {
+						// could add more possible callbacks in the future
+						const callback = props.updateThreatsCallback || null;
+						if (callback) callback();
+					};
+
+					// possible options are:
+					// - non-end response w/o updates
+					// - end response w/updates
+					// - end response w/o updates (for story/narrative convs)
+					// - non-end response w/updates (usually completing mission but with continued conv)
+					// - end response with joinParty but party is full, so use altNextMessageKey
+
+					if (response.statusUpdate) {
+						statusUpdates = {...response.statusUpdate};
+						// asking npc to join party but not enough space
+						if (nextMessageKey.includes('end') && statusUpdates.joinParty && props.partySize === 3) {
+							updateConversation(AllConversations[response.altNextMessageKey]);
+						} else {
+							// todo: for certain convs may need to update main char data too
+							const update = () => {
+								props.applyUpdatesFromConv(convTargetChar.id, statusUpdates, triggeredCallback);
+							}
+							// end resp w/updates
+							if (nextMessageKey.includes('end')) {
+								props.setShowConversation(() => {
+									props.setConversationTarget(null, update);
+								});
+							} else {
+								// non-end response w/updates (usually completing mission)
+								update();
+								updateConversation(AllConversations[nextMessageKey]);
+							}
+						}
+					// end response w/o update
+					} else if (nextMessageKey.includes('end')) {
+						props.setShowConversation(() => {
+							props.setConversationTarget(null, triggeredCallback);
+							let storyProgress = deepCopy(props.storyProgress);
+							storyProgress.dialogs[convTargetChar.id].triggered = true;
+							props.updateStoryProgress(storyProgress);
+						});
+					// non-end response w/o updates - there will always be a statusUpdate at end of non-story conv, so no need to check that it's not the end
+					} else {
+						updateConversation(AllConversations[nextMessageKey]);
+					}
+					if (creaturesNeedIdent) {
+						props.updateIdentifiedThings(identifiedThings);
+					}
+				}}>{typeof response === 'string' ? response : response.message}</div>
+			);
+		}
 	}
 	return (
 		<div id='conversation-window' className='dialog ui-panel'>
@@ -1373,7 +1520,12 @@ function ConversationWindow(props) {
 function DialogWindow(props) {
 	return (
 		<div className={`dialog ui-panel ${props.classes}`}>
-			<div className='general-button dialog-button-x' onClick={() => props.closeDialogCallback()}>X</div>
+			<div className='general-button dialog-button-x' onClick={() => {
+				props.closeDialogCallback();
+				if (props.closeButtonCallback) {
+					props.closeButtonCallback();
+				}
+			}}>X</div>
 			<div className='dialog-message'>{props.dialogContent}</div>
 			<div className='dialog-buttons'>
 				{!props.disableCloseButton &&
@@ -1429,11 +1581,13 @@ function ContextMenu(props) {
 function HelpPopup(props) {
 	return (
 		<div className='help-popup ui-panel' style={{'top': props.showHelpPopup.selectedIconPos.top, 'left': props.showHelpPopup.selectedIconPos.left}}>
-			<div className='general-button help-popup-close' onClick={() => props.toggleHelpPopup(null, null)}>X</div>
-			<div className='help-popup-container'>
+			<div id='help-popup-header'>
+				<div className='general-button help-popup-close' onClick={() => props.toggleHelpPopup(null, null)}>X</div>
+				<div className='font-fancy'>{props.showHelpPopup.name}</div>
+			</div>
+			<div id='help-popup-content'>
 				<div className={props.showHelpPopup.iconClass}></div>
 				<div className='help-popup-text'>
-					<div className='font-fancy'>{props.showHelpPopup.name}</div>
 					<div>{props.showHelpPopup.description}</div>
 					{props.showHelpPopup.source && <div>Source: {props.showHelpPopup.source}</div>}
 				</div>
@@ -1446,7 +1600,7 @@ function GameOptions(props) {
 	const gameOptions = {...props.gameOptions};
 
 	return (
-		<div className='dialog ui-panel'>
+		<div id='game-options' className='dialog ui-panel'>
 			<div className='font-fancy'>Game Options</div>
 			<div className='game-options-container'>
 				<div className='game-options-row'>
@@ -1499,7 +1653,7 @@ function GameOptions(props) {
 						onClick={() => props.toggleNeedToSaveData(true)}>
 						Save Game
 					</button>
-					<div className='small-text'>(Game autosaves when changing levels/areas but does NOT save when closing the app!)</div>
+					<div className='small-text'>(Game autosaves when changing levels/areas but does NOT save when closing the app! Also saves all game options.)</div>
 				</div>
 				<div className='game-options-row game-options-row-button-first'>
 					<button
@@ -1553,4 +1707,4 @@ function GameOptions(props) {
 	);
 }
 
-export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoPanel, ModeInfoPanel, PartyInfoPanel, JournalWindow, ConversationWindow, DialogWindow, ContextMenu, HelpPopup, GameOptions};
+export {CharacterControls, CharacterInfoPanel, CreatureInfoPanel, ObjectInfoWindow, ModeInfoPanel, RestWindow, PartyInfoPanel, JournalWindow, ConversationWindow, DialogWindow, ContextMenu, HelpPopup, GameOptions};
