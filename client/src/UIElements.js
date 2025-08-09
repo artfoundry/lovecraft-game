@@ -966,7 +966,7 @@ function ObjectInfoWindow(props) {
 								{!isEnvObject && obj.amount && <div>Amount: {obj.amount}</div>}
 								{!isEnvObject && obj.currentRounds !== null && obj.currentRounds >= 0 && <div>Rounds remaining: {obj.currentRounds}</div>}
 								{!isEnvObject && obj.twoHanded && <div>Two-handed</div>}
-								{!isEnvObject && obj.damage && <div>Base damage: {obj.damage}</div>}
+								{!isEnvObject && obj.damage && <div>Base damage: {(1 + obj.damage.bonus) + '-' + (obj.damage.roll + obj.damage.bonus)}</div>}
 								{!isEnvObject && obj.time !== null && obj.time !== undefined && obj.time >= 0 && <div>Light remaining: {obj.time} steps</div>}
 								{!isEnvObject && obj.isIdentified && <div>{obj.furtherInfo}</div>}
 								{!isEnvObject && obj.isIdentified && obj.effect && <div>Effect: {obj.effect}</div>}
@@ -1043,7 +1043,7 @@ function ObjectInfoWindow(props) {
 						{objectToShow.amount && <div>Amount: {objectToShow.amount}</div>}
 						{objectToShow.currentRounds !== null && objectToShow.currentRounds >= 0 && <div>Rounds remaining: {objectToShow.currentRounds}</div>}
 						{objectToShow.twoHanded && <div>Two-handed</div>}
-						{objectToShow.damage && <div>Base damage: {objectToShow.damage}</div>}
+						{objectToShow.damage && <div>Base damage: {(1 + objectToShow.damage.bonus) + '-' + (objectToShow.damage.roll + objectToShow.damage.bonus)}</div>}
 						{objectToShow.time !== null && objectToShow.time !== undefined && objectToShow.time >= 0 && <div>Light remaining: {objectToShow.time} steps</div>}
 						<div>{objectToShow.description}</div>
 						{objectToShow.isIdentified && <div>{objectToShow.furtherInfo}</div>}

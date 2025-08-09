@@ -10,7 +10,7 @@ class Character extends React.PureComponent {
 		super(props);
 
 		this.noGunKnowledgePenalty = 0.5;
-		this.hitDie = 10;
+		this.hitDie = 6;
 		this.defenseDie = 4;
 		this.lightTimeCosts = props.lightTimeCosts;
 
@@ -43,7 +43,7 @@ class Character extends React.PureComponent {
 		};
 		this.items = props.isSavedData ? props.items : this._populateInvInfo('item', props.items, props.equippedItems);
 		this.maxItems = 12;
-		this.moveSpeed = props.baseMoveSpeed + (this.skills.moveIt ? this.skills.moveIt.modifier[this.skills.moveIt.level] : 0);
+		this.moveSpeed = props.isSavedData ? props.moveSpeed : props.baseMoveSpeed + (this.skills.moveIt ? this.skills.moveIt.modifier[this.skills.moveIt.level] : 0);
 		this.defense = props.isSavedData ? props.defense : this.calculateDefense(props.agility, props.equippedItems.armor ? this.items[props.equippedItems.armor].defense : 0);
 		this.damageReduction = this.equippedItems.armor ? this.items[this.equippedItems.armor].damageReduction : 0;
 		this.coords = props.isSavedData ? {...props.coords} : null;
@@ -97,6 +97,7 @@ class Character extends React.PureComponent {
 
 	/* PUBLIC */
 
+	//todo: change so attrs aren't necessary
 	calculateDefense = (agility, armor) => {
 		return agility + armor;
 	}
@@ -159,8 +160,8 @@ class Character extends React.PureComponent {
 				isHit = attackTotal >= defenseTotal;
 				if (isHit && !failFromCurse && (!weaponInfo.targetRace || weaponInfo.targetRace === targetData.race)) {
 					const attackDifference = attackTotal - defenseTotal;
-					const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 2);
-					damage = rangedStrHitModifier + actionStats.damage + damageModBasedOnAttack;
+					const damageModBasedOnAttack = Math.round(attackDifference / 3);
+					damage = rangedStrHitModifier + diceRoll(actionStats.damage.roll) + actionStats.damage.bonus + damageModBasedOnAttack;
 					damage -= targetData.damageReduction <= damage ? targetData.damageReduction : damage;
 					damageTotal += damage;
 				}
@@ -179,7 +180,7 @@ class Character extends React.PureComponent {
 			hitRoll = diceRoll(this.hitDie);
 			defenseRoll = diceRoll(this.defenseDie);
 			defenseTotal = targetData.defense + defenseRoll;
-			attackTotal = pcData.strength + Math.floor(pcData.agility / 2) + hitRoll;
+			attackTotal = pcData.strength + Math.floor(pcData.agility / 3) + hitRoll;
 			if (pcData.id === 'thief') {
 				attackTotal += Math.round(attackFromTheShadowsMod * attackTotal);
 			}
@@ -189,8 +190,8 @@ class Character extends React.PureComponent {
 			isHit = attackTotal >= defenseTotal;
 			if (isHit && !failFromCurse) {
 				const attackDifference = attackTotal - defenseTotal;
-				const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 2);
-				damageTotal = pcData.strength + actionStats.damage + damageModBasedOnAttack;
+				const damageModBasedOnAttack = Math.round(attackDifference / 3);
+				damageTotal = pcData.strength + diceRoll(actionStats.damage.roll) + actionStats.damage.bonus + damageModBasedOnAttack;
 				if (pcData.id === 'thief') {
 					damageTotal += Math.round(attackFromTheShadowsMod * damageTotal);
 				} else if (pcData.id === 'occultResearcher' && actionId === 'krisKnife0') {

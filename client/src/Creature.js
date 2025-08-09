@@ -5,7 +5,7 @@ import Statuses from './data/statuses.json';
 class Creature extends React.PureComponent {
 	constructor(props) {
 		super(props);
-		this.hitDie = 10;
+		this.hitDie = 6;
 		this.defenseDie = 4;
 		this.hitRoll = 0;
 		this.defenseRoll = 0;
@@ -61,34 +61,35 @@ class Creature extends React.PureComponent {
 	 */
 	attack = (targetData, updateTarget, updateLog, toggleAudio, updateTurnCallback = null) => {
 		let isHit, damageTotal = 0, hitTotal = 0, defenseTotal = 0;
-		const halfStr = Math.round(this.strength / 2); // bonus for ranged attacks
-		const halfAgility = Math.round(this.agility / 2); // bonus for str attacks
+		const rangedStrBonus = Math.round(this.strength / 3); // bonus for ranged attacks
+		const meleeAgilityBonus = Math.round(this.agility / 3); // bonus for str attacks
 		const targetStealth = targetData.statuses.stealthy;
-		const targetAgilityBonus = targetStealth ? targetStealth.modifier : 0;
+		const targetStealthBonus = targetStealth ? targetStealth.modifier : 0;
+		const damageRoll = diceRoll(this.damage.roll) + this.damage.bonus;
 		let logAttackMessage = `${articleType(this.name, true)} ${this.name} lashes at ${targetData.name.first} with something disgusting...`;
 		let logDamageMessage = `The ${this.name} misses.`;
 		this.rollForAttackAndDefense();
 
 		if (this.attackType === 'ranged') {
-			hitTotal = this.agility + halfStr + this.hitRoll;
-			defenseTotal = targetData.defense + targetAgilityBonus + this.defenseRoll;
+			hitTotal = this.agility + rangedStrBonus + this.hitRoll;
+			defenseTotal = targetData.defense + targetStealthBonus + this.defenseRoll;
 			const attackDifference = hitTotal - defenseTotal;
-			const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 2);
-			damageTotal = halfStr + this.damage + damageModBasedOnAttack - targetData.damageReduction;
+			const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 3);
+			damageTotal = rangedStrBonus + damageRoll + damageModBasedOnAttack - targetData.damageReduction;
 			logAttackMessage = `${articleType(this.name, true)} ${this.name} launches something at ${targetData.name.first}...`;
 		} else if (this.attackType === 'melee') {
-			hitTotal = this.strength + halfAgility + this.hitRoll;
-			defenseTotal = targetData.defense + targetAgilityBonus + this.defenseRoll;
+			hitTotal = this.strength + meleeAgilityBonus + this.hitRoll;
+			defenseTotal = targetData.defense + targetStealthBonus + this.defenseRoll;
 			const attackDifference = hitTotal - defenseTotal;
-			const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 2);
-			damageTotal = this.strength + this.damage + damageModBasedOnAttack - targetData.damageReduction;
+			const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 3);
+			damageTotal = this.strength + damageRoll + damageModBasedOnAttack - targetData.damageReduction;
 		} else if (this.attackType === 'psychic') {
 			const damageAdjustment = targetData.statuses.sanityProtection ? targetData.statuses.sanityProtection.modifier : 0;
 			hitTotal = this.mentalAcuity + this.hitRoll;
 			defenseTotal = targetData.mentalAcuity + this.defenseRoll;
 			const attackDifference = hitTotal - defenseTotal;
-			const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 2);
-			damageTotal = this.mentalAcuity + damageModBasedOnAttack - damageAdjustment;
+			const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 3);
+			damageTotal = this.mentalAcuity + damageRoll + damageModBasedOnAttack - damageAdjustment;
 			logAttackMessage = `${articleType(this.name, true)} ${this.name} psychically attacks ${targetData.name.first}...`;
 			logDamageMessage = `...but fails to penetrate ${targetData.name.first}'s mind.`;
 		}
@@ -231,7 +232,7 @@ class Creature extends React.PureComponent {
 		let logMessage = '';
 
 		if (hitTotal >= defenseTotal) {
-			const damage = cycloneSkill.damage + diceRoll(4);
+			const damage = diceRoll(cycloneSkill.damage.roll) + cycloneSkill.damage.bonus;
 			const damageResult = pcData.currentSpirit - damage;
 			const spiritCost = cycloneSkill.spirit - (Math.floor(damage * cycloneSkill.percentReturned));
 			pcData.currentSpirit = damageResult < 0 ? 0 : damageResult;
@@ -279,7 +280,7 @@ class Creature extends React.PureComponent {
 			defenseTotal = individualPcData.mentalAcuity + this.defenseRoll;
 
 			if (hitTotal >= defenseTotal) {
-				const damage = wailSkill.damagePercent * individualPcData.startingSanity;
+				const damage = (wailSkill.damagePercent * individualPcData.startingSanity) + diceRoll(wailSkill.damage.roll) + wailSkill.damage.bonus;
 				const damageResult = individualPcData.currentSanity - damage;
 				individualPcData.currentSanity = damageResult < 0 ? 0 : damageResult;
 				// todo: add skill specific audio
