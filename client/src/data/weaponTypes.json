@@ -1,6 +1,6 @@
 {
   "Colt Revolver": {
-    "damage": 5,
+    "damage": {"roll": 3, "bonus": 2},
     "ranged": true,
     "rounds": 6,
     "usesStr": false,
@@ -9,7 +9,7 @@
     "description": "Standard issue 6 round revolver."
   },
   "S And W Revolver": {
-    "damage": 7,
+    "damage": {"roll": 5, "bonus": 2},
     "ranged": true,
     "rounds": 6,
     "usesStr": false,
@@ -18,7 +18,7 @@
     "description": "Higher powered version of the 6 round revolver."
   },
   "Browning Semi-automatic": {
-    "damage": 7,
+    "damage": {"roll": 5, "bonus": 2},
     "ranged": true,
     "rounds": 10,
     "usesStr": false,
@@ -27,7 +27,7 @@
     "description": "More power and more rounds between reloads equals more killing!"
   },
   "Remington": {
-    "damage": 10,
+    "damage": {"roll": 6, "bonus": 4},
     "ranged": true,
     "rounds": 5,
     "usesStr": false,
@@ -36,7 +36,7 @@
     "description": "A standard among pump action shotguns. Not as powerful, but if you can shoot more between reloading, does it matter?"
   },
   "Winchester": {
-    "damage": 18,
+    "damage": {"roll": 12, "bonus": 6},
     "ranged": true,
     "rounds": 2,
     "usesStr": false,
@@ -45,42 +45,42 @@
     "description": "Double barrelled portable canon. 'Nuff said."
   },
   "Knife": {
-    "damage": 3,
+    "damage": {"roll": 2, "bonus": 1},
     "damageType": "blade",
     "ranged": false,
     "twoHanded": false,
     "description": "Slice and dice! Not a machete, but bigger than a pocketknife."
   },
   "Kris Knife": {
-    "damage": 4,
+    "damage": {"roll": 3, "bonus": 2},
     "damageType": "blade",
     "ranged": false,
     "twoHanded": false,
     "description": "Ornate and with alternating curves in its very sharp blade, there is something disturbingly mysterious about this weapon."
   },
   "Machete": {
-    "damage": 5,
+    "damage": {"roll": 4, "bonus": 1},
     "damageType": "blade",
     "ranged": false,
     "twoHanded": false,
     "description": "Now THIS is a knife!"
   },
   "Baseball Bat": {
-    "damage": 2,
+    "damage": {"roll": 3, "bonus": 0},
     "damageType": "blunt",
     "ranged": false,
     "twoHanded": true,
     "description": "Doesn't hurt much, but at least you won't cut up your fists."
   },
   "Pickaxe": {
-    "damage": 2,
+    "damage": {"roll": 3, "bonus": 1},
     "damageType": "blade",
     "ranged": false,
     "twoHanded": false,
     "description": "Intended for mining, but works as a weapon in a pinch."
   },
   "Acid Concoction": {
-    "damage": 10,
+    "damage": {"roll": 8, "bonus": 4},
     "damageType": "liquid",
     "ranged": true,
     "usesStr": false,
@@ -89,7 +89,7 @@
     "description": "Melt the hide off anything crawling. Just don't spill it in your pack."
   },
   "Holy Water": {
-    "damage": 6,
+    "damage": {"roll": 6, "bonus": 1},
     "damageType": "liquid",
     "targetRace": "Undead",
     "ranged": true,
@@ -99,7 +99,7 @@
     "description": "Useful against the undead but not much else. Except as drinking water."
   },
   "Molotov Cocktail": {
-    "damage": 6,
+    "damage": {"roll": 8, "bonus": 2},
     "damageType": "explosion",
     "ranged": true,
     "usesStr": false,
@@ -108,7 +108,7 @@
     "description": "Fire! Fire!"
   },
   "Rock": {
-    "damage": 1,
+    "damage": {"roll": 2, "bonus": 0},
     "damageType": "blunt",
     "ranged": true,
     "usesStr": true,

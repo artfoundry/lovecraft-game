@@ -102,7 +102,7 @@ function CreateReverb(activePipeline, reverbType) {
 //
 // }
 
-function AdjustVolume(activePipeline, volumeSetting) {
+function AdjustVolume(volumeSetting) {
 	gainNode.gain.value = volumeSetting;
 }
 
@@ -121,8 +121,8 @@ function ProcessAudio(selectorName, audioEl, processValues) {
 		// if (processValues.panSetting) {
 		// 	PanAudio(activePipeline, processValues.panSetting);
 		// }
-		const volume = processValues.volumeSetting || 1;
-		AdjustVolume(activePipeline, volume);
+		const volume = processValues.volumeSetting || 0.8;
+		AdjustVolume(volume);
 	} else {
 		activePipeline.connect(audioContext.destination);
 	}

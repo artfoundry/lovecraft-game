@@ -193,7 +193,7 @@ class Game extends React.PureComponent {
 			dialogClasses: ''
 		};
 		this.invisibleTargetDialogProps = {
-			dialogContent: "The air seems to shimmer there, as if something is there, but the investigator can neither see it nor move past it.",
+			dialogContent: "The air seems to shimmer here and gives off an unearthly smell. The space distorts anything viewed through it. The party's consensus is that nothing good would come to anything moving into it.",
 			closeButtonText: 'Ok',
 			closeButtonCallback: null,
 			disableCloseButton: false,
@@ -215,9 +215,9 @@ class Game extends React.PureComponent {
 
 		this.state = {
 			gameOptions: {
-				fxVolume: 1,
+				fxVolume: 0.5,
 				playFx: true,
-				musicVolume: 1,
+				musicVolume: 0.5,
 				playMusic: this.gameAttr.playMusic,
 				screenZoom: 1.0,
 				brightness: 1.3,
@@ -2361,7 +2361,7 @@ class Game extends React.PureComponent {
 					const yDist = Math.abs(sndCoords.yPos - activePcCoors.yPos);
 					const modifier = 0.06 * (xDist > yDist ? xDist : yDist);
 					// toFixed fixes issues with floating point math resulting in long slightly inaccurate float values
-					processValues.volumeSetting = +(1 - (modifier <= 1 ? modifier : 1)).toFixed(2);
+					processValues.volumeSetting = +(0.8 - (modifier <= 0.8 ? modifier : 0.8)).toFixed(2);
 				}
 				if (processors.useReverb && !sfxReverbProcessed[selectorName]) {
 					processValues.reverbSetting = this.state.currentLocation;
