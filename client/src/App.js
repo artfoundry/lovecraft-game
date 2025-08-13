@@ -852,7 +852,9 @@ class Game extends React.PureComponent {
 			const unitsTurnOrder = this._sortInitiatives(deepCopy(this.state.unitsTurnOrder), uniqueCreatureId, unitInit, 'mapCreatures');
 			this.setState({unitsTurnOrder, creatureSpawnInfo: null}, () => {
 				this.updateThreatList([uniqueCreatureId], [], () => {
-					this.updateLog(`${articleType(creatureData.name, true)} ${creatureData.name} appears and attacks the party!`);
+					const identifiedCreature = this.state.identifiedThings.creatures[creatureData.name];
+					const creatureName = identifiedCreature && identifiedCreature.name ? `${articleType(creatureData.name, true)} ${creatureData.name}` : 'A creature';
+					this.updateLog(`${creatureName} appears and attacks the party!`);
 				});
 			});
 		});
@@ -1415,7 +1417,7 @@ class Game extends React.PureComponent {
 	/**
 	 * User click handler for clicking on units to determine if it's being selected or acted upon (ie. attacked, healed, etc.)
 	 * @param id: string (target ID)
-	 * @param target: string ('player' or 'creature')
+	 * @param target: string ('player', 'creature', 'npc', 'object')
 	 * @param isInRange: boolean
 	 * @param checkLineOfSightToParty: function (from Map)
 	 */
@@ -1434,6 +1436,7 @@ class Game extends React.PureComponent {
 				pcData: activePC,
 				partyData: this.state.playerCharacters,
 				updateCharacters: this.updateCharacters,
+				identifiedCreatures: this.state.identifiedThings.creatures,
 				updateLog: this.updateLog,
 				setShowDialogProps: this.setShowDialogProps,
 				notEnoughLightDialogProps: this.notEnoughLightDialogProps,
@@ -1443,10 +1446,12 @@ class Game extends React.PureComponent {
 				callback: () => {
 					this.toggleActionButton('', '', '', '', () => {
 						if (target === 'creature' && this.state.mapCreatures[id].currentHealth <= 0) {
+							const identifiedCreature = this.state.identifiedThings.creatures[targetData.name];
+							const creatureName = identifiedCreature && identifiedCreature.name ? targetData.name : 'creature';
 							if (this.state.mapCreatures[id].isRemoved) {
-								this.updateLog(`The ${this.state.mapCreatures[id].name} has been banished to another dimension!`);
+								this.updateLog(`The ${creatureName} has been banished to another dimension!`);
 							} else {
-								this.updateLog(`The ${this.state.mapCreatures[id].name} is dead!`);
+								this.updateLog(`The ${creatureName} is dead!`);
 							}
 							this.updateExpertise(this.state.mapCreatures[id].expertisePoints);
 							this._removeDeadFromGame(id, this.updateActivePlayerActions, checkLineOfSightToParty);
@@ -1735,7 +1740,9 @@ class Game extends React.PureComponent {
 			// check if other creature/player is on clicked tile to know whether it blocks the Resuscitate skill
 			const allChars = {...this.state.playerCharacters, ...this.state.mapCreatures};
 			if (allChars[clickedTargetId] && convertCoordsToPos(allChars[clickedTargetId].coords) === tilePos && clickedTargetId !== dyingCharId) {
-				otherCharacterOnTile = (allChars[clickedTargetId].type === 'player' ? allChars[clickedTargetId].name.first : 'The ' + allChars[clickedTargetId].name);
+				const identifiedCreature = this.state.identifiedThings.creatures[allChars[clickedTargetId].name];
+				const creatureName = allChars[clickedTargetId].type === 'creature' && identifiedCreature && identifiedCreature.name ? allChars[clickedTargetId].name : 'creature';
+				otherCharacterOnTile = (allChars[clickedTargetId].type === 'player' ? allChars[clickedTargetId].name.first : 'The ' + creatureName);
 			}
 		}
 
@@ -2103,11 +2110,14 @@ class Game extends React.PureComponent {
 		} else {
 			const targetId = target ? target.id : this.state.activeCharacter;
 			const actionStats = pcData.weapons[weaponId];
+			const identifiedCreature = this.state.identifiedThings.creatures[target.name];
+			const creatureName = target.type === 'creature' && identifiedCreature && identifiedCreature.name ? target.name : 'creature';
 			const props = {
 				actionId: weaponId,
 				actionStats,
 				targetData: target,
 				pcData,
+				identifiedCreatures: this.state.identifiedThings.creatures,
 				updateCharacters: this.updateCharacters,
 				updateLog: this.updateLog,
 				toggleAudio: this.toggleAudio,
@@ -2117,8 +2127,8 @@ class Game extends React.PureComponent {
 						if (target.type === 'player') {
 							this.updateLog(`${pcData.name.first} has killed ${target.name.first}!`);
 						} else {
-							this.updateLog(`The ${target.name} is dead!`);
-							this.updateExpertise(this.state.mapCreatures[targetId].expertisePoints);
+							this.updateLog(`The ${creatureName} is dead!`);
+							this.updateExpertise(target.expertisePoints);
 						}
 						this._removeDeadFromGame(targetId, updateActionsAndTakeNextAction, checkLineOfSightToParty);
 					} else {
@@ -2126,7 +2136,7 @@ class Game extends React.PureComponent {
 					}
 				}
 			};
-			const targetName = target ? (target.type === 'player' ? target.name.first + '!' : `a nearby ${target.name}`) : null;
+			const targetName = target ? (target.type === 'player' ? target.name.first + '!' : `a nearby ${creatureName}`) : null;
 			this.updateLog(`${pcData.name.first} is confused and attacks ${targetName}`);
 			pcData.attack(props);
 		}
@@ -2467,6 +2477,13 @@ class Game extends React.PureComponent {
 	 *********************/
 
 
+	/**
+	 * Saves to FB all state data needed for restoring saved game
+	 * Called from resetAllData or saveMapData
+	 * @param callback
+	 * @param isReset boolean (true when called from resetAllData)
+	 * @private
+	 */
 	_saveGameData(callback, isReset = false) {
 		const userId = this.state.userData.uid;
 		const dataToSave = {
@@ -3102,6 +3119,7 @@ class Game extends React.PureComponent {
 						lightTimeCosts={this.lightTimeCosts}
 						takeAutomaticAction={this.takeAutomaticAction}
 						recoverCharsSpirit={this.recoverCharsSpirit}
+						identifiedThings={this.state.identifiedThings}
 						// npcs
 						npcs={this.state.npcs}
 						updateNpcs={this.updateNpcs}

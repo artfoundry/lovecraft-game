@@ -408,9 +408,9 @@ export default class CharacterCreation extends React.PureComponent {
 							</div>
 						</div>
 						<div id='rolls-display' className={`${this.state.currentStep === 'profession' ? 'bottom-rule' : 'hidden'}`}>
-							<div>Str: {this.state.statsSaved.strength}</div>
-							<div>Agi: {this.state.statsSaved.agility}</div>
-							<div>MenAcu: {this.state.statsSaved.mentalAcuity}</div>
+							<div>Strength: {this.state.statsSaved.strength}</div>
+							<div>Agility: {this.state.statsSaved.agility}</div>
+							<div>Mental Acuity: {this.state.statsSaved.mentalAcuity}</div>
 							<div className={`char-creation-button ${this.state.statsRolled.roll1.strength === 0 ? 'button-disabled' : ''} ${this.state.rollNumSaved === 1 ? 'button-selected' : ''}`}
 							     onClick={() => this.updateValue({statsSaved: this.state.statsRolled.roll1, rollNumSaved: 1})}
 							>1</div>

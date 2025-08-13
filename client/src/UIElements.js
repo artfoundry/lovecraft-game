@@ -242,7 +242,7 @@ function CharacterControls(props) {
 				const leftGunHasAmmo = leftWeapon && leftWeapon.currentRounds > 0;
 				const rightGunHasAmmo = rightWeapon && rightWeapon.currentRounds > 0;
 				const gunIsLoaded = skill.requiresEquippedGunType && hasNeededItem && (leftGunHasAmmo || rightGunHasAmmo);
-				const requiresActionsRemaining = skill.name !== 'Quick Reload' && skill.name !== 'Mine' && skill.name !== 'Expert Mining';
+				const requiresActionsRemaining = skill.name !== 'Quick Reload' && skill.name !== 'Mine' && skill.name !== 'Expert Mining' && skill.name !== 'Stealthy';
 				// all active and only active skills require spirit
 				const hasEnoughSpirit = skill.spirit && currentPCdata.currentSpirit >= skill.spirit[skill.level];
 				let skillClass = `${convertObjIdToClassId(skill.skillId)}-action`;

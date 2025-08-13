@@ -3248,6 +3248,7 @@ class Map extends React.PureComponent {
 				let skillProps = {
 					pcData: targetPlayerData,
 					creatureData,
+					identifiedCreatures: this.props.identifiedThings.creatures,
 					updateCharacters: this.props.updateCharacters,
 					updateLog: this.props.updateLog,
 					toggleAudio: this.props.toggleAudio,
@@ -3275,7 +3276,7 @@ class Map extends React.PureComponent {
 							skillProps.updateTurnCallback = moveAfterActing;
 							creatureData[creatureSkillToUse](skillProps);
 						} else {
-							creatureData.attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog, this.props.toggleAudio, moveAfterActing);
+							creatureData.attack(targetPlayerData, this.props.identifiedThings.creatures, this.props.updateCharacters, this.props.updateLog, this.props.toggleAudio, moveAfterActing);
 						}
 					} else {
 						moveAfterActing();
@@ -3299,7 +3300,7 @@ class Map extends React.PureComponent {
 								skillProps.creatureData = deepCopy(this.props.mapCreatures[creatureID]);
 								creatureData[creatureSkillToUse](skillProps);
 							} else {
-								creatureData.attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog, this.props.toggleAudio, () => {
+								creatureData.attack(targetPlayerData, this.props.identifiedThings.creatures, this.props.updateCharacters, this.props.updateLog, this.props.toggleAudio, () => {
 									this._updateThreatLists(updateSpiritAndCurrentTurn);
 								});
 							}
@@ -3314,7 +3315,7 @@ class Map extends React.PureComponent {
 					} else {
 						// for use in updateSpiritAndCurrentTurn - don't need to recopy data just for an attack (only for skills or movement)
 						needToRecopyData = false;
-						creatureData.attack(targetPlayerData, this.props.updateCharacters, this.props.updateLog, this.props.toggleAudio, updateSpiritAndCurrentTurn);
+						creatureData.attack(targetPlayerData, this.props.identifiedThings.creatures, this.props.updateCharacters, this.props.updateLog, this.props.toggleAudio, updateSpiritAndCurrentTurn);
 					}
 				}
 			} else if (!creatureData.relatedMission) {
