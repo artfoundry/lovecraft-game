@@ -12,7 +12,7 @@
 				"mapTileLimit": 500,
 				"npcs": {},
 				"creatures": {
-					"flyingPolyp": {"number": 0, "variation": 2},
+					"flyingPolyp": {"number": 0, "variation": 1},
 					"ghast": {"number": 2, "variation": 3},
 					"ghoul": {"number": 8, "variation": 3}
 				},
@@ -222,7 +222,7 @@
 					"privateEye": {
 						"coords": {
 							"xPos": 14,
-							"yPos": 17
+							"yPos": 15
 						}
 					},
 					"archaeologist": {

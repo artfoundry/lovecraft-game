@@ -109,6 +109,7 @@ class Character extends React.PureComponent {
 	 *  actionStats: object (includes item/weapon info),
 	 *  targetData: object,
 	 *  pcData: object,
+	 *  identifiedCreatures: object (part of identifiedThings from App)
 	 *  updateCharacters: function (from App),
 	 *  updateLog: function (from App),
 	 *  toggleAudio function (from App),
@@ -117,7 +118,7 @@ class Character extends React.PureComponent {
 	 * )
 	 */
 	attack = (props) => {
-		const {actionId, actionStats, targetData, pcData, updateCharacters, updateLog, toggleAudio, sfxSelectors, callback} = props;
+		const {actionId, actionStats, targetData, pcData, identifiedCreatures, updateCharacters, updateLog, toggleAudio, sfxSelectors, callback} = props;
 		let attackTotal, hitRoll, defenseRoll, defenseTotal;
 		let isHit = false;
 		let damageTotal = 0;
@@ -125,7 +126,8 @@ class Character extends React.PureComponent {
 		let updatedPcData = deepCopy(pcData);
 		let updatedTargetData = deepCopy(targetData);
 		const pcPronoun = pcData.gender === 'Male' ? 'his' : 'her';
-		const targetName = targetData.type === 'player' ? targetData.name.first : 'the ' + targetData.name;
+		const creatureName = targetData.type === 'creature' && identifiedCreatures[targetData.name] && identifiedCreatures[targetData.name].name ? targetData.name : 'creature';
+		const targetName = targetData.type === 'player' ? targetData.name.first : 'the ' + creatureName;
 		const weaponInfo = updatedPcData.weapons[actionId];
 		const equippedSide = pcData.equippedItems.loadout1.right === actionId ? 'right' : 'left';
 		const equippedGunType = weaponInfo.gunType;
@@ -738,11 +740,25 @@ class Character extends React.PureComponent {
 		}
 	}
 
+	/**
+	 * identifiedCreatures: object (part of identifiedThings from App)
+	 * @param props (
+	 *  actionStats: object (includes item/weapon info),
+	 *  targetData: object,
+	 *  pcData: object,
+	 *  identifiedCreatures: object (part of identifiedThings from App)
+	 *  updateCharacters: function (from App),
+	 *  updateLog: function (from App),
+	 *  callback: function (from App - calls toggleWeapon, _removeDeadFromTurnOrder if creature dies, then updateActivePlayerActions)
+	 * )
+	 */
 	useRelic = (props) => {
-		const {actionStats, targetData, pcData, updateCharacters, updateLog, callback} = props;
+		const {actionStats, targetData, pcData, identifiedCreatures, updateCharacters, updateLog, callback} = props;
 		let updatedPcData = deepCopy(pcData);
 		let updatedCreatureData = deepCopy(targetData);
 		const relicExpertSkillMod = pcData.id === 'occultResearcher' ? pcData.skills.relicExpertise.modifier[pcData.skills.relicExpertise.level] : 0;
+		const creatureName = targetData.type === 'creature' && identifiedCreatures[targetData.name] && identifiedCreatures[targetData.name].name ? targetData.name : 'creature';
+
 		let sanityReduction = 0;
 
 		// todo: need to decide what each relic will do
@@ -757,7 +773,7 @@ class Character extends React.PureComponent {
 		}
 
 		updateCharacters('player', updatedPcData, pcData.id, false, false, false, () => {
-		    updateLog(`${pcData.name.first} uses the ${actionStats.name}, wreaking havoc on the ${targetData.name} but driving ${pcData.gender === 'Male' ? 'him' : 'her'}self closer to madness!`);
+		    updateLog(`${pcData.name.first} uses the ${actionStats.name}, wreaking havoc on the ${creatureName} but driving ${pcData.gender === 'Male' ? 'him' : 'her'}self closer to madness!`);
 			updateCharacters('creature', updatedCreatureData, targetData.id, false, false, false, callback);
 		});
 	}

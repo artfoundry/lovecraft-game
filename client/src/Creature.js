@@ -53,21 +53,23 @@ class Creature extends React.PureComponent {
 
 	/**
 	 * Attack a pc
-	 * @param targetData: object (pc data)
-	 * @param updateTarget: function (App's updateCharacters)
-	 * @param updateLog: function
-	 * @param toggleAudio: function
-	 * @param updateTurnCallback: function
+	 * @param targetData object (pc data)
+	 * @param identifiedCreatures object (part of identifiedThings from App)
+	 * @param updateTarget function (App's updateCharacters)
+	 * @param updateLog function
+	 * @param toggleAudio function
+	 * @param updateTurnCallback function
 	 */
-	attack = (targetData, updateTarget, updateLog, toggleAudio, updateTurnCallback = null) => {
+	attack = (targetData, identifiedCreatures, updateTarget, updateLog, toggleAudio, updateTurnCallback = null) => {
 		let isHit, damageTotal = 0, hitTotal = 0, defenseTotal = 0;
 		const rangedStrBonus = Math.round(this.strength / 3); // bonus for ranged attacks
 		const meleeAgilityBonus = Math.round(this.agility / 3); // bonus for str attacks
 		const targetStealth = targetData.statuses.stealthy;
 		const targetStealthBonus = targetStealth ? targetStealth.modifier : 0;
 		const damageRoll = diceRoll(this.damage.roll) + this.damage.bonus;
-		let logAttackMessage = `${articleType(this.name, true)} ${this.name} lashes at ${targetData.name.first} with something disgusting...`;
-		let logDamageMessage = `The ${this.name} misses.`;
+		const creatureName = identifiedCreatures[this.name] && identifiedCreatures[this.name].name ? this.name : 'creature';
+		let logAttackMessage = `${articleType(creatureName, true)} ${creatureName} lashes at ${targetData.name.first} with something disgusting...`;
+		let logDamageMessage = `The ${creatureName} misses.`;
 		this.rollForAttackAndDefense();
 
 		if (this.attackType === 'ranged') {
@@ -76,7 +78,7 @@ class Creature extends React.PureComponent {
 			const attackDifference = hitTotal - defenseTotal;
 			const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 3);
 			damageTotal = rangedStrBonus + damageRoll + damageModBasedOnAttack - targetData.damageReduction;
-			logAttackMessage = `${articleType(this.name, true)} ${this.name} launches something at ${targetData.name.first}...`;
+			logAttackMessage = `${articleType(creatureName, true)} ${creatureName} launches something at ${targetData.name.first}...`;
 		} else if (this.attackType === 'melee') {
 			hitTotal = this.strength + meleeAgilityBonus + this.hitRoll;
 			defenseTotal = targetData.defense + targetStealthBonus + this.defenseRoll;
@@ -90,7 +92,7 @@ class Creature extends React.PureComponent {
 			const attackDifference = hitTotal - defenseTotal;
 			const damageModBasedOnAttack = attackDifference <= 0 ? 0 : Math.round(attackDifference / 3);
 			damageTotal = this.mentalAcuity + damageRoll + damageModBasedOnAttack - damageAdjustment;
-			logAttackMessage = `${articleType(this.name, true)} ${this.name} psychically attacks ${targetData.name.first}...`;
+			logAttackMessage = `${articleType(creatureName, true)} ${creatureName} psychically attacks ${targetData.name.first}...`;
 			logDamageMessage = `...but fails to penetrate ${targetData.name.first}'s mind.`;
 		}
 		damageTotal = damageTotal < 0 ? 0 : damageTotal;
@@ -143,6 +145,7 @@ class Creature extends React.PureComponent {
 	 * @param props: object (
 	 *  pcData: object (pc data)
 	 *  creatureData: object (deepcopy of creature's data)
+	 *  identifiedCreatures: object (part of identifiedThings from App)
 	 *  updateCharacters: function (App's updateCharacters)
 	 *  skillName: string
 	 *  updateLog: function
@@ -151,7 +154,7 @@ class Creature extends React.PureComponent {
 	 * )
 	 */
 	attemptToApplyStatus = (props) => {
-		const {pcData, creatureData, updateCharacters, skillName, updateLog, toggleAudio, updateTurnCallback} = props;
+		const {pcData, creatureData, identifiedCreatures, updateCharacters, skillName, updateLog, toggleAudio, updateTurnCallback} = props;
 		this.rollForAttackAndDefense();
 		const skill = this.skills[skillName];
 		const status = skill.status;
@@ -161,7 +164,8 @@ class Creature extends React.PureComponent {
 		const targetAgilityBonus = targetStealth ? targetStealth.modifier : 0;
 		const defenseTotal = pcData[relevantStat] + targetAgilityBonus + this.defenseRoll;
 		let logMessage = '';
-		const logMessageAction = relevantStat === 'mentalAcuity' ? 'psychically probes' : 'reaches out with a disgusting appendage';
+		const creatureName = identifiedCreatures[this.name] && identifiedCreatures[this.name].name ? `${articleType(this.name, true)} ${this.name}` : 'A creature';
+		const logMessageAction = relevantStat === 'mentalAcuity' ? 'psychically probes' : 'reaches out with a disgusting appendage to';
 		const targetPronoun = pcData.gender === 'Male' ? 'him' : 'her';
 
 		if (hitTotal >= defenseTotal) {
@@ -171,7 +175,7 @@ class Creature extends React.PureComponent {
 				turnsLeft: diceRoll(skill.maxTurns),
 				chanceOfEffect: skill.chanceOfEffect
 			}
-			logMessage = `${articleType(this.name, true)} ${this.name} ${logMessageAction} to ${pcData.name.first} and causes ${targetPronoun} to be ${status}!`;
+			logMessage = `${creatureName} ${logMessageAction} ${pcData.name.first} and causes ${targetPronoun} to be ${status}!`;
 			//todo: add skill specific audio?
 			toggleAudio('characters', removeIdNumber(this.id) + 'Attack', {useReverb: true, useVolume: true, soundCoords: this.coords});
 			this._updateSpirit(creatureData, skill.spirit, updateCharacters, () => {
@@ -181,7 +185,7 @@ class Creature extends React.PureComponent {
 				});
 			});
 		} else {
-			logMessage = `${articleType(this.name, true)} ${this.name} ${logMessageAction} to ${pcData.name.first} but fortunately fails to make contact.`;
+			logMessage = `${creatureName} ${logMessageAction} ${pcData.name.first} but fortunately fails to make contact.`;
 			this._updateSpirit(creatureData, skill.spirit, updateCharacters, updateTurnCallback);
 		}
 		updateLog(logMessage);
@@ -191,14 +195,16 @@ class Creature extends React.PureComponent {
 	 * Creature turns invisible
 	 * @param props: object ({
 	 *  creatureData: object (creature's data)
+	 *  identifiedCreatures: object (part of identifiedThings from App)
 	 *  updateCharacters: function (App's updateCharacters)
 	 *  updateLog: function
 	 *  updateTurnCallback: function
 	 * })
 	 */
 	phase = (props) => {
-		const {creatureData, updateCharacters, updateLog, updateTurnCallback} = props;
+		const {creatureData, identifiedCreatures, updateCharacters, updateLog, updateTurnCallback} = props;
 		const phaseSkill = this.skills.phase;
+		const creatureName = identifiedCreatures[this.name] && identifiedCreatures[this.name].name ? `The ${this.name}` : 'A creature';
 		creatureData.statuses.invisible = {
 			name: Statuses.invisible.name,
 			description: Statuses.invisible.description,
@@ -207,7 +213,7 @@ class Creature extends React.PureComponent {
 		// _checkForUsableSkill in Map checks if creature has enough spirit, so don't need to check here
 		creatureData.currentSpirit -= phaseSkill.spirit;
 		updateCharacters('creature', creatureData, creatureData.id, false, false, false, () => {
-			updateLog(`The ${this.name} has vanished!`);
+			updateLog(`${creatureName} has vanished!`);
 			if (updateTurnCallback) updateTurnCallback();
 		});
 	}
@@ -217,6 +223,7 @@ class Creature extends React.PureComponent {
 	 * @param props object ({
 	 *  pcData: object (target pc's data)
 	 *  creatureData: object (creature's data)
+	 *  identifiedCreatures: object (part of identifiedThings from App)
 	 *  updateCharacters: function (App's updateCharacters)
 	 *  updateLog: function
 	 *  toggleAudio: function
@@ -224,11 +231,12 @@ class Creature extends React.PureComponent {
 	 * })
 	 */
 	cyclone = (props) => {
-		const {pcData, creatureData, updateCharacters, updateLog, toggleAudio, updateTurnCallback} = props;
+		const {pcData, creatureData, identifiedCreatures, updateCharacters, updateLog, toggleAudio, updateTurnCallback} = props;
 		const cycloneSkill = this.skills.cyclone;
 		this.rollForAttackAndDefense();
 		const hitTotal = this.mentalAcuity + this.hitRoll;
 		const defenseTotal = pcData.mentalAcuity + this.defenseRoll;
+		const creatureName = identifiedCreatures[this.name] && identifiedCreatures[this.name].name ? this.name : 'creature';
 		let logMessage = '';
 
 		if (hitTotal >= defenseTotal) {
@@ -238,7 +246,7 @@ class Creature extends React.PureComponent {
 			pcData.currentSpirit = damageResult < 0 ? 0 : damageResult;
 			// todo: add skill specific audio
 			toggleAudio('characters', 'flyingPolypAttack', {useReverb: true, useVolume: true, soundCoords: this.coords});
-			logMessage = `A hallowing cyclone winds its way from a flying polyp to ${pcData.name.first}, draining ${pcData.gender === 'Male' ? 'him' : 'her'} of Spirit!`;
+			logMessage = `A hallowing cyclone winds its way from a ${creatureName} to ${pcData.name.first}, draining ${pcData.gender === 'Male' ? 'him' : 'her'} of Spirit!`;
 			this._updateSpirit(creatureData, spiritCost, updateCharacters, () => {
 				updateCharacters('player', pcData, pcData.id, false, false, false, () => {
 					toggleAudio('characters', pcData.gender.toLowerCase() + 'Injured', {useReverb: true, useVolume: true, soundCoords: pcData.coords});
@@ -246,7 +254,7 @@ class Creature extends React.PureComponent {
 				});
 			});
 		} else {
-			logMessage = `A hallowing cyclone winds its way from a Flying Polyp to ${pcData.name.first}, but ${pcData.gender === 'Male' ? 'he' : 'she'} manages to resist its effects.`;
+			logMessage = `A hallowing cyclone winds its way from a ${creatureName} to ${pcData.name.first}, but ${pcData.gender === 'Male' ? 'he' : 'she'} manages to resist its effects.`;
 			this._updateSpirit(creatureData, cycloneSkill.spirit, updateCharacters, updateTurnCallback);
 		}
 		updateLog(logMessage);
@@ -257,6 +265,7 @@ class Creature extends React.PureComponent {
 	 * @param props object ({
 	 *  pcData: object (all pcs' data)
 	 *  creatureData: object (creature's data)
+	 *  identifiedCreatures: object (part of identifiedThings from App)
 	 *  updateCharacters: function (App's updateCharacters)
 	 *  updateLog: function
 	 *  toggleAudio: function
@@ -264,15 +273,16 @@ class Creature extends React.PureComponent {
 	 * })
 	 */
 	piercingWail = (props) => {
-		const {pcData, creatureData, updateCharacters, updateLog, toggleAudio, updateTurnCallback} = props;
+		const {pcData, creatureData, identifiedCreatures, updateCharacters, updateLog, toggleAudio, updateTurnCallback} = props;
 		const wailSkill = this.skills.piercingWail;
+		const creatureName = identifiedCreatures[this.name] && identifiedCreatures[this.name].name ? `The ${this.name}` : 'A creature';
 		this.hitRoll = diceRoll(this.hitDie);
 		let hitTotal = 0;
 		let defenseTotal = 0;
 		let logMessage = '';
 		let affectedPCs = [];
 
-		updateLog('The Shoggoth makes an ear-splitting screeching wail that tears at the fabric of reality, threatening to drive investigators near it closer to insanity!');
+		updateLog(creatureName + ' makes an ear-splitting screeching wail that tears at the fabric of reality, threatening to drive investigators near it closer to insanity!');
 
 		for (const individualPcData of Object.values(pcData)) {
 			this.defenseRoll = diceRoll(this.defenseDie);
