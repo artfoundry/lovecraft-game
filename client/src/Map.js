@@ -2422,7 +2422,7 @@ class Map extends React.PureComponent {
 					const yPos = shorterAxisStartingPos === 'yPos' ? shorterAxisNewPos : longerAxisNewPos;
 					const newPos = `${xPos}-${yPos}`;
 
-					//TODO: need to come up with a way to allow pc to have a clear path from around a corner
+					//todo: need to come up with a way to allow pc to have a clear path from around a corner
 					if (this._isCurrentTileBlocked(newPos, checkForCreatures)) {
 						numOfClearPaths--;
 						clearPaths[pointName] = false;
@@ -2776,8 +2776,11 @@ class Map extends React.PureComponent {
 		}
 
 		const activePlayerData = this.props.playerCharacters[activePC];
+		const leaderPos = convertCoordsToPos(this.props.playerCharacters[this.props.activeCharacter].coords);
 		let updateData = deepCopy(activePlayerData);
-		updateData.coords = {...newCoords};
+		if (convertCoordsToPos(newCoords) !== leaderPos) {
+			updateData.coords = {...newCoords};
+		}
 
 		const newPosLighting = this.state.mapLayout[newTilePos].lightStrength;
 		if (newPosLighting === 0 && !this.state.currentLocationData.floors[this.props.currentFloor].allTilesAtLeastAmbientLit) {
@@ -2899,7 +2902,7 @@ class Map extends React.PureComponent {
 						} else {
 							checkForThreats();
 						}
-						// }); // <- block end for slowMovementAnimation
+						// }); <- block end for slowMovementAnimation
 					}
 				});
 			});

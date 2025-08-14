@@ -689,17 +689,22 @@ class UI extends React.PureComponent {
 		});
 	}
 
+	cancelObjPanel = () => {
+		this.setObjectSelected(null, null);
+		this.setObjectPanelDisplayOption(false);
+		if (this.props.objHasBeenDropped.dropped) {
+			this.props.setHasObjBeenDropped({objHasBeenDropped: false, evt: null});
+		}
+	}
+
 	showObjectPanel = () => {
 		const creatureCoords = this.props.getAllCharactersPos('creature', 'coords');
 		return (
 			<ObjectInfoWindow
 				objectInfo={this.state.objectSelected}
 				isDraggedObject={this.state.draggedObjectMetaData !== null}
-				setObjectSelected={this.setObjectSelected}
-				setObjectPanelDisplayOption={this.setObjectPanelDisplayOption}
 				selectedObjPos={this.state.selectedObjPos}
 				objHasBeenDropped={this.props.objHasBeenDropped.dropped}
-				setHasObjBeenDropped={this.props.setHasObjBeenDropped}
 				addObjectToMap={this.addObjectToMap}
 				addStackedObjToOtherPc={this.addStackedObjToOtherPc}
 				addItemToPlayerInventory={this.props.addItemToPlayerInventory}
@@ -712,6 +717,7 @@ class UI extends React.PureComponent {
 				activePcInfo={this.props.playerCharacters[this.props.activeCharacter]}
 				inTacticalMode={this.props.inTacticalMode}
 				setContainerOpenState={this.setContainerOpenState}
+				cancelObjPanel={this.cancelObjPanel}
 			/>
 		);
 	}
