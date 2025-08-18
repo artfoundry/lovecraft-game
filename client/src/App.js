@@ -2513,7 +2513,7 @@ class Game extends React.PureComponent {
 			inTacticalMode: this.state.inTacticalMode // boolean
 		};
 		this.firebase.setData(userId, isReset ? null : deepCopy(dataToSave, true), (logMessage) => {
-			if (!isReset) {
+			if (!isReset && this.state.logText[this.state.logText.length - 1] !== logMessage) {
 				this.updateLog(logMessage);
 			}
 			if (callback) callback();
