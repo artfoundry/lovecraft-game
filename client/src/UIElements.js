@@ -896,11 +896,8 @@ function ObjectInfoWindow(props) {
 	const {
 		objectInfo,
 		isDraggedObject,
-		setObjectSelected,
-		setObjectPanelDisplayOption,
 		selectedObjPos,
 		objHasBeenDropped,
-		setHasObjBeenDropped,
 		// dropItemToPC,  - to be used for buttons as alts for drag-and-drop if needed
 		// dropItemToEquipped,
 		// dropItemToInv,
@@ -914,7 +911,10 @@ function ObjectInfoWindow(props) {
 		creatureCoords,
 		activePc,
 		activePcInfo,
-		setContainerOpenState} = {...props};
+		setContainerOpenState,
+		cancelObjPanel} = {...props};
+	const [interactingPc] = useState(activePc);
+	const [interactingPcInfo] = useState(activePcInfo);
 	const [origObjectList, updateOrigObjectList] = useState(objectInfo);
 	const [containerId, updateContainerId] = useState(null);
 	const [objectToShow] = useState(isMapObj ? null : objectInfo);
@@ -988,10 +988,10 @@ function ObjectInfoWindow(props) {
 										dialogClasses: ''
 									}
 									setShowDialogProps(true, guardedDialogProps);
-								} else if (notEnoughSpaceInInventory(1, 0, activePcInfo)) {
+								} else if (notEnoughSpaceInInventory(1, 0, interactingPcInfo)) {
 									setShowDialogProps(true, notEnoughSpaceDialogProps);
 								} else {
-									addItemToPlayerInventory(obj, obj.id, activePc, isPickUpAction, false, containerId);
+									addItemToPlayerInventory(obj, obj.id, interactingPc, isPickUpAction, false, containerId);
 									const updatedList = origObjectList;
 									updatedList[index] = undefined;
 									updateOrigObjectList(updatedList);
@@ -1013,13 +1013,6 @@ function ObjectInfoWindow(props) {
 			});
 		}
 		return list;
-	}
-	const cancelObjPanel = () => {
-		setObjectSelected(null, null);
-		setObjectPanelDisplayOption(false);
-		if (objHasBeenDropped) {
-			setHasObjBeenDropped({objHasBeenDropped: false, evt: null});
-		}
 	}
 
 	return (
