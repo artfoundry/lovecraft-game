@@ -88,6 +88,10 @@ export default class CharacterCreation extends React.PureComponent {
 		this.setState(value);
 	}
 
+	cancelObjPanel = () => {
+		this.setObjectSelected(null, null);
+	}
+
 	showObjectPanel = () => {
 		const top = `calc(50% - ${this.props.objectPanelHeight / 2}px)`;
 		const left = this.props.screenData.isNarrow ? 0 : `calc(50% - ${this.props.objectPanelWidth / 2}px)`;
@@ -101,6 +105,7 @@ export default class CharacterCreation extends React.PureComponent {
 				objHasBeenDropped={false}
 				isPickUpAction={false}
 				isMapObj={false}
+				cancelObjPanel={this.cancelObjPanel}
 			/>
 		);
 	}
