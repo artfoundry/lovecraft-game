@@ -20,6 +20,7 @@
 /asset_sources/
 dev_notes
 test_notes
+story
 fixedBugs
 /mapLayoutTool/mapData_*.json
 client_secret*

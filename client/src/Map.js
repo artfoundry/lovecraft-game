@@ -3682,16 +3682,16 @@ class Map extends React.PureComponent {
 						direction = 'down';
 						break;
 					case 'Numpad1':
-						direction = 'up-left';
-						break;
-					case 'Numpad3':
-						direction = 'up-right';
-						break;
-					case 'Numpad7':
 						direction = 'down-left';
 						break;
-					case 'Numpad9':
+					case 'Numpad3':
 						direction = 'down-right';
+						break;
+					case 'Numpad7':
+						direction = 'up-left';
+						break;
+					case 'Numpad9':
+						direction = 'up-right';
 						break;
 				}
 				this.checkIfTileOrObject('', direction);
